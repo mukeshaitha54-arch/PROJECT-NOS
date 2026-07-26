@@ -1,0 +1,34 @@
+# Dependency directories
+node_modules/
+bin/
+obj/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Framework builds
+.next/
+dist/
+out/
+build/
+coverage/
+
+# Turbo cache and typescript info
+.turbo/
+*.tsbuildinfo
+
+# Environmental variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs and operating system files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db

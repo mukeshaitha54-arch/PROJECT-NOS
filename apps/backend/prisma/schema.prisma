@@ -1,0 +1,701 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Foundation System Node registry entity (Telemetry metric models postponed per requirements)
+model SystemNode {
+  id          String    @id @default(uuid())
+  hostname    String    @unique
+  ipAddress   String
+  status      String    @default("HEALTHY")
+  description String?
+  lastSeenAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("system_nodes")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  ANALYST
+  VIEWER
+  USER
+}
+
+enum OtpType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  role            Role              @default(USER)
+  isEmailVerified Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  refreshTokens   RefreshToken[]
+  otps            VerificationOtp[]
+  assignedAlerts  Alert[]           @relation("AssignedUserAlerts")
+  alertComments   AlertComment[]
+  alertAssignmentsReceived AlertAssignment[] @relation("AssignedAlerts")
+  alertAssignmentsGiven    AlertAssignment[] @relation("AssignedByAlerts")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model VerificationOtp {
+  id        String   @id @default(uuid())
+  otpHash   String
+  type      OtpType
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  email     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+  @@map("verification_otps")
+}
+
+// ==========================================
+// PHASE 2A: DEVICE REGISTRATION & HEARTBEAT
+// ==========================================
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  DEGRADED
+  CRITICAL
+  MAINTENANCE
+}
+
+model Device {
+  id             String       @id @default(uuid())
+  uuid           String       @unique
+  hostname       String
+  deviceName     String
+  os             String
+  osVersion      String
+  architecture   String
+  agentVersion   String
+  status         DeviceStatus @default(OFFLINE)
+  lastSeen       DateTime?
+  registeredAt   DateTime     @default(now())
+  organizationId String?
+  tokenHash      String?      @unique
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  heartbeats     Heartbeat[]
+  telemetrySnapshots TelemetrySnapshot[]
+  inventory        DeviceInventory?
+  auditLogs        InventoryAuditLog[]
+  alerts           Alert[]
+  maintenanceWindows MaintenanceWindow[]
+
+  @@index([hostname])
+  @@index([status])
+  @@map("devices")
+}
+
+model Heartbeat {
+  id        String   @id @default(uuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  cpuUsage  Float
+  ramUsage  Float
+  uptime    Float
+  ipAddress String
+  timestamp DateTime @default(now())
+
+  @@index([deviceId, timestamp(sort: Desc)])
+  @@map("heartbeats")
+}
+
+// ==========================================
+// PHASE 2B: COMPLETE TELEMETRY COLLECTION
+// ==========================================
+
+model TelemetrySnapshot {
+  id                   String   @id @default(uuid())
+  deviceId             String
+  device               Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  cpuUsage             Float
+  cpuTemperature       Float    @default(0.0)
+  cpuFrequency         Float    @default(0.0)
+  logicalProcessors    Int
+  physicalProcessors   Int
+  memoryUsed           Float
+  memoryFree           Float
+  memoryTotal          Float
+  memoryUsagePercent   Float
+  diskReadSpeed        Float    @default(0.0)
+  diskWriteSpeed       Float    @default(0.0)
+  diskUsagePercent     Float
+  diskFree             Float
+  diskTotal            Float
+  networkUploadSpeed   Float    @default(0.0)
+  networkDownloadSpeed Float    @default(0.0)
+  bytesSent            Float    @default(0.0)
+  bytesReceived        Float    @default(0.0)
+  activeConnections    Int      @default(0)
+  runningProcesses     Int      @default(0)
+  systemUptime         Float
+  bootTime             DateTime
+  ipAddress            String
+  macAddress           String   @default("00:00:00:00:00:00")
+  timestamp            DateTime @default(now())
+
+  @@index([deviceId, timestamp(sort: Desc)])
+  @@map("telemetry_snapshots")
+}
+
+// ==========================================================
+// PHASE 3: DEVICE INVENTORY & ASSET DISCOVERY ENGINE
+// ==========================================================
+
+model DeviceInventory {
+  id               String       @id @default(uuid())
+  deviceId         String       @unique
+  device           Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  
+  manufacturer     String       @default("Unknown")
+  model            String       @default("Unknown")
+  serialNumber     String       @default("Unknown")
+  motherboard      String       @default("Unknown")
+  biosVendor       String       @default("Unknown")
+  biosVersion      String       @default("Unknown")
+  biosReleaseDate  String?
+  
+  cpuModel         String       @default("Unknown")
+  cpuVendor        String       @default("Unknown")
+  physicalCores    Int          @default(1)
+  logicalCores     Int          @default(1)
+  
+  hostname         String
+  domain           String       @default("WORKGROUP")
+  workgroup        String       @default("WORKGROUP")
+  osEdition        String       @default("Unknown")
+  osBuild          String       @default("Unknown")
+  architecture     String       @default("x64")
+  
+  assetFingerprint String       @default("UNHASHED")
+  inventoryVersion Int          @default(1)
+  schemaVersion    String       @default("1.0.0")
+  lastScanAt       DateTime     @default(now())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  memoryModules        MemoryModule[]
+  diskDrives           DiskDrive[]
+  gpus                 Gpu[]
+  networkAdapters      NetworkAdapter[]
+  installedSoftware    InstalledSoftware[]
+  windowsServices      WindowsService[]
+  startupApplications  StartupApplication[]
+  security             SecurityInventory?
+  capabilities         DeviceCapabilities?
+
+  @@index([deviceId])
+  @@index([assetFingerprint])
+  @@map("device_inventories")
+}
+
+model MemoryModule {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  slot              String
+  capacityBytes     Float           @default(0.0)
+  speedMHz          Int             @default(0)
+  manufacturer      String          @default("Unknown")
+  partNumber        String          @default("Unknown")
+  serialNumber      String          @default("Unknown")
+
+  @@index([deviceInventoryId])
+  @@map("memory_modules")
+}
+
+model DiskDrive {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  driveName         String
+  model             String          @default("Unknown")
+  serialNumber      String          @default("Unknown")
+  mediaType         String          @default("Fixed")
+  sizeBytes         Float           @default(0.0)
+  fileSystem        String          @default("NTFS")
+  isSystemDrive     Boolean         @default(false)
+
+  @@index([deviceInventoryId])
+  @@map("disk_drives")
+}
+
+model Gpu {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  name              String
+  manufacturer      String          @default("Unknown")
+  driverVersion     String          @default("Unknown")
+  vRamBytes         Float           @default(0.0)
+  resolution        String          @default("Unknown")
+
+  @@index([deviceInventoryId])
+  @@map("gpus")
+}
+
+model NetworkAdapter {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  name              String
+  description       String?
+  macAddress        String          @default("00:00:00:00:00:00")
+  ipv4              String          @default("0.0.0.0")
+  ipv6              String          @default("::1")
+  gateway           String          @default("0.0.0.0")
+  dns               String          @default("8.8.8.8")
+  speedMbps         Float           @default(1000.0)
+  isWireless        Boolean         @default(false)
+  isPhysical        Boolean         @default(true)
+  isOperational     Boolean         @default(true)
+
+  @@index([deviceInventoryId])
+  @@index([macAddress])
+  @@map("network_adapters")
+}
+
+model InstalledSoftware {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  name              String
+  publisher         String          @default("Unknown")
+  version           String          @default("1.0.0")
+  installDate       String          @default("Unknown")
+  installLocation   String?
+
+  @@index([deviceInventoryId, name])
+  @@map("installed_software")
+}
+
+model WindowsService {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  serviceName       String
+  displayName       String
+  status            String          @default("Stopped")
+  startType         String          @default("Manual")
+  account           String          @default("LocalSystem")
+
+  @@index([deviceInventoryId, serviceName])
+  @@map("windows_services")
+}
+
+model StartupApplication {
+  id                String          @id @default(uuid())
+  deviceInventoryId String
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  name              String
+  command           String
+  location          String          @default("Registry")
+  user              String          @default("All Users")
+
+  @@index([deviceInventoryId])
+  @@map("startup_applications")
+}
+
+model SecurityInventory {
+  id                     String          @id @default(uuid())
+  deviceInventoryId      String          @unique
+  deviceInventory        DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  windowsDefenderEnabled Boolean         @default(true)
+  firewallEnabled          Boolean         @default(true)
+  bitLockerEnabled         Boolean         @default(false)
+  bitLockerDrive           String?
+  secureBootEnabled        Boolean         @default(true)
+  tpmEnabled             Boolean         @default(true)
+  tpmVersion             String?         @default("2.0")
+
+  @@map("security_inventories")
+}
+
+model DeviceCapabilities {
+  id                      String          @id @default(uuid())
+  deviceInventoryId       String          @unique
+  deviceInventory         DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+  
+  supportsGPU             Boolean         @default(false)
+  supportsBattery         Boolean         @default(false)
+  supportsTPM             Boolean         @default(true)
+  supportsVirtualization  Boolean         @default(true)
+  supportsDocker          Boolean         @default(false)
+  supportsWSL             Boolean         @default(false)
+  supportsWiFi            Boolean         @default(false)
+  supportsEthernet        Boolean         @default(true)
+  virtualMachineDetection Boolean         @default(false)
+  vmVendor                String?
+
+  @@map("device_capabilities")
+}
+
+model InventoryAuditLog {
+  id            String   @id @default(uuid())
+  deviceId      String
+  device        Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  action        String   // e.g., "Inventory Created", "Inventory Updated", "Inventory Refreshed", "Hardware Added", etc.
+  changeDetails String
+  timestamp     DateTime @default(now())
+
+  @@index([deviceId, timestamp(sort: Desc)])
+  @@map("inventory_audit_logs")
+}
+
+// ==========================================
+// PHASE 5: ENTERPRISE ALERT & NOTIFICATION ENGINE
+// ==========================================
+
+enum AlertSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  NEW
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  CLOSED
+  SUPPRESSED
+  EXPIRED
+  SNOOZED
+}
+
+enum AlertCategory {
+  CPU
+  RAM
+  DISK
+  TEMPERATURE
+  NETWORK
+  HEARTBEAT
+  INVENTORY
+  SECURITY
+  WINDOWS_SERVICE
+  STARTUP_APP
+  SYSTEM
+  CORRELATION
+}
+
+enum NotificationProvider {
+  EMAIL
+  SLACK
+  DISCORD
+  TEAMS
+  SMS
+  PUSH
+  WEBHOOK
+}
+
+// ==========================================
+// PHASE 5 FINAL HARDENING: Rule Priority & Category Enums
+// ==========================================
+
+enum AlertRulePriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum AlertRuleCategory {
+  PERFORMANCE
+  SECURITY
+  AVAILABILITY
+  INVENTORY
+  COMPLIANCE
+  MAINTENANCE
+  SYSTEM
+  NETWORK
+}
+
+enum AlertRuleScheduleMode {
+  ALWAYS
+  BUSINESS_HOURS
+  NIGHT
+  WEEKEND
+  CRON
+}
+
+enum AlertRuleStatus {
+  ACTIVE
+  DISABLED
+  ARCHIVED
+}
+
+model Alert {
+  id               String         @id @default(uuid())
+  incidentNumber   String         @unique // e.g., INC-000001
+  deviceId         String
+  device           Device         @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  ruleId           String?
+  rule             AlertRule?     @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  parentAlertId    String?        // For Correlation Groups
+  parentAlert      Alert?         @relation("AlertCorrelation", fields: [parentAlertId], references: [id], onDelete: SetNull)
+  childAlerts      Alert[]        @relation("AlertCorrelation")
+  title            String
+  description      String
+  severity         AlertSeverity  @default(LOW)
+  status           AlertStatus    @default(NEW)
+  category         AlertCategory  @default(SYSTEM)
+  source           String         @default("RuleEngine")
+  occurrenceCount  Int            @default(1)
+  fingerprint      String         // SHA256(deviceId + metric + ruleId) for O(1) deduplication
+  riskScore        Int            @default(0)
+  confidenceScore  String         @default("HIGH")
+  recoveryTimerSeconds Int?
+  tags             String[]       @default([])
+  runbookUrl       String?
+  firstOccurred    DateTime       @default(now())
+  lastOccurred     DateTime       @default(now())
+  acknowledgedAt   DateTime?
+  resolvedAt       DateTime?
+  suppressedUntil  DateTime?
+  snoozedUntil     DateTime?
+  assignedUserId   String?
+  assignedUser     User?          @relation("AssignedUserAlerts", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  history          AlertHistory[]
+  comments         AlertComment[]
+  notifications    NotificationLog[]
+  assignments      AlertAssignment[]
+  escalations      AlertEscalation[]
+
+  @@index([deviceId, status])
+  @@index([fingerprint])
+  @@index([severity, status])
+  @@index([createdAt(sort: Desc)])
+  @@map("alerts")
+}
+
+// ==========================================
+// AlertRule — Enhanced for Phase 5 Final Hardening
+// ==========================================
+model AlertRule {
+  id               String                @id @default(uuid())
+  version          Int                   @default(1)
+  name             String                @unique
+  description      String?
+  metric           String
+  operator         String
+  threshold        Float
+  durationSeconds  Int                   @default(0)
+  severity         AlertSeverity         @default(MEDIUM)
+  priority         AlertRulePriority     @default(NORMAL)
+  category         AlertRuleCategory     @default(SYSTEM)
+  ruleStatus       AlertRuleStatus       @default(ACTIVE)
+  enabled          Boolean               @default(true)
+  cooldownSeconds  Int                   @default(300)
+  timeoutMs        Int                   @default(500)        // Rule execution timeout
+  scheduleMode     AlertRuleScheduleMode @default(ALWAYS)
+  cronExpression   String?               // For CRON scheduleMode
+  tags             String[]              @default([])
+  templateName     String?
+  silentMode       Boolean               @default(false)
+  businessHoursOnly Boolean              @default(false)
+  // Dependency graph: list of rule IDs this rule depends on
+  dependsOnIds     String[]              @default([])
+  // Performance tracking fields
+  evaluationCount  BigInt                @default(0)
+  triggerCount     BigInt                @default(0)
+  suppressionCount BigInt                @default(0)
+  deduplicationCount BigInt              @default(0)
+  escalationCount  BigInt                @default(0)
+  avgExecMs        Float                 @default(0.0)
+  maxExecMs        Float                 @default(0.0)
+  minExecMs        Float                 @default(0.0)
+  lastEvaluatedAt  DateTime?
+  // Complexity & Noise scoring (computed, cached)
+  complexityScore  String                @default("SIMPLE")   // SIMPLE | MEDIUM | COMPLEX | VERY_COMPLEX
+  noiseScore       Int                   @default(0)          // 0–100
+  createdBy        String?
+  modifiedBy       String?
+  owner            String?
+  publishedAt      DateTime?             @default(now())
+  archivedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  alerts           Alert[]
+  auditLogs        AlertRuleAuditLog[]
+
+  @@index([metric, enabled])
+  @@index([ruleStatus])
+  @@index([priority])
+  @@index([category])
+  @@map("alert_rules")
+}
+
+// ==========================================
+// PHASE 5 FINAL HARDENING: Rule Audit Log
+// Full enterprise audit trail for every rule mutation
+// ==========================================
+model AlertRuleAuditLog {
+  id            String    @id @default(uuid())
+  ruleId        String
+  rule          AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  action        String    // CREATE | UPDATE | DELETE | ENABLE | DISABLE | ARCHIVE | PUBLISH | ROLLBACK | CLONE | IMPORT | EXPORT | SIMULATE | REPLAY | DRY_RUN
+  field         String?   // e.g., "threshold", "severity", "cooldownSeconds"
+  oldValue      String?
+  newValue      String?
+  version       Int
+  performedBy   String    @default("System")
+  reason        String?
+  correlationId String?
+  ipAddress     String?
+  browser       String?
+  timestamp     DateTime  @default(now())
+
+  @@index([ruleId, timestamp(sort: Desc)])
+  @@index([action])
+  @@map("alert_rule_audit_logs")
+}
+
+model AlertHistory {
+  id            String   @id @default(uuid())
+  alertId       String
+  alert         Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  action        String
+  performedBy   String   @default("System")
+  oldValue      String?
+  newValue      String?
+  ipAddress     String?
+  browser       String?
+  correlationId String?
+  comment       String?
+  timestamp     DateTime @default(now())
+
+  @@index([alertId, timestamp(sort: Desc)])
+  @@map("alert_history")
+}
+
+model AlertComment {
+  id        String   @id @default(uuid())
+  alertId   String
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName  String
+  comment   String
+  isPrivate Boolean  @default(false) // True for internal Operator Notes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([alertId, createdAt(sort: Asc)])
+  @@map("alert_comments")
+}
+
+model NotificationLog {
+  id         String               @id @default(uuid())
+  alertId    String
+  alert      Alert                @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  provider   NotificationProvider @default(EMAIL)
+  recipient  String               @default("operators@nos.local")
+  status     String               @default("SUCCESS")
+  response   String?
+  retryCount Int                  @default(0)
+  isDlq      Boolean              @default(false)
+  sentAt     DateTime             @default(now())
+
+  @@index([alertId, status])
+  @@index([isDlq])
+  @@map("notification_logs")
+}
+
+model MaintenanceWindow {
+  id            String    @id @default(uuid())
+  deviceId      String?
+  device        Device?   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceGroupId String?
+  title         String
+  startTime     DateTime
+  endTime       DateTime
+  reason        String
+  type          String    @default("SCHEDULED") // SCHEDULED | EMERGENCY | RECURRING
+  enabled       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([deviceId, enabled, startTime, endTime])
+  @@map("maintenance_windows")
+}
+
+model AlertAssignment {
+  id              String   @id @default(uuid())
+  alertId         String
+  alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  assignedToUserId String
+  assignedToUser  User     @relation("AssignedAlerts", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  assignedByUserId String
+  assignedByUser  User     @relation("AssignedByAlerts", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+  assignedAt      DateTime @default(now())
+
+  @@index([alertId, assignedAt(sort: Desc)])
+  @@map("alert_assignments")
+}
+
+model AlertEscalation {
+  id               String        @id @default(uuid())
+  alertId          String
+  alert            Alert         @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  previousSeverity AlertSeverity
+  newSeverity      AlertSeverity
+  escalatedAt      DateTime      @default(now())
+  reason           String
+
+  @@index([alertId, escalatedAt(sort: Desc)])
+  @@map("alert_escalations")
+}

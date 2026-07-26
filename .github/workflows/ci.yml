@@ -1,0 +1,85 @@
+name: CI/CD Pipeline - NOS Monorepo
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  validate-node:
+    name: Lint, Format & Typecheck (Node.js Workspace)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client Stub
+        run: pnpm --filter @nos/backend prisma:generate
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
+
+      - name: Verify Formatting
+        run: pnpm run format:check
+
+      - name: Run ESLint across Monorepo
+        run: pnpm turbo run lint
+
+      - name: Run TypeScript Type Check
+        run: pnpm turbo run typecheck
+
+      - name: Build All Packages & Applications
+        run: pnpm turbo run build
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
+
+  validate-dotnet:
+    name: Build & Verify (.NET Monitoring Agent)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore apps/agent/NOS.Agent.csproj
+
+      - name: Build Monitoring Agent
+        run: dotnet build apps/agent/NOS.Agent.csproj --no-restore -c Release
+
+  docker-compose-check:
+    name: Docker Compose Syntax Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Validate Docker Compose Configuration
+        run: docker compose -f docker-compose.yml config --quiet

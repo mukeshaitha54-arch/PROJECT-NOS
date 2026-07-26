@@ -1,0 +1,12 @@
+node_modules/
+.next/
+dist/
+build/
+bin/
+obj/
+.turbo/
+coverage/
+pnpm-lock.yaml
+package-lock.json
+*.min.js
+*.css.map
