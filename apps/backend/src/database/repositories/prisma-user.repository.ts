@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserRole } from '@nos/shared-types';
 import { PrismaService } from '../prisma.service';
 import { IUserRepository, CreateUserData, UpdateUserData } from '../../common/repositories/user.repository.interface';
-import { Role as PrismaRole } from '@prisma/client';
+import { Role as PrismaRole, Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
@@ -58,7 +58,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async update(id: string, data: UpdateUserData) {
-    const updatePayload: any = {};
+    const updatePayload: Prisma.UserUpdateInput = {};
     if (data.firstName !== undefined) updatePayload.firstName = data.firstName;
     if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
     if (data.passwordHash !== undefined) updatePayload.passwordHash = data.passwordHash;
@@ -85,5 +85,18 @@ export class PrismaUserRepository implements IUserRepository {
     } catch {
       return false;
     }
+  }
+
+  async search(query: string, organizationId: string): Promise<User[]> {
+    return this.prisma.user.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { lastName: { contains: query, mode: 'insensitive' } },
+          { email: { contains: query, mode: 'insensitive' } }
+        ]
+      },
+      take: 20
+    }); // Needs joining with organization member in real app if organizationId scoped
   }
 }

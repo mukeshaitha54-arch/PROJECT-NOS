@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IAlertRepository, AlertFindManyQuery, AlertOverviewStats } from '../../common/repositories/alert.repository.interface';
-import { Alert, AlertHistory, AlertComment, AlertRule, Device, Prisma } from '@prisma/client';
-import { AlertStatus, AlertSeverity } from '@nos/shared-types';
+import { Alert, AlertHistory, AlertComment, AlertRule, Device, Prisma, AlertStatus, AlertSeverity, AlertCategory } from '@prisma/client';
 
 @Injectable()
 export class PrismaAlertRepository implements IAlertRepository {
@@ -35,9 +34,9 @@ export class PrismaAlertRepository implements IAlertRepository {
         parentAlertId: data.parentAlertId || null,
         title: data.title,
         description: data.description,
-        severity: data.severity as any,
-        status: (data.status || 'NEW') as any,
-        category: (data.category || 'SYSTEM') as any,
+        severity: data.severity as unknown as AlertSeverity,
+        status: (data.status || 'NEW') as unknown as AlertStatus,
+        category: (data.category || 'SYSTEM') as unknown as AlertCategory,
         source: data.source || 'RuleEngine',
         fingerprint: data.fingerprint,
         riskScore: data.riskScore ?? 0,
@@ -46,7 +45,7 @@ export class PrismaAlertRepository implements IAlertRepository {
         tags: data.tags || [],
         runbookUrl: data.runbookUrl || null,
         assignedUserId: data.assignedUserId || null,
-      },
+      } as unknown as Prisma.AlertUncheckedCreateInput,
     });
   }
 
@@ -60,13 +59,13 @@ export class PrismaAlertRepository implements IAlertRepository {
         history: { orderBy: { timestamp: 'desc' } },
         childAlerts: true,
       },
-    }) as any;
+    }) as unknown as Alert & { rule?: AlertRule | null; device?: Device | null; comments?: AlertComment[]; history?: AlertHistory[]; childAlerts?: Alert[] } | null;
   }
 
   async findByFingerprint(fingerprint: string, openOnly = true): Promise<Alert | null> {
     const where: Prisma.AlertWhereInput = { fingerprint };
     if (openOnly) {
-      where.status = { in: ['NEW', 'OPEN', 'ACKNOWLEDGED'] as any };
+      where.status = { in: [AlertStatus.NEW, AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED] };
     }
     return this.prisma.alert.findFirst({
       where,
@@ -76,9 +75,9 @@ export class PrismaAlertRepository implements IAlertRepository {
 
   async findMany(query: AlertFindManyQuery): Promise<[Alert[], number]> {
     const where: Prisma.AlertWhereInput = {};
-    if (query.status) where.status = query.status as any;
-    if (query.severity) where.severity = query.severity as any;
-    if (query.category) where.category = query.category as any;
+    if (query.status) where.status = query.status as unknown as AlertStatus;
+    if (query.severity) where.severity = query.severity as unknown as AlertSeverity;
+    if (query.category) where.category = query.category as unknown as AlertCategory;
     if (query.deviceId) where.deviceId = query.deviceId;
     if (query.assignedUserId) where.assignedUserId = query.assignedUserId;
     if (query.tag) where.tags = { has: query.tag };
@@ -106,17 +105,17 @@ export class PrismaAlertRepository implements IAlertRepository {
       this.prisma.alert.count({ where }),
     ]);
 
-    return [data as any, total];
+    return [data as unknown as Alert[], total];
   }
 
   async update(id: string, data: Partial<Alert>): Promise<Alert> {
-    const updateData: any = { ...data };
+    const updateData: Record<string, unknown> = { ...data };
     delete updateData.id;
     delete updateData.incidentNumber;
     delete updateData.createdAt;
     return this.prisma.alert.update({
       where: { id },
-      data: updateData,
+      data: updateData as Prisma.AlertUpdateInput,
     });
   }
 
@@ -178,7 +177,7 @@ export class PrismaAlertRepository implements IAlertRepository {
     return this.prisma.alert.findMany({
       where: {
         deviceId,
-        status: { in: ['NEW', 'OPEN', 'ACKNOWLEDGED'] as any },
+        status: { in: [AlertStatus.NEW, AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED] },
       },
     });
   }
@@ -187,9 +186,9 @@ export class PrismaAlertRepository implements IAlertRepository {
     const cutoff = new Date(Date.now() - maxOpenMinutes * 60 * 1000);
     return this.prisma.alert.findMany({
       where: {
-        status: { in: ['NEW', 'OPEN'] as any },
+        status: { in: [AlertStatus.NEW, AlertStatus.OPEN] },
         firstOccurred: { lte: cutoff },
-        severity: { not: 'CRITICAL' as any },
+        severity: { not: AlertSeverity.CRITICAL },
       },
     });
   }
@@ -200,11 +199,11 @@ export class PrismaAlertRepository implements IAlertRepository {
 
     const [total, open, critical, warning, acked, resolvedToday, sumRepeats] = await Promise.all([
       this.prisma.alert.count(),
-      this.prisma.alert.count({ where: { status: { in: ['NEW', 'OPEN'] as any } } }),
-      this.prisma.alert.count({ where: { status: { in: ['NEW', 'OPEN'] as any }, severity: 'CRITICAL' as any } }),
-      this.prisma.alert.count({ where: { status: { in: ['NEW', 'OPEN'] as any }, severity: 'MEDIUM' as any } }),
-      this.prisma.alert.count({ where: { status: 'ACKNOWLEDGED' as any } }),
-      this.prisma.alert.count({ where: { status: 'RESOLVED' as any, resolvedAt: { gte: startOfToday } } }),
+      this.prisma.alert.count({ where: { status: { in: [AlertStatus.NEW, AlertStatus.OPEN] } } }),
+      this.prisma.alert.count({ where: { status: { in: [AlertStatus.NEW, AlertStatus.OPEN] }, severity: AlertSeverity.CRITICAL } }),
+      this.prisma.alert.count({ where: { status: { in: [AlertStatus.NEW, AlertStatus.OPEN] }, severity: AlertSeverity.MEDIUM } }),
+      this.prisma.alert.count({ where: { status: AlertStatus.ACKNOWLEDGED } }),
+      this.prisma.alert.count({ where: { status: AlertStatus.RESOLVED, resolvedAt: { gte: startOfToday } } }),
       this.prisma.alert.aggregate({ _sum: { occurrenceCount: true } }),
     ]);
 
@@ -223,7 +222,7 @@ export class PrismaAlertRepository implements IAlertRepository {
   }
 
   async bulkUpdateStatus(alertIds: string[], status: string, timestamp = new Date()): Promise<number> {
-    const data: Prisma.AlertUpdateManyMutationInput = { status: status as any };
+    const data: Prisma.AlertUpdateManyMutationInput = { status: status as unknown as AlertStatus };
     if (status === 'RESOLVED') {
       data.resolvedAt = timestamp;
     } else if (status === 'ACKNOWLEDGED') {
@@ -243,5 +242,18 @@ export class PrismaAlertRepository implements IAlertRepository {
     } catch {
       return false;
     }
+  }
+
+  async search(query: string, organizationId: string): Promise<Alert[]> {
+    return this.prisma.alert.findMany({
+      where: {
+        device: { organizationId },
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { incidentNumber: { contains: query, mode: 'insensitive' } }
+        ]
+      },
+      take: 20
+    });
   }
 }

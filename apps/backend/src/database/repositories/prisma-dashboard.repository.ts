@@ -15,11 +15,12 @@ export class PrismaDashboardRepository implements IDashboardRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getOverviewCounts(): Promise<DashboardOverviewCounts> {
+  async getOverviewCounts(organizationId: string): Promise<DashboardOverviewCounts> {
     const [total, statusGroups] = await Promise.all([
-      this.prisma.device.count(),
+      this.prisma.device.count({ where: { organizationId } }),
       this.prisma.device.groupBy({
         by: ['status'],
+        where: { organizationId },
         _count: { status: true },
       }),
     ]);
@@ -60,13 +61,14 @@ export class PrismaDashboardRepository implements IDashboardRepository {
   }
 
   async getDeviceRows(params: {
+    organizationId: string;
     skip: number;
     take: number;
     search?: string;
     status?: string;
     os?: string;
   }): Promise<{ devices: DeviceRowRaw[]; total: number }> {
-    const where: Prisma.DeviceWhereInput = {};
+    const where: Prisma.DeviceWhereInput = { organizationId: params.organizationId };
 
     if (params.search && params.search.trim().length > 0) {
       const term = params.search.trim();
@@ -145,9 +147,10 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     return { devices, total };
   }
 
-  async getDeviceDetail(deviceId: string): Promise<DeviceDetailRaw | null> {
+  async getDeviceDetail(organizationId: string, deviceId: string): Promise<DeviceDetailRaw | null> {
     const device = await this.prisma.device.findFirst({
       where: {
+        organizationId,
         OR: [{ id: deviceId }, { uuid: deviceId }],
       },
       include: {
@@ -168,7 +171,9 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     const latestHeartbeat = device.heartbeats[0] || null;
 
     // Remove relations from base device object before returning raw
-    const { telemetrySnapshots, heartbeats, ...cleanDevice } = device;
+    const cleanDevice: Partial<typeof device> = { ...device };
+    delete cleanDevice.telemetrySnapshots;
+    delete cleanDevice.heartbeats;
 
     return {
       device: cleanDevice,
@@ -178,6 +183,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
   }
 
   async getTelemetryHistory(
+    organizationId: string,
     deviceId: string,
     params: {
       from?: Date;
@@ -187,6 +193,9 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     },
   ): Promise<TelemetryHistoryRaw> {
     const where: Prisma.TelemetrySnapshotWhereInput = {
+      device: {
+        organizationId,
+      },
       OR: [{ deviceId: deviceId }, { device: { uuid: deviceId } }],
     };
 

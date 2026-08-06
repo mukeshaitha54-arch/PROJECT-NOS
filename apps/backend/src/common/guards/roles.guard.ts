@@ -21,12 +21,17 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException({ code: ErrorCode.UNAUTHORIZED, message: 'User context missing.' });
     }
 
-    // SUPER_ADMIN overrides all restrictions in NOS architecture
+    // SUPER_ADMIN overrides all restrictions globally
     if (user.role === UserRole.SUPER_ADMIN) {
       return true;
     }
 
-    const hasRole = requiredRoles.includes(user.role);
+    const request = context.switchToHttp().getRequest();
+    const tenantRole = request.tenantContext?.role;
+    
+    // Check if the user has the required role globally OR in the current tenant context
+    const hasRole = requiredRoles.includes(user.role) || (tenantRole && requiredRoles.includes(tenantRole as UserRole));
+    
     if (!hasRole) {
       throw new ForbiddenException({
         code: ErrorCode.INSUFFICIENT_PERMISSIONS,

@@ -3,6 +3,8 @@ import { AlertEngineService } from './services/alert-engine.service';
 import { RuleEngineService } from './services/rule-engine.service';
 import { MaintenanceService } from './services/maintenance.service';
 import { AlertHistoryService } from './services/alert-history.service';
+import { RuleAuditService } from './services/rule-audit.service';
+import { RuleMetricsService } from './services/rule-metrics.service';
 import { NotificationService } from './notification/notification.service';
 import { AlertHealthService } from './services/alert-health.service';
 import { EscalationWorker } from './queues/escalation.worker';
@@ -37,6 +39,7 @@ describe('Phase 5 - Enterprise Alert & Notification Engine', () => {
       emitDashboardUpdated: jest.fn(),
       emitSystemStatusChanged: jest.fn(),
       emitAlertEvent: jest.fn(),
+      emitTenantEvent: jest.fn(),
     };
 
     const alertsStore = new Map<string, any>();
@@ -122,6 +125,8 @@ describe('Phase 5 - Enterprise Alert & Notification Engine', () => {
         NotificationService,
         AlertHealthService,
         EscalationWorker,
+        { provide: RuleAuditService, useValue: { record: jest.fn().mockResolvedValue(undefined), logChange: jest.fn().mockResolvedValue(undefined) } },
+        { provide: RuleMetricsService, useValue: { recordExecution: jest.fn(), getMetrics: jest.fn() } },
         { provide: IAlertRepository, useValue: mockAlertRepo },
         { provide: IAlertRuleRepository, useValue: mockRuleRepo },
         { provide: INotificationRepository, useValue: mockNotifRepo },

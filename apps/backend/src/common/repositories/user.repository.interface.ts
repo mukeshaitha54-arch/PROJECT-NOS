@@ -20,6 +20,7 @@ export interface UpdateUserData {
 export interface IUserRepository {
   findById(id: string): Promise<(User & { passwordHash: string }) | null>;
   findByEmail(email: string): Promise<(User & { passwordHash: string }) | null>;
+  search(query: string, organizationId: string): Promise<any[]>;
   create(data: CreateUserData): Promise<User & { passwordHash: string }>;
   update(id: string, data: UpdateUserData): Promise<User & { passwordHash: string }>;
   delete(id: string): Promise<boolean>;

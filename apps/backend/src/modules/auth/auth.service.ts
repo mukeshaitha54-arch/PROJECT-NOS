@@ -30,7 +30,7 @@ export class AuthService {
 
     const randomSecret = crypto.randomUUID() + crypto.randomUUID();
     const refreshToken = `${user.id}.${randomSecret}`;
-    const tokenHash = await this.hasher.hash(refreshToken);
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     await this.tokenRepo.createRefreshToken(user.id, tokenHash, expiresAt);
@@ -100,6 +100,7 @@ export class AuthService {
     const user = await this.userRepo.findByEmail(dto.email);
     if (user) {
       await this.userRepo.update(user.id, { isEmailVerified: true });
+      await this.mailService.sendWelcomeEmail(user.email, user.firstName || 'User');
     }
 
     this.logger.log(`✅ Email verified successfully for: [${dto.email}]`);
@@ -111,8 +112,15 @@ export class AuthService {
     if (parts.length < 2) {
       throw new UnauthorizedException({ code: ErrorCode.UNAUTHORIZED, message: 'Malformed refresh token format.' });
     }
-    const userId = parts[0];
-    const user = await this.userRepo.findById(userId);
+    
+    const tokenHash = crypto.createHash('sha256').update(dto.refreshToken).digest('hex');
+    const storedToken = await this.tokenRepo.findRefreshToken(tokenHash);
+    
+    if (!storedToken || storedToken.isRevoked || new Date() > storedToken.expiresAt) {
+      throw new UnauthorizedException({ code: ErrorCode.UNAUTHORIZED, message: 'Refresh token is invalid, revoked, or expired.' });
+    }
+
+    const user = await this.userRepo.findById(storedToken.userId);
     if (!user) {
       throw new UnauthorizedException({ code: ErrorCode.USER_NOT_FOUND, message: 'Associated user no longer exists.' });
     }

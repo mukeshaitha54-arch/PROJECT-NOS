@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/out
+**/*.log
+.git
+.github
+.husky
+coverage
+.env.local
+*.tsbuildinfo

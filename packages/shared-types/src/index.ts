@@ -47,12 +47,16 @@ export enum ErrorCode {
  * Role-Based Access Control (RBAC) Hierarchy Enums
  */
 export enum UserRole {
+  OWNER = 'OWNER',
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
   OPERATOR = 'OPERATOR',
   ANALYST = 'ANALYST',
   VIEWER = 'VIEWER',
-  USER = 'USER',
+  AUDITOR = 'AUDITOR',
+  CUSTOM_ROLE = 'CUSTOM_ROLE',
+  USER = 'USER', // Backward compatibility preservation
 }
 
 /**
@@ -67,6 +71,7 @@ export interface User {
   isEmailVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  organizationId?: string;
 }
 
 /**
@@ -165,6 +170,7 @@ export interface Device {
   lastSeen: string | null;
   registeredAt: string;
   organizationId?: string | null;
+  claimStatus?: 'UNASSIGNED' | 'ASSIGNED';
   createdAt: string;
   updatedAt: string;
 }
@@ -177,6 +183,8 @@ export interface Heartbeat {
   uptime: number;
   ipAddress: string;
   timestamp: string;
+  agentVersion?: string | null;
+  lastTelemetryId?: string | null;
 }
 
 export interface RegisterDevicePayload {
@@ -187,6 +195,7 @@ export interface RegisterDevicePayload {
   osVersion: string;
   architecture: string;
   agentVersion: string;
+  registrationKey?: string;
   organizationId?: string;
 }
 
@@ -205,6 +214,8 @@ export interface HeartbeatPayload {
   timestamp: string;
   hostname?: string;
   os?: string;
+  agentVersion?: string;
+  lastTelemetryId?: string;
 }
 
 export interface HeartbeatResponse {
@@ -261,6 +272,9 @@ export interface TelemetrySnapshot {
   ipAddress: string;
   macAddress: string;
   timestamp: string;            // ISO 8601 UTC string
+  runningServices?: string[] | null;
+  gateway?: string | null;
+  dns?: string[] | null;
 }
 
 export interface SubmitTelemetryPayload {
@@ -290,6 +304,9 @@ export interface SubmitTelemetryPayload {
   ipAddress: string;
   macAddress: string;
   timestamp?: string;
+  runningServices?: string[];
+  gateway?: string;
+  dns?: string[];
 }
 
 export interface SubmitTelemetryResponse {
@@ -698,9 +715,13 @@ export const getDeviceRoom = (deviceId: string) => `${DEVICE_ROOM_PREFIX}${devic
  * and trace cross-layer executions.
  */
 export interface SocketEventEnvelope<T = any> {
+  eventId?: string;
+  eventType?: string;
   version: number;
   event: string;
   timestamp: string;
+  organizationId?: string;
+  deviceId?: string;
   correlationId?: string;
   payload: T;
 }
@@ -1518,5 +1539,449 @@ export interface QueueDashboardDto {
   totalFailed: number;
   healthStatus: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
   lastUpdatedAt: string;
+}
+
+// ==========================================
+// PHASE 6: ENTERPRISE MULTI-TENANT SAAS PLATFORM TRANSFORMATION
+// ==========================================
+
+// ─── SPL Feature: Tenant Context Propagation ─────────────────
+
+export interface TenantContext {
+  organizationId: string;
+  correlationId: string;
+  requestId: string;
+  userId?: string;
+  role?: string;
+  ipAddress?: string;
+  browser?: string;
+}
+
+export interface TenantAwarePayload<T = any> {
+  context: TenantContext;
+  data: T;
+}
+
+// ─── Organization & Tenant Entities ──────────────────────────
+
+export enum OrganizationStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  ARCHIVED = 'ARCHIVED',
+  DELETED = 'DELETED', // Soft delete state
+}
+
+export interface OrganizationSettingsDto {
+  timezone: string;
+  language: string;
+  retentionDays: number;
+  notificationDefaults: {
+    emailEnabled: boolean;
+    webhookEnabled: boolean;
+    silentHoursStart?: string;
+    silentHoursEnd?: string;
+  };
+  maintenanceDefaults: {
+    defaultDurationMinutes: number;
+    requireApproval: boolean;
+    autoNotify: boolean;
+  };
+  securityPolicies: {
+    enforceMfa: boolean;
+    sessionTimeoutMinutes: number;
+    maxFailedLoginAttempts: number;
+    allowedIpRanges?: string[];
+  };
+  passwordPolicies: {
+    minLength: number;
+    requireUppercase: boolean;
+    requireNumbers: boolean;
+    requireSymbols: boolean;
+    expiryDays: number;
+  };
+}
+
+export interface OrganizationQuotaDto {
+  maxDevices: number;
+  maxUsers: number;
+  maxApiKeys: number;
+  maxStorageMb: number;
+  maxDailyTelemetry: number;
+  maxDailyAlerts: number;
+}
+
+export interface OrganizationQuotaUsageDto extends OrganizationQuotaDto {
+  currentDevices: number;
+  currentUsers: number;
+  currentApiKeys: number;
+  currentStorageMb: number;
+  currentDailyTelemetry: number;
+  currentDailyAlerts: number;
+  isApproachingLimit: boolean;
+  isLimitExceeded: boolean;
+  percentUsed: number;
+}
+
+export interface OrganizationDto {
+  id: string;
+  name: string;
+  slug: string;
+  status: OrganizationStatus;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  settings: OrganizationSettingsDto;
+  quota: OrganizationQuotaDto;
+  quotaUsage?: OrganizationQuotaUsageDto;
+}
+
+// ─── Teams, Departments & Membership ─────────────────────────
+
+export interface DepartmentDto {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  headUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamDto {
+  id: string;
+  organizationId: string;
+  departmentId?: string;
+  name: string;
+  description?: string;
+  leadUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum InvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REVOKED = 'REVOKED',
+  EXPIRED = 'EXPIRED',
+}
+
+export interface OrganizationInvitationDto {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: UserRole;
+  teamIds: string[];
+  departmentIds: string[];
+  invitedByUserId: string;
+  status: InvitationStatus;
+  tokenHash: string;
+  expiresAt: string;
+  createdAt: string;
+  acceptedAt?: string | null;
+}
+
+export interface OrganizationMemberDto {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: UserRole;
+  customRoleId?: string;
+  teamIds: string[];
+  departmentIds: string[];
+  joinedAt: string;
+  isSuspended: boolean;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    lastLoginAt?: string;
+  };
+}
+
+// ─── RBAC & ABAC Permissions ─────────────────────────────────
+
+export enum PermissionFlag {
+  DEVICE_MANAGEMENT = 'DEVICE_MANAGEMENT',
+  INVENTORY_READ_WRITE = 'INVENTORY_READ_WRITE',
+  TELEMETRY_READ = 'TELEMETRY_READ',
+  ALERTS_MANAGE = 'ALERTS_MANAGE',
+  RULES_MANAGE = 'RULES_MANAGE',
+  MAINTENANCE_MANAGE = 'MAINTENANCE_MANAGE',
+  USERS_MANAGE = 'USERS_MANAGE',
+  TEAMS_MANAGE = 'TEAMS_MANAGE',
+  SETTINGS_MANAGE = 'SETTINGS_MANAGE',
+  API_KEYS_MANAGE = 'API_KEYS_MANAGE',
+  AUDIT_READ = 'AUDIT_READ',
+  ROLE_BUILDER_MANAGE = 'ROLE_BUILDER_MANAGE',
+}
+
+export interface PermissionProfileDto {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  permissions: PermissionFlag[];
+  abacConditions?: Record<string, any>;
+  isBuiltIn: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoleTemplateDto {
+  id: string;
+  name: string;
+  baseRole: UserRole;
+  defaultPermissions: PermissionFlag[];
+  description: string;
+}
+
+export interface PermissionMatrixDto {
+  roles: { role: UserRole | string; permissions: PermissionFlag[] }[];
+  allPermissions: { flag: PermissionFlag; category: string; label: string; description: string }[];
+}
+
+// ─── Device Ownership & Governance ───────────────────────────
+
+export enum DeviceGroupType {
+  STATIC = 'STATIC',
+  DYNAMIC = 'DYNAMIC',
+  SMART = 'SMART',
+}
+
+export interface DeviceGroupDto {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  groupType: DeviceGroupType;
+  filterCriteria?: {
+    os?: string[];
+    status?: string[];
+    tags?: string[];
+    ipRange?: string;
+    customRule?: string;
+  };
+  deviceCount?: number;
+  deviceIds?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DeviceOwnershipDto {
+  id: string;
+  deviceId: string;
+  organizationId: string;
+  ownerUserId?: string | null;
+  assignedTeamId?: string | null;
+  assignedDepartmentId?: string | null;
+  assignedOperatorId?: string | null;
+  groupIds: string[];
+  assignedAt: string;
+  updatedAt: string;
+}
+
+export enum DeviceTransferStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface DeviceTransferRequestDto {
+  id: string;
+  deviceId: string;
+  fromOrganizationId: string;
+  toOrganizationId: string;
+  requestedByUserId: string;
+  approvedByUserId?: string | null;
+  status: DeviceTransferStatus;
+  reason: string;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+// ─── User Session & Governance ───────────────────────────────
+
+export interface UserSessionDto {
+  id: string;
+  userId: string;
+  organizationId: string;
+  tokenHash: string;
+  ipAddress: string;
+  browser: string;
+  os: string;
+  isActive: boolean;
+  isRevoked: boolean;
+  lastUsedAt: string;
+  expiresAt: string;
+  createdAt: string;
+  riskScore?: number;
+}
+
+export interface UserActivityDto {
+  id: string;
+  userId: string;
+  organizationId: string;
+  action: string;
+  resourceType?: string;
+  resourceId?: string;
+  ipAddress: string;
+  browser: string;
+  timestamp: string;
+}
+
+export interface UserImpersonationDto {
+  impersonatingUserId: string;
+  targetUserId: string;
+  organizationId: string;
+  reason: string;
+  startedAt: string;
+  expiresAt: string;
+  auditCorrelationId: string;
+}
+
+// ─── API Key Governance ──────────────────────────────────────
+
+export enum ApiKeyScope {
+  DEVICES_READ = 'DEVICES_READ',
+  DEVICES_WRITE = 'DEVICES_WRITE',
+  TELEMETRY_INGEST = 'TELEMETRY_INGEST',
+  ALERTS_READ = 'ALERTS_READ',
+  ALERTS_WRITE = 'ALERTS_WRITE',
+  INVENTORY_READ = 'INVENTORY_READ',
+  AUDIT_READ = 'AUDIT_READ',
+  WEBHOOKS_MANAGE = 'WEBHOOKS_MANAGE',
+}
+
+export interface ApiKeyDto {
+  id: string;
+  organizationId: string;
+  name: string;
+  keyPrefix: string; // First 8 characters for identification
+  tokenHash?: string;
+  scopes: ApiKeyScope[];
+  allowedIps?: string[];
+  expiresAt: string;
+  lastUsedAt?: string | null;
+  usageCount: number;
+  createdByUserId: string;
+  isRevoked: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiKeyCreateRequestDto {
+  name: string;
+  scopes: ApiKeyScope[];
+  allowedIps?: string[];
+  expiryDays: number;
+}
+
+// ─── Universal Audit System ──────────────────────────────────
+
+export enum AuditActionType {
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  DEVICE_REGISTRATION = 'DEVICE_REGISTRATION',
+  DEVICE_TRANSFER = 'DEVICE_TRANSFER',
+  INVENTORY_UPDATE = 'INVENTORY_UPDATE',
+  TELEMETRY_INGEST = 'TELEMETRY_INGEST',
+  RULE_CREATE = 'RULE_CREATE',
+  RULE_UPDATE = 'RULE_UPDATE',
+  RULE_DELETE = 'RULE_DELETE',
+  ALERT_TRIGGER = 'ALERT_TRIGGER',
+  ALERT_ACKNOWLEDGE = 'ALERT_ACKNOWLEDGE',
+  MAINTENANCE_SCHEDULE = 'MAINTENANCE_SCHEDULE',
+  ORG_SETTINGS_UPDATE = 'ORG_SETTINGS_UPDATE',
+  USER_INVITED = 'USER_INVITED',
+  USER_REMOVED = 'USER_REMOVED',
+  USER_IMPERSONATION = 'USER_IMPERSONATION',
+  PERMISSION_CHANGE = 'PERMISSION_CHANGE',
+  API_KEY_CREATE = 'API_KEY_CREATE',
+  API_KEY_REVOKE = 'API_KEY_REVOKE',
+  SESSION_REVOKE = 'SESSION_REVOKE',
+  ORG_LIFECYCLE_CHANGE = 'ORG_LIFECYCLE_CHANGE',
+}
+
+export interface AuditLogDto {
+  id: string;
+  organizationId: string;
+  userId?: string | null;
+  userEmail?: string | null;
+  action: AuditActionType | string;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  reason?: string | null;
+  ipAddress: string;
+  browser: string;
+  correlationId: string;
+  details?: Record<string, any>;
+  timestamp: string;
+}
+
+export interface AuditSearchRequestDto {
+  organizationId?: string;
+  userId?: string;
+  action?: string;
+  resourceType?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AuditSearchResultDto {
+  items: AuditLogDto[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
+
+// ─── 1% Special Enterprise Scores & Dashboards ───────────────
+
+export interface OrganizationHealthScoreDto {
+  organizationId: string;
+  overallHealthScore: number; // 0 - 100
+  deviceAvailabilityPercent: number;
+  openCriticalAlertsCount: number;
+  queueHealth: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  storageQuotaPercent: number;
+  timestamp: string;
+}
+
+export interface OrganizationRiskScoreDto {
+  organizationId: string;
+  riskScore: number; // 0 - 100 (Higher is riskier)
+  unverifiedUsersCount: number;
+  staleApiKeysCount: number;
+  failedLogins24h: number;
+  devicesOutsideMaintenance: number;
+  impersonationCount24h: number;
+  timestamp: string;
+}
+
+export interface SecurityScoreDto {
+  organizationId: string;
+  securityScore: number; // 0 - 100
+  mfaEnforcementEnabled: boolean;
+  strictPasswordPolicy: boolean;
+  ipWhiteListingActive: boolean;
+  expiredInvitationsCount: number;
+  openSessionAnomalies: number;
+  timestamp: string;
+}
+
+export interface ComplianceScoreDto {
+  organizationId: string;
+  complianceScore: number; // 0 - 100
+  auditLoggingCoveragePercent: number; // 100% in our design
+  retentionCompliance: boolean;
+  segregationOfDutiesVerified: boolean;
+  zeroOrmLeakageVerified: boolean;
+  tenantIsolationVerified: boolean;
+  timestamp: string;
 }
 

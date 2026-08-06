@@ -40,4 +40,9 @@ export class AlertHistoryService {
     });
     return commentRecord;
   }
+
+  async getHistory(alertId: string): Promise<AlertHistory[]> {
+    const alert = await this.alertRepo.findById(alertId);
+    return alert?.history || [];
+  }
 }

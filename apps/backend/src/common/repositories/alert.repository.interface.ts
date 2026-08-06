@@ -85,6 +85,8 @@ export interface IAlertRepository {
   bulkUpdateStatus(alertIds: string[], status: string, timestamp?: Date): Promise<number>;
   
   delete(id: string): Promise<boolean>;
+  
+  search(query: string, organizationId: string): Promise<Alert[]>;
 }
 
 export const IAlertRepository = Symbol('IAlertRepository');

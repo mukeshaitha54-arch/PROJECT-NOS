@@ -19,10 +19,17 @@ export class PrismaDeviceRepository implements IDeviceRepository {
     return this.prisma.device.findUnique({ where: { tokenHash } });
   }
 
-  async findAll(): Promise<Device[]> {
+  async findAll(organizationId?: string): Promise<Device[]> {
+    const where = organizationId && organizationId !== 'default-org' ? { organizationId } : {};
     return this.prisma.device.findMany({
+      where,
       orderBy: { lastSeen: 'desc' },
     });
+  }
+
+  async countByOrganization(organizationId?: string): Promise<number> {
+    const where = organizationId && organizationId !== 'default-org' ? { organizationId } : {};
+    return this.prisma.device.count({ where });
   }
 
   async create(data: CreateDeviceInput): Promise<Device> {
@@ -78,5 +85,19 @@ export class PrismaDeviceRepository implements IDeviceRepository {
     }
 
     return result;
+  }
+
+  async search(query: string, organizationId: string): Promise<Device[]> {
+    return this.prisma.device.findMany({
+      where: {
+        organizationId,
+        OR: [
+          { hostname: { contains: query, mode: 'insensitive' } },
+          { deviceName: { contains: query, mode: 'insensitive' } },
+          { uuid: { contains: query, mode: 'insensitive' } }
+        ]
+      },
+      take: 20
+    });
   }
 }

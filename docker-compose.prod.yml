@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    mem_limit: 256M
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c work_mem=4MB
+      -c max_connections=10
+      -c effective_cache_size=256MB
+      -c checkpoint_completion_target=0.5
+      -c wal_buffers=4MB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432" # Exposed ONLY to internal network via localhost binding (host binding disabled from 0.0.0.0)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - nos-network
+
+  backend:
+    build:
+      context: ./apps/backend
+    mem_limit: 300M
+    environment:
+      DATABASE_URL: ${DATABASE_URL} # Must contain connection_limit=5
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3001
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3001:3001" # Exposed ONLY to internal network via localhost binding
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health/live || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - nos-network
+
+  frontend:
+    build:
+      context: ./apps/frontend
+    mem_limit: 300M
+    environment:
+      NEXT_PUBLIC_API_URL: ${FRONTEND_URL:-https://nos.is-a.dev}/api
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3000:3000" # Exposed ONLY to internal network via localhost binding
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - nos-network
+
+  nginx:
+    image: nginx:alpine
+    mem_limit: 64M
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - nos-network
+
+networks:
+  nos-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IMaintenanceRepository, MaintenanceWindowCreateInput } from '../../common/repositories/maintenance.repository.interface';
-import { MaintenanceWindow } from '@prisma/client';
+import { MaintenanceWindow, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PrismaMaintenanceRepository implements IMaintenanceRepository {
@@ -41,7 +41,7 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
   }
 
   async findMany(enabledOnly = false): Promise<MaintenanceWindow[]> {
-    const where: any = {};
+    const where: Prisma.MaintenanceWindowWhereInput = {};
     if (enabledOnly) where.enabled = true;
     return this.prisma.maintenanceWindow.findMany({
       where,
@@ -50,12 +50,12 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
   }
 
   async update(id: string, data: Partial<MaintenanceWindow>): Promise<MaintenanceWindow> {
-    const updateData: any = { ...data };
+    const updateData: Record<string, unknown> = { ...data };
     delete updateData.id;
     delete updateData.createdAt;
     return this.prisma.maintenanceWindow.update({
       where: { id },
-      data: updateData,
+      data: updateData as Prisma.MaintenanceWindowUpdateInput,
     });
   }
 

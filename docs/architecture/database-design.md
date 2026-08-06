@@ -1,0 +1,91 @@
+# NOS Database & Storage Architecture v1.0
+
+This document defines the physical entity relationship model, database schema design, and data persistence rules for the Neural Operating System (NOS). In strict adherence to **Global Rule 5** ("Every database table must have exactly one owning module"), **Global Rule 6** ("Frontend never accesses database directly"), and **Global Rule 7** ("Agent never knows database"), this specification anchors every entity in our verified 37-table PostgreSQL schema (`apps/backend/prisma/schema.prisma`).
+
+---
+
+## 1. Physical Entity Relationship (ER) Model & Table Ownership Matrix
+
+Every database table in NOS is explicitly owned by a single bounded context module in `apps/backend`. Other modules requiring access to an entity must interact via the owning module's application service API or exported repository interface; zero direct bypass query execution is permitted.
+
+| Physical Table Name | Owning Bounded Context | Primary Key | Foreign Key References & Unique Constraints | Key Indexes | Soft Delete | Audit Fields & Retention Mode |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`system_nodes`** | `device` | `id` (UUID) | Unique: `[hostname]` | Default PK | No | `createdAt`, `updatedAt`, `lastSeenAt`. Permanent until explicitly deregistered. |
+| **`users`** | `users` | `id` (UUID) | Unique: `[email]` | Default PK | No | `createdAt`, `updatedAt`. Permanent until tenant deletion. |
+| **`refresh_tokens`** | `auth` | `id` (UUID) | FK: `userId` -> `users.id` (Cascade)<br>Unique: `[tokenHash]` | `[userId]` | Revocation flag (`isRevoked`) | `createdAt`. Expired tokens purged daily by Cron. |
+| **`verification_otps`** | `auth` | `id` (UUID) | FK: `userId` -> `users.id` (Cascade) | `[email, type]` | Used flag (`isUsed`) | `createdAt`. Expired OTPs purged daily by Cron. |
+| **`devices`** | `device` | `id` (UUID) | Unique: `[uuid]`, `[tokenHash]` | `[hostname]`, `[status]` | No | `createdAt`, `updatedAt`, `registeredAt`. Permanent node record. |
+| **`heartbeats`** | `device` | `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade) | `[deviceId, timestamp (Desc)]` | No | `timestamp`. Retained per org retention policy (default 30 days). |
+| **`telemetry_snapshots`**| `telemetry` | `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade) | `[deviceId, timestamp (Desc)]` | No | `timestamp`. High-frequency partition candidate; pruned after retention window. |
+| **`device_inventories`** | `inventory` | `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade)<br>Unique: `[deviceId]` | `[deviceId]`, `[assetFingerprint]` | No | `createdAt`, `updatedAt`, `lastScanAt`. Replaced on diff change. |
+| **`memory_modules`** | `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId]` | No | Child entity; replaced on full inventory refresh. |
+| **`disk_drives`** | `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId]` | No | Child entity; replaced on full inventory refresh. |
+| **`gpus`** | `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId]` | No | Child entity; replaced on full inventory refresh. |
+| **`network_adapters`** | `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId]`, `[macAddress]`| No | Child entity; replaced on full inventory refresh. |
+| **`installed_software`** | `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId, name]` | No | Child entity; replaced on full inventory refresh. |
+| **`windows_services`** | `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId, serviceName]` | No | Child entity; replaced on full inventory refresh. |
+| **`startup_applications`**| `inventory`| `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade) | `[deviceInventoryId]` | No | Child entity; replaced on full inventory refresh. |
+| **`security_inventories`**| `inventory`| `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade)<br>Unique: `[deviceInventoryId]` | Default PK | No | 1-to-1 Child entity; updated on security posture scan. |
+| **`device_capabilities`**| `inventory` | `id` (UUID) | FK: `deviceInventoryId` -> `device_inventories.id` (Cascade)<br>Unique: `[deviceInventoryId]` | Default PK | No | 1-to-1 Child entity; updated on capability detection. |
+| **`inventory_audit_logs`**| `inventory`| `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade) | `[deviceId, timestamp (Desc)]` | No | `timestamp`. Immutable audit log of hardware/software diffs. |
+| **`alerts`** | `alerts` | `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade)<br>FK: `ruleId` -> `alert_rules.id` (SetNull)<br>FK: `parentAlertId` -> `alerts.id` (SetNull)<br>FK: `assignedUserId` -> `users.id` (SetNull)<br>Unique: `[incidentNumber]` | `[deviceId, status]`, `[fingerprint]`, `[severity, status]`, `[createdAt (Desc)]` | Status transitions (`CLOSED`, `SUPPRESSED`) | `createdAt`, `updatedAt`, `firstOccurred`, `lastOccurred`. Permanent incident record. |
+| **`alert_rules`** | `alerts` | `id` (UUID) | Unique: `[name]` | `[metric, enabled]`, `[ruleStatus]`, `[priority]`, `[category]` | Status flag (`ruleStatus`) | `createdAt`, `updatedAt`, `publishedAt`, `archivedAt`. Permanent rule definition. |
+| **`alert_rule_audit_logs`**| `alerts` | `id` (UUID) | FK: `ruleId` -> `alert_rules.id` (Cascade) | `[ruleId, timestamp (Desc)]`, `[action]` | No | `timestamp`. Immutable regulatory audit trail for rule mutations. |
+| **`alert_history`** | `alerts` | `id` (UUID) | FK: `alertId` -> `alerts.id` (Cascade) | `[alertId, timestamp (Desc)]` | No | `timestamp`. Immutable step-by-step incident investigation history. |
+| **`alert_comments`** | `alerts` | `id` (UUID) | FK: `alertId` -> `alerts.id` (Cascade)<br>FK: `userId` -> `users.id` (Cascade) | `[alertId, createdAt (Asc)]` | No | `createdAt`, `updatedAt`. Permanent collaboration comments. |
+| **`notification_logs`** | `alerts` | `id` (UUID) | FK: `alertId` -> `alerts.id` (Cascade) | `[alertId, status]`, `[isDlq]` | No | `sentAt`. Dispatch telemetry and dead-letter queue tracking. |
+| **`maintenance_windows`**| `device` | `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade) | `[deviceId, enabled, startTime, endTime]`| Disabled flag | `createdAt`, `updatedAt`. Scheduled alert suppression records. |
+| **`alert_assignments`** | `alerts` | `id` (UUID) | FK: `alertId` -> `alerts.id` (Cascade)<br>FK: `assignedToUserId` -> `users.id`<br>FK: `assignedByUserId` -> `users.id` | `[alertId, assignedAt (Desc)]` | No | `assignedAt`. Immutable record of responsibility transfers. |
+| **`alert_escalations`** | `alerts` | `id` (UUID) | FK: `alertId` -> `alerts.id` (Cascade) | `[alertId, escalatedAt (Desc)]`| No | `escalatedAt`. Immutable severity transition tracking. |
+| **`organizations`** | `tenant` | `id` (UUID) | Unique: `[slug]` | `[slug]`, `[status]` | Yes (`deletedAt`) | `createdAt`, `updatedAt`, `deletedAt`. Top-level SaaS isolation boundary. |
+| **`departments`** | `tenant` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | `[organizationId]` | No | `createdAt`, `updatedAt`. Organizational hierarchy unit. |
+| **`teams`** | `tenant` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | `[organizationId, departmentId]`| No | `createdAt`, `updatedAt`. Functional operator unit. |
+| **`organization_members`**| `tenant` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade)<br>FK: `userId` -> `users.id` (Cascade)<br>Unique: `[organizationId, userId]` | `[userId]` | Suspended flag | `joinedAt`, `updatedAt`. RBAC multi-tenant membership mapping. |
+| **`organization_invitations`**|`tenant`| `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade)<br>Unique: `[tokenHash]` | `[organizationId, status]`, `[email]` | Status flag (`REVOKED`) | `createdAt`, `expiresAt`, `acceptedAt`. Secure enrollment vouchers. |
+| **`api_keys`** | `auth` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade)<br>Unique: `[tokenHash]` | `[organizationId, isRevoked]`, `[keyPrefix]` | Revoke flag (`isRevoked`) | `createdAt`, `updatedAt`, `lastUsedAt`. External API consumer credentials. |
+| **`user_sessions`** | `auth` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade)<br>Unique: `[tokenHash]` | `[userId, organizationId, isActive]` | Revoke flag (`isRevoked`) | `createdAt`, `lastUsedAt`, `expiresAt`. Active Web UI browser sessions. |
+| **`user_activities`** | `users` | `id` (UUID) | None (Direct ID refs for audit immutability) | `[organizationId, userId, timestamp (Desc)]`| No | `timestamp`. High-frequency user UI interaction audit sink. |
+| **`audit_logs`** | `tenant` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | `[organizationId, timestamp (Desc)]`, `[organizationId, action]`, `[correlationId]` | No | `timestamp`. Permanent enterprise compliance audit ledger. |
+| **`organization_quotas`** | `tenant` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade)<br>Unique: `[organizationId]` | Default PK | No | `updatedAt`. Real-time billing & SLA capacity restriction tracking. |
+| **`device_ownerships`** | `fleet` | `id` (UUID) | Unique: `[deviceId]` | `[organizationId]`, `[ownerUserId]`| No | `assignedAt`, `updatedAt`. Enterprise asset tagging and warranty profiling. |
+| **`device_groups`** | `fleet` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | Default PK | No | `createdAt`, `updatedAt`. Static/Dynamic node clustering containers. |
+| **`smart_groups`** | `fleet` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | `[organizationId]` | No | `createdAt`, `updatedAt`. Rule-based real-time node filter queries. |
+| **`permission_profiles`**| `auth` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | `[organizationId]` | No | `createdAt`, `updatedAt`. Custom tenant granular ABAC permissions. |
+| **`role_templates`** | `auth` | `id` (UUID) | Unique: `[name]` | Default PK | No | `createdAt`. Universal baseline permission templates. |
+| **`organization_webhooks`**| `tenant`| `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade) | `[organizationId, isActive]` | Active flag (`isActive`) | `createdAt`, `updatedAt`, `lastTriggeredAt`. Outbound event webhooks. |
+| **`device_transfer_requests`**|`fleet`| `id` (UUID) | None (Direct ID refs across boundary orgs) | `[fromOrganizationId, status]`, `[toOrganizationId, status]` | Cancelled/Rejected state| `createdAt`, `resolvedAt`. Secure cross-organization device handover migration. |
+| **`device_timeline_events`**|`device`| `id` (UUID) | FK: `deviceId` -> `devices.id` (Cascade) | `[deviceId, timestamp (Desc)]`, `[deviceId, eventType]`, `[deviceId, severity]` | No | `timestamp`. Permanent immutable operational life history per target node. |
+| **`registration_keys`** | `fleet` | `id` (UUID) | FK: `organizationId` -> `organizations.id` (Cascade)<br>Unique: `[keyHash]` | `[organizationId]`, `[status]`| Revoked flag (`status`) | `createdAt`, `lastUsed`. Cryptographic agent enrollment secrets. |
+
+---
+
+## 2. Structural Schema & Index Engineering Rules
+
+### 1. Universal Primary Keys
+Every entity must utilize a standard 128-bit UUID (`@id @default(uuid())` in Prisma). Auto-incrementing sequential integers are forbidden for primary business entities to prevent enumeration attacks and simplify distributed database horizontal merging.
+
+### 2. Mandatory Audit & Retention Metadata
+- All mutable entities must implement `createdAt DateTime @default(now())` and `updatedAt DateTime @updatedAt`.
+- All historical immutable event tables (`telemetry_snapshots`, `heartbeats`, `audit_logs`, `device_timeline_events`, `alert_history`) must index on `[entityId, timestamp(sort: Desc)]` to guarantee $O(\log n)$ read efficiency for time-window pagination and historical analysis dashboards.
+
+### 3. Tenant Isolation & Foreign Key Cascading
+- In a multi-tenant SaaS deployment, all high-level business entities must maintain an explicit link to `organizationId`.
+- Child entities must configure explicit onDelete behaviors:
+  - **Cascade (`onDelete: Cascade`)**: Used for strict compositional parent-child lifecycles (e.g., deleting a `Device` automatically purges its `Heartbeat`, `TelemetrySnapshot`, and `DeviceInventory` records; deleting an `Organization` cascades to all `OrganizationMember` and `ApiKey` bindings).
+  - **Set Null (`onDelete: SetNull`)**: Used for optional associations and audit histories where deleting an actor must not destroy historic incident forensics (e.g., if a `User` account is deleted, existing assigned `Alert` records persist with `assignedUserId` set to NULL; if an `AlertRule` is removed, generated `Alert` incidents transition `ruleId` to NULL while preserving incident history).
+
+### 4. JSON Blob Management vs. Normalized Tables
+In accordance with established architectural design (e.g., `DeviceInventory` lines 228–240 in `schema.prisma`), structured, highly queried attributes (RAM module speeds, disk sizes, MAC addresses) are modeled as normalized relational tables (`memory_modules`, `network_adapters`). Conversely, operating-system specific or evolving diagnostic output (Windows Event Logs, S.M.A.R.T. raw disk attributes, scheduled task arrays) is persisted as structured `Json` columns (`eventLogs`, `smartData`). This dual pattern prevents constant migration thrashing while supporting cross-platform diagnostic expansion.
+
+---
+
+## 3. Migration & Future Partitioning Strategy
+
+### Safe Migration Lifecycle
+1. **Schema Modifications**: Any structural database mutation must originate exclusively by modifying `apps/backend/prisma/schema.prisma`. Direct DDL execution on target DBMS instances is strictly prohibited.
+2. **Deterministic Migration File Generation**: Changes are compiled via `npx prisma migrate dev --name <descriptive_slug>`, generating an immutable, SQL-audited migration script in `apps/backend/prisma/migrations/`.
+3. **Zero-Downtime Execution**: Production deployments run `npx prisma migrate deploy` within container entrypoints prior to starting backend application listeners. Breaking column renames must execute via a 3-step deprecation phase (add new column -> populate dual writes -> remove legacy column in subsequent sprint).
+
+### Future High-Scale Partitioning (Hyper-scale Strategy)
+When managed node rosters exceed 10,000 active devices, ephemeral time-series tables (`telemetry_snapshots`, `heartbeats`, `user_activities`) risk lock contention and vacuum bloat under PostgreSQL single-table indexing.
+- **Architectural Decision**: These tables are pre-structured with `timestamp` included in primary compound indexes to support frictionless conversion into native PostgreSQL time-based declarative partitions (partitioning monthly or daily by `timestamp`) or seamless migration to TimescaleDB hyper-tables without application layer query rewrites.

@@ -5,10 +5,10 @@ import {
   ServiceUnavailableException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   IInventoryRepository,
 } from '../../common/repositories/inventory.repository.interface';
-import { ISocketPublisherToken, ISocketPublisher } from '../../common/services/socket-publisher.interface';
 import { InventoryCacheService } from './services/inventory-cache.service';
 import { InventoryAuditService } from './services/inventory-audit.service';
 import {
@@ -21,6 +21,8 @@ import {
   InventoryHealthResponse,
 } from '@nos/shared-types';
 import { InventoryQueryDto } from './dto/inventory.dto';
+import { PrismaService } from '../../database/prisma.service';
+import { InventoryUpdatedEvent } from '../../common/events/domain-events';
 
 @Injectable()
 export class InventoryService {
@@ -31,8 +33,8 @@ export class InventoryService {
     private readonly repository: IInventoryRepository,
     private readonly cache: InventoryCacheService,
     private readonly audit: InventoryAuditService,
-    @Inject(ISocketPublisherToken)
-    private readonly socketPublisher: ISocketPublisher,
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private checkFeatureFlag(): void {
@@ -66,7 +68,7 @@ export class InventoryService {
     );
 
     // 3. Execute difference engine & persist audit logs
-    await this.audit.detectAndLogDifferences(targetDeviceId, previousInventory, payload, this.repository);
+    const diffResult = await this.audit.detectAndLogDifferences(targetDeviceId, previousInventory, payload, this.repository);
 
     // 4. Invalidate all read caches for this device
     this.cache.invalidate(`inv:${targetDeviceId}`);
@@ -74,13 +76,20 @@ export class InventoryService {
     // 5. Fetch updated audit logs
     const recentAuditLogs = await this.repository.getRecentAuditLogs(targetDeviceId);
 
-    // 6. Emit real-time inventory discovery update via Socket.IO
-    await this.socketPublisher.emitInventoryUpdated(targetDeviceId, {
-      deviceId: targetDeviceId,
-      inventoryVersion: fingerprint,
-      updatedFields: ['hardware', 'software', 'network', 'security'],
-      timestamp: new Date().toISOString(),
-    });
+    // 6. Emit domain event — timeline and realtime handlers subscribe independently
+    // Replaces direct socketPublisher.emitInventoryUpdated() call per Constitutional §8.6
+    const device = await this.prisma.device.findUnique({ where: { id: targetDeviceId }, select: { organizationId: true } });
+    this.eventEmitter.emit(
+      'inventory.updated',
+      new InventoryUpdatedEvent(
+        device?.organizationId || 'default-org',
+        targetDeviceId,
+        inventory.inventoryVersion || 1,
+        fingerprint,
+        diffResult !== null && diffResult !== undefined,
+        typeof diffResult === 'string' ? diffResult : `Inventory version ${inventory.inventoryVersion || 1} recorded.`,
+      ),
+    );
 
     return {
       inventory,
@@ -210,5 +219,74 @@ export class InventoryService {
       status: 'SCHEDULED',
       message: 'Manual inventory scan command triggered. The monitoring agent will consume and execute on its next autonomous lifecycle polling cycle.',
     };
+  }
+
+  async searchInventory(query: string, tab: string) {
+    this.checkFeatureFlag();
+    if (tab === 'SOFTWARE') {
+      const items = await this.prisma.installedSoftware.findMany({
+        where: query ? { name: { contains: query, mode: 'insensitive' } } : {},
+        take: 50,
+        include: { deviceInventory: { include: { device: true } } }
+      });
+      return items.map(i => ({
+        id: i.id,
+        deviceId: i.deviceInventory?.deviceId,
+        hostname: i.deviceInventory?.device?.hostname,
+        softwareName: i.name,
+        publisher: i.publisher,
+        version: i.version,
+        installDate: i.installDate,
+        osEdition: i.deviceInventory?.device?.os || 'Unknown'
+      }));
+    } else if (tab === 'SERVICES') {
+      const items = await this.prisma.windowsService.findMany({
+        where: query ? { serviceName: { contains: query, mode: 'insensitive' } } : {},
+        take: 50,
+        include: { deviceInventory: { include: { device: true } } }
+      });
+      return items.map(i => ({
+        id: i.id,
+        deviceId: i.deviceInventory?.deviceId,
+        hostname: i.deviceInventory?.device?.hostname,
+        serviceName: i.serviceName,
+        displayName: i.displayName,
+        status: i.status,
+        startType: i.startType,
+        osEdition: i.deviceInventory?.device?.os || 'Unknown'
+      }));
+    } else if (tab === 'SECURITY') {
+      const devices = await this.prisma.device.findMany({
+        where: query ? { hostname: { contains: query, mode: 'insensitive' } } : {},
+        take: 50,
+        include: { inventory: { include: { security: true } } }
+      });
+      return devices.filter(d => d.inventory?.security).map(d => ({
+        id: d.inventory!.security!.id,
+        deviceId: d.id,
+        hostname: d.hostname,
+        defenderEnabled: d.inventory!.security!.windowsDefenderEnabled,
+        firewallEnabled: d.inventory!.security!.firewallEnabled,
+        bitLockerStatus: d.inventory!.security!.bitLockerEnabled ? 'Enabled' : 'Disabled',
+        tpmVersion: d.inventory!.security!.tpmVersion,
+        osEdition: d.os
+      }));
+    } else if (tab === 'CHANGES') {
+      const items = await this.prisma.inventoryAuditLog.findMany({
+        where: query ? { changeDetails: { contains: query, mode: 'insensitive' } } : {},
+        take: 50,
+        include: { device: true }
+      });
+      return items.map(i => ({
+        id: i.id,
+        deviceId: i.deviceId,
+        hostname: i.device?.hostname,
+        action: i.action,
+        details: i.changeDetails,
+        timestamp: i.timestamp,
+        osEdition: i.device?.os || 'Unknown'
+      }));
+    }
+    return [];
   }
 }

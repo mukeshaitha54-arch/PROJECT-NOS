@@ -4,40 +4,40 @@ using System.Text.Json.Serialization;
 namespace NOS.Agent.Models;
 
 public record MemoryModuleDto(
-    [property: JsonPropertyName("slot")] string Slot,
+    [property: JsonPropertyName("slot")] string? Slot,
     [property: JsonPropertyName("capacityBytes")] double CapacityBytes,
     [property: JsonPropertyName("speedMHz")] int SpeedMHz,
-    [property: JsonPropertyName("manufacturer")] string Manufacturer,
-    [property: JsonPropertyName("partNumber")] string PartNumber,
-    [property: JsonPropertyName("serialNumber")] string SerialNumber
+    [property: JsonPropertyName("manufacturer")] string? Manufacturer,
+    [property: JsonPropertyName("partNumber")] string? PartNumber,
+    [property: JsonPropertyName("serialNumber")] string? SerialNumber
 );
 
 public record DiskDriveDto(
-    [property: JsonPropertyName("driveName")] string DriveName,
-    [property: JsonPropertyName("model")] string Model,
-    [property: JsonPropertyName("serialNumber")] string SerialNumber,
-    [property: JsonPropertyName("mediaType")] string MediaType,
+    [property: JsonPropertyName("driveName")] string? DriveName,
+    [property: JsonPropertyName("model")] string? Model,
+    [property: JsonPropertyName("serialNumber")] string? SerialNumber,
+    [property: JsonPropertyName("mediaType")] string? MediaType,
     [property: JsonPropertyName("sizeBytes")] double SizeBytes,
-    [property: JsonPropertyName("fileSystem")] string FileSystem,
+    [property: JsonPropertyName("fileSystem")] string? FileSystem,
     [property: JsonPropertyName("isSystemDrive")] bool IsSystemDrive
 );
 
 public record GpuDto(
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("manufacturer")] string Manufacturer,
-    [property: JsonPropertyName("driverVersion")] string DriverVersion,
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("manufacturer")] string? Manufacturer,
+    [property: JsonPropertyName("driverVersion")] string? DriverVersion,
     [property: JsonPropertyName("vRamBytes")] double VRamBytes,
-    [property: JsonPropertyName("resolution")] string Resolution
+    [property: JsonPropertyName("resolution")] string? Resolution
 );
 
 public record NetworkAdapterDto(
-    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("name")] string? Name,
     [property: JsonPropertyName("description")] string? Description,
-    [property: JsonPropertyName("macAddress")] string MacAddress,
-    [property: JsonPropertyName("ipv4")] string Ipv4,
-    [property: JsonPropertyName("ipv6")] string Ipv6,
-    [property: JsonPropertyName("gateway")] string Gateway,
-    [property: JsonPropertyName("dns")] string Dns,
+    [property: JsonPropertyName("macAddress")] string? MacAddress,
+    [property: JsonPropertyName("ipv4")] string? Ipv4,
+    [property: JsonPropertyName("ipv6")] string? Ipv6,
+    [property: JsonPropertyName("gateway")] string? Gateway,
+    [property: JsonPropertyName("dns")] string? Dns,
     [property: JsonPropertyName("speedMbps")] double SpeedMbps,
     [property: JsonPropertyName("isWireless")] bool IsWireless,
     [property: JsonPropertyName("isPhysical")] bool IsPhysical,
@@ -45,26 +45,27 @@ public record NetworkAdapterDto(
 );
 
 public record InstalledSoftwareDto(
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("publisher")] string Publisher,
-    [property: JsonPropertyName("version")] string Version,
-    [property: JsonPropertyName("installDate")] string InstallDate,
-    [property: JsonPropertyName("installLocation")] string? InstallLocation = null
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("publisher")] string? Publisher,
+    [property: JsonPropertyName("version")] string? Version,
+    [property: JsonPropertyName("installDate")] string? InstallDate,
+    [property: JsonPropertyName("installLocation")] string? InstallLocation = null,
+    [property: JsonPropertyName("size")] int? Size = null
 );
 
 public record WindowsServiceDto(
-    [property: JsonPropertyName("serviceName")] string ServiceName,
-    [property: JsonPropertyName("displayName")] string DisplayName,
-    [property: JsonPropertyName("status")] string Status,
-    [property: JsonPropertyName("startType")] string StartType,
-    [property: JsonPropertyName("account")] string Account
+    [property: JsonPropertyName("serviceName")] string? ServiceName,
+    [property: JsonPropertyName("displayName")] string? DisplayName,
+    [property: JsonPropertyName("status")] string? Status,
+    [property: JsonPropertyName("startType")] string? StartType,
+    [property: JsonPropertyName("account")] string? Account
 );
 
 public record StartupApplicationDto(
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("command")] string Command,
-    [property: JsonPropertyName("location")] string Location,
-    [property: JsonPropertyName("user")] string User
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("command")] string? Command,
+    [property: JsonPropertyName("location")] string? Location,
+    [property: JsonPropertyName("user")] string? User
 );
 
 public record SecurityInventoryDto(
@@ -91,20 +92,20 @@ public record DeviceCapabilitiesDto(
 );
 
 public record SubmitInventoryPayload(
-    [property: JsonPropertyName("manufacturer")] string Manufacturer,
-    [property: JsonPropertyName("model")] string Model,
-    [property: JsonPropertyName("serialNumber")] string SerialNumber,
-    [property: JsonPropertyName("motherboard")] string Motherboard,
-    [property: JsonPropertyName("biosVendor")] string BiosVendor,
-    [property: JsonPropertyName("biosVersion")] string BiosVersion,
-    [property: JsonPropertyName("cpuModel")] string CpuModel,
-    [property: JsonPropertyName("cpuVendor")] string CpuVendor,
+    [property: JsonPropertyName("manufacturer")] string? Manufacturer,
+    [property: JsonPropertyName("model")] string? Model,
+    [property: JsonPropertyName("serialNumber")] string? SerialNumber,
+    [property: JsonPropertyName("motherboard")] string? Motherboard,
+    [property: JsonPropertyName("biosVendor")] string? BiosVendor,
+    [property: JsonPropertyName("biosVersion")] string? BiosVersion,
+    [property: JsonPropertyName("cpuModel")] string? CpuModel,
+    [property: JsonPropertyName("cpuVendor")] string? CpuVendor,
     [property: JsonPropertyName("physicalCores")] int PhysicalCores,
     [property: JsonPropertyName("logicalCores")] int LogicalCores,
-    [property: JsonPropertyName("hostname")] string Hostname,
-    [property: JsonPropertyName("osEdition")] string OsEdition,
-    [property: JsonPropertyName("osBuild")] string OsBuild,
-    [property: JsonPropertyName("architecture")] string Architecture,
+    [property: JsonPropertyName("hostname")] string? Hostname,
+    [property: JsonPropertyName("osEdition")] string? OsEdition,
+    [property: JsonPropertyName("osBuild")] string? OsBuild,
+    [property: JsonPropertyName("architecture")] string? Architecture,
     [property: JsonPropertyName("memoryModules")] List<MemoryModuleDto> MemoryModules,
     [property: JsonPropertyName("diskDrives")] List<DiskDriveDto> DiskDrives,
     [property: JsonPropertyName("gpus")] List<GpuDto> Gpus,

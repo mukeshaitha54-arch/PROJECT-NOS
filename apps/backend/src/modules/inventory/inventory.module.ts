@@ -1,6 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { InventoryController } from './inventory.controller';
+import { InventorySearchController } from './inventory-search.controller';
 import { InventoryService } from './inventory.service';
+import { InventorySearchService } from './inventory-search.service';
 import { InventoryCacheService } from './services/inventory-cache.service';
 import { InventoryAuditService } from './services/inventory-audit.service';
 import { IInventoryRepository } from '../../common/repositories/inventory.repository.interface';
@@ -9,10 +11,11 @@ import { DatabaseModule } from '../../database/database.module';
 import { DeviceModule } from '../device/device.module';
 
 @Module({
-  imports: [DatabaseModule, DeviceModule],
-  controllers: [InventoryController],
+  imports: [DatabaseModule, forwardRef(() => DeviceModule)],
+  controllers: [InventoryController, InventorySearchController],
   providers: [
     InventoryService,
+    InventorySearchService,
     InventoryCacheService,
     InventoryAuditService,
     {
@@ -20,6 +23,7 @@ import { DeviceModule } from '../device/device.module';
       useClass: PrismaInventoryRepository,
     },
   ],
-  exports: [InventoryService, IInventoryRepository],
+  exports: [InventoryService, InventorySearchService, IInventoryRepository],
 })
 export class InventoryModule {}
+

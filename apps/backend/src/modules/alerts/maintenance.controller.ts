@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { MaintenanceService } from './services/maintenance.service';
 
-@Controller('api/v1/maintenance-windows')
+@Controller('maintenance-windows')
 export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}
 

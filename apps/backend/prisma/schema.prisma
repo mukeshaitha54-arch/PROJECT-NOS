@@ -25,11 +25,15 @@ model SystemNode {
 }
 
 enum Role {
+  OWNER
   SUPER_ADMIN
   ADMIN
+  MANAGER
   OPERATOR
   ANALYST
   VIEWER
+  AUDITOR
+  CUSTOM_ROLE
   USER
 }
 
@@ -39,19 +43,19 @@ enum OtpType {
 }
 
 model User {
-  id              String            @id @default(uuid())
-  email           String            @unique
-  passwordHash    String
-  firstName       String
-  lastName        String
-  role            Role              @default(USER)
-  isEmailVerified Boolean           @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  refreshTokens   RefreshToken[]
-  otps            VerificationOtp[]
-  assignedAlerts  Alert[]           @relation("AssignedUserAlerts")
-  alertComments   AlertComment[]
+  id                       String            @id @default(uuid())
+  email                    String            @unique
+  passwordHash             String
+  firstName                String
+  lastName                 String
+  role                     Role              @default(USER)
+  isEmailVerified          Boolean           @default(false)
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  refreshTokens            RefreshToken[]
+  otps                     VerificationOtp[]
+  assignedAlerts           Alert[]           @relation("AssignedUserAlerts")
+  alertComments            AlertComment[]
   alertAssignmentsReceived AlertAssignment[] @relation("AssignedAlerts")
   alertAssignmentsGiven    AlertAssignment[] @relation("AssignedByAlerts")
 
@@ -68,6 +72,7 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([userId, isRevoked, expiresAt])
   @@map("refresh_tokens")
 }
 
@@ -98,43 +103,55 @@ enum DeviceStatus {
   MAINTENANCE
 }
 
+enum DeviceClaimStatus {
+  UNASSIGNED
+  CLAIMED
+}
+
 model Device {
-  id             String       @id @default(uuid())
-  uuid           String       @unique
-  hostname       String
-  deviceName     String
-  os             String
-  osVersion      String
-  architecture   String
-  agentVersion   String
-  status         DeviceStatus @default(OFFLINE)
-  lastSeen       DateTime?
-  registeredAt   DateTime     @default(now())
-  organizationId String?
-  tokenHash      String?      @unique
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  heartbeats     Heartbeat[]
+  id                 String                @id @default(uuid())
+  uuid               String                @unique
+  hostname           String
+  deviceName         String
+  name               String?
+  os                 String
+  osVersion          String
+  architecture       String
+  agentVersion       String
+  status             DeviceStatus          @default(OFFLINE)
+  claimStatus        DeviceClaimStatus     @default(UNASSIGNED)
+  lastSeen           DateTime?
+  registeredAt       DateTime              @default(now())
+  organizationId     String?
+  tenantId           String?               @default("default-org")
+  tokenHash          String?               @unique
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  heartbeats         Heartbeat[]
   telemetrySnapshots TelemetrySnapshot[]
-  inventory        DeviceInventory?
-  auditLogs        InventoryAuditLog[]
-  alerts           Alert[]
+  inventory          DeviceInventory?
+  auditLogs          InventoryAuditLog[]
+  alerts             Alert[]
   maintenanceWindows MaintenanceWindow[]
+  timelineEvents     DeviceTimelineEvent[]
 
   @@index([hostname])
   @@index([status])
+  @@index([tenantId, status])
   @@map("devices")
 }
 
 model Heartbeat {
-  id        String   @id @default(uuid())
-  deviceId  String
-  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  cpuUsage  Float
-  ramUsage  Float
-  uptime    Float
-  ipAddress String
-  timestamp DateTime @default(now())
+  id              String   @id @default(uuid())
+  deviceId        String
+  device          Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  cpuUsage        Float
+  ramUsage        Float
+  uptime          Float
+  ipAddress       String
+  agentVersion    String   @default("1.0.0")
+  lastTelemetryId String?
+  timestamp       DateTime @default(now())
 
   @@index([deviceId, timestamp(sort: Desc)])
   @@map("heartbeats")
@@ -168,13 +185,17 @@ model TelemetrySnapshot {
   bytesReceived        Float    @default(0.0)
   activeConnections    Int      @default(0)
   runningProcesses     Int      @default(0)
+  runningServices      Int      @default(0)
   systemUptime         Float
   bootTime             DateTime
   ipAddress            String
+  gateway              String   @default("0.0.0.0")
+  dns                  String   @default("8.8.8.8")
   macAddress           String   @default("00:00:00:00:00:00")
   timestamp            DateTime @default(now())
 
   @@index([deviceId, timestamp(sort: Desc)])
+  @@index([timestamp])
   @@map("telemetry_snapshots")
 }
 
@@ -183,46 +204,59 @@ model TelemetrySnapshot {
 // ==========================================================
 
 model DeviceInventory {
-  id               String       @id @default(uuid())
-  deviceId         String       @unique
-  device           Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  
-  manufacturer     String       @default("Unknown")
-  model            String       @default("Unknown")
-  serialNumber     String       @default("Unknown")
-  motherboard      String       @default("Unknown")
-  biosVendor       String       @default("Unknown")
-  biosVersion      String       @default("Unknown")
-  biosReleaseDate  String?
-  
-  cpuModel         String       @default("Unknown")
-  cpuVendor        String       @default("Unknown")
-  physicalCores    Int          @default(1)
-  logicalCores     Int          @default(1)
-  
-  hostname         String
-  domain           String       @default("WORKGROUP")
-  workgroup        String       @default("WORKGROUP")
-  osEdition        String       @default("Unknown")
-  osBuild          String       @default("Unknown")
-  architecture     String       @default("x64")
-  
-  assetFingerprint String       @default("UNHASHED")
-  inventoryVersion Int          @default(1)
-  schemaVersion    String       @default("1.0.0")
-  lastScanAt       DateTime     @default(now())
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id       String @id @default(uuid())
+  deviceId String @unique
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
-  memoryModules        MemoryModule[]
-  diskDrives           DiskDrive[]
-  gpus                 Gpu[]
-  networkAdapters      NetworkAdapter[]
-  installedSoftware    InstalledSoftware[]
-  windowsServices      WindowsService[]
-  startupApplications  StartupApplication[]
-  security             SecurityInventory?
-  capabilities         DeviceCapabilities?
+  manufacturer    String  @default("Unknown")
+  model           String  @default("Unknown")
+  serialNumber    String  @default("Unknown")
+  motherboard     String  @default("Unknown")
+  biosVendor      String  @default("Unknown")
+  biosVersion     String  @default("Unknown")
+  biosReleaseDate String?
+
+  cpuModel      String @default("Unknown")
+  cpuVendor     String @default("Unknown")
+  physicalCores Int    @default(1)
+  logicalCores  Int    @default(1)
+
+  hostname     String
+  domain       String @default("WORKGROUP")
+  workgroup    String @default("WORKGROUP")
+  osEdition    String @default("Unknown")
+  osBuild      String @default("Unknown")
+  architecture String @default("x64")
+
+  assetFingerprint String   @default("UNHASHED")
+  inventoryVersion Int      @default(1)
+  schemaVersion    String   @default("1.0.0")
+  lastScanAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // ── Extended Collector JSON Blobs (Q1 Decision) ─────────────────────────
+  // Stored as Json to avoid constant migrations & support cross-OS evolution.
+  // Fields: eventLogs, windowsDefender, usbDevices, scheduledTasks,
+  //         gpuInfo, smartData, tpm, bitlocker
+  eventLogs       Json? // Recent Warning/Error/Critical EventViewer entries
+  windowsDefender Json? // Threat status, real-time protection, last scan
+  usbDevices      Json? // Connected USB device snapshot
+  scheduledTasks  Json? // Task name, last run, next run, status
+  gpuInfo         Json? // GPU utilization %, driver, VRAM usage (extended)
+  smartData       Json? // S.M.A.R.T. disk health per drive
+  tpmExtended     Json? // TPM manufacturer, firmware version, PCR state
+  bitlockerInfo   Json? // BitLocker status per volume, recovery key ID presence
+
+  memoryModules       MemoryModule[]
+  diskDrives          DiskDrive[]
+  gpus                Gpu[]
+  networkAdapters     NetworkAdapter[]
+  installedSoftware   InstalledSoftware[]
+  windowsServices     WindowsService[]
+  startupApplications StartupApplication[]
+  security            SecurityInventory?
+  capabilities        DeviceCapabilities?
 
   @@index([deviceId])
   @@index([assetFingerprint])
@@ -233,13 +267,13 @@ model MemoryModule {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  slot              String
-  capacityBytes     Float           @default(0.0)
-  speedMHz          Int             @default(0)
-  manufacturer      String          @default("Unknown")
-  partNumber        String          @default("Unknown")
-  serialNumber      String          @default("Unknown")
+
+  slot          String
+  capacityBytes Float  @default(0.0)
+  speedMHz      Int    @default(0)
+  manufacturer  String @default("Unknown")
+  partNumber    String @default("Unknown")
+  serialNumber  String @default("Unknown")
 
   @@index([deviceInventoryId])
   @@map("memory_modules")
@@ -249,14 +283,14 @@ model DiskDrive {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  driveName         String
-  model             String          @default("Unknown")
-  serialNumber      String          @default("Unknown")
-  mediaType         String          @default("Fixed")
-  sizeBytes         Float           @default(0.0)
-  fileSystem        String          @default("NTFS")
-  isSystemDrive     Boolean         @default(false)
+
+  driveName     String
+  model         String  @default("Unknown")
+  serialNumber  String  @default("Unknown")
+  mediaType     String  @default("Fixed")
+  sizeBytes     Float   @default(0.0)
+  fileSystem    String  @default("NTFS")
+  isSystemDrive Boolean @default(false)
 
   @@index([deviceInventoryId])
   @@map("disk_drives")
@@ -266,12 +300,12 @@ model Gpu {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  name              String
-  manufacturer      String          @default("Unknown")
-  driverVersion     String          @default("Unknown")
-  vRamBytes         Float           @default(0.0)
-  resolution        String          @default("Unknown")
+
+  name          String
+  manufacturer  String @default("Unknown")
+  driverVersion String @default("Unknown")
+  vRamBytes     Float  @default(0.0)
+  resolution    String @default("Unknown")
 
   @@index([deviceInventoryId])
   @@map("gpus")
@@ -281,18 +315,18 @@ model NetworkAdapter {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  name              String
-  description       String?
-  macAddress        String          @default("00:00:00:00:00:00")
-  ipv4              String          @default("0.0.0.0")
-  ipv6              String          @default("::1")
-  gateway           String          @default("0.0.0.0")
-  dns               String          @default("8.8.8.8")
-  speedMbps         Float           @default(1000.0)
-  isWireless        Boolean         @default(false)
-  isPhysical        Boolean         @default(true)
-  isOperational     Boolean         @default(true)
+
+  name          String
+  description   String?
+  macAddress    String  @default("00:00:00:00:00:00")
+  ipv4          String  @default("0.0.0.0")
+  ipv6          String  @default("::1")
+  gateway       String  @default("0.0.0.0")
+  dns           String  @default("8.8.8.8")
+  speedMbps     Float   @default(1000.0)
+  isWireless    Boolean @default(false)
+  isPhysical    Boolean @default(true)
+  isOperational Boolean @default(true)
 
   @@index([deviceInventoryId])
   @@index([macAddress])
@@ -303,12 +337,12 @@ model InstalledSoftware {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  name              String
-  publisher         String          @default("Unknown")
-  version           String          @default("1.0.0")
-  installDate       String          @default("Unknown")
-  installLocation   String?
+
+  name            String
+  publisher       String  @default("Unknown")
+  version         String  @default("1.0.0")
+  installDate     String  @default("Unknown")
+  installLocation String?
 
   @@index([deviceInventoryId, name])
   @@map("installed_software")
@@ -318,12 +352,12 @@ model WindowsService {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  serviceName       String
-  displayName       String
-  status            String          @default("Stopped")
-  startType         String          @default("Manual")
-  account           String          @default("LocalSystem")
+
+  serviceName String
+  displayName String
+  status      String @default("Stopped")
+  startType   String @default("Manual")
+  account     String @default("LocalSystem")
 
   @@index([deviceInventoryId, serviceName])
   @@map("windows_services")
@@ -333,46 +367,46 @@ model StartupApplication {
   id                String          @id @default(uuid())
   deviceInventoryId String
   deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  name              String
-  command           String
-  location          String          @default("Registry")
-  user              String          @default("All Users")
+
+  name     String
+  command  String
+  location String @default("Registry")
+  user     String @default("All Users")
 
   @@index([deviceInventoryId])
   @@map("startup_applications")
 }
 
 model SecurityInventory {
-  id                     String          @id @default(uuid())
-  deviceInventoryId      String          @unique
-  deviceInventory        DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  windowsDefenderEnabled Boolean         @default(true)
-  firewallEnabled          Boolean         @default(true)
-  bitLockerEnabled         Boolean         @default(false)
-  bitLockerDrive           String?
-  secureBootEnabled        Boolean         @default(true)
-  tpmEnabled             Boolean         @default(true)
-  tpmVersion             String?         @default("2.0")
+  id                String          @id @default(uuid())
+  deviceInventoryId String          @unique
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+
+  windowsDefenderEnabled Boolean @default(true)
+  firewallEnabled        Boolean @default(true)
+  bitLockerEnabled       Boolean @default(false)
+  bitLockerDrive         String?
+  secureBootEnabled      Boolean @default(true)
+  tpmEnabled             Boolean @default(true)
+  tpmVersion             String? @default("2.0")
 
   @@map("security_inventories")
 }
 
 model DeviceCapabilities {
-  id                      String          @id @default(uuid())
-  deviceInventoryId       String          @unique
-  deviceInventory         DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
-  
-  supportsGPU             Boolean         @default(false)
-  supportsBattery         Boolean         @default(false)
-  supportsTPM             Boolean         @default(true)
-  supportsVirtualization  Boolean         @default(true)
-  supportsDocker          Boolean         @default(false)
-  supportsWSL             Boolean         @default(false)
-  supportsWiFi            Boolean         @default(false)
-  supportsEthernet        Boolean         @default(true)
-  virtualMachineDetection Boolean         @default(false)
+  id                String          @id @default(uuid())
+  deviceInventoryId String          @unique
+  deviceInventory   DeviceInventory @relation(fields: [deviceInventoryId], references: [id], onDelete: Cascade)
+
+  supportsGPU             Boolean @default(false)
+  supportsBattery         Boolean @default(false)
+  supportsTPM             Boolean @default(true)
+  supportsVirtualization  Boolean @default(true)
+  supportsDocker          Boolean @default(false)
+  supportsWSL             Boolean @default(false)
+  supportsWiFi            Boolean @default(false)
+  supportsEthernet        Boolean @default(true)
+  virtualMachineDetection Boolean @default(false)
   vmVendor                String?
 
   @@map("device_capabilities")
@@ -382,7 +416,7 @@ model InventoryAuditLog {
   id            String   @id @default(uuid())
   deviceId      String
   device        Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  action        String   // e.g., "Inventory Created", "Inventory Updated", "Inventory Refreshed", "Hardware Added", etc.
+  action        String // e.g., "Inventory Created", "Inventory Updated", "Inventory Refreshed", "Hardware Added", etc.
   changeDetails String
   timestamp     DateTime @default(now())
 
@@ -409,6 +443,7 @@ enum AlertStatus {
   RESOLVED
   CLOSED
   SUPPRESSED
+  SUPPRESS
   EXPIRED
   SNOOZED
 }
@@ -475,48 +510,56 @@ enum AlertRuleStatus {
 }
 
 model Alert {
-  id               String         @id @default(uuid())
-  incidentNumber   String         @unique // e.g., INC-000001
-  deviceId         String
-  device           Device         @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  ruleId           String?
-  rule             AlertRule?     @relation(fields: [ruleId], references: [id], onDelete: SetNull)
-  parentAlertId    String?        // For Correlation Groups
-  parentAlert      Alert?         @relation("AlertCorrelation", fields: [parentAlertId], references: [id], onDelete: SetNull)
-  childAlerts      Alert[]        @relation("AlertCorrelation")
-  title            String
-  description      String
-  severity         AlertSeverity  @default(LOW)
-  status           AlertStatus    @default(NEW)
-  category         AlertCategory  @default(SYSTEM)
-  source           String         @default("RuleEngine")
-  occurrenceCount  Int            @default(1)
-  fingerprint      String         // SHA256(deviceId + metric + ruleId) for O(1) deduplication
-  riskScore        Int            @default(0)
-  confidenceScore  String         @default("HIGH")
+  id                   String        @id @default(uuid())
+  incidentNumber       String        @unique // e.g., INC-000001
+  tenantId             String?       @default("default-org")
+  deviceId             String
+  device               Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  ruleId               String?
+  rule                 AlertRule?    @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  parentAlertId        String? // For Correlation Groups
+  parentAlert          Alert?        @relation("AlertCorrelation", fields: [parentAlertId], references: [id], onDelete: SetNull)
+  childAlerts          Alert[]       @relation("AlertCorrelation")
+  title                String
+  description          String
+  message              String?
+  metric               String?
+  value                Float?
+  threshold            Float?
+  severity             AlertSeverity @default(LOW)
+  status               AlertStatus   @default(NEW)
+  category             AlertCategory @default(SYSTEM)
+  source               String        @default("RuleEngine")
+  occurrenceCount      Int           @default(1)
+  fingerprint          String // SHA256(deviceId + metric + ruleId) for O(1) deduplication
+  riskScore            Int           @default(0)
+  confidenceScore      String        @default("HIGH")
   recoveryTimerSeconds Int?
-  tags             String[]       @default([])
-  runbookUrl       String?
-  firstOccurred    DateTime       @default(now())
-  lastOccurred     DateTime       @default(now())
-  acknowledgedAt   DateTime?
-  resolvedAt       DateTime?
-  suppressedUntil  DateTime?
-  snoozedUntil     DateTime?
-  assignedUserId   String?
-  assignedUser     User?          @relation("AssignedUserAlerts", fields: [assignedUserId], references: [id], onDelete: SetNull)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  tags                 String[]      @default([])
+  runbookUrl           String?
+  firstOccurred        DateTime      @default(now())
+  lastOccurred         DateTime      @default(now())
+  acknowledgedBy       String?
+  acknowledgedAt       DateTime?
+  resolvedAt           DateTime?
+  suppressedUntil      DateTime?
+  snoozedUntil         DateTime?
+  assignedUserId       String?
+  assignedUser         User?         @relation("AssignedUserAlerts", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
-  history          AlertHistory[]
-  comments         AlertComment[]
-  notifications    NotificationLog[]
-  assignments      AlertAssignment[]
-  escalations      AlertEscalation[]
+  history       AlertHistory[]
+  comments      AlertComment[]
+  notifications NotificationLog[]
+  assignments   AlertAssignment[]
+  escalations   AlertEscalation[]
 
+  @@index([tenantId, status, createdAt])
   @@index([deviceId, status])
   @@index([fingerprint])
   @@index([severity, status])
+  @@index([status, createdAt])
   @@index([createdAt(sort: Desc)])
   @@map("alerts")
 }
@@ -525,58 +568,75 @@ model Alert {
 // AlertRule — Enhanced for Phase 5 Final Hardening
 // ==========================================
 model AlertRule {
-  id               String                @id @default(uuid())
-  version          Int                   @default(1)
-  name             String                @unique
-  description      String?
-  metric           String
-  operator         String
-  threshold        Float
-  durationSeconds  Int                   @default(0)
-  severity         AlertSeverity         @default(MEDIUM)
-  priority         AlertRulePriority     @default(NORMAL)
-  category         AlertRuleCategory     @default(SYSTEM)
-  ruleStatus       AlertRuleStatus       @default(ACTIVE)
-  enabled          Boolean               @default(true)
-  cooldownSeconds  Int                   @default(300)
-  timeoutMs        Int                   @default(500)        // Rule execution timeout
-  scheduleMode     AlertRuleScheduleMode @default(ALWAYS)
-  cronExpression   String?               // For CRON scheduleMode
-  tags             String[]              @default([])
-  templateName     String?
-  silentMode       Boolean               @default(false)
-  businessHoursOnly Boolean              @default(false)
+  id                 String                @id @default(uuid())
+  version            Int                   @default(1)
+  tenantId           String?               @default("default-org")
+  name               String                @unique
+  description        String?
+  metric             String
+  operator           String
+  threshold          Float
+  duration           Int                   @default(1)
+  durationSeconds    Int                   @default(0)
+  severity           AlertSeverity         @default(MEDIUM)
+  priority           AlertRulePriority     @default(NORMAL)
+  category           AlertRuleCategory     @default(SYSTEM)
+  ruleStatus         AlertRuleStatus       @default(ACTIVE)
+  enabled            Boolean               @default(true)
+  deviceIds          String[]              @default([])
+  cooldownSeconds    Int                   @default(300)
+  timeoutMs          Int                   @default(500) // Rule execution timeout
+  scheduleMode       AlertRuleScheduleMode @default(ALWAYS)
+  cronExpression     String? // For CRON scheduleMode
+  tags               String[]              @default([])
+  templateName       String?
+  silentMode         Boolean               @default(false)
+  businessHoursOnly  Boolean               @default(false)
   // Dependency graph: list of rule IDs this rule depends on
-  dependsOnIds     String[]              @default([])
+  dependsOnIds       String[]              @default([])
   // Performance tracking fields
-  evaluationCount  BigInt                @default(0)
-  triggerCount     BigInt                @default(0)
-  suppressionCount BigInt                @default(0)
-  deduplicationCount BigInt              @default(0)
-  escalationCount  BigInt                @default(0)
-  avgExecMs        Float                 @default(0.0)
-  maxExecMs        Float                 @default(0.0)
-  minExecMs        Float                 @default(0.0)
-  lastEvaluatedAt  DateTime?
+  evaluationCount    BigInt                @default(0)
+  triggerCount       BigInt                @default(0)
+  suppressionCount   BigInt                @default(0)
+  deduplicationCount BigInt                @default(0)
+  escalationCount    BigInt                @default(0)
+  avgExecMs          Float                 @default(0.0)
+  maxExecMs          Float                 @default(0.0)
+  minExecMs          Float                 @default(0.0)
+  lastEvaluatedAt    DateTime?
   // Complexity & Noise scoring (computed, cached)
-  complexityScore  String                @default("SIMPLE")   // SIMPLE | MEDIUM | COMPLEX | VERY_COMPLEX
-  noiseScore       Int                   @default(0)          // 0–100
-  createdBy        String?
-  modifiedBy       String?
-  owner            String?
-  publishedAt      DateTime?             @default(now())
-  archivedAt       DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  complexityScore    String                @default("SIMPLE") // SIMPLE | MEDIUM | COMPLEX | VERY_COMPLEX
+  noiseScore         Int                   @default(0) // 0–100
+  createdBy          String?
+  modifiedBy         String?
+  owner              String?
+  publishedAt        DateTime?             @default(now())
+  archivedAt         DateTime?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 
-  alerts           Alert[]
-  auditLogs        AlertRuleAuditLog[]
+  alerts    Alert[]
+  auditLogs AlertRuleAuditLog[]
 
+  @@index([tenantId, enabled, metric])
   @@index([metric, enabled])
   @@index([ruleStatus])
   @@index([priority])
   @@index([category])
   @@map("alert_rules")
+}
+
+model AlertBreachState {
+  id               String   @id @default(uuid())
+  deviceId         String
+  ruleId           String
+  firstBreachAt    DateTime
+  lastBreachAt     DateTime
+  consecutiveCount Int      @default(1)
+
+  @@unique([deviceId, ruleId])
+  @@index([deviceId, ruleId])
+  @@map("alert_breach_states")
 }
 
 // ==========================================
@@ -587,8 +647,8 @@ model AlertRuleAuditLog {
   id            String    @id @default(uuid())
   ruleId        String
   rule          AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  action        String    // CREATE | UPDATE | DELETE | ENABLE | DISABLE | ARCHIVE | PUBLISH | ROLLBACK | CLONE | IMPORT | EXPORT | SIMULATE | REPLAY | DRY_RUN
-  field         String?   // e.g., "threshold", "severity", "cooldownSeconds"
+  action        String // CREATE | UPDATE | DELETE | ENABLE | DISABLE | ARCHIVE | PUBLISH | ROLLBACK | CLONE | IMPORT | EXPORT | SIMULATE | REPLAY | DRY_RUN
+  field         String? // e.g., "threshold", "severity", "cooldownSeconds"
   oldValue      String?
   newValue      String?
   version       Int
@@ -656,32 +716,32 @@ model NotificationLog {
 }
 
 model MaintenanceWindow {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   deviceId      String?
-  device        Device?   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device        Device?  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   deviceGroupId String?
   title         String
   startTime     DateTime
   endTime       DateTime
   reason        String
-  type          String    @default("SCHEDULED") // SCHEDULED | EMERGENCY | RECURRING
-  enabled       Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  type          String   @default("SCHEDULED") // SCHEDULED | EMERGENCY | RECURRING
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([deviceId, enabled, startTime, endTime])
   @@map("maintenance_windows")
 }
 
 model AlertAssignment {
-  id              String   @id @default(uuid())
-  alertId         String
-  alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  alertId          String
+  alert            Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   assignedToUserId String
-  assignedToUser  User     @relation("AssignedAlerts", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  assignedToUser   User     @relation("AssignedAlerts", fields: [assignedToUserId], references: [id], onDelete: Cascade)
   assignedByUserId String
-  assignedByUser  User     @relation("AssignedByAlerts", fields: [assignedByUserId], references: [id], onDelete: Cascade)
-  assignedAt      DateTime @default(now())
+  assignedByUser   User     @relation("AssignedByAlerts", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+  assignedAt       DateTime @default(now())
 
   @@index([alertId, assignedAt(sort: Desc)])
   @@map("alert_assignments")
@@ -699,3 +759,478 @@ model AlertEscalation {
   @@index([alertId, escalatedAt(sort: Desc)])
   @@map("alert_escalations")
 }
+
+// ==========================================
+// PHASE 6: ENTERPRISE MULTI-TENANT SAAS PLATFORM
+// ==========================================
+
+model Organization {
+  id                 String                   @id @default(uuid())
+  name               String
+  slug               String                   @unique
+  status             String                   @default("ACTIVE") // ACTIVE | SUSPENDED | ARCHIVED | DELETED
+  timezone           String                   @default("UTC")
+  locale             String                   @default("en-US")
+  logoUrl            String?
+  companyName        String?
+  accentColour       String?
+  supportEmail       String?
+  brandingEnabled    Boolean                  @default(false)
+  customDomain       String?
+  retentionDays      Int                      @default(90)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  deletedAt          DateTime? // Soft delete timestamp
+  members            OrganizationMember[]
+  departments        Department[]
+  teams              Team[]
+  invitations        OrganizationInvitation[]
+  apiKeys            ApiKey[]
+  registrationKeys   RegistrationKey[]
+  sessions           UserSession[]
+  auditLogs          AuditLog[]
+  quota              OrganizationQuota?
+  deviceGroups       DeviceGroup[]
+  permissionProfiles PermissionProfile[]
+  webhooks           OrganizationWebhook[]
+  smartGroups        SmartGroup[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("organizations")
+}
+
+model Department {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  headUserId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("departments")
+}
+
+model Team {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  departmentId   String?
+  name           String
+  description    String?
+  leadUserId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, departmentId])
+  @@map("teams")
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  role           String       @default("OPERATOR")
+  customRoleId   String?
+  teamIds        String[]
+  departmentIds  String[]
+  isSuspended    Boolean      @default(false)
+  joinedAt       DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id              String       @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email           String
+  role            String       @default("OPERATOR")
+  teamIds         String[]
+  departmentIds   String[]
+  invitedByUserId String
+  status          String       @default("PENDING") // PENDING | ACCEPTED | REVOKED | EXPIRED
+  tokenHash       String       @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@index([organizationId, status])
+  @@index([email])
+  @@map("organization_invitations")
+}
+
+model ApiKey {
+  id              String       @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  keyPrefix       String
+  tokenHash       String       @unique
+  scopes          String[]
+  allowedIps      String[]
+  expiresAt       DateTime
+  lastUsedAt      DateTime?
+  usageCount      Int          @default(0)
+  createdByUserId String
+  isRevoked       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId, isRevoked])
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
+
+model UserSession {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tokenHash      String       @unique
+  ipAddress      String
+  browser        String
+  os             String       @default("Unknown")
+  isActive       Boolean      @default(true)
+  isRevoked      Boolean      @default(false)
+  riskScore      Int          @default(0)
+  lastUsedAt     DateTime     @default(now())
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+
+  @@index([userId, organizationId, isActive])
+  @@map("user_sessions")
+}
+
+model UserActivity {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  action         String
+  resourceType   String?
+  resourceId     String?
+  ipAddress      String
+  browser        String
+  timestamp      DateTime @default(now())
+
+  @@index([organizationId, userId, timestamp(sort: Desc)])
+  @@map("user_activities")
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  userEmail      String?
+  action         String
+  resourceType   String?
+  resourceId     String?
+  reason         String?
+  ipAddress      String
+  browser        String
+  correlationId  String       @default(uuid())
+  details        Json?
+  timestamp      DateTime     @default(now())
+
+  @@index([organizationId, timestamp(sort: Desc)])
+  @@index([organizationId, action])
+  @@index([correlationId])
+  @@map("audit_logs")
+}
+
+model OrganizationQuota {
+  id                    String       @id @default(uuid())
+  organizationId        String       @unique
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  maxDevices            Int          @default(50)
+  maxUsers              Int          @default(10)
+  maxApiKeys            Int          @default(10)
+  maxStorageMb          Int          @default(1024)
+  maxDailyTelemetry     Int          @default(100000)
+  maxDailyAlerts        Int          @default(5000)
+  currentDevices        Int          @default(0)
+  currentUsers          Int          @default(1)
+  currentApiKeys        Int          @default(0)
+  currentStorageMb      Int          @default(0)
+  currentDailyTelemetry Int          @default(0)
+  currentDailyAlerts    Int          @default(0)
+  updatedAt             DateTime     @updatedAt
+
+  @@map("organization_quotas")
+}
+
+model DeviceOwnership {
+  id                   String    @id @default(uuid())
+  deviceId             String    @unique
+  organizationId       String
+  ownerUserId          String?
+  assignedTeamId       String?
+  assignedDepartmentId String?
+  assignedOperatorId   String?
+  groupIds             String[]
+  branch               String?
+  businessUnit         String?
+  criticality          String?
+  environment          String?
+  purpose              String?
+  assetNumber          String?
+  purchaseDate         DateTime?
+  warrantyDate         DateTime?
+  tags                 String[]
+  assignedAt           DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([ownerUserId])
+  @@map("device_ownerships")
+}
+
+model DeviceGroup {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  groupType      String       @default("STATIC") // STATIC | DYNAMIC | SMART
+  filterCriteria Json?
+  deviceCount    Int          @default(0)
+  deviceIds      String[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("device_groups")
+}
+
+model SmartGroup {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  rules          Json
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("smart_groups")
+}
+
+model PermissionProfile {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  permissions    String[]
+  abacConditions Json?
+  isBuiltIn      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("permission_profiles")
+}
+
+model RoleTemplate {
+  id                 String   @id @default(uuid())
+  name               String   @unique
+  baseRole           String
+  defaultPermissions String[]
+  description        String
+  createdAt          DateTime @default(now())
+
+  @@map("role_templates")
+}
+
+model OrganizationWebhook {
+  id              String       @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  url             String
+  secretHash      String
+  events          String[]
+  isActive        Boolean      @default(true)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId, isActive])
+  @@map("organization_webhooks")
+}
+
+model DeviceTransferRequest {
+  id                 String    @id @default(uuid())
+  deviceId           String
+  fromOrganizationId String
+  toOrganizationId   String
+  requestedByUserId  String
+  approvedByUserId   String?
+  status             String    @default("PENDING_APPROVAL") // PENDING_APPROVAL | APPROVED | REJECTED | CANCELLED
+  reason             String
+  createdAt          DateTime  @default(now())
+  resolvedAt         DateTime?
+
+  @@index([fromOrganizationId, status])
+  @@index([toOrganizationId, status])
+  @@map("device_transfer_requests")
+}
+
+// =============================================================================
+// PHASE 7: DEVICE OPERATIONAL TIMELINE
+// Permanent immutable event log for every lifecycle event on a device.
+// Invaluable for incident forensics, SLA reporting, and operator review.
+// =============================================================================
+
+enum TimelineEventType {
+  REGISTERED
+  HEARTBEAT
+  ONLINE
+  OFFLINE
+  INVENTORY_UPDATED
+  INVENTORY_DIFF
+  ALERT_TRIGGERED
+  ALERT_ACKNOWLEDGED
+  ALERT_ESCALATED
+  ALERT_RESOLVED
+  ALERT_SUPPRESSED
+  MAINTENANCE_START
+  MAINTENANCE_END
+  AGENT_UPDATE
+  CONFIG_CHANGE
+  OPERATOR_NOTE
+  SECURITY_EVENT
+  SYSTEM_EVENT
+}
+
+enum TimelineSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  CRITICAL
+}
+
+model DeviceTimelineEvent {
+  id          String            @id @default(uuid())
+  deviceId    String
+  device      Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  eventType   TimelineEventType
+  severity    TimelineSeverity  @default(INFO)
+  title       String
+  detail      String?
+  actorId     String?
+  actorName   String?
+  relatedId   String?
+  relatedType String?
+  metadata    Json?
+  timestamp   DateTime          @default(now())
+
+  @@index([deviceId, timestamp(sort: Desc)])
+  @@index([deviceId, eventType])
+  @@index([deviceId, severity])
+  @@map("device_timeline_events")
+}
+
+// ==========================================
+// PHASE 8: ENTERPRISE FLEET COLLABORATION
+// ==========================================
+
+model RegistrationKey {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  displayName        String
+  keyHash            String       @unique // SHA256(key)
+  keyPrefix          String // E.g., NOS-ABCD
+  status             String       @default("ACTIVE") // ACTIVE | REVOKED | EXPIRED
+  maxUses            Int          @default(0) // 0 means unlimited
+  currentUses        Int          @default(0)
+  expiresAt          DateTime?
+  allowedDepartments String[]
+  allowedTeams       String[]
+  allowedGroups      String[]
+  allowedTags        String[]
+  createdBy          String
+  createdAt          DateTime     @default(now())
+  lastUsed           DateTime?
+  lastUsedBy         String?
+  lastUsedIp         String?
+  revokedBy          String?
+  revokedReason      String?
+  notes              String?
+
+  // Analytics fields (tracked per key)
+  totalGenerated Int @default(1)
+  failedAttempts Int @default(0)
+  devicesCreated Int @default(0)
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("registration_keys")
+}
+
+// ==========================================
+// MODULE 3: RETENTION AGGREGATION & FLEET JOBS
+// ==========================================
+
+model TelemetryAggregation {
+  id             String   @id @default(uuid())
+  deviceId       String
+  tenantId       String?  @default("default-org")
+  tier           String   // 1m | 15m | 1h | 1d
+  granularity    String   @default("1m") // "1m", "15m", "1h", "1d"
+  avgCpu         Float    @default(0.0)
+  maxCpu         Float    @default(0.0)
+  minCpu         Float    @default(0.0)
+  avgRam         Float    @default(0.0)
+  maxRam         Float    @default(0.0)
+  avgDisk        Float    @default(0.0)
+  avgNetwork     Float    @default(0.0)
+  sampleCount    Int      @default(1)
+  periodStart    DateTime
+  periodEnd      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([deviceId, tier, periodStart(sort: Desc)])
+  @@index([deviceId, granularity, periodStart(sort: Desc)])
+  @@map("telemetry_aggregations")
+}
+
+model BulkJob {
+  id                String   @id @default(uuid())
+  jobId             String   @unique
+  organizationId    String?
+  action            String   // TAG, ASSIGN_GROUP, UPDATE_POLICY, REBOOT, RUN_SCRIPT
+  status            String   @default("QUEUED") // QUEUED, RUNNING, COMPLETED, FAILED
+  accepted          Boolean  @default(true)
+  queued            Boolean  @default(true)
+  estimatedDevices  Int      @default(0)
+  processedCount    Int      @default(0)
+  failedCount       Int      @default(0)
+  details           String?  // JSON formatted details or errors
+  performedByUserId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([organizationId])
+  @@map("bulk_jobs")
+}
+
+model KeyValue {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  @@map("key_values")
+}
+
+

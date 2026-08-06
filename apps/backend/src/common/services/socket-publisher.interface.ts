@@ -13,4 +13,5 @@ export interface ISocketPublisher {
   emitDashboardUpdated(payload: any, correlationId?: string): Promise<void>;
   emitSystemStatusChanged(payload: any, correlationId?: string): Promise<void>;
   emitAlertEvent(event: string, payload: any, correlationId?: string): Promise<void>;
+  emitTenantEvent(organizationId: string, event: string, payload: any, correlationId?: string): Promise<void>;
 }

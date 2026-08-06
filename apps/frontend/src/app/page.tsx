@@ -20,42 +20,45 @@ export default function Home() {
             <span className="font-bold text-lg text-white">N</span>
           </div>
           <span className="text-xl font-bold tracking-tight text-white">NOS Platform</span>
-          <span className="px-2.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
-            Phase 2A Active
+          <span className="px-2.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
+            Enterprise NOC Active
           </span>
         </div>
 
-        <nav className="flex items-center space-x-4">
-          <Link
-            href="/device"
-            className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-cyan-400 border border-cyan-500/30 transition-colors"
-          >
-            Monitoring Agents (/device)
+        <nav className="flex items-center space-x-3 text-xs font-semibold">
+          <Link href="/dashboard" className="px-3 py-1.5 rounded-xl bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 transition">
+            NOC Dashboard
+          </Link>
+          <Link href="/device" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+            Devices
+          </Link>
+          <Link href="/inventory" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+            Inventory
+          </Link>
+          <Link href="/alerts" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+            Alerts
+          </Link>
+          <Link href="/audit" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+            Audit
+          </Link>
+          <Link href="/admin" className="px-3 py-1.5 rounded-xl bg-slate-900 text-purple-400 border border-purple-500/30 hover:bg-purple-600/20 transition">
+            Admin
           </Link>
           {isAuthenticated ? (
             <Link
               href="/profile"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-lg shadow-cyan-500/20 transition"
             >
               <span>{user?.firstName}&apos;s Profile</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           ) : (
-            <>
-              <Link
-                href="/auth/login"
-                className="px-4 py-2 rounded-xl hover:bg-slate-900 text-sm font-medium text-slate-300 transition-colors"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/register"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all"
-              >
-                <span>Provision Account</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </>
+            <Link
+              href="/auth/login"
+              className="px-3.5 py-1.5 rounded-xl bg-cyan-600 text-white font-semibold shadow-lg transition"
+            >
+              Sign in
+            </Link>
           )}
         </nav>
       </header>
@@ -124,33 +127,33 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-xl opacity-75">
-            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 mb-4">
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4">
               <Activity className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-300 mb-2 flex items-center justify-between">
+            <h3 className="font-bold text-slate-200 mb-2 flex items-center justify-between">
               <span>Telemetry Dashboard</span>
-              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-md">
-                Locked (Phase 2)
+              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
+                Active (Phase 6)
               </span>
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Real-time WebSocket streaming dashboard and predictive health analytics will be activated upon Phase 1 sign-off.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Real-time Socket.IO streaming telemetry dashboard, device inventory matrix, and multi-tenant operational insights.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-xl opacity-75">
-            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 mb-4">
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
               <Terminal className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-300 mb-2 flex items-center justify-between">
-              <span>.NET Agent Core</span>
-              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-md">
-                Locked (Phase 2)
+            <h3 className="font-bold text-slate-200 mb-2 flex items-center justify-between">
+              <span>Windows Agent Core</span>
+              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
+                Active (Phase 6)
               </span>
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              High-throughput Windows system monitoring agent with mutual TLS authentication waiting for upcoming deployment phase.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              High-throughput system monitoring agent with real-time heartbeat, system metrics collectors, and automatic reconnection.
             </p>
           </div>
         </div>

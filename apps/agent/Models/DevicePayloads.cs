@@ -10,7 +10,7 @@ public record RegisterDevicePayload(
     [property: JsonPropertyName("osVersion")] string OsVersion,
     [property: JsonPropertyName("architecture")] string Architecture,
     [property: JsonPropertyName("agentVersion")] string AgentVersion,
-    [property: JsonPropertyName("organizationId")] string? OrganizationId = null
+    [property: JsonPropertyName("registrationKey")] string? RegistrationKey = null
 );
 
 public record RegisterDeviceData(

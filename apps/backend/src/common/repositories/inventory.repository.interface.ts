@@ -85,4 +85,5 @@ export interface IInventoryRepository {
    * Retrieves the most recent audit events for a monitored node.
    */
   getRecentAuditLogs(deviceId: string, limit?: number): Promise<InventoryAuditLogDto[]>;
+  search(query: string, organizationId: string): Promise<any[]>;
 }

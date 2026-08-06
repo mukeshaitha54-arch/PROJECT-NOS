@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { INotificationRepository, NotificationCreateInput } from '../../common/repositories/notification.repository.interface';
-import { NotificationLog } from '@prisma/client';
+import { NotificationLog, Prisma, NotificationProvider } from '@prisma/client';
 
 @Injectable()
 export class PrismaNotificationRepository implements INotificationRepository {
@@ -11,7 +11,7 @@ export class PrismaNotificationRepository implements INotificationRepository {
     return this.prisma.notificationLog.create({
       data: {
         alertId: data.alertId,
-        provider: data.provider as any,
+        provider: data.provider as unknown as NotificationProvider,
         recipient: data.recipient,
         status: data.status,
         response: data.response || null,
@@ -33,11 +33,11 @@ export class PrismaNotificationRepository implements INotificationRepository {
   }
 
   async updateStatus(id: string, status: string, retryCount: number, isDlq = false, response?: string): Promise<NotificationLog> {
-    const data: any = { status, retryCount, isDlq };
-    if (response !== undefined) data.response = response;
+    const updateData: Prisma.NotificationLogUpdateInput = { status, retryCount, isDlq };
+    if (response !== undefined) updateData.response = response;
     return this.prisma.notificationLog.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

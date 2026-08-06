@@ -1,29 +1,29 @@
+using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using NOS.Agent.Models;
+using System.Management;
 
 namespace NOS.Agent.Services;
 
 public class SystemDiagnosticsService : ISystemDiagnosticsService
 {
     private readonly ILogger<SystemDiagnosticsService> _logger;
-    private readonly Random _rand = new Random();
+    private readonly IMetricCollector _metricCollector;
 
-    private double _previousBytesSent = 0;
-    private double _previousBytesReceived = 0;
-    private DateTime _previousNetworkSampleTime = DateTime.UtcNow;
-
-    public SystemDiagnosticsService(ILogger<SystemDiagnosticsService> logger)
+    public SystemDiagnosticsService(ILogger<SystemDiagnosticsService> logger, IMetricCollector metricCollector)
     {
         _logger = logger;
+        _metricCollector = metricCollector;
     }
 
-    public RegisterDevicePayload GetRegistrationInfo(string stableUuid, string? organizationId = null)
+    public RegisterDevicePayload GetRegistrationInfo(string stableUuid, string? registrationKey = null)
     {
         var hostname = Environment.MachineName;
         var os = RuntimeInformation.OSDescription;
@@ -33,12 +33,12 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         return new RegisterDevicePayload(
             Uuid: stableUuid,
             Hostname: hostname,
-            DeviceName: $"{hostname} (NOS Monitored Node)",
+            DeviceName: hostname,
             Os: os,
             OsVersion: osVersion,
             Architecture: arch,
-            AgentVersion: "2.0.0-phase2b",
-            OrganizationId: organizationId
+            AgentVersion: "2.1.0",
+            RegistrationKey: registrationKey
         );
     }
 
@@ -47,13 +47,13 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         double uptime = Math.Round(TimeSpan.FromMilliseconds(Environment.TickCount64).TotalSeconds, 1);
         string ip = GetLocalIPAddress(out _);
         
-        double cpuUsage = GetCpuUsageEstimate();
-        double ramUsage = GetRamUsageEstimate();
+        double cpuUsage = _metricCollector.GetCpuUsage();
+        var memMetrics = _metricCollector.GetMemoryMetrics();
 
         return new HeartbeatPayload(
             DeviceId: deviceId,
-            CpuUsage: Math.Round(cpuUsage, 1),
-            RamUsage: Math.Round(ramUsage, 1),
+            CpuUsage: cpuUsage,
+            RamUsage: memMetrics.UsedPercentage,
             Uptime: uptime,
             IpAddress: ip,
             Timestamp: DateTime.UtcNow.ToString("O"),
@@ -69,63 +69,80 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         
         string ip = GetLocalIPAddress(out string mac);
 
-        // CPU Diagnostics
-        double cpuUsage = Math.Round(GetCpuUsageEstimate(), 1);
-        double cpuTemp = Math.Round(44.0 + _rand.NextDouble() * 9.5, 1);
-        double cpuFrequency = Math.Round(2800.0 + (_rand.NextDouble() * 600.0 - 300.0), 0);
+        // CPU & Memory from collector
+        double cpuUsage = _metricCollector.GetCpuUsage();
+        var temps = _metricCollector.GetSystemTemperatures();
+        double cpuTemp = temps.Count > 0 ? temps[0].Celsius : 0.0;
+        
+        double cpuFrequency = 0.0;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher("SELECT CurrentClockSpeed FROM Win32_Processor");
+                foreach (var obj in searcher.Get())
+                {
+                    if (obj["CurrentClockSpeed"] != null)
+                    {
+                        cpuFrequency = Convert.ToDouble(obj["CurrentClockSpeed"]);
+                        break;
+                    }
+                }
+            }
+            catch { }
+        }
+
         int logicalCores = Environment.ProcessorCount;
-        int physicalCores = Math.Max(1, logicalCores / 2);
+        int physicalCores = logicalCores; // Fallback
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher("SELECT NumberOfCores FROM Win32_Processor");
+                foreach (var obj in searcher.Get())
+                {
+                    if (obj["NumberOfCores"] != null)
+                    {
+                        physicalCores = Convert.ToInt32(obj["NumberOfCores"]);
+                        break;
+                    }
+                }
+            }
+            catch { }
+        }
 
-        // Memory Diagnostics
-        double totalMemory = 16L * 1024 * 1024 * 1024; // Default 16GB fallback
+        var memMetrics = _metricCollector.GetMemoryMetrics();
+
+        // Disk
+        double diskTotal = 0;
+        double diskFree = 0;
         try
         {
-            var gcInfo = GC.GetGCMemoryInfo();
-            if (gcInfo.TotalAvailableMemoryBytes > 0)
+            foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed))
             {
-                totalMemory = gcInfo.TotalAvailableMemoryBytes;
+                diskTotal += drive.TotalSize;
+                diskFree += drive.TotalFreeSpace;
             }
         }
-        catch { /* Retain fallback */ }
+        catch { }
 
-        double memPercent = Math.Round(GetRamUsageEstimate(), 1);
-        double memUsed = Math.Round((memPercent / 100.0) * totalMemory, 0);
-        double memFree = Math.Round(totalMemory - memUsed, 0);
-
-        // Disk I/O & Capacity Diagnostics
-        double diskTotal = 512L * 1024 * 1024 * 1024; // 512GB fallback
-        double diskFree = 192L * 1024 * 1024 * 1024;  // 192GB free fallback
-        try
-        {
-            var drive = DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady && (d.DriveType == DriveType.Fixed || d.Name == @"C:\"));
-            if (drive != null)
-            {
-                diskTotal = drive.TotalSize;
-                diskFree = drive.TotalFreeSpace;
-            }
-        }
-        catch { /* Retain fallback */ }
-
-        double diskUsagePercent = diskTotal > 0 ? Math.Round(((diskTotal - diskFree) / diskTotal) * 100.0, 1) : 62.5;
-        double diskReadSpeed = Math.Round(120.0 * 1024 + _rand.NextDouble() * 2.5 * 1024 * 1024, 0);
-        double diskWriteSpeed = Math.Round(45.0 * 1024 + _rand.NextDouble() * 800 * 1024, 0);
-
-        // Network Traffic Diagnostics & Active Socket Tally
-        GetNetworkStatistics(out double bytesSent, out double bytesReceived, out double uploadSpeed, out double downloadSpeed);
+        double diskUsagePercent = diskTotal > 0 ? Math.Round(((diskTotal - diskFree) / diskTotal) * 100.0, 1) : 0;
+        var diskThroughput = _metricCollector.GetDiskThroughput();
+        var netThroughput = _metricCollector.GetNetworkThroughput();
 
         int activeConnections = 0;
         try
         {
             activeConnections = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpConnections().Length;
         }
-        catch { activeConnections = 42; }
+        catch { }
 
         int runningProcesses = 0;
         try
         {
             runningProcesses = Process.GetProcesses().Length;
         }
-        catch { runningProcesses = 138; }
+        catch { }
 
         return new TelemetrySnapshotPayload(
             DeviceId: deviceId,
@@ -134,19 +151,19 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
             CpuFrequency: cpuFrequency,
             LogicalProcessors: logicalCores,
             PhysicalProcessors: physicalCores,
-            MemoryUsed: memUsed,
-            MemoryFree: memFree,
-            MemoryTotal: totalMemory,
-            MemoryUsagePercent: memPercent,
-            DiskReadSpeed: diskReadSpeed,
-            DiskWriteSpeed: diskWriteSpeed,
+            MemoryUsed: memMetrics.UsedBytes,
+            MemoryFree: Math.Max(0, memMetrics.TotalBytes - memMetrics.UsedBytes),
+            MemoryTotal: memMetrics.TotalBytes,
+            MemoryUsagePercent: memMetrics.UsedPercentage,
+            DiskReadSpeed: Math.Round(diskThroughput.ReadBytesPerSec, 0),
+            DiskWriteSpeed: Math.Round(diskThroughput.WriteBytesPerSec, 0),
             DiskUsagePercent: diskUsagePercent,
             DiskFree: diskFree,
             DiskTotal: diskTotal,
-            NetworkUploadSpeed: Math.Max(0, uploadSpeed),
-            NetworkDownloadSpeed: Math.Max(0, downloadSpeed),
-            BytesSent: Math.Max(0, bytesSent),
-            BytesReceived: Math.Max(0, bytesReceived),
+            NetworkUploadSpeed: Math.Max(0, netThroughput.UploadBytesPerSec),
+            NetworkDownloadSpeed: Math.Max(0, netThroughput.DownloadBytesPerSec),
+            BytesSent: 0,
+            BytesReceived: 0,
             ActiveConnections: activeConnections,
             RunningProcesses: runningProcesses,
             SystemUptime: uptime,
@@ -155,94 +172,6 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
             MacAddress: mac,
             Timestamp: DateTime.UtcNow.ToString("O")
         );
-    }
-
-    private void GetNetworkStatistics(out double totalSent, out double totalReceived, out double uploadRate, out double downloadRate)
-    {
-        totalSent = 0;
-        totalReceived = 0;
-        uploadRate = 0;
-        downloadRate = 0;
-
-        try
-        {
-            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                if (nic.OperationalStatus == OperationalStatus.Up &&
-                    nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                    nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
-                {
-                    try
-                    {
-                        var stats = nic.GetIPv4Statistics();
-                        totalSent += stats.BytesSent;
-                        totalReceived += stats.BytesReceived;
-                    }
-                    catch { /* Ignore unreadable adapter counters */ }
-                }
-            }
-
-            if (totalSent == 0 && totalReceived == 0)
-            {
-                totalSent = 850L * 1024 * 1024 + _rand.Next(1000, 50000);
-                totalReceived = 4200L * 1024 * 1024 + _rand.Next(5000, 250000);
-            }
-
-            var now = DateTime.UtcNow;
-            var elapsed = (now - _previousNetworkSampleTime).TotalSeconds;
-            if (elapsed > 0 && _previousBytesSent > 0)
-            {
-                uploadRate = Math.Round((totalSent - _previousBytesSent) / elapsed, 0);
-                downloadRate = Math.Round((totalReceived - _previousBytesReceived) / elapsed, 0);
-            }
-            else
-            {
-                uploadRate = Math.Round(12.5 * 1024 + _rand.NextDouble() * 80 * 1024, 0);
-                downloadRate = Math.Round(64.0 * 1024 + _rand.NextDouble() * 450 * 1024, 0);
-            }
-
-            _previousBytesSent = totalSent;
-            _previousBytesReceived = totalReceived;
-            _previousNetworkSampleTime = now;
-        }
-        catch
-        {
-            totalSent = 1024L * 1024 * 1024;
-            totalReceived = 4096L * 1024 * 1024;
-            uploadRate = 24576;
-            downloadRate = 131072;
-        }
-    }
-
-    private double GetCpuUsageEstimate()
-    {
-        try
-        {
-            var proc = Process.GetCurrentProcess();
-            var totalProcessorTime = proc.TotalProcessorTime.TotalMilliseconds;
-            var elapsed = Environment.TickCount64;
-            var usage = (totalProcessorTime / (elapsed > 0 ? elapsed : 1)) * 100.0 * Environment.ProcessorCount;
-            return Math.Clamp(usage + _rand.NextDouble() * 15.0 + 10.0, 2.0, 98.0);
-        }
-        catch
-        {
-            return 15.5 + _rand.NextDouble() * 10.0;
-        }
-    }
-
-    private double GetRamUsageEstimate()
-    {
-        try
-        {
-            var info = GC.GetGCMemoryInfo();
-            var totalAvailable = info.TotalAvailableMemoryBytes;
-            var usage = totalAvailable > 0 ? (double)info.MemoryLoadBytes / totalAvailable * 100.0 : 45.0;
-            return Math.Clamp(usage > 5.0 ? usage : 42.0 + _rand.NextDouble() * 12.0, 5.0, 95.0);
-        }
-        catch
-        {
-            return 52.3;
-        }
     }
 
     private string GetLocalIPAddress(out string macAddress)
@@ -264,7 +193,7 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
                             macAddress = string.Join(":", macBytes.Select(b => b.ToString("X2")));
                         }
                     }
-                    catch { /* retain default MAC */ }
+                    catch { }
 
                     var props = item.GetIPProperties();
                     foreach (var ip in props.UnicastAddresses)

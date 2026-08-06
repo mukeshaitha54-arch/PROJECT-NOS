@@ -263,4 +263,65 @@ export class AlertEngineService {
       slaViolations: 2,
     };
   }
+
+  // ── Step 4 Alert Operations Methods ────────────────────────────────────
+
+  async assignAlert(alertId: string, assignedUserId: string, performedBy = 'Operator', comment = '') {
+    const existing = await this.alertRepo.findById(alertId);
+    if (!existing) throw new Error('Alert not found');
+
+    const updated = await this.alertRepo.update(alertId, {
+      assignedUserId,
+    });
+
+    await this.historyService.recordAction({
+      alertId,
+      action: 'ALERT_ASSIGNED',
+      performedBy,
+      comment: comment || `Assigned to user ID [${assignedUserId}]`,
+    });
+
+    this.socketPublisher.emitAlertEvent(SocketEvents.ALERT_UPDATED as any, {
+      alert: updated,
+      eventType: 'UPDATED',
+      timestamp: new Date().toISOString(),
+    });
+
+    return updated;
+  }
+
+  async escalateAlert(alertId: string, targetSeverity: AlertSeverity, comment = '', performedBy = 'Operator') {
+    const existing = await this.alertRepo.findById(alertId);
+    if (!existing) throw new Error('Alert not found');
+
+    const updated = await this.alertRepo.update(alertId, {
+      severity: targetSeverity as any,
+    });
+
+    await this.historyService.recordAction({
+      alertId,
+      action: 'ALERT_ESCALATED',
+      performedBy,
+      oldValue: existing.severity,
+      newValue: targetSeverity,
+      comment: comment || `Severity escalated from ${existing.severity} to ${targetSeverity}`,
+    });
+
+    this.socketPublisher.emitAlertEvent(SocketEvents.ALERT_UPDATED as any, {
+      alert: updated,
+      eventType: 'UPDATED',
+      timestamp: new Date().toISOString(),
+    });
+
+    return updated;
+  }
+
+  async getCorrelatedAlerts(alertId: string): Promise<Alert[]> {
+    const target = await this.alertRepo.findById(alertId);
+    if (!target) throw new Error('Alert not found');
+
+    const [all] = await this.alertRepo.findMany({ deviceId: target.deviceId, take: 50 });
+    return all.filter((a) => a.id !== alertId);
+  }
 }
+

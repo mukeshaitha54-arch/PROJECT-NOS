@@ -9,6 +9,7 @@ import { PresenceService } from './services/presence.service';
 import { HeartbeatPresenceService } from './services/heartbeat-presence.service';
 import { SocketMetricsService } from './services/socket-metrics.service';
 import { SocketRateLimiterService } from './services/socket-rate-limiter.service';
+import { RealtimeHandler } from './handlers/realtime.handler';
 import { ISocketPublisherToken } from '../../common/services/socket-publisher.interface';
 import { ISocketEventBusToken } from '../../common/services/socket-event-bus.interface';
 import { LocalSocketEventBusService } from '../../common/services/local-socket-event-bus.service';
@@ -34,8 +35,10 @@ import { LocalSocketEventBusService } from '../../common/services/local-socket-e
     HeartbeatPresenceService,
     SocketMetricsService,
     SocketRateLimiterService,
+    RealtimeHandler,
   ],
   exports: [
+    RealtimeGateway,
     ISocketPublisherToken,
     ISocketEventBusToken,
     ConnectionRegistryService,
@@ -46,3 +49,4 @@ import { LocalSocketEventBusService } from '../../common/services/local-socket-e
   ],
 })
 export class RealtimeModule {}
+

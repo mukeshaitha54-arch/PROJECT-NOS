@@ -14,9 +14,9 @@ export const dashboardApi = {
    * Fetches operational infrastructure overview counts (Total, Online, Offline, Critical, Warning).
    */
   async getOverview(): Promise<DashboardOverviewResponse> {
-    const res = await apiClient.get<ApiResponse<DashboardOverviewResponse>>('/api/v1/dashboard/overview');
-    if (!res.data.data) throw new Error('Failed to retrieve dashboard overview counts.');
-    return res.data.data;
+    const res = await apiClient.get<any, ApiResponse<DashboardOverviewResponse>>('/dashboard/overview');
+    if (!res.data) throw new Error('Failed to retrieve dashboard overview counts.');
+    return res.data;
   },
 
   /**
@@ -30,18 +30,18 @@ export const dashboardApi = {
     if (query?.status && query.status !== 'ALL') params.append('status', query.status);
     if (query?.os && query.os !== 'ALL') params.append('os', query.os);
 
-    const res = await apiClient.get<ApiResponse<PaginatedDashboardDevicesResponse>>(`/api/v1/dashboard/devices?${params.toString()}`);
-    if (!res.data.data) throw new Error('Failed to retrieve dashboard device rows.');
-    return res.data.data;
+    const res = await apiClient.get<any, ApiResponse<PaginatedDashboardDevicesResponse>>(`/dashboard/devices?${params.toString()}`);
+    if (!res.data) throw new Error('Failed to retrieve dashboard device rows.');
+    return res.data;
   },
 
   /**
    * Retrieves comprehensive device real-time monitoring details (Current Snapshot, Heartbeat, CPU, RAM, Disk, Network, System Status).
    */
   async getDeviceDetail(id: string): Promise<DashboardDeviceDetailResponse> {
-    const res = await apiClient.get<ApiResponse<DashboardDeviceDetailResponse>>(`/api/v1/dashboard/device/${id}`);
-    if (!res.data.data) throw new Error('Failed to retrieve target device operational detail profile.');
-    return res.data.data;
+    const res = await apiClient.get<any, ApiResponse<DashboardDeviceDetailResponse>>(`/dashboard/device/${id}`);
+    if (!res.data) throw new Error('Failed to retrieve target device operational detail profile.');
+    return res.data;
   },
 
   /**
@@ -54,8 +54,18 @@ export const dashboardApi = {
     if (query?.limit) params.append('limit', String(query.limit));
     if (query?.page) params.append('page', String(query.page));
 
-    const res = await apiClient.get<ApiResponse<PaginatedTelemetryResponse>>(`/api/v1/dashboard/history/${deviceId}?${params.toString()}`);
-    if (!res.data.data) throw new Error('Failed to retrieve historical telemetry records.');
-    return res.data.data;
+    const res = await apiClient.get<any, ApiResponse<PaginatedTelemetryResponse>>(`/dashboard/history/${deviceId}?${params.toString()}`);
+    if (!res.data) throw new Error('Failed to retrieve historical telemetry records.');
+    return res.data;
+  },
+
+  /**
+   * Retrieves permanent device operational timeline event log.
+   */
+  async getDeviceTimeline(deviceId: string, page = 1, limit = 20): Promise<any> {
+    const res = await apiClient.get<any, ApiResponse<any>>(`/device/${deviceId}/timeline?page=${page}&limit=${limit}`);
+    if (!res.data) throw new Error('Failed to retrieve device operational timeline.');
+    return res.data;
   },
 };
+

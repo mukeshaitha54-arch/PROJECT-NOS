@@ -17,6 +17,7 @@ import { AlertQueueService } from './queues/queue.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AlertRuleEngineService } from './alert-rule-engine.service';
 import {
   AlertStatus, AlertSeverity, AlertCategory, UserRole,
   RuleTestTimeframe,
@@ -59,7 +60,7 @@ import {
  *  New:  POST  /queue/:queueName/retry/:jobId
  *  New:  DELETE /queue/:queueName/purge  (ADMIN only)
  */
-@Controller('api/v1/alerts')
+@Controller('alerts')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AlertsController {
   constructor(
@@ -74,9 +75,22 @@ export class AlertsController {
     private readonly ruleHealthService: RuleHealthService,
     private readonly auditService: RuleAuditService,
     private readonly queueService: AlertQueueService,
+    private readonly alertRuleEngine: AlertRuleEngineService,
   ) {}
 
   // ─── Alert Incidents ────────────────────────────────────
+
+  @Get('active')
+  async getActiveAlerts(@Request() req: any) {
+    const tenantId = req.user?.organizationId || req.user?.tenantId || 'default-org';
+    const [all] = await this.alertEngine.getAlerts({ take: 500 });
+    const active = all.filter((a) => ['NEW', 'OPEN', 'ACKNOWLEDGED'].includes(a.status as string));
+    return {
+      success: true,
+      data: active,
+      meta: { total: active.length, page: 1, limit: 500 },
+    };
+  }
 
   @Get('overview')
   async getOverview() {
@@ -104,6 +118,80 @@ export class AlertsController {
     return this.alertEngine.getStatistics();
   }
 
+  @Patch('incidents/:id/acknowledge')
+  async acknowledgeAlert(
+    @Param('id') id: string,
+    @Body('comment') comment?: string,
+    @Request() req?: any,
+  ) {
+    const performedBy = req?.user?.email || 'Operator';
+    return this.alertEngine.updateAlertStatus(id, AlertStatus.ACKNOWLEDGED, performedBy, comment);
+  }
+
+  @Patch('incidents/:id/resolve')
+  async resolveAlert(
+    @Param('id') id: string,
+    @Body('comment') comment?: string,
+    @Request() req?: any,
+  ) {
+    const performedBy = req?.user?.email || 'Operator';
+    return this.alertEngine.updateAlertStatus(id, AlertStatus.RESOLVED as any, performedBy, comment);
+  }
+
+  @Patch(':id/close')
+  async closeAlert(
+    @Param('id') id: string,
+    @Body('comment') comment?: string,
+    @Request() req?: any,
+  ) {
+    const performedBy = req?.user?.email || 'Operator';
+    return this.alertEngine.updateAlertStatus(id, AlertStatus.CLOSED as any, performedBy, comment);
+  }
+
+  @Delete(':id/suppress')
+  @Roles(UserRole.ADMIN)
+  async suppressAlert(
+    @Param('id') id: string,
+    @Body('comment') comment?: string,
+    @Request() req?: any,
+  ) {
+    const performedBy = req?.user?.email || 'Operator';
+    return this.alertEngine.updateAlertStatus(id, AlertStatus.SUPPRESSED as any, performedBy, comment);
+  }
+
+  @Patch('incidents/:id/assign')
+  async assignAlert(
+    @Param('id') id: string,
+    @Body('assignedUserId') assignedUserId: string,
+    @Body('comment') comment?: string,
+    @Request() req?: any,
+  ) {
+    const performedBy = req?.user?.email || 'Operator';
+    return this.alertEngine.assignAlert(id, assignedUserId, performedBy, comment);
+  }
+
+  @Patch('incidents/:id/escalate')
+  async escalateAlert(
+    @Param('id') id: string,
+    @Body('severity') severity: AlertSeverity,
+    @Body('comment') comment?: string,
+    @Request() req?: any,
+  ) {
+    const performedBy = req?.user?.email || 'Operator';
+    return this.alertEngine.escalateAlert(id, severity, comment, performedBy);
+  }
+
+  @Get('incidents/:id/correlated')
+  async getCorrelatedAlerts(@Param('id') id: string) {
+    return this.alertEngine.getCorrelatedAlerts(id);
+  }
+
+  @Get('incidents/:id/history')
+  async getAlertHistory(@Param('id') id: string) {
+    return this.historyService.getHistory(id);
+  }
+
+
   @Get('health')
   async getHealth() {
     return this.healthService.checkHealth();
@@ -120,6 +208,15 @@ export class AlertsController {
   ) {
     // Backward compatible: delegates to dry-run logic
     return this.simulationService.dryRun({ metric, operator, threshold });
+  }
+
+  @Post('simulate')
+  async simulateRulePost(@Body() body: any) {
+    return this.simulationService.dryRun({
+      metric: body?.metric ?? 'cpuUsage',
+      operator: body?.operator ?? '>',
+      threshold: Number(body?.threshold ?? 90),
+    });
   }
 
   // ─── SPL Feature 23: Rule Health ─────────────────────────
@@ -256,12 +353,22 @@ export class AlertsController {
   @HttpCode(HttpStatus.OK)
   async testRule(
     @Param('id') id: string,
-    @Body() body: { timeframe?: RuleTestTimeframe; from?: string; to?: string },
+    @Body() body: { timeframe?: RuleTestTimeframe; from?: string; to?: string; deviceId?: string; simulatedValue?: number },
     @Request() req: any,
   ) {
     const performedBy = req.user?.email || 'System';
     const ipAddress = req.ip || req.headers?.['x-forwarded-for'];
     const browser = req.headers?.['user-agent'];
+    
+    // Evaluate via live engine if simulatedValue is provided (Requirement 5)
+    if (body.simulatedValue !== undefined && body.deviceId) {
+      // Create mock telemetry payload from the simulated value based on rule metric
+      // We'll just fetch the rule and call the helper logic manually
+      return (this.alertRuleEngine as any).testRule
+        ? (this.alertRuleEngine as any).testRule(id, body.deviceId, Number(body.simulatedValue))
+        : { wouldTrigger: false, reason: 'Test logic not implemented in service', durationRequired: 1, currentDuration: 0 };
+    }
+
     return this.simulationService.testRule(
       { ruleId: id, timeframe: body.timeframe || 'LAST_24H', from: body.from, to: body.to },
       performedBy,

@@ -24,16 +24,16 @@ export class DashboardService {
     @Inject(ISocketPublisherToken) private readonly socketPublisher: ISocketPublisher,
   ) {}
 
-  async publishOverviewRefresh(): Promise<void> {
-    const overview = await this.getOverview();
+  async publishOverviewRefresh(organizationId: string): Promise<void> {
+    const overview = await this.getOverview(organizationId);
     await this.socketPublisher.emitDashboardUpdated({
       overview,
       timestamp: new Date().toISOString(),
     });
   }
 
-  async getOverview(): Promise<DashboardOverviewResponse> {
-    const counts: DashboardOverviewCounts = await this.repository.getOverviewCounts();
+  async getOverview(organizationId: string): Promise<DashboardOverviewResponse> {
+    const counts: DashboardOverviewCounts = await this.repository.getOverviewCounts(organizationId);
 
     return {
       totalDevices: counts.total,
@@ -47,12 +47,13 @@ export class DashboardService {
     };
   }
 
-  async getDevices(query: DashboardDevicesQueryDto): Promise<PaginatedDashboardDevicesResponse> {
+  async getDevices(organizationId: string, query: DashboardDevicesQueryDto): Promise<PaginatedDashboardDevicesResponse> {
     const page = query.page || 1;
     const limit = query.limit || 20;
     const skip = (page - 1) * limit;
 
     const { devices, total } = await this.repository.getDeviceRows({
+      organizationId,
       skip,
       take: limit,
       search: query.search,
@@ -113,8 +114,8 @@ export class DashboardService {
     };
   }
 
-  async getDeviceById(id: string): Promise<DashboardDeviceDetailResponse> {
-    const raw = await this.repository.getDeviceDetail(id);
+  async getDeviceById(organizationId: string, id: string): Promise<DashboardDeviceDetailResponse> {
+    const raw = await this.repository.getDeviceDetail(organizationId, id);
     if (!raw || !raw.device) {
       throw new NotFoundException(`Monitored device with identifier [${id}] not found in control plane.`);
     }
@@ -181,7 +182,7 @@ export class DashboardService {
     };
   }
 
-  async getDeviceHistory(deviceId: string, query: DashboardHistoryQueryDto): Promise<PaginatedTelemetryResponse> {
+  async getDeviceHistory(organizationId: string, deviceId: string, query: DashboardHistoryQueryDto): Promise<PaginatedTelemetryResponse> {
     const page = query.page || 1;
     const limit = query.limit || 50;
     const skip = (page - 1) * limit;
@@ -189,7 +190,7 @@ export class DashboardService {
     const fromDate = query.from ? new Date(query.from) : undefined;
     const toDate = query.to ? new Date(query.to) : undefined;
 
-    const { snapshots, total } = await this.repository.getTelemetryHistory(deviceId, {
+    const { snapshots, total } = await this.repository.getTelemetryHistory(organizationId, deviceId, {
       from: fromDate,
       to: toDate,
       skip,

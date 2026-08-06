@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { ITokenRepository, OtpTypeEnum, RefreshTokenRecord, OtpRecord } from '../../common/repositories/token.repository.interface';
+import { OtpType } from '@prisma/client';
 
 @Injectable()
 export class PrismaTokenRepository implements ITokenRepository {
@@ -42,7 +43,7 @@ export class PrismaTokenRepository implements ITokenRepository {
         userId,
         email: email.toLowerCase(),
         otpHash,
-        type: type as any,
+        type: type as unknown as OtpType,
         expiresAt,
       },
     });
@@ -51,7 +52,7 @@ export class PrismaTokenRepository implements ITokenRepository {
 
   async findLatestOtp(email: string, type: OtpTypeEnum): Promise<OtpRecord | null> {
     const record = await this.prisma.verificationOtp.findFirst({
-      where: { email: email.toLowerCase(), type: type as any, isUsed: false },
+      where: { email: email.toLowerCase(), type: type as unknown as OtpType, isUsed: false },
       orderBy: { createdAt: 'desc' },
     });
     if (!record) return null;

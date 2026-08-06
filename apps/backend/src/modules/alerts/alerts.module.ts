@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { AuditModule } from '../audit/audit.module';
 
 // Services
 import { RuleEngineService } from './services/rule-engine.service';
@@ -9,6 +10,7 @@ import { AlertHistoryService } from './services/alert-history.service';
 import { MaintenanceService } from './services/maintenance.service';
 import { AlertHealthService } from './services/alert-health.service';
 import { NotificationService } from './notification/notification.service';
+import { AlertRuleEngineService } from './alert-rule-engine.service';
 
 // Phase 5 Final Hardening Services
 import { RuleValidationService } from './services/rule-validation.service';
@@ -41,8 +43,9 @@ import { PrismaTelemetryRepository } from '../../database/repositories/prisma-te
 import { AlertsController } from './alerts.controller';
 import { MaintenanceController } from './maintenance.controller';
 
+@Global()
 @Module({
-  imports: [DatabaseModule, RealtimeModule],
+  imports: [DatabaseModule, RealtimeModule, AuditModule],
   controllers: [AlertsController, MaintenanceController],
   providers: [
     // Core Services
@@ -51,6 +54,7 @@ import { MaintenanceController } from './maintenance.controller';
     MaintenanceService,
     AlertHealthService,
     NotificationService,
+    AlertRuleEngineService,
 
     // Queue & Workers
     AlertQueueService,
@@ -78,9 +82,11 @@ import { MaintenanceController } from './maintenance.controller';
     MaintenanceService,
     NotificationService,
     RuleAuditService,
+    AlertRuleEngineService,
     IAlertRepository,
     IAlertRuleRepository,
     IMaintenanceRepository,
   ],
 })
 export class AlertsModule {}
+

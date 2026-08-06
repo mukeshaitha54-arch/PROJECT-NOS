@@ -17,7 +17,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nos_admin} -d ${POSTGRES_DB:-nos_database}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nos_admin} -d ${POSTGRES_DB:-nos_database}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -55,7 +55,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secure_redis_password}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secure_redis_password}", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -69,24 +69,31 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+
     container_name: nos_backend
     restart: always
+
+    env_file:
+      - ./apps/backend/.env
+
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 4000
       DATABASE_URL: "postgresql://${POSTGRES_USER:-nos_admin}:${POSTGRES_PASSWORD:-secure_nos_password}@postgres:5432/${POSTGRES_DB:-nos_database}?schema=public"
       REDIS_URL: "redis://:${REDIS_PASSWORD:-secure_redis_password}@redis:6379/0"
+
     ports:
       - "4000:4000"
+
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+
     networks:
       - nos_network
-
   frontend:
     build:
       context: .
@@ -113,7 +120,8 @@ services:
     environment:
       AgentConfig__NodeId: nos-container-agent-001
       AgentConfig__PollIntervalSeconds: 10
-      AgentConfig__ApiIngestionEndpoint: http://backend:4000/api/v1
+      AgentConfig__ApiIngestionEndpoint: http://nos_backend:4000/api/v1
+      AgentConfig__RegistrationKey: nos-reg-key-test-1234
     depends_on:
       - backend
     networks:

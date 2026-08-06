@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { SocketEvents, SocketEventEnvelope } from '@nos/shared-types';
+import { clientEnv } from '../../../config/env';
 
 export type RealtimeStatus = 'LIVE' | 'RECONNECTING' | 'OFFLINE' | 'UNAUTHORIZED';
 export type StatusListener = (status: RealtimeStatus, latencyMs: number) => void;
@@ -23,8 +24,8 @@ class RealtimeSocketClient {
     this.currentToken = token;
     this.disconnect();
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-    const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '') || 'http://localhost:3001';
+    const apiUrl = clientEnv.apiBaseUrl;
+    const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '') || 'http://localhost:4000';
     const namespace = process.env.NEXT_PUBLIC_SOCKET_NAMESPACE || '/realtime';
 
     this.socket = io(`${baseUrl}${namespace}`, {
@@ -64,7 +65,7 @@ class RealtimeSocketClient {
 
   public on<T = any>(event: SocketEvents | string, callback: (envelope: SocketEventEnvelope<T>) => void): () => void {
     if (!this.socket) {
-      return () => {};
+      return () => { };
     }
     const handler = (data: any) => {
       callback(data as SocketEventEnvelope<T>);

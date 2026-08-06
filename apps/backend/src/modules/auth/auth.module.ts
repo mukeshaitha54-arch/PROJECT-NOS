@@ -22,7 +22,7 @@ import { IMailServiceToken } from '../../common/services/mail-service.interface'
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'nos_super_secret_jwt_key_32_chars_min_length_value!'),
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: config.get<string>('JWT_EXPIRATION', '15m') },
       }),
     }),
   ],

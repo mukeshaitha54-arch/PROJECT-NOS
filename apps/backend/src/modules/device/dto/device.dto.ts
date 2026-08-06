@@ -38,7 +38,12 @@ export class RegisterDeviceDto implements RegisterDevicePayload {
   @IsNotEmpty()
   agentVersion: string;
 
-  @ApiPropertyOptional({ example: 'org-enterprise-corp-01', description: 'Optional organizational tenant boundary' })
+  @ApiPropertyOptional({ example: 'NOS-ABCD-1234-5678-9012', description: 'Registration Key to authenticate and associate with an organization' })
+  @IsOptional()
+  @IsString()
+  registrationKey?: string;
+
+  @ApiPropertyOptional({ example: 'org-uuid', description: 'Optional explicit organization ID for operational acceptance tests' })
   @IsOptional()
   @IsString()
   organizationId?: string;
@@ -86,4 +91,9 @@ export class HeartbeatDto implements HeartbeatPayload {
   @IsOptional()
   @IsString()
   os?: string;
+
+  @ApiPropertyOptional({ example: 'online', description: 'Agent operational health status (online, error, critical)' })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

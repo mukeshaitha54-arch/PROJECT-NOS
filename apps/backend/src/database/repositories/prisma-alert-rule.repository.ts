@@ -5,7 +5,15 @@ import {
   AlertRuleCreateInput,
   AlertRuleFindManyQuery,
 } from '../../common/repositories/alert-rule.repository.interface';
-import { AlertRule, Prisma } from '@prisma/client';
+import {
+  AlertRule,
+  Prisma,
+  AlertSeverity,
+  AlertRulePriority,
+  AlertRuleCategory,
+  AlertRuleStatus,
+  AlertRuleScheduleMode,
+} from '@prisma/client';
 
 @Injectable()
 export class PrismaAlertRuleRepository implements IAlertRuleRepository {
@@ -21,21 +29,21 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
         operator: data.operator,
         threshold: data.threshold,
         durationSeconds: data.durationSeconds ?? 0,
-        severity: (data.severity || 'MEDIUM') as any,
-        priority: (data.priority || 'NORMAL') as any,
-        category: (data.category || 'SYSTEM') as any,
-        ruleStatus: (data.ruleStatus || 'ACTIVE') as any,
+        severity: (data.severity || 'MEDIUM') as unknown as AlertSeverity,
+        priority: (data.priority || 'NORMAL') as unknown as AlertRulePriority,
+        category: (data.category || 'SYSTEM') as unknown as AlertRuleCategory,
+        ruleStatus: (data.ruleStatus || 'ACTIVE') as unknown as AlertRuleStatus,
         enabled: data.enabled ?? true,
         cooldownSeconds: data.cooldownSeconds ?? 300,
         timeoutMs: data.timeoutMs ?? 500,
-        scheduleMode: (data.scheduleMode || 'ALWAYS') as any,
+        scheduleMode: (data.scheduleMode || 'ALWAYS') as unknown as AlertRuleScheduleMode,
         cronExpression: data.cronExpression || null,
         tags: data.tags || [],
         templateName: data.templateName || null,
         silentMode: data.silentMode ?? false,
         businessHoursOnly: data.businessHoursOnly ?? false,
         dependsOnIds: data.dependsOnIds || [],
-        complexityScore: (data.complexityScore || 'SIMPLE') as any,
+        complexityScore: data.complexityScore || 'SIMPLE',
         noiseScore: data.noiseScore ?? 0,
         createdBy: data.createdBy || null,
         modifiedBy: data.modifiedBy || null,
@@ -55,7 +63,7 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
 
   async findMany(enabledOnly = false, metric?: string): Promise<AlertRule[]> {
     const where: Prisma.AlertRuleWhereInput = {
-      ruleStatus: { not: 'ARCHIVED' as any },
+      ruleStatus: { not: AlertRuleStatus.ARCHIVED },
     };
     if (enabledOnly) where.enabled = true;
     if (metric) where.metric = metric;
@@ -73,10 +81,10 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
     if (query.enabledOnly) where.enabled = true;
     if (query.enabled !== undefined) where.enabled = query.enabled;
     if (query.metric) where.metric = { contains: query.metric, mode: 'insensitive' };
-    if (query.severity) where.severity = query.severity as any;
-    if (query.category) where.category = query.category as any;
-    if (query.ruleStatus) where.ruleStatus = query.ruleStatus as any;
-    if (query.priority) where.priority = query.priority as any;
+    if (query.severity) where.severity = query.severity as unknown as AlertSeverity;
+    if (query.category) where.category = query.category as unknown as AlertRuleCategory;
+    if (query.ruleStatus) where.ruleStatus = query.ruleStatus as unknown as AlertRuleStatus;
+    if (query.priority) where.priority = query.priority as unknown as AlertRulePriority;
     if (query.owner) where.owner = { contains: query.owner, mode: 'insensitive' };
     if (query.version !== undefined) where.version = query.version;
     if (query.tags && query.tags.length > 0) {
@@ -100,12 +108,12 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
   }
 
   async update(id: string, data: Partial<AlertRule>): Promise<AlertRule> {
-    const updateData: any = { ...data };
+    const updateData: Record<string, unknown> = { ...data };
     delete updateData.id;
     delete updateData.createdAt;
     return this.prisma.alertRule.update({
       where: { id },
-      data: updateData,
+      data: updateData as Prisma.AlertRuleUpdateInput,
     });
   }
 
@@ -122,7 +130,7 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
     return this.prisma.alertRule.update({
       where: { id },
       data: {
-        ruleStatus: 'ARCHIVED' as any,
+        ruleStatus: AlertRuleStatus.ARCHIVED,
         enabled: false,
         archivedAt: new Date(),
         modifiedBy: performedBy,
@@ -144,7 +152,7 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
         severity: source.severity,
         priority: source.priority,
         category: source.category,
-        ruleStatus: 'ACTIVE' as any,
+        ruleStatus: AlertRuleStatus.ACTIVE,
         enabled: false, // Clones start disabled — operator must review and enable
         cooldownSeconds: source.cooldownSeconds,
         timeoutMs: source.timeoutMs,
@@ -216,7 +224,7 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
   async findConflicting(): Promise<Array<{ ruleIds: string[]; reason: string }>> {
     // Detect rules with same metric and overlapping threshold ranges
     const rules = await this.prisma.alertRule.findMany({
-      where: { ruleStatus: { not: 'ARCHIVED' as any }, enabled: true },
+      where: { ruleStatus: { not: AlertRuleStatus.ARCHIVED }, enabled: true },
       select: { id: true, name: true, metric: true, operator: true, threshold: true, severity: true },
     });
 
@@ -238,7 +246,7 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
 
   async findDuplicates(): Promise<Array<{ ruleIds: string[]; reason: string }>> {
     const rules = await this.prisma.alertRule.findMany({
-      where: { ruleStatus: { not: 'ARCHIVED' as any } },
+      where: { ruleStatus: { not: AlertRuleStatus.ARCHIVED } },
       select: { id: true, name: true, metric: true, operator: true, threshold: true, durationSeconds: true, severity: true },
     });
 

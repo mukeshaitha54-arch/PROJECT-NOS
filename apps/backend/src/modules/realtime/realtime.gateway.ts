@@ -120,6 +120,12 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       client.join(SocketRooms.DASHBOARD);
       this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
 
+      // Phase 6: Automatically subscribe to Tenant Isolated Room if organizationId is present
+      const orgId = client.handshake.query?.organizationId || client.handshake.headers?.['x-organization-id'] || payload.org || 'default-org';
+      const orgRoom = `org_${orgId}`;
+      client.join(orgRoom);
+      this.registry.addRoom(client.id, orgRoom);
+
       // Send connection acknowledgement with server version envelope
       const ackEnvelope: SocketEventEnvelope = {
         version: 1,

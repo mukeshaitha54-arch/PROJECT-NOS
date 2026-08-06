@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # NOS (Network Operating System)
 
 A production-ready enterprise monorepo foundation powered by **pnpm workspaces** and **Turborepo**, designed for high-performance network management, device telemetry, and analytics.
@@ -68,6 +67,3 @@ To build all apps and packages in optimal topological order:
 ```powershell
 pnpm turbo run build
 ```
-=======
-# PROJECT-NOS
->>>>>>> 760af820ecfc07bbf929541558dd3fafe4f8962b

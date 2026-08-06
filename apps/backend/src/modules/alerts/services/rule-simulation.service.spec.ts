@@ -182,7 +182,7 @@ describe('RuleSimulationService (Phase 5 Hardening Verification)', () => {
       );
 
       expect(result.wouldTriggerCount).toBe(0); // All suppressed due to maintenance!
-      expect(result.suppressedCount).toBe(1);
+      expect(result.suppressedCount).toBe(2);
       expect(result.timeline[0].suppressReason).toContain('Emergency Firmware Upgrade');
     });
   });

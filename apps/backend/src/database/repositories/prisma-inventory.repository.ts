@@ -14,6 +14,30 @@ import {
   InventoryHealthResponse,
   InventoryAuditLogDto,
 } from '@nos/shared-types';
+import {
+  DeviceInventory,
+  MemoryModule,
+  DiskDrive,
+  Gpu,
+  NetworkAdapter,
+  InstalledSoftware,
+  WindowsService,
+  StartupApplication,
+  SecurityInventory,
+  DeviceCapabilities,
+} from '@prisma/client';
+
+type CompleteInventory = DeviceInventory & {
+  memoryModules?: MemoryModule[];
+  diskDrives?: DiskDrive[];
+  gpus?: Gpu[];
+  networkAdapters?: NetworkAdapter[];
+  installedSoftware?: InstalledSoftware[];
+  windowsServices?: WindowsService[];
+  startupApplications?: StartupApplication[];
+  security?: SecurityInventory | null;
+  capabilities?: DeviceCapabilities | null;
+};
 
 @Injectable()
 export class PrismaInventoryRepository implements IInventoryRepository {
@@ -21,8 +45,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToDto(raw: any): DeviceInventoryDto {
-    if (!raw) return null as any;
+  private mapToDto(raw: CompleteInventory | null | undefined): DeviceInventoryDto {
+    if (!raw) return null as unknown as DeviceInventoryDto;
     return {
       id: raw.id,
       deviceId: raw.deviceId,
@@ -49,7 +73,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       lastScanAt: raw.lastScanAt.toISOString(),
       createdAt: raw.createdAt.toISOString(),
       updatedAt: raw.updatedAt.toISOString(),
-      memoryModules: raw.memoryModules?.map((m: any) => ({
+      memoryModules: raw.memoryModules?.map((m) => ({
         id: m.id,
         slot: m.slot,
         capacityBytes: m.capacityBytes,
@@ -58,7 +82,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         partNumber: m.partNumber,
         serialNumber: m.serialNumber,
       })),
-      diskDrives: raw.diskDrives?.map((d: any) => ({
+      diskDrives: raw.diskDrives?.map((d) => ({
         id: d.id,
         driveName: d.driveName,
         model: d.model,
@@ -68,7 +92,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         fileSystem: d.fileSystem,
         isSystemDrive: d.isSystemDrive,
       })),
-      gpus: raw.gpus?.map((g: any) => ({
+      gpus: raw.gpus?.map((g) => ({
         id: g.id,
         name: g.name,
         manufacturer: g.manufacturer,
@@ -76,7 +100,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         vRamBytes: g.vRamBytes,
         resolution: g.resolution,
       })),
-      networkAdapters: raw.networkAdapters?.map((n: any) => ({
+      networkAdapters: raw.networkAdapters?.map((n) => ({
         id: n.id,
         name: n.name,
         description: n.description || undefined,
@@ -90,7 +114,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         isPhysical: n.isPhysical,
         isOperational: n.isOperational,
       })),
-      installedSoftware: raw.installedSoftware?.map((s: any) => ({
+      installedSoftware: raw.installedSoftware?.map((s) => ({
         id: s.id,
         name: s.name,
         publisher: s.publisher,
@@ -98,7 +122,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         installDate: s.installDate,
         installLocation: s.installLocation || undefined,
       })),
-      windowsServices: raw.windowsServices?.map((ws: any) => ({
+      windowsServices: raw.windowsServices?.map((ws) => ({
         id: ws.id,
         serviceName: ws.serviceName,
         displayName: ws.displayName,
@@ -106,7 +130,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         startType: ws.startType,
         account: ws.account,
       })),
-      startupApplications: raw.startupApplications?.map((sa: any) => ({
+      startupApplications: raw.startupApplications?.map((sa) => ({
         id: sa.id,
         name: sa.name,
         command: sa.command,
@@ -705,9 +729,23 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     return logs.map((l) => ({
       id: l.id,
       deviceId: l.deviceId,
-      action: l.action as any,
+      action: l.action as unknown as InventoryAuditLogDto['action'],
       changeDetails: l.changeDetails,
       timestamp: l.timestamp.toISOString(),
     }));
+  }
+
+  async search(query: string, organizationId: string): Promise<any[]> {
+    return this.prisma.deviceInventory.findMany({
+      where: {
+        device: { organizationId },
+        OR: [
+          { manufacturer: { contains: query, mode: 'insensitive' } },
+          { model: { contains: query, mode: 'insensitive' } },
+          { serialNumber: { contains: query, mode: 'insensitive' } }
+        ]
+      },
+      take: 20
+    });
   }
 }

@@ -10,7 +10,8 @@ export class PrismaService
 
   constructor() {
     super({
-      log: ['warn', 'error'],
+      datasources: { db: { url: process.env.DATABASE_URL } },
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
     });
   }
 

@@ -89,6 +89,11 @@ export class SocketPublisherService implements ISocketPublisher {
     await this.broadcast(event as any, rooms, payload, correlationId);
   }
 
+  async emitTenantEvent(organizationId: string, event: string, payload: any, correlationId?: string): Promise<void> {
+    const rooms = [`org_${organizationId}`];
+    await this.broadcast(event as any, rooms, payload, correlationId);
+  }
+
   /**
    * Centralized selective broadcast engine.
    * Enforces SPL Feature 1 (Versioning), SPL Feature 2 (Correlation ID),
@@ -116,10 +121,16 @@ export class SocketPublisherService implements ISocketPublisher {
 
     // 2. Payload Minimization & Versioned Envelope creation
     const cleanPayload = this.minimizePayload(payload);
+    const eventId = `evt-${now}-${Math.random().toString(36).substring(2, 8)}`;
+    const deviceId = cleanPayload?.deviceId || cleanPayload?.snapshot?.deviceId || (dedupKey ? dedupKey.split('-')[1] : undefined);
     const envelope: SocketEventEnvelope = {
+      eventId,
+      eventType: event,
       version: 1,
       event,
       timestamp: new Date().toISOString(),
+      organizationId: cleanPayload?.organizationId || 'default-org',
+      deviceId,
       correlationId: correlationId || `nos-pub-${now}-${Math.random().toString(36).substring(2, 6)}`,
       payload: cleanPayload,
     };

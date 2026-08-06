@@ -1,8 +1,9 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { ApiResponse, TokenResponsePayload } from '@nos/shared-types';
+import { clientEnv } from '../config/env';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const BASE_URL = clientEnv.apiBaseUrl;
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -12,12 +13,18 @@ export const apiClient: AxiosInstance = axios.create({
   timeout: 10000,
 });
 
-// Request Interceptor: Attach JWT Bearer Token
+// Request Interceptor: Attach JWT Bearer Token & Normalize URL
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const accessToken = useAuthStore.getState().accessToken;
+    if (config.url && config.url.startsWith('/api/v1/')) {
+      config.url = config.url.substring(7);
+    }
+    const { accessToken, user } = useAuthStore.getState();
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    if (user?.organizationId && config.headers) {
+      config.headers['x-organization-id'] = user.organizationId;
     }
     return config;
   },

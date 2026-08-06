@@ -50,9 +50,10 @@ export interface TelemetryHistoryRaw {
 }
 
 export interface IDashboardRepository {
-  getOverviewCounts(): Promise<DashboardOverviewCounts>;
+  getOverviewCounts(organizationId: string): Promise<DashboardOverviewCounts>;
   
   getDeviceRows(params: {
+    organizationId: string;
     skip: number;
     take: number;
     search?: string;
@@ -60,9 +61,10 @@ export interface IDashboardRepository {
     os?: string;
   }): Promise<{ devices: DeviceRowRaw[]; total: number }>;
 
-  getDeviceDetail(deviceId: string): Promise<DeviceDetailRaw | null>;
+  getDeviceDetail(organizationId: string, deviceId: string): Promise<DeviceDetailRaw | null>;
 
   getTelemetryHistory(
+    organizationId: string,
     deviceId: string,
     params: {
       from?: Date;

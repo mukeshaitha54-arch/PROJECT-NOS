@@ -1,41 +1,26 @@
-FROM node:22-alpine AS base
+# Stage 1: Builder
+FROM node:20-alpine AS builder
 
-# 1. Prune step: isolate frontend package and its workspace dependencies
-FROM base AS pruner
-RUN apk add --no-cache libc6-compat
-RUN corepack enable pnpm
 WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
 COPY . .
-RUN npx turbo@^2.3.3 prune @nos/frontend --docker
+RUN npm run build
 
-# 2. Builder step: install pruned dependencies and compile standalone output
-FROM base AS builder
-RUN apk add --no-cache libc6-compat
-RUN corepack enable pnpm
+# Stage 2: Production
+FROM node:20-alpine
+
 WORKDIR /app
-COPY --from=pruner /app/out/json/ .
-COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
-RUN pnpm install --frozen-lockfile
 
-COPY --from=pruner /app/out/full/ .
-COPY turbo.json turbo.json
-ENV DOCKER_BUILD="true"
-RUN pnpm turbo run build --filter=@nos/frontend
-
-# 3. Runner step: lean production environment using Next standalone output
-FROM base AS runner
-WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/apps/frontend/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/public ./public
 
-USER nextjs
 EXPOSE 3000
-CMD ["node", "apps/frontend/server.js"]
+
+CMD ["npm", "start"]

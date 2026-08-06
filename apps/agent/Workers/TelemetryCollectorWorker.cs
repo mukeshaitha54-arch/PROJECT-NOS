@@ -1,5 +1,9 @@
+using System;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,38 +14,47 @@ namespace NOS.Agent.Workers;
 
 /// <summary>
 /// Background worker daemon responsible for initial agent onboarding registration,
-/// persistent 30-second diagnostic heartbeats, and Phase 2B complete hardware telemetry ingestion in UTC.
+/// persistent diagnostic heartbeats, telemetry ingestion, offline buffering, and drain on reconnect.
 /// </summary>
 public class TelemetryCollectorWorker : BackgroundService
 {
     private readonly ILogger<TelemetryCollectorWorker> _logger;
     private readonly ISystemDiagnosticsService _diagnosticsService;
     private readonly ITokenStorageService _tokenStorageService;
+    private readonly IOfflineBufferService _offlineBufferService;
+    private readonly ICollectorSchedulerService _schedulerService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly int _pollIntervalSeconds;
     private readonly string _apiEndpoint;
-    private readonly string _organizationId;
+    private readonly string _registrationKey;
 
     public TelemetryCollectorWorker(
         ILogger<TelemetryCollectorWorker> logger,
         ISystemDiagnosticsService diagnosticsService,
         ITokenStorageService tokenStorageService,
+        IOfflineBufferService offlineBufferService,
+        ICollectorSchedulerService schedulerService,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration)
     {
         _logger = logger;
         _diagnosticsService = diagnosticsService;
         _tokenStorageService = tokenStorageService;
+        _offlineBufferService = offlineBufferService;
+        _schedulerService = schedulerService;
         _httpClientFactory = httpClientFactory;
         
         _pollIntervalSeconds = configuration.GetValue<int>("AgentConfig:PollIntervalSeconds", 30);
-        _apiEndpoint = configuration.GetValue<string>("AgentConfig:ApiIngestionEndpoint", "http://localhost:3001/api/v1").TrimEnd('/');
-        _organizationId = configuration.GetValue<string>("AgentConfig:OrganizationId", "nos-org-default")!;
+        var endpoint = configuration.GetValue<string>("AgentConfig:ApiIngestionEndpoint") 
+                    ?? configuration.GetValue<string>("AgentConfig:BackendUrl") 
+                    ?? "http://localhost:4000/api/v1";
+        _apiEndpoint = endpoint.TrimEnd('/');
+        _registrationKey = configuration.GetValue<string>("AgentConfig:RegistrationKey", "")!;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("🚀 NOS Enterprise Agent (Phase 2B Telemetry & Heartbeat Worker) booting up. Target Server: [{ApiEndpoint}], Interval: [{Interval}s]", _apiEndpoint, _pollIntervalSeconds);
+        _logger.LogInformation("🚀 NOS Enterprise Agent (Telemetry & Heartbeat Worker) booting up. Target Server: [{ApiEndpoint}], Interval: [{Interval}s]", _apiEndpoint, _pollIntervalSeconds);
 
         var client = _httpClientFactory.CreateClient("NOSAgentClient");
         client.Timeout = TimeSpan.FromSeconds(15);
@@ -51,14 +64,26 @@ public class TelemetryCollectorWorker : BackgroundService
 
         if (credentials == null)
         {
-            _logger.LogInformation("🛡️ No secure device credentials cached locally. Initiating Zero-Trust Device Registration...");
-            credentials = await RegisterAgentAsync(client, stoppingToken);
-            
-            while (credentials == null && !stoppingToken.IsCancellationRequested)
+            // If credentials were provisioned into appsettings.json by installer or automated deployment, restore them directly
+            var configDeviceId = configuration.GetValue<string>("AgentConfig:DeviceId");
+            var configDeviceToken = configuration.GetValue<string>("AgentConfig:DeviceToken");
+            if (!string.IsNullOrEmpty(configDeviceId) && !string.IsNullOrEmpty(configDeviceToken))
             {
-                _logger.LogWarning("⏳ Agent Onboarding failed or target unreachable. Retrying registration in 15 seconds...");
-                await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                _logger.LogInformation("🛡️ Restoring device credentials from configuration file for Device ID: [{Id}]...", configDeviceId);
+                credentials = new TokenCredentials(configDeviceId, configDeviceToken, DateTime.UtcNow.ToString("O"));
+                await _tokenStorageService.SaveCredentialsAsync(credentials, stoppingToken);
+            }
+            else
+            {
+                _logger.LogInformation("🛡️ No secure device credentials cached locally. Initiating Zero-Trust Device Registration...");
                 credentials = await RegisterAgentAsync(client, stoppingToken);
+                
+                while (credentials == null && !stoppingToken.IsCancellationRequested)
+                {
+                    _logger.LogWarning("⏳ Agent Onboarding failed or target unreachable. Retrying registration in 15 seconds...");
+                    await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                    credentials = await RegisterAgentAsync(client, stoppingToken);
+                }
             }
         }
         else
@@ -68,14 +93,14 @@ public class TelemetryCollectorWorker : BackgroundService
 
         if (stoppingToken.IsCancellationRequested || credentials == null) return;
 
-        // 2. 30-SECOND CONTINUOUS HEARTBEAT & TELEMETRY COLLECTION LOOP
-        _logger.LogInformation("⏰ Engaging persistent Phase 2B telemetry collection & heartbeat loop (Every {Seconds}s)...", _pollIntervalSeconds);
+        // 2. CONTINUOUS HEARTBEAT & TELEMETRY COLLECTION LOOP
+        _logger.LogInformation("⏰ Engaging persistent telemetry collection & heartbeat loop (Every {Seconds}s)...", _pollIntervalSeconds);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                // Dispatch Phase 2A Diagnostic Heartbeat
+                // Dispatch Diagnostic Heartbeat
                 var heartbeat = _diagnosticsService.GetHeartbeatMetrics(credentials.DeviceId);
                 var hbRequest = new HttpRequestMessage(HttpMethod.Post, $"{_apiEndpoint}/device/heartbeat")
                 {
@@ -89,6 +114,7 @@ public class TelemetryCollectorWorker : BackgroundService
                 {
                     _logger.LogInformation("💓 [Heartbeat Confirmed] CPU: {Cpu}%, RAM: {Ram}%, Uptime: {Up}s, IP: {Ip}", 
                         heartbeat.CpuUsage, heartbeat.RamUsage, heartbeat.Uptime, heartbeat.IpAddress);
+                    _schedulerService.RecordSuccess("Heartbeat");
                 }
                 else if (hbResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -102,7 +128,7 @@ public class TelemetryCollectorWorker : BackgroundService
                     _logger.LogWarning("⚠️ Heartbeat rejection from control plane. Status Code: {Status}", hbResponse.StatusCode);
                 }
 
-                // Dispatch Phase 2B Complete Telemetry Snapshot in UTC
+                // Dispatch Complete Telemetry Snapshot in UTC
                 var telemetry = _diagnosticsService.GetTelemetrySnapshot(credentials.DeviceId);
                 var telemetryRequest = new HttpRequestMessage(HttpMethod.Post, $"{_apiEndpoint}/telemetry")
                 {
@@ -114,8 +140,33 @@ public class TelemetryCollectorWorker : BackgroundService
 
                 if (telemetryResponse.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("📡 [Phase 2B Telemetry Ingested] CPU: {Cpu}% ({Temp}°C @ {Freq}MHz), RAM: {Mem}%, Disk: {Disk}%, Sockets: {Conns}, Procs: {Procs}",
+                    _logger.LogInformation("📡 [Telemetry Ingested] CPU: {Cpu}% ({Temp}°C @ {Freq}MHz), RAM: {Mem}%, Disk: {Disk}%, Sockets: {Conns}, Procs: {Procs}",
                         telemetry.CpuUsage, telemetry.CpuTemperature, telemetry.CpuFrequency, telemetry.MemoryUsagePercent, telemetry.DiskUsagePercent, telemetry.ActiveConnections, telemetry.RunningProcesses);
+
+                    _schedulerService.RecordSuccess("Telemetry");
+
+                    // Drain offline buffer on successful connection
+                    if (_offlineBufferService.Count > 0)
+                    {
+                        _logger.LogInformation("🔄 Server reachable! Draining {_Count} buffered offline telemetry snapshots...", _offlineBufferService.Count);
+                        var bufferedBatch = await _offlineBufferService.DequeueBatchAsync<TelemetrySnapshotPayload>(10);
+                        foreach (var buffered in bufferedBatch)
+                        {
+                            try
+                            {
+                                var drainRequest = new HttpRequestMessage(HttpMethod.Post, $"{_apiEndpoint}/telemetry")
+                                {
+                                    Content = JsonContent.Create(buffered)
+                                };
+                                drainRequest.Headers.Add("X-Device-Token", credentials.RegistrationToken);
+                                await client.SendAsync(drainRequest, stoppingToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning("Buffer drain item failed: {Message}", ex.Message);
+                            }
+                        }
+                    }
                 }
                 else if (telemetryResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -126,12 +177,20 @@ public class TelemetryCollectorWorker : BackgroundService
                 else
                 {
                     var errBody = await telemetryResponse.Content.ReadAsStringAsync(stoppingToken);
-                    _logger.LogWarning("⚠️ Telemetry snapshot rejection from control plane. Status Code: {Status}, Error: {Error}", telemetryResponse.StatusCode, errBody);
+                    _logger.LogWarning("⚠️ Telemetry snapshot rejection from control plane. Status Code: {Status}, Error: {Error}. Buffering snapshot locally.", telemetryResponse.StatusCode, errBody);
+                    await _offlineBufferService.EnqueueAsync(telemetry);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Network connectivity exception during 30s telemetry and heartbeat transmission cycle.");
+                _logger.LogError(ex, "❌ Network connectivity exception during telemetry transmission. Buffering snapshot locally.");
+                try
+                {
+                    var telemetry = _diagnosticsService.GetTelemetrySnapshot(credentials.DeviceId);
+                    await _offlineBufferService.EnqueueAsync(telemetry);
+                }
+                catch {}
+                _schedulerService.RecordFailure("Telemetry", ex);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken);
@@ -145,7 +204,7 @@ public class TelemetryCollectorWorker : BackgroundService
         try
         {
             var uuid = _tokenStorageService.GetOrCreateStableMachineUuid();
-            var payload = _diagnosticsService.GetRegistrationInfo(uuid, _organizationId);
+            var payload = _diagnosticsService.GetRegistrationInfo(uuid, _registrationKey);
 
             _logger.LogInformation("Transmitting Phase 2B onboarding profile for Hardware UUID: [{Uuid}], Host: [{Host}]...", uuid, payload.Hostname);
             
@@ -179,3 +238,4 @@ public class TelemetryCollectorWorker : BackgroundService
         }
     }
 }
+

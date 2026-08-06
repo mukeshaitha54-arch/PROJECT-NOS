@@ -7,37 +7,78 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyCompress from '@fastify/compress';
-import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import * as crypto from 'crypto';
 import { AppModule } from './app.module';
+import { LoggerService } from './common/logger/logger.service';
+
+/**
+ * Fail-fast startup secret guard.
+ * Throws immediately in production if critical secrets are absent —
+ * prevents booting with insecure defaults.
+ */
+function validateProductionSecrets(): void {
+  if (process.env.NODE_ENV !== 'production') return;
+  const required = ['JWT_SECRET', 'REFRESH_TOKEN_SECRET', 'DATABASE_URL'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    throw new Error(
+      `[NOS] FATAL: Missing production secrets: [${missing.join(', ')}]. ` +
+      `Set all required environment variables before starting in production mode.`,
+    );
+  }
+}
 
 async function bootstrap() {
+  // Guard production secrets before any module initialisation
+  validateProductionSecrets();
+
   const adapter = new FastifyAdapter({
-    logger: false, // Defer logging orchestration to nestjs-pino
+    logger: false, // Handled by Winston
     trustProxy: true,
   });
 
-  // Custom Fastify hook for Request ID correlation middleware
+  const appLogger = new LoggerService();
+  appLogger.setContext('Bootstrap');
+
+  // Custom Fastify hook for Request ID correlation middleware (Native Pattern)
   adapter.getInstance().addHook('onRequest', (req, res, done) => {
-    const headerId = req.headers['x-request-id'] || req.headers['x-correlation-id'];
-    const requestId = Array.isArray(headerId) ? headerId[0] : (headerId || `nos-req-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`);
-    req.headers['x-request-id'] = requestId;
-    res.header('x-request-id', requestId);
+    const headerId = req.headers['x-trace-id'] || req.headers['x-correlation-id'];
+    const traceId = Array.isArray(headerId) ? headerId[0] : (headerId || crypto.randomUUID());
+    
+    req.headers['x-trace-id'] = traceId;
+    res.header('x-trace-id', traceId);
+
+    const method = req.method;
+    const path = req.originalUrl || req.url;
+    const ip = req.ip || req.socket?.remoteAddress;
+    const userAgent = req.headers['user-agent'] || '';
+
+    appLogger.log(`Incoming Request: ${method} ${path}`, {
+      traceId,
+      method,
+      path,
+      ip,
+      userAgent
+    });
+
     done();
   });
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     adapter,
-    { bufferLogs: true },
+    { bufferLogs: true, logger: appLogger },
   );
+
+  // Enable Graceful Shutdown Hooks
+  app.enableShutdownHooks();
 
   // Wire enterprise Socket.IO realtime adapter
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  // Integrate Pino structured logging
-  app.useLogger(app.get(Logger));
-  app.useGlobalInterceptors(new LoggerErrorInterceptor());
+  // Integrate Winston structured logging globally
+  app.useLogger(appLogger);
 
   // Security headers & compression middleware
   await app.register(fastifyHelmet, {
@@ -52,6 +93,7 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
@@ -60,14 +102,26 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix);
   app.enableVersioning({ type: VersioningType.URI });
 
-  // OpenAPI Swagger Documentation setup
+  // OpenAPI Swagger Documentation — Phase 7 Enterprise Edition
   const config = new DocumentBuilder()
-    .setTitle('NOS (Network Operating System) API')
+    .setTitle('NOS — Network Operations & Security Platform API')
     .setDescription(
-      'Production-ready enterprise telemetry and network node management API foundation.',
+      'Enterprise-grade telemetry, network node management, alerting, inventory, and multi-tenant administration API. ' +
+      'Powering real-time NOC operations for hundreds of monitored endpoints.',
     )
-    .setVersion('0.1.0')
+    .setVersion('7.0.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT')
+    .addApiKey({ type: 'apiKey', in: 'header', name: 'x-api-key' }, 'ApiKey')
     .addTag('Health', 'System diagnostic and database liveliness endpoints')
+    .addTag('Authentication & Identity', 'Login, registration, token refresh, password reset')
+    .addTag('Devices', 'Device registration, heartbeat, and lifecycle management')
+    .addTag('Telemetry', 'Real-time CPU, RAM, Disk, and Network telemetry ingest and retrieval')
+    .addTag('Alerts', 'Alert rules, engine evaluation, incident lifecycle')
+    .addTag('Inventory', 'Hardware, software, network, and security asset discovery')
+    .addTag('Dashboard', 'Operational NOC overview and device status aggregations')
+    .addTag('Realtime', 'Socket.IO gateway and room management')
+    .addTag('Users', 'User management and profile operations')
+    .addTag('Tenant', 'Multi-tenant organization, roles, API keys, and governance')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
@@ -77,8 +131,10 @@ async function bootstrap() {
 
   await app.listen(port, host);
   const url = await app.getUrl();
-  console.log(`🚀 NOS Backend Fastify Server operational at: ${url}/${apiPrefix}`);
-  console.log(`📚 OpenAPI Swagger docs accessible at: ${url}/docs`);
+  appLogger.log(`🚀 NOS Backend Fastify Server operational at: ${url}/${apiPrefix}`);
+  appLogger.log(`📚 OpenAPI Swagger docs accessible at: ${url}/docs`);
+  appLogger.log(`🔒 Production secrets validation: ${process.env.NODE_ENV === 'production' ? 'ENFORCED' : 'DEVELOPMENT MODE'}`);
 }
 
 bootstrap();
+
