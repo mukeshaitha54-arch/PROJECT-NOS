@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { RealtimeProvider } from "@/features/realtime/contexts/socket.provider";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Providers } from './providers';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "NOS | Network Operating System",
-  description: "Production-ready enterprise network operating system monitoring and management dashboard.",
+  title: 'NOS — Neural Operating System',
+  description: 'AI-assisted Network Operations & Security Platform',
 };
 
 export default function RootLayout({
@@ -18,11 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
-        <RealtimeProvider>
+        <Providers>
           <main className="min-h-screen flex flex-col justify-between">
             {children}
           </main>
-        </RealtimeProvider>
+        </Providers>
       </body>
     </html>
   );

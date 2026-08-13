@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Inject } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Inject, Query, Delete } from '@nestjs/common';
 import { RegistrationKeyService, CreateRegistrationKeyDto } from '../services/registration-key.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -50,29 +50,26 @@ export class RegistrationKeyController {
     }
 
     return {
+      plainKey: result.key,
       success: true,
       data: result,
       message: 'IMPORTANT: The plain key will only be shown this one time.',
     };
   }
 
-  @Get('organization/:orgId')
-  async getKeys(@Param('orgId') orgId: string) {
+  @Get()
+  async getKeys(@Query('organizationId') orgId: string) {
     const keys = await this.registrationKeyService.getKeysByOrganization(orgId);
-    return {
-      success: true,
-      data: keys,
-    };
+    return keys; // Return the array directly or wrapped depending on what frontend expects. The user's code just says api.get(...)
   }
 
-  @Post(':id/revoke')
+  @Delete(':id')
   async revokeKey(
     @Param('id') id: string,
-    @Body('reason') reason: string,
     @CurrentUser() user: any,
   ) {
     // In a real implementation we would fetch the key first to get the orgId for the audit log
-    const revoked = await this.registrationKeyService.revokeKey(id, user.id, reason);
+    const revoked = await this.registrationKeyService.revokeKey(id, user.id, 'Revoked via UI');
 
     await this.auditLogRepo.record({
       organizationId: revoked.organizationId, correlationId: 'N/A',
@@ -81,7 +78,7 @@ export class RegistrationKeyController {
       action: 'REGISTRATION_KEY_REVOKED',
       resourceType: 'RegistrationKey',
       resourceId: id,
-      reason: reason,
+      reason: 'Revoked via UI',
       ipAddress: user.ipAddress || 'unknown',
       browser: user.browser || 'unknown',
       details: {

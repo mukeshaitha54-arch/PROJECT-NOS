@@ -1,8 +1,66 @@
-import { IsNumber, IsString, IsOptional, Min, Max, IsInt } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsOptional,
+  Min,
+  Max,
+  IsInt,
+  IsArray,
+  IsObject,
+  ValidateNested,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { TelemetrySnapshot as PrismaTelemetrySnapshot } from '@prisma/client';
 import { TelemetrySnapshot as TelemetrySnapshotContract } from '@nos/shared-types';
+
+/* ─────────────────────────────────────────────────────────────
+   Nested DTOs for agent-sent network / service metadata
+   ───────────────────────────────────────────────────────────── */
+
+class RunningServiceDto {
+  @IsString()
+  name!: string;
+
+  @IsString()
+  status!: string;
+
+  @IsString()
+  startType!: string;
+}
+
+class GatewayDto {
+  @IsOptional()
+  @IsString()
+  ipv4?: string;
+
+  @IsOptional()
+  @IsString()
+  ipv6?: string;
+
+  @IsOptional()
+  @IsString()
+  mac?: string;
+}
+
+class DnsDto {
+  @IsOptional()
+  @IsString()
+  primary?: string;
+
+  @IsOptional()
+  @IsString()
+  secondary?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  servers?: string[];
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Main Telemetry Ingest DTO
+   ───────────────────────────────────────────────────────────── */
 
 export class SubmitTelemetryDto {
   @ApiPropertyOptional({ description: 'Explicit device UUID if differing from authorization token state' })
@@ -133,7 +191,25 @@ export class SubmitTelemetryDto {
   @IsOptional()
   @IsString()
   timestamp?: string;
+
+  /* ─── Agent-sent optional fields — simplified validation ─── */
+
+  @ApiPropertyOptional({ description: 'List of running Windows services' })
+  @IsOptional()
+  runningServices?: any;
+
+  @ApiPropertyOptional({ description: 'Default gateway info (IPv4, IPv6, MAC)' })
+  @IsOptional()
+  gateway?: any;
+
+  @ApiPropertyOptional({ description: 'DNS configuration' })
+  @IsOptional()
+  dns?: any;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Query DTO
+   ───────────────────────────────────────────────────────────── */
 
 export class TelemetryHistoryQueryDto {
   @ApiPropertyOptional({ description: 'ISO 8601 UTC start filter timestamp' })
@@ -161,10 +237,10 @@ export class TelemetryHistoryQueryDto {
   page?: number;
 }
 
-/**
- * Transforms raw Prisma ORM telemetry database entities into strict domain DTO response contracts.
- * Ensures zero direct exposure of Prisma internals and enforces UTC ISO formatting.
- */
+/* ─────────────────────────────────────────────────────────────
+   Mapper: Prisma entity → API contract
+   ───────────────────────────────────────────────────────────── */
+
 export function toTelemetrySnapshotDto(entity: PrismaTelemetrySnapshot): TelemetrySnapshotContract {
   return {
     id: entity.id,

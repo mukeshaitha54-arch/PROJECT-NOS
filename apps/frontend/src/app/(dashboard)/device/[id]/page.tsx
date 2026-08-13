@@ -15,7 +15,7 @@ import { DeviceClaimWizard } from '@/features/device/components/DeviceClaimWizar
 
 type TimeRangeMode = '1h' | '24h' | '7d' | 'custom' | 'all';
 
-export default function DeviceOperationalDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function DeviceOperationalDetailPageContent({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const deviceId = resolvedParams.id;
 
@@ -596,4 +596,10 @@ export default function DeviceOperationalDetailPage({ params }: { params: Promis
       </div>
     </div>
   );
+}
+
+import nextDynamic from 'next/dynamic';
+const DynamicDeviceOperationalDetailPage = nextDynamic(() => Promise.resolve(DeviceOperationalDetailPageContent), { ssr: false });
+export default function DeviceOperationalDetailPage(props: any) {
+  return <DynamicDeviceOperationalDetailPage {...props} />;
 }

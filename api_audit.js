@@ -69,7 +69,7 @@ frontendEndpoints.forEach(fe => {
   const feNorm = normalizeRoute(fe.route);
   // Find matching backend route
   const match = backendEndpoints.find(be => be.method === fe.method && normalizeRoute(be.route) === feNorm);
-  
+
   if (match) {
     table.push(`| ${fe.file} | \`${fe.method} ${fe.route}\` | \`${fe.method} ${match.route}\` | \`${fe.method} ${match.route}\` | ✅ Matched |`);
   } else {

@@ -58,7 +58,7 @@ export class PrismaAlertRuleRepository implements IAlertRuleRepository {
   }
 
   async findByName(name: string): Promise<AlertRule | null> {
-    return this.prisma.alertRule.findUnique({ where: { name } });
+    return this.prisma.alertRule.findFirst({ where: { name } });
   }
 
   async findMany(enabledOnly = false, metric?: string): Promise<AlertRule[]> {

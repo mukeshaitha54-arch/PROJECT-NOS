@@ -45,7 +45,7 @@ async function bootstrap() {
   adapter.getInstance().addHook('onRequest', (req, res, done) => {
     const headerId = req.headers['x-trace-id'] || req.headers['x-correlation-id'];
     const traceId = Array.isArray(headerId) ? headerId[0] : (headerId || crypto.randomUUID());
-    
+
     req.headers['x-trace-id'] = traceId;
     res.header('x-trace-id', traceId);
 
@@ -81,18 +81,18 @@ async function bootstrap() {
   app.useLogger(appLogger);
 
   // Security headers & compression middleware
-  await app.register(fastifyHelmet, {
+  await app.register(fastifyHelmet as any, {
     contentSecurityPolicy: false, // Adjusted for local OpenAPI doc viewer compatibility
   });
-  await app.register(fastifyCompress, { encodings: ['gzip', 'deflate'] });
+  await app.register(fastifyCompress as any, { encodings: ['gzip', 'deflate'] });
 
   // Enable CORS & Global validation pipes
   app.enableCors({ origin: '*', credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
+      forbidNonWhitelisted: false,
       transform: true,
-      forbidNonWhitelisted: true,
       transformOptions: { enableImplicitConversion: true },
     }),
   );

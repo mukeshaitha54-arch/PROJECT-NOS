@@ -55,7 +55,7 @@ namespace NOS.Agent.Services
             }
             catch (Exception ex)
             {
-                await _eventLog.LogAsync("Failed to initialize performance counters", EventLogEntryType.Warning, 2000, ex);
+                _eventLog.WriteEvent(2000, $"Failed to initialize performance counters: {ex.Message}", EventLogEntryType.Warning);
             }
 
             while (!stoppingToken.IsCancellationRequested)
@@ -81,7 +81,7 @@ namespace NOS.Agent.Services
                             _config.SecurityScanIntervalSeconds *= 2;
                             _config.MaxConcurrentCollections = 1;
 
-                            await _eventLog.LogAsync($"CPU throttling activated. CPU at {cpuPercent}%. Intervals doubled.", EventLogEntryType.Warning, 2000);
+                            _eventLog.WriteEvent(2000, $"CPU throttling activated. CPU at {cpuPercent}%. Intervals doubled.", EventLogEntryType.Warning);
                         }
                     }
                     else
@@ -92,7 +92,7 @@ namespace NOS.Agent.Services
                     // RAM Check
                     if (workingSetMb > _config.MaxRamMb)
                     {
-                        await _eventLog.LogAsync($"Memory limit exceeded ({workingSetMb} MB > {_config.MaxRamMb} MB). Emergency throttle.", EventLogEntryType.Error, 1001);
+                        _eventLog.WriteEvent(1001, $"Memory limit exceeded ({workingSetMb} MB > {_config.MaxRamMb} MB). Emergency throttle.", EventLogEntryType.Error);
                         await VacuumDatabaseAsync(stoppingToken);
                         
                         // Collectors can check IsThrottled or we use an emergency flag
@@ -103,17 +103,17 @@ namespace NOS.Agent.Services
                     if (availableRamMb < 100 && !_isSurvivalMode)
                     {
                         _isSurvivalMode = true;
-                        await _eventLog.LogAsync($"Survival mode activated. System RAM low ({availableRamMb} MB).", EventLogEntryType.Warning, 2000);
+                        _eventLog.WriteEvent(2000, $"Survival mode activated. System RAM low ({availableRamMb} MB).", EventLogEntryType.Warning);
                     }
                     else if (availableRamMb > 200 && _isSurvivalMode)
                     {
                         _isSurvivalMode = false;
-                        await _eventLog.LogAsync($"Survival mode deactivated. System RAM restored ({availableRamMb} MB).", EventLogEntryType.Information, 3000);
+                        _eventLog.WriteEvent(3000, $"Survival mode deactivated. System RAM restored ({availableRamMb} MB).", EventLogEntryType.Information);
                     }
                 }
                 catch (Exception ex)
                 {
-                    await _eventLog.LogAsync("Error during resource monitoring", EventLogEntryType.Error, 1001, ex);
+                    _eventLog.WriteEvent(1001, $"Error during resource monitoring: {ex.Message}", EventLogEntryType.Error);
                 }
             }
 
@@ -131,7 +131,7 @@ namespace NOS.Agent.Services
             }
             catch (Exception ex)
             {
-                await _eventLog.LogAsync("Failed to VACUUM SQLite database", EventLogEntryType.Warning, 2000, ex);
+                _eventLog.WriteEvent(2000, $"Failed to VACUUM SQLite database: {ex.Message}", EventLogEntryType.Warning);
             }
         }
     }

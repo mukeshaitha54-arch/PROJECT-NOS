@@ -7,7 +7,7 @@ namespace NOS.Agent.Services
 {
     public interface IOutboxQueueService
     {
-        Task EnqueueAsync(string messageType, string payload, int priority, CancellationToken cancellationToken = default);
+        Task EnqueueAsync(string messageType, object payload, int priority, CancellationToken cancellationToken = default);
         Task<List<OutboxMessage>> GetPendingMessagesAsync(int batchSize, CancellationToken cancellationToken = default);
         Task MarkDeliveredAsync(int messageId, CancellationToken cancellationToken = default);
         Task MarkFailedAsync(int messageId, string error, CancellationToken cancellationToken = default);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Key, Copy, Download, CheckCircle2 } from 'lucide-react';
-import { Button } from '../../../../../../components/ui/button';
-import { fleetApi } from '../../../../../fleet/services/fleet.api';
+import { Button } from "@/components/ui/button";
+import { fleetApi } from "@/fleet/services/fleet.api";
 
 interface GenerateKeyModalProps {
   isOpen: boolean;

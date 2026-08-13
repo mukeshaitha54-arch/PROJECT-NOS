@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NOS.Agent.Data;
 using NOS.Agent.Models;
 
@@ -14,189 +13,185 @@ namespace NOS.Agent.Services
 {
     public class OutboxQueueService : IOutboxQueueService
     {
-        private readonly IServiceScopeFactory _scopeFactory;
-        private static readonly SemaphoreSlim _enqueueLock = new SemaphoreSlim(1, 1);
-        private readonly JsonSerializerOptions _jsonOptions;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<OutboxQueueService> _logger;
 
-        public OutboxQueueService(IServiceScopeFactory scopeFactory)
+        public OutboxQueueService(IServiceProvider serviceProvider, ILogger<OutboxQueueService> logger)
         {
-            _scopeFactory = scopeFactory;
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false
-            };
+            _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         public async Task EnqueueAsync(string messageType, object payload, int priority, CancellationToken cancellationToken = default)
         {
-            var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-            
-            string? deviceId = null;
-            string? tenantId = null;
-
-            try
+            await ExecuteWithRetryAsync(async () =>
             {
-                var node = JsonNode.Parse(payloadJson);
-                if (node != null)
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                var message = new OutboxMessage
                 {
-                    deviceId = node["deviceId"]?.ToString();
-                    tenantId = node["tenantId"]?.ToString();
-                }
-            }
-            catch
-            {
-                // Ignore parse errors, fields will remain null
-            }
-
-            var message = new OutboxMessage
-            {
-                MessageType = messageType,
-                Payload = payloadJson,
-                Priority = priority,
-                DeviceId = deviceId,
-                TenantId = tenantId
-            };
-
-            await _enqueueLock.WaitAsync(cancellationToken);
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-                await context.InitializeAsync(cancellationToken);
-
-                var pendingCount = await context.OutboxMessages
-                    .CountAsync(m => m.DeliveredAt == null && !m.IsDeadLetter, cancellationToken);
-
-                if (pendingCount >= 10000)
-                {
-                    // Drop oldest lowest-priority message
-                    var messageToDrop = await context.OutboxMessages
-                        .Where(m => m.DeliveredAt == null && !m.IsDeadLetter)
-                        .OrderByDescending(m => m.Priority)
-                        .ThenBy(m => m.CreatedAt)
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (messageToDrop != null)
-                    {
-                        context.OutboxMessages.Remove(messageToDrop);
-                    }
-                }
-
-                context.OutboxMessages.Add(message);
-                await context.SaveChangesAsync(cancellationToken);
-            }
-            finally
-            {
-                _enqueueLock.Release();
-            }
+                    MessageType = messageType,
+                    Payload = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions 
+                    { 
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase 
+                    }),
+                    Priority = priority,
+                    CreatedAt = DateTime.UtcNow,
+                    NextRetryAt = DateTime.UtcNow,
+                    RetryCount = 0,
+                    IsDeadLetter = false
+                };
+                dbContext.OutboxMessages.Add(message);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                
+                _logger.LogDebug("Enqueued message {MessageType} with priority {Priority}", messageType, priority);
+                return true;
+            });
         }
 
         public async Task<List<OutboxMessage>> GetPendingMessagesAsync(int batchSize, CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-            await context.InitializeAsync(cancellationToken);
-
-            var now = DateTime.UtcNow;
-
-            return await context.OutboxMessages
-                .Where(m => m.DeliveredAt == null 
-                            && !m.IsDeadLetter 
-                            && (m.NextRetryAt == null || m.NextRetryAt <= now))
-                .OrderBy(m => m.Priority)
-                .ThenBy(m => m.NextRetryAt)
-                .ThenBy(m => m.CreatedAt)
-                .Take(batchSize)
-                .ToListAsync(cancellationToken);
+            return await ExecuteWithRetryAsync(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                return await dbContext.OutboxMessages
+                    .Where(m => m.DeliveredAt == null && !m.IsDeadLetter && m.NextRetryAt <= DateTime.UtcNow)
+                    .OrderBy(m => m.Priority)
+                    .ThenBy(m => m.CreatedAt)
+                    .Take(batchSize)
+                    .ToListAsync(cancellationToken);
+            });
         }
 
         public async Task MarkDeliveredAsync(int messageId, CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-            await context.InitializeAsync(cancellationToken);
-
-            var message = await context.OutboxMessages.FindAsync(new object[] { messageId }, cancellationToken);
-            if (message != null)
+            await ExecuteWithRetryAsync(async () =>
             {
-                message.DeliveredAt = DateTime.UtcNow;
-                await context.SaveChangesAsync(cancellationToken);
-            }
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                var message = await dbContext.OutboxMessages.FindAsync(new object[] { messageId }, cancellationToken);
+                if (message != null)
+                {
+                    message.DeliveredAt = DateTime.UtcNow;
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+                return true;
+            });
         }
 
         public async Task MarkFailedAsync(int messageId, string error, CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-            await context.InitializeAsync(cancellationToken);
-
-            var message = await context.OutboxMessages.FindAsync(new object[] { messageId }, cancellationToken);
-            if (message != null)
+            await ExecuteWithRetryAsync(async () =>
             {
-                message.LastError = error.Length > 512 ? error.Substring(0, 512) : error;
-                message.RetryCount++;
-
-                if (message.RetryCount >= 10)
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                var message = await dbContext.OutboxMessages.FindAsync(new object[] { messageId }, cancellationToken);
+                if (message != null)
                 {
-                    message.IsDeadLetter = true;
+                    message.RetryCount++;
+                    message.LastError = error;
+                    message.NextRetryAt = DateTime.UtcNow.AddSeconds(Math.Pow(2, message.RetryCount)); // Exponential backoff
+                    
+                    if (message.RetryCount >= 10)
+                    {
+                        var dlqMsg = new DeadLetterMessage
+                        {
+                            MessageType = message.MessageType,
+                            Payload = message.Payload,
+                            CreatedAt = message.CreatedAt,
+                            FailedAt = DateTime.UtcNow,
+                            FinalError = error,
+                            Priority = message.Priority,
+                            DeviceId = message.DeviceId,
+                            TenantId = message.TenantId
+                        };
+                        dbContext.DeadLetterMessages.Add(dlqMsg);
+                        dbContext.OutboxMessages.Remove(message);
+                    }
+                    await dbContext.SaveChangesAsync(cancellationToken);
                 }
-                else
-                {
-                    var backoffSeconds = Math.Min(5 * Math.Pow(2, message.RetryCount), 3600);
-                    message.NextRetryAt = DateTime.UtcNow.AddSeconds(backoffSeconds);
-                }
-
-                await context.SaveChangesAsync(cancellationToken);
-            }
+                return true;
+            });
         }
 
         public async Task<int> GetPendingCountAsync(CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-            await context.InitializeAsync(cancellationToken);
-
-            return await context.OutboxMessages
-                .CountAsync(m => m.DeliveredAt == null && !m.IsDeadLetter, cancellationToken);
+            return await ExecuteWithRetryAsync(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                return await dbContext.OutboxMessages
+                    .CountAsync(m => m.DeliveredAt == null && !m.IsDeadLetter, cancellationToken);
+            });
         }
 
         public async Task PurgeOldMessagesAsync(int maxAgeDays, CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-            await context.InitializeAsync(cancellationToken);
-
-            var cutoff = DateTime.UtcNow.AddDays(-maxAgeDays);
-            
-            var oldMessages = await context.OutboxMessages
-                .Where(m => m.DeliveredAt != null && m.DeliveredAt < cutoff)
-                .ToListAsync(cancellationToken);
-
-            if (oldMessages.Any())
+            await ExecuteWithRetryAsync(async () =>
             {
-                context.OutboxMessages.RemoveRange(oldMessages);
-                await context.SaveChangesAsync(cancellationToken);
-            }
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                var cutoff = DateTime.UtcNow.AddDays(-maxAgeDays);
+                var oldMessages = await dbContext.OutboxMessages
+                    .Where(m => m.DeliveredAt != null && m.DeliveredAt < cutoff)
+                    .ToListAsync(cancellationToken);
+                
+                dbContext.OutboxMessages.RemoveRange(oldMessages);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                
+                _logger.LogInformation("Purged {Count} old delivered messages", oldMessages.Count);
+                return true;
+            });
         }
 
         public async Task PurgeDeadLettersAsync(CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
-            await context.InitializeAsync(cancellationToken);
-
-            var cutoff = DateTime.UtcNow.AddDays(-7);
-            
-            var deadLetters = await context.OutboxMessages
-                .Where(m => m.IsDeadLetter && m.CreatedAt < cutoff)
-                .ToListAsync(cancellationToken);
-
-            if (deadLetters.Any())
+            await ExecuteWithRetryAsync(async () =>
             {
-                context.OutboxMessages.RemoveRange(deadLetters);
-                await context.SaveChangesAsync(cancellationToken);
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                var deadLetters = await dbContext.OutboxMessages
+                    .Where(m => m.IsDeadLetter)
+                    .ToListAsync(cancellationToken);
+                
+                dbContext.OutboxMessages.RemoveRange(deadLetters);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                
+                _logger.LogInformation("Purged {Count} dead letter messages", deadLetters.Count);
+                return true;
+            });
+        }
+
+        private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
+        {
+            int maxRetries = 3;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                try
+                {
+                    return await action();
+                }
+                catch (Microsoft.Data.Sqlite.SqliteException ex) when (i < maxRetries - 1)
+                {
+                    _logger.LogWarning(ex, "SQLite operation failed. Retrying in 100ms. Attempt {Attempt}", i + 1);
+                    await Task.Delay(100);
+                }
+                catch (DbUpdateException ex) when (i < maxRetries - 1)
+                {
+                    _logger.LogWarning(ex, "DbUpdateException failed. Retrying in 100ms. Attempt {Attempt}", i + 1);
+                    await Task.Delay(100);
+                }
             }
+            // Let it throw on the final attempt
+            return await action();
         }
     }
 }

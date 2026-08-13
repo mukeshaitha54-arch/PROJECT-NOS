@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Key, Plus, Copy, Download, RefreshCw, XCircle, Search, Filter } from 'lucide-react';
-import { Button } from '../../../../components/ui/button';
-import { fleetApi } from '../../../../features/fleet/services/fleet.api';
-import { useAuthStore } from '../../../../features/auth/stores/auth.store';
+import { Button } from '@/components/ui/button';
+import { fleetApi } from '@/fleet/services/fleet.api';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { GenerateKeyModal } from './components/GenerateKeyModal';
 
 export default function RegistrationKeysPage() {

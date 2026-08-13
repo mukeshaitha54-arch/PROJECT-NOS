@@ -132,20 +132,7 @@ export class DeviceController {
     };
   }
 
-  @Get(':id/timeline')
-  @ApiOperation({ summary: 'Retrieve permanent device operational timeline', description: 'Returns chronologically sorted, paginated event history for device lifecycle, heartbeats, alerts, and inventory changes.' })
-  @ApiResponse({ status: 200, description: 'Device timeline event history returned.' })
-  async getDeviceTimeline(
-    @Param('id') id: string,
-    @Body('page') page?: number,
-    @Body('limit') limit?: number,
-  ) {
-    const data = await this.deviceService.getDeviceTimeline(id, page || 1, limit || 20);
-    return {
-      success: true,
-      data,
-    };
-  }
+
 
   @Post(':id/maintenance')
   @HttpCode(HttpStatus.OK)

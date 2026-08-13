@@ -11,7 +11,7 @@ import {
 import { useRealtimeDashboard } from '@/features/realtime/hooks/useRealtimeDashboard';
 import { RealtimeStatusBadge } from '@/features/realtime/components/RealtimeStatusBadge';
 
-export default function OperationalDashboardPage() {
+function OperationalDashboardPageContent() {
   const [overview, setOverview] = useState<DashboardOverviewResponse | null>(null);
   const [devices, setDevices] = useState<DashboardDeviceRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -388,4 +388,10 @@ export default function OperationalDashboardPage() {
       </div>
     </main>
   );
+}
+
+import nextDynamic from 'next/dynamic';
+const DynamicOperationalDashboardPage = nextDynamic(() => Promise.resolve(OperationalDashboardPageContent), { ssr: false });
+export default function OperationalDashboardPage(props: any) {
+  return <DynamicOperationalDashboardPage {...props} />;
 }

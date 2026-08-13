@@ -9,10 +9,10 @@ namespace NOS.Agent.Configuration
         [Required]
         public string ServerUrl { get; set; } = string.Empty;
 
-        [Required]
-        [MinLength(8)]
+        
+        
         [MaxLength(64)]
-        public string DeviceId { get; set; } = string.Empty;
+        public string DeviceId { get; set; } = "";
 
         [Required]
         [MinLength(4)]
@@ -54,27 +54,39 @@ namespace NOS.Agent.Configuration
 
         public string SqliteDbPath { get; set; } = @"C:\ProgramData\NOS\Agent\outbox.db";
 
-        public void Validate()
+        public ResourceGuardrailsConfig ResourceGuardrails { get; set; } = new ResourceGuardrailsConfig();
+
+        public class ResourceGuardrailsConfig
         {
-            var context = new ValidationContext(this, serviceProvider: null, items: null);
-            Validator.ValidateObject(this, context, validateAllProperties: true);
-
-            if (HeartbeatIntervalSeconds >= TelemetryIntervalSeconds)
-            {
-                throw new ValidationException("HeartbeatIntervalSeconds must be less than TelemetryIntervalSeconds.");
-            }
-
-            if (!ServerUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ValidationException("ServerUrl must start with https://");
-            }
-
-            if (ApiKey == "YOUR_API_KEY_HERE" || ApiKey.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ValidationException("ApiKey cannot be placeholder text.");
-            }
+            public double MaxCpuPercent { get; set; } = 3.0;
+            public double MaxRamMB { get; set; } = 128;
+            public double EmergencyRamMB { get; set; } = 200;
+            public int ThrottleTelemetryIntervalSec { get; set; } = 600;
+            public int ThrottleHeartbeatIntervalSec { get; set; } = 120;
         }
 
+        public void Validate()
+    {   
+    var context = new ValidationContext(this, serviceProvider: null, items: null);
+    Validator.ValidateObject(this, context, validateAllProperties: true);
+
+    if (HeartbeatIntervalSeconds >= TelemetryIntervalSeconds)
+    {
+        throw new ValidationException("HeartbeatIntervalSeconds must be less than TelemetryIntervalSeconds.");
+    }
+
+    // Allow http:// for local development, https:// for production
+    if (!ServerUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
+        !ServerUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ValidationException("ServerUrl must start with http:// or https://.");
+    }
+
+    if (ApiKey == "YOUR_API_KEY_HERE" || ApiKey.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new ValidationException("ApiKey cannot be placeholder text.");
+    }
+    }
         public void Normalize()
         {
             if (ServerUrl.EndsWith("/"))

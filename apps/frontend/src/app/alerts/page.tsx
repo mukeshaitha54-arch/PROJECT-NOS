@@ -11,7 +11,7 @@ import {
   RefreshCw, Play, RotateCcw, ChevronRight, Server, Flame, Activity, CheckSquare, Square, Bell, Lock
 } from 'lucide-react';
 
-export default function EnterpriseAlertsCommandCenterPage() {
+function EnterpriseAlertsCommandCenterPageContent() {
   const [activeTab, setActiveTab] = useState<'INCIDENTS' | 'SIMULATOR' | 'DLQ'>('INCIDENTS');
   const [alerts, setAlerts] = useState<any[]>([]);
   const [statistics, setStatistics] = useState<AlertStatisticsDto | null>(null);
@@ -825,4 +825,10 @@ export default function EnterpriseAlertsCommandCenterPage() {
       )}
     </div>
   );
+}
+
+import nextDynamic from 'next/dynamic';
+const DynamicEnterpriseAlertsCommandCenterPage = nextDynamic(() => Promise.resolve(EnterpriseAlertsCommandCenterPageContent), { ssr: false });
+export default function EnterpriseAlertsCommandCenterPage(props: any) {
+  return <DynamicEnterpriseAlertsCommandCenterPage {...props} />;
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +16,8 @@ namespace NOS.Agent.Services
         private readonly ICredentialManagerService _credentialManager;
         private readonly IWindowsEventLogService _eventLogService;
         private readonly AgentConfiguration _config;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<OutboxDispatcherService> _logger;
 
         private int _consecutiveNetworkErrors = 0;
         private DateTime _circuitBreakerUntil = DateTime.MinValue;
@@ -27,14 +27,15 @@ namespace NOS.Agent.Services
             ICredentialManagerService credentialManager,
             IWindowsEventLogService eventLogService,
             IOptions<AgentConfiguration> configOptions,
-            HttpClient httpClient)
+            IHttpClientFactory httpClientFactory,
+            ILogger<OutboxDispatcherService> logger)
         {
             _queueService = queueService;
             _credentialManager = credentialManager;
             _eventLogService = eventLogService;
             _config = configOptions.Value;
-            _httpClient = httpClient;
-            _httpClient.Timeout = TimeSpan.FromSeconds(30);
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -47,7 +48,7 @@ namespace NOS.Agent.Services
                 }
                 catch (Exception ex)
                 {
-                    await _eventLogService.LogAsync("Unhandled exception in OutboxDispatcherService", EventLogEntryType.Error, 1001, ex);
+                    _eventLogService.WriteEvent(1001, $"Unhandled exception in OutboxDispatcherService: {ex.Message}\n{ex.StackTrace}", EventLogEntryType.Error);
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
@@ -56,22 +57,32 @@ namespace NOS.Agent.Services
 
         public async Task DispatchPendingMessagesAsync(CancellationToken cancellationToken = default)
         {
-            if (DateTime.UtcNow < _circuitBreakerUntil)
+            bool isHalfOpen = false;
+            if (_consecutiveNetworkErrors >= 5)
             {
-                return;
+                if (DateTime.UtcNow < _circuitBreakerUntil)
+                {
+                    return;
+                }
+                isHalfOpen = true;
+                _logger.LogWarning("Circuit breaker HALF-OPEN — attempting 1 test message");
             }
 
-            var messages = await _queueService.GetPendingMessagesAsync(50, cancellationToken);
+            int batchSize = isHalfOpen ? 1 : 10;
+            var messages = await _queueService.GetPendingMessagesAsync(batchSize, cancellationToken);
             if (messages.Count == 0) return;
 
             var token = await _credentialManager.GetDeviceTokenAsync();
+            // Fallback to in-memory token if credential manager read fails
             if (string.IsNullOrEmpty(token))
             {
-                await _eventLogService.LogAsync("Authentication failure: Missing device token in credential manager", EventLogEntryType.Error, 1000);
+                token = DeviceRegistrationService.CurrentToken;
+            }
+            if (string.IsNullOrEmpty(token))
+            {
+                _eventLogService.WriteEvent(1000, "Authentication failure: No device token available", EventLogEntryType.Error);
                 return;
             }
-
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             foreach (var message in messages)
             {
@@ -81,15 +92,20 @@ namespace NOS.Agent.Services
                 string endpoint = GetEndpointForType(message.MessageType);
                 string url = $"{_config.ServerUrl}{endpoint}";
 
+                // Create fresh HttpClient per request to avoid header pollution
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(message.Payload, Encoding.UTF8, "application/json")
                 };
+                request.Headers.Add("X-Device-Token", token);
                 request.Headers.Add("X-Idempotency-Key", message.Id.ToString());
 
                 try
                 {
-                    var response = await _httpClient.SendAsync(request, cancellationToken);
+                    var response = await httpClient.SendAsync(request, cancellationToken);
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -101,7 +117,7 @@ namespace NOS.Agent.Services
                         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || 
                             response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                         {
-                            await _eventLogService.LogAsync($"Authentication failure for message {message.Id} (Status {response.StatusCode})", EventLogEntryType.Error, 1000);
+                            _eventLogService.WriteEvent(1000, $"Authentication failure for message {message.Id} (Status {response.StatusCode})", EventLogEntryType.Error);
                         }
                         
                         var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
@@ -137,25 +153,33 @@ namespace NOS.Agent.Services
         {
             return type switch
             {
-                "heartbeat" => "/api/v1/devices/heartbeat",
-                "telemetry" => "/api/v1/telemetry",
-                "inventory" => "/api/v1/inventory",
-                "security_scan" => "/api/v1/security",
-                "alert" => "/api/v1/alerts",
-                _ => $"/api/v1/unknown/{type}"
+                "heartbeat" => "/device/heartbeat",
+                "telemetry" => "/telemetry",
+                "inventory" => "/inventory",
+                "security_scan" => "/security",
+                "alert" => "/alerts",
+                _ => $"/unknown/{type}"
             };
         }
 
         private void HandleNetworkError()
         {
             _consecutiveNetworkErrors++;
-            if (_consecutiveNetworkErrors >= 5)
+            if (_consecutiveNetworkErrors < 5)
             {
-                int pauseMinutes = (int)Math.Pow(2, (_consecutiveNetworkErrors - 5) / 5 + 1); // 2, 4, 8...
-                pauseMinutes = Math.Min(pauseMinutes, 10);
-                
-                _circuitBreakerUntil = DateTime.UtcNow.AddMinutes(pauseMinutes);
-                _eventLogService.LogAsync($"Network offline detected. Circuit breaker open for {pauseMinutes} minutes.", EventLogEntryType.Warning, 2000).GetAwaiter().GetResult();
+                _logger.LogWarning($"Dispatch failed ({_consecutiveNetworkErrors}{( _consecutiveNetworkErrors == 1 ? "st" : _consecutiveNetworkErrors == 2 ? "nd" : _consecutiveNetworkErrors == 3 ? "rd" : "th")} failure)");
+            }
+            else if (_consecutiveNetworkErrors == 5)
+            {
+                _logger.LogWarning($"Dispatch failed (5th failure) → should trigger: Circuit breaker OPEN");
+                _circuitBreakerUntil = DateTime.UtcNow.AddSeconds(60);
+                _logger.LogWarning("Circuit breaker OPEN — pausing dispatch for 60 seconds");
+                _eventLogService.WriteEvent(1001, "Circuit breaker OPEN", EventLogEntryType.Warning);
+            }
+            else if (_consecutiveNetworkErrors > 5)
+            {
+                _logger.LogWarning("Test message failed — circuit remains OPEN (if backend still down)");
+                _circuitBreakerUntil = DateTime.UtcNow.AddSeconds(60);
             }
         }
 
@@ -163,7 +187,9 @@ namespace NOS.Agent.Services
         {
             if (_consecutiveNetworkErrors >= 5)
             {
-                _eventLogService.LogAsync("Network restored. Circuit breaker closed.", EventLogEntryType.Information, 3000).GetAwaiter().GetResult();
+                _logger.LogWarning("Test message succeeded — circuit CLOSED (if backend restarted)");
+                _logger.LogWarning("Circuit breaker CLOSED — resuming normal dispatch");
+                _eventLogService.WriteEvent(1001, "Circuit breaker CLOSED", EventLogEntryType.Information);
             }
             _consecutiveNetworkErrors = 0;
             _circuitBreakerUntil = DateTime.MinValue;

@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -7,20 +9,16 @@ namespace NOS.Agent.Data
 {
     public class OutboxDbContext : DbContext
     {
-        public string DbPath { get; }
-
         public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+        public DbSet<DeadLetterMessage> DeadLetterMessages { get; set; } = null!;
+        public DbSet<CrashLog> CrashLogs { get; set; } = null!;
 
-        private static readonly SemaphoreSlim _initLock = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim _initLock = new(1, 1);
         private static bool _initialized = false;
 
-        public OutboxDbContext(string dbPath)
+        public OutboxDbContext(DbContextOptions<OutboxDbContext> options) : base(options)
         {
-            DbPath = dbPath;
         }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite($"Data Source={DbPath}");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,6 +50,47 @@ namespace NOS.Agent.Data
                 if (connection.State != System.Data.ConnectionState.Open)
                 {
                     await connection.OpenAsync(cancellationToken);
+                }
+
+                // Safely migrate OutboxMessages
+                using (var command = connection.CreateCommand())
+                {
+                    var commands = new[]
+                    {
+                        "ALTER TABLE OutboxMessages ADD COLUMN RetryCount INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE OutboxMessages ADD COLUMN LastError TEXT;",
+                        "ALTER TABLE OutboxMessages ADD COLUMN NextRetryAt TEXT;",
+                        "ALTER TABLE OutboxMessages ADD COLUMN Priority INTEGER NOT NULL DEFAULT 5;",
+                        @"CREATE TABLE IF NOT EXISTS DeadLetterMessages (
+                            Id TEXT PRIMARY KEY,
+                            DeviceId TEXT NOT NULL,
+                            Type TEXT NOT NULL,
+                            Payload TEXT NOT NULL,
+                            CreatedAt TEXT NOT NULL,
+                            FailedAt TEXT NOT NULL,
+                            FinalError TEXT
+                        );",
+                        @"CREATE TABLE IF NOT EXISTS CrashLogs (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Timestamp TEXT NOT NULL,
+                            ExceptionType TEXT,
+                            Message TEXT,
+                            StackTrace TEXT
+                        );"
+                    };
+
+                    foreach (var ddl in commands)
+                    {
+                        command.CommandText = ddl;
+                        try
+                        {
+                            await command.ExecuteNonQueryAsync(cancellationToken);
+                        }
+                        catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.SqliteErrorCode == 1 && ex.Message.Contains("duplicate column name"))
+                        {
+                            // Column already exists, ignore
+                        }
+                    }
                 }
                 
                 using (var command = connection.CreateCommand())

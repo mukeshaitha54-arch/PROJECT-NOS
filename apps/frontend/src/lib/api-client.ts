@@ -1,111 +1,117 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '../features/auth/stores/auth.store';
-import { ApiResponse, TokenResponsePayload } from '@nos/shared-types';
-import { clientEnv } from '../config/env';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const BASE_URL = clientEnv.apiBaseUrl;
-
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+export const rawApi = axios.create({
+  baseURL: '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
 });
 
-// Request Interceptor: Attach JWT Bearer Token & Normalize URL
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    if (config.url && config.url.startsWith('/api/v1/')) {
-      config.url = config.url.substring(7);
-    }
-    const { accessToken, user } = useAuthStore.getState();
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-    if (user?.organizationId && config.headers) {
-      config.headers['x-organization-id'] = user.organizationId;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
-
-// Response Interceptor: Automatic Refresh Token Rotation on 401 Unauthorized
 let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: any) => void;
-}> = [];
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: any) => void }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
-    } else if (token) {
+    } else {
       prom.resolve(token);
     }
   });
   failedQueue = [];
 };
 
-apiClient.interceptors.response.use(
-  (response) => response.data,
-  async (error: AxiosError<ApiResponse>) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+rawApi.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('nos_access_token') : null;
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-    // Avoid infinite loop if refresh request fails or isn't 401
-    if (!error.response || error.response.status !== 401 || originalRequest.url?.includes('/auth/refresh') || originalRequest._retry) {
-      return Promise.reject(error.response?.data?.error || { code: 'NETWORK_ERROR', message: error.message });
+rawApi.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retryCount?: number };
+
+    // Handle 429 Rate Limit with simple exponential backoff
+    if (error.response?.status === 429) {
+      originalRequest._retryCount = originalRequest._retryCount || 0;
+      if (originalRequest._retryCount < 3) {
+        originalRequest._retryCount++;
+        const backoff = Math.pow(2, originalRequest._retryCount - 1) * 1000;
+        console.warn(`Rate limited — retrying in ${backoff}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
+        return rawApi(originalRequest);
+      }
+      console.error('Rate limit exceeded max retries');
     }
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({
-          resolve: (token: string) => {
+    if (error.response?.status === 403) {
+      console.error('Access denied');
+    }
+
+    if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/login' && originalRequest.url !== '/auth/refresh') {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
-            resolve(apiClient(originalRequest));
-          },
-          reject: (err: any) => reject(err),
-        });
-      });
-    }
+            return rawApi(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
 
-    originalRequest._retry = true;
-    isRefreshing = true;
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-    const currentRefreshToken = useAuthStore.getState().refreshToken;
-    if (!currentRefreshToken) {
-      useAuthStore.getState().clearSession();
-      return Promise.reject({ code: 'UNAUTHORIZED', message: 'No active refresh session.' });
-    }
+      try {
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('nos_refresh_token') : null;
+        if (!refreshToken) throw new Error('No refresh token');
 
-    try {
-      const response = await axios.post<ApiResponse<TokenResponsePayload>>(`${BASE_URL}/auth/refresh`, {
-        refreshToken: currentRefreshToken,
-      });
+        // Use a new axios instance to avoid interceptor loops
+        const refreshResponse = await axios.post('/api/v1/auth/refresh', { refreshToken });
+        const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data.data || refreshResponse.data;
 
-      if (response.data.success && response.data.data) {
-        const newSession = response.data.data;
-        useAuthStore.getState().setSession(newSession);
-
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newSession.accessToken}`;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('nos_access_token', accessToken);
+          if (newRefreshToken) localStorage.setItem('nos_refresh_token', newRefreshToken);
         }
 
-        processQueue(null, newSession.accessToken);
-        return apiClient(originalRequest);
-      } else {
-        throw new Error('Refresh token rotation rejected by server.');
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        processQueue(null, accessToken);
+
+        return rawApi(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError as Error, null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('nos_access_token');
+          localStorage.removeItem('nos_refresh_token');
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
-    } catch (refreshErr) {
-      processQueue(refreshErr, null);
-      useAuthStore.getState().clearSession();
-      return Promise.reject({ code: 'SESSION_EXPIRED', message: 'Session expired. Please log in again.' });
-    } finally {
-      isRefreshing = false;
     }
-  },
+
+    return Promise.reject(error);
+  }
 );
+
+export const api = {
+  get: <T>(url: string, config?: any) => rawApi.get<T>(url, config).then((res) => res.data),
+  post: <T>(url: string, data?: any, config?: any) => rawApi.post<T>(url, data, config).then((res) => res.data),
+  patch: <T>(url: string, data?: any, config?: any) => rawApi.patch<T>(url, data, config).then((res) => res.data),
+  delete: <T>(url: string, config?: any) => rawApi.delete<T>(url, config).then((res) => res.data),
+};
+
+export const apiClient = rawApi;

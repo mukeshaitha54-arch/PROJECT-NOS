@@ -6,6 +6,6 @@ namespace NOS.Agent.Services
 {
     public interface IWindowsEventLogService
     {
-        Task LogAsync(string message, EventLogEntryType type, int eventId, Exception? ex = null);
+        void WriteEvent(int eventId, string message, EventLogEntryType type);
     }
 }

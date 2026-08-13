@@ -11,7 +11,7 @@ import {
   Server, Flame, Activity, Send, Lock, Share2, Copy, Check, UserCheck, FastForward
 } from 'lucide-react';
 
-export default function EnterpriseIncidentDetailWorkspacePage() {
+function EnterpriseIncidentDetailWorkspacePageContent() {
   const params = useParams();
   const router = useRouter();
   const alertId = (params?.id as string) || '';
@@ -329,4 +329,10 @@ export default function EnterpriseIncidentDetailWorkspacePage() {
       </div>
     </div>
   );
+}
+
+import nextDynamic from 'next/dynamic';
+const DynamicEnterpriseIncidentDetailWorkspacePage = nextDynamic(() => Promise.resolve(EnterpriseIncidentDetailWorkspacePageContent), { ssr: false });
+export default function EnterpriseIncidentDetailWorkspacePage(props: any) {
+  return <DynamicEnterpriseIncidentDetailWorkspacePage {...props} />;
 }

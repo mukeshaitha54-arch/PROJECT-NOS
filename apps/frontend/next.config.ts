@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: process.env.DOCKER_BUILD === "true" || process.env.CI === "true" ? "standalone" : undefined,
+  output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@nos/shared-types"],
 };

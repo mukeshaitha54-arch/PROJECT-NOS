@@ -1,0 +1,162 @@
+<USER_REQUEST>
+ANTI-GRAVITY PROMPT: PHASE 1 — AGENT RESILIENCE & PRODUCTION HARDENING
+CONTEXT: The NOS .NET Agent (apps/NOS.Agent/) currently has a basic SQLite outbox queue that works for the happy path. Phase 0 is complete. We are now entering Phase 1: Agent Resilience. The agent must survive network outages, backend crashes, and resource starvation without losing data or killing the host PC.
+RULES:
+ZERO REGRESSION: All existing telemetry, heartbeat, and registration flows must continue working exactly as they do now.
+NO BREAKING CHANGES: Do not modify SubmitTelemetryDto, DeviceService, or any backend API contracts.
+ADD ONLY: Every change is additive (new services, new config keys, new tables). Existing code stays untouched unless refactoring is strictly necessary for compilation.
+WINDOWS ONLY: The agent runs exclusively on Windows 10/11 as a .NET 8 Windows Service.
+TASK 1: Outbox Queue Stress Test & Hardening
+Current State: OutboxDispatcherService.cs exists and drains on connection. It has NOT been tested under load or extended downtime.
+Required Changes:
+A. Outbox Schema Migration
+Add a new EF Core migration (or raw SQL if not using EF) to the agent's SQLite database:
+sql
+-- Add to agent SQLite outbox table
+ALTER TABLE OutboxMessages ADD COLUMN RetryCount INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE OutboxMessages ADD COLUMN LastError TEXT;
+ALTER TABLE OutboxMessages ADD COLUMN NextRetryAt TEXT; -- ISO 8601
+ALTER TABLE OutboxMessages ADD COLUMN Priority INTEGER NOT NULL DEFAULT 5; -- 1=heartbeat, 5=telemetry, 10=inventory
+B. OutboxDispatcherService.cs — Production Hardening
+Modify OutboxDispatcherService to implement:
+Priority Queue Drain Order: Heartbeat (1) → Telemetry (5) → Inventory (10). Always send heartbeats first so backend marks device ONLINE before processing telemetry.
+Exponential Backoff: On HTTP 5xx or network failure, increment RetryCount, set NextRetryAt = Now + (2^RetryCount * 5 seconds), cap at 5 minutes.
+Dead Letter Queue: After 10 retries, move message to a new DeadLetterMessages table (same schema + FailedAt, FinalError). Log warning to Windows Event Log.
+Batch Dispatch: Send up to 10 messages per dispatch cycle instead of one-by-one. Use a single HTTP request with JSON array payload if backend supports bulk ingest (if not, send sequentially but limit to 10 per cycle).
+Circuit Breaker: If 5 consecutive dispatches fail, enter "Open" state for 60 seconds. Stop attempting dispatch. Log "Circuit breaker OPEN". After 60s, enter "Half-Open" and try 1 message. If success, close circuit.
+C. OutboxPressureMonitor.cs (NEW FILE)
+Create a background service that:
+Checks SQLite DB size every 60 seconds
+If OutboxMessages count > 1000 OR DB file size > 50MB, trigger aggressive drain (reduce dispatch interval from 30s to 5s)
+If DeadLetterMessages count > 100, log CRITICAL to Windows Event Log
+If DB file size > 100MB, delete oldest telemetry messages (keep heartbeats) until under 80MB
+TASK 2: Agent Resource Guardrails
+Required Changes:
+A. AgentResourceMonitor.cs (NEW FILE)
+Create a Windows-specific resource monitor service that:
+Reads its own process CPU usage via Process.GetCurrentProcess().TotalProcessorTime every 30 seconds
+Reads its own RAM usage via Process.GetCurrentProcess().WorkingSet64
+If CPU > 3% sustained over 2 minutes: throttle dispatch interval (telemetry every 10 min instead of 5 min, heartbeats every 120s instead of 60s)
+If RAM > 128MB: pause non-critical collectors (inventory sync), keep heartbeat + telemetry only, log WARNING to Windows Event Log
+If RAM > 200MB: emergency shutdown — stop all collectors, flush outbox, exit process with code 99
+B. Config Updates
+Add to appsettings.json:
+JSON
+{
+  "Agent": {
+    "ResourceGuardrails": {
+      "MaxCpuPercent": 3.0,
+      "MaxRamMB": 128,
+      "EmergencyRamMB": 200,
+      "ThrottleTelemetryIntervalSec": 600,
+      "ThrottleHeartbeatIntervalSec": 120
+    }
+  }
+}
+TASK 3: Windows Event Log Integration
+Required Changes:
+A. WindowsEventLogService.cs (NEW FILE)
+Create a service that writes to Windows Event Log:
+Source Name: NOS-Agent
+Log Name: Application
+Event IDs:
+1000 = Information (heartbeat sent, telemetry sent)
+1001 = Warning (throttling activated, circuit breaker open)
+1002 = Error (dispatch failed, backend unreachable)
+1003 = Critical (emergency shutdown, dead letter queue full)
+B. Registration
+Register the event source on first run if not already registered:
+csharp
+if (!EventLog.SourceExists("NOS-Agent"))
+    EventLog.CreateEventSource("NOS-Agent", "Application");
+C. Integration Points
+Call WindowsEventLogService from:
+OutboxDispatcherService on circuit breaker state changes
+AgentResourceMonitor on throttle/shutdown events
+Program.cs on unhandled exceptions
+TASK 4: Crash-Proof Retry & Self-Healing
+Required Changes:
+A. Global Exception Handler in Program.cs
+Wrap the entire service host in a try/catch that:
+Logs exception to Windows Event Log (Event ID 1003)
+Writes exception details to SQLite CrashLogs table (NEW TABLE: Id, Timestamp, ExceptionType, Message, StackTrace)
+Does NOT suppress the exception (let Windows Service Manager restart the agent)
+B. Startup Recovery Sequence
+On agent startup, before any collectors run:
+Check CrashLogs table for crashes in last 24 hours
+If crash count > 3, enter "Safe Mode" for 10 minutes:
+Heartbeat only (no telemetry, no inventory)
+Dispatch interval doubled
+Log "Safe mode activated due to repeated crashes"
+After 10 minutes, auto-resume normal operations
+C. SQLite Connection Resilience
+All SQLite operations must:
+Use using statements with 3 retry attempts
+On SQLiteException, wait 100ms and retry
+On 3rd failure, log to Windows Event Log and skip that operation cycle
+TASK 5: End-to-End Verification Script
+After implementation, verify with these exact steps:
+Step 1: Outbox Stress Test
+powershell
+# Stop backend
+docker stop nos-backend-1
+
+# Run agent for 3 minutes (it will queue heartbeats + telemetry)
+# Start backend
+docker start nos-backend-1
+
+# Wait 2 minutes
+# Verify: All queued messages delivered (check OutboxMessages count = 0)
+# Verify: Zero messages in DeadLetterMessages
+# Verify: Backend DB has telemetry from the offline period
+Step 2: Resource Guardrail Test
+powershell
+# Simulate CPU load on agent process (optional stress tool)
+# Verify: Agent logs "Throttling activated" to Windows Event Log
+# Verify: Telemetry interval slows to 10 minutes
+# Verify: Heartbeat continues every 2 minutes
+Step 3: Circuit Breaker Test
+powershell
+# Stop backend, wait for 5 failed dispatch cycles
+# Verify: Agent logs "Circuit breaker OPEN"
+# Verify: Agent stops attempting HTTP requests
+# Start backend after 60 seconds
+# Verify: Agent logs "Circuit breaker CLOSED"
+# Verify: Queue drains normally
+Step 4: Windows Event Log Verification
+powershell
+Get-WinEvent -FilterHashtable @{LogName='Application'; ID=1000,1001,1002,1003} | Select-Object -First 20
+Expected: Events from NOS-Agent source with proper IDs.
+DELIVERABLES CHECKLIST
+[ ] OutboxMessages table has RetryCount, LastError, NextRetryAt, Priority columns
+[ ] DeadLetterMessages table exists
+[ ] CrashLogs table exists
+[ ] OutboxDispatcherService has priority queue, exponential backoff, batch dispatch, circuit breaker
+[ ] OutboxPressureMonitor monitors DB size and triggers aggressive drain
+[ ] AgentResourceMonitor caps CPU at 3% and RAM at 128MB
+[ ] WindowsEventLogService writes to Windows Event Log with correct source
+[ ] Program.cs has global exception handler + startup safe mode
+[ ] All SQLite operations have 3-retry resilience
+[ ] Stress test passes: 3-min backend downtime, zero message loss
+[ ] Circuit breaker test passes: opens after 5 failures, closes after 60s
+[ ] Resource guardrail test passes: throttles under load
+[ ] Windows Event Log shows NOS-Agent entries
+[ ] Agent still compiles with dotnet build (0 errors)
+[ ] Agent still registers, sends heartbeats, sends telemetry after all changes
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-08-13T20:04:37+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\mukes\OneDrive\Desktop\NOS\apps\backend\src\modules\fleet\controllers\registration-key.controller.ts (LANGUAGE_TYPESCRIPT)
+Cursor is on line: 21
+Other open documents:
+- c:\Users\mukes\OneDrive\Desktop\NOS\apps\frontend\src\app\(dashboard)\dashboard\page.tsx (LANGUAGE_TSX)
+- c:\Users\mukes\OneDrive\Desktop\NOS\apps\frontend\src\contexts\auth-context.tsx (LANGUAGE_TSX)
+- c:\Users\mukes\OneDrive\Desktop\NOS\apps\NOS.Agent\Services\ResourceMonitorService.cs (LANGUAGE_CSHARP)
+- c:\Users\mukes\OneDrive\Desktop\NOS\apps\backend\src\main.ts (LANGUAGE_TYPESCRIPT)
+- c:\Users\mukes\OneDrive\Desktop\NOS\apps\backend\Dockerfile (LANGUAGE_DOCKERFILE)
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.1 Pro (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

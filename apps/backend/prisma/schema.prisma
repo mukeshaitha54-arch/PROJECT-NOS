@@ -11,18 +11,7 @@ datasource db {
 }
 
 // Foundation System Node registry entity (Telemetry metric models postponed per requirements)
-model SystemNode {
-  id          String    @id @default(uuid())
-  hostname    String    @unique
-  ipAddress   String
-  status      String    @default("HEALTHY")
-  description String?
-  lastSeenAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
-  @@map("system_nodes")
-}
 
 enum Role {
   OWNER
@@ -123,8 +112,9 @@ model Device {
   lastSeen           DateTime?
   registeredAt       DateTime              @default(now())
   organizationId     String?
+  organization       Organization?         @relation(fields: [organizationId], references: [id])
   tenantId           String?               @default("default-org")
-  tokenHash          String?               @unique
+  tokenHash          String                @unique
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
   heartbeats         Heartbeat[]
@@ -571,7 +561,7 @@ model AlertRule {
   id                 String                @id @default(uuid())
   version            Int                   @default(1)
   tenantId           String?               @default("default-org")
-  name               String                @unique
+  name               String
   description        String?
   metric             String
   operator           String
@@ -623,6 +613,7 @@ model AlertRule {
   @@index([ruleStatus])
   @@index([priority])
   @@index([category])
+  @@unique([tenantId, name])
   @@map("alert_rules")
 }
 
@@ -781,6 +772,7 @@ model Organization {
   createdAt          DateTime                 @default(now())
   updatedAt          DateTime                 @updatedAt
   deletedAt          DateTime? // Soft delete timestamp
+  devices            Device[]
   members            OrganizationMember[]
   departments        Department[]
   teams              Team[]

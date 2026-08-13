@@ -9,7 +9,7 @@ import { Server, Activity, Cpu, HardDrive, RefreshCw, Clock, ShieldCheck, AlertC
 import { useRealtimeDashboard } from '@/features/realtime/hooks/useRealtimeDashboard';
 import { RealtimeStatusBadge } from '@/features/realtime/components/RealtimeStatusBadge';
 
-export default function DeviceRosterPage() {
+function DeviceRosterPageContent() {
   const { isAuthenticated, user } = useAuthStore();
   const [data, setData] = useState<DeviceStatusResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -330,4 +330,10 @@ export default function DeviceRosterPage() {
       </div>
     </div>
   );
+}
+
+import nextDynamic from 'next/dynamic';
+const DynamicDeviceRosterPage = nextDynamic(() => Promise.resolve(DeviceRosterPageContent), { ssr: false });
+export default function DeviceRosterPage(props: any) {
+  return <DynamicDeviceRosterPage {...props} />;
 }

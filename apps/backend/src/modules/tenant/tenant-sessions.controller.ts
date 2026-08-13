@@ -7,7 +7,7 @@ import { UserRole } from '@nos/shared-types';
 import { TenantSessionsService } from './tenant-sessions.service';
 
 @ApiTags('Tenant - Session Management')
-@Controller('tenant/sessions')
+@Controller('tenant/admin/sessions')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @ApiBearerAuth()
