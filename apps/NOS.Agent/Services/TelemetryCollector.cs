@@ -140,6 +140,14 @@ namespace NOS.Agent.Services
                     dto.PhysicalProcessors = cpu["NumberOfCores"] != null ? Convert.ToInt32(cpu["NumberOfCores"]) : 0;
                 }
             }
+            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+            {
+                _logger.LogWarning("WMI Access Denied reading basic CPU data.");
+            }
+            catch (ManagementException ex)
+            {
+                _logger.LogWarning(ex, "WMI error reading basic CPU data: {ErrorCode}.", ex.ErrorCode);
+            }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect basic CPU WMI data."); }
 
             try
@@ -152,7 +160,18 @@ namespace NOS.Agent.Services
                     dto.CpuTemperature = (tempTenthsKelvin / 10.0) - 273.15;
                 }
             }
-            catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect CPU temperature from WMI."); }
+            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+            {
+                _logger.LogWarning("WMI Access Denied reading CPU temperature. Run agent as Administrator for thermal data. Falling back to 0.");
+            }
+            catch (ManagementException ex)
+            {
+                _logger.LogWarning(ex, "WMI error reading CPU temperature: {ErrorCode}. Falling back to 0.", ex.ErrorCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error reading CPU temperature. Falling back to 0.");
+            }
         }
 
         private void CollectMemoryData(SubmitTelemetryDto dto)
@@ -175,6 +194,14 @@ namespace NOS.Agent.Services
                         dto.MemoryUsagePercent = (dto.MemoryUsed / dto.MemoryTotal) * 100.0;
                     }
                 }
+            }
+            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+            {
+                _logger.LogWarning("WMI Access Denied reading memory data. Run agent as Administrator.");
+            }
+            catch (ManagementException ex)
+            {
+                _logger.LogWarning(ex, "WMI error reading memory data: {ErrorCode}.", ex.ErrorCode);
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect memory WMI data."); }
         }
@@ -200,6 +227,14 @@ namespace NOS.Agent.Services
                         dto.DiskUsagePercent = ((dto.DiskTotal - dto.DiskFree) / dto.DiskTotal) * 100.0;
                     }
                 }
+            }
+            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+            {
+                _logger.LogWarning("WMI Access Denied reading disk data.");
+            }
+            catch (ManagementException ex)
+            {
+                _logger.LogWarning(ex, "WMI error reading disk data: {ErrorCode}.", ex.ErrorCode);
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect disk WMI data."); }
 
@@ -243,6 +278,14 @@ namespace NOS.Agent.Services
                     if (adapter["DNSServerSearchOrder"] is string[] dnsList && dnsList.Length > 0)
                         dto.Dns = dnsList[0];
                 }
+            }
+            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+            {
+                _logger.LogWarning("WMI Access Denied reading network data.");
+            }
+            catch (ManagementException ex)
+            {
+                _logger.LogWarning(ex, "WMI error reading network data: {ErrorCode}.", ex.ErrorCode);
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect network WMI data."); }
 
@@ -325,6 +368,14 @@ namespace NOS.Agent.Services
                     dto.BootTime = bootTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
                     dto.SystemUptime = (DateTime.Now - bootTime).TotalSeconds;
                 }
+            }
+            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
+            {
+                _logger.LogWarning("WMI Access Denied reading system boot time.");
+            }
+            catch (ManagementException ex)
+            {
+                _logger.LogWarning(ex, "WMI error reading system boot time: {ErrorCode}.", ex.ErrorCode);
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect system uptime WMI data."); }
         }

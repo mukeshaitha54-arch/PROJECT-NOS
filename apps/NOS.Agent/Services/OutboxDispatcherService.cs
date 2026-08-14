@@ -90,7 +90,7 @@ namespace NOS.Agent.Services
                 if (DateTime.UtcNow < _circuitBreakerUntil) break;
 
                 string endpoint = GetEndpointForType(message.MessageType);
-                string url = $"{_config.ServerUrl}{endpoint}";
+                string url = BuildApiUrl(endpoint);
 
                 // Create fresh HttpClient per request to avoid header pollution
                 var httpClient = _httpClientFactory.CreateClient();
@@ -109,24 +109,39 @@ namespace NOS.Agent.Services
 
                     if (response.IsSuccessStatusCode)
                     {
+                        _logger.LogInformation(
+                            "Dispatched {MessageType} to {Url} | Status: {Status}",
+                            message.MessageType, url, (int)response.StatusCode);
                         await _queueService.MarkDeliveredAsync(message.Id, cancellationToken);
                         ResetCircuitBreaker();
                     }
                     else if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                     {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        _logger.LogError(
+                            "Dispatch FAILED for {MessageType} to {Url} | " +
+                            "HTTP {Status} | Response: {ResponseBody}",
+                            message.MessageType, url, (int)response.StatusCode, responseBody);
+
                         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || 
                             response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                         {
                             _eventLogService.WriteEvent(1000, $"Authentication failure for message {message.Id} (Status {response.StatusCode})", EventLogEntryType.Error);
                         }
                         
-                        var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
+                        var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";
                         await _queueService.MarkFailedAsync(message.Id, error, cancellationToken);
                         ResetCircuitBreaker();
                     }
                     else // 5xx
                     {
-                        var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        _logger.LogError(
+                            "Dispatch FAILED for {MessageType} to {Url} | " +
+                            "HTTP {Status} | Response: {ResponseBody}",
+                            message.MessageType, url, (int)response.StatusCode, responseBody);
+
+                        var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";
                         await _queueService.MarkFailedAsync(message.Id, error, cancellationToken);
                         HandleNetworkError();
                     }
@@ -153,13 +168,22 @@ namespace NOS.Agent.Services
         {
             return type switch
             {
-                "heartbeat" => "/device/heartbeat",
-                "telemetry" => "/telemetry",
-                "inventory" => "/inventory",
-                "security_scan" => "/security",
-                "alert" => "/alerts",
-                _ => $"/unknown/{type}"
+                "heartbeat" => "/api/v1/device/heartbeat",
+                "telemetry" => "/api/v1/telemetry",
+                "inventory" => "/api/v1/inventory",
+                "security_scan" => "/api/v1/security",
+                "alert" => "/api/v1/alerts",
+                _ => $"/api/v1/unknown/{type}"
             };
+        }
+
+        private string BuildApiUrl(string endpoint)
+        {
+            var baseUri = new Uri(_config.ServerUrl.EndsWith("/") 
+                ? _config.ServerUrl 
+                : _config.ServerUrl + "/");
+            var fullUri = new Uri(baseUri, endpoint.TrimStart('/'));
+            return fullUri.ToString();
         }
 
         private void HandleNetworkError()

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../contexts/auth-context';
 import { SocketProvider } from '../contexts/socket-context';
+import { RealtimeProvider as LegacyRealtimeProvider } from '../features/realtime/contexts/socket.provider';
 import { useState } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -23,7 +24,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SocketProvider>
-          {children}
+          <LegacyRealtimeProvider>
+            {children}
+          </LegacyRealtimeProvider>
         </SocketProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useRealtimeDevice } from '@/features/realtime/hooks/useRealtimeDevice';
 import { RealtimeStatusBadge } from '@/features/realtime/components/RealtimeStatusBadge';
+import { useRealtimeContext } from '@/realtime/providers/RealtimeProvider';
 import { DeviceTimeline, TimelineEvent } from '@/features/device/components/DeviceTimeline';
 import { DeviceClaimWizard } from '@/features/device/components/DeviceClaimWizard';
 
@@ -106,7 +107,7 @@ function DeviceOperationalDetailPageContent({ params }: { params: Promise<{ id: 
       if (evt.snapshot) {
         setDetail((prev) => prev ? ({ ...prev, latestSnapshot: evt.snapshot as any }) : null);
         if (page === 1) {
-          setHistory((prev) => [evt.snapshot as any, ...prev].slice(0, limit));
+          setHistory((prev) => [evt.snapshot as any, ...prev].slice(0, 20));
         }
         setLastSynced(new Date());
       }
@@ -118,6 +119,32 @@ function DeviceOperationalDetailPageContent({ params }: { params: Promise<{ id: 
     },
     onInventory: () => fetchDeviceProfile(),
   });
+
+  const { on } = useRealtimeContext();
+
+  useEffect(() => {
+    const handleTelemetry = (payload: any) => {
+      if (payload?.deviceId === deviceId && payload?.snapshot) {
+        setDetail((prev) => prev ? ({ ...prev, currentSnapshot: payload.snapshot as any }) : null);
+        if (page === 1) {
+          setHistory((prev) => [payload.snapshot as any, ...prev].slice(0, 20));
+        }
+        setLastSynced(new Date());
+      }
+    };
+
+    const unsubTele = on('telemetry.received', handleTelemetry);
+    const unsubTeleNew = on('telemetry:new', handleTelemetry);
+    const unsubOnline = on('device.online', fetchDeviceProfile);
+    const unsubOffline = on('device.offline', fetchDeviceProfile);
+
+    return () => {
+      unsubTele();
+      unsubTeleNew();
+      unsubOnline();
+      unsubOffline();
+    };
+  }, [on, deviceId, page, fetchDeviceProfile]);
 
   const formatBytes = (bytes?: number) => {
     if (!bytes || bytes === 0) return '0 B';

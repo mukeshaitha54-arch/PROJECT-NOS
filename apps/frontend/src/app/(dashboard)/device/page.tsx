@@ -6,9 +6,7 @@ import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { deviceApi } from '@/features/device/services/device.api';
 import { DeviceStatusResponse, Device, Heartbeat, DeviceStatus } from '@nos/shared-types';
 import { Server, Activity, Cpu, HardDrive, RefreshCw, Clock, ShieldCheck, AlertCircle, ArrowLeft, Terminal, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import { useRealtimeDashboard } from '@/features/realtime/hooks/useRealtimeDashboard';
-import { RealtimeStatusBadge } from '@/features/realtime/components/RealtimeStatusBadge';
-
+import { useRealtimeContext } from '@/realtime/providers/RealtimeProvider';
 function DeviceRosterPageContent() {
   const { isAuthenticated, user } = useAuthStore();
   const [data, setData] = useState<DeviceStatusResponse | null>(null);
@@ -33,12 +31,45 @@ function DeviceRosterPageContent() {
     fetchStatus();
   }, [fetchStatus]);
 
-  // Real-time communication replacing legacy polling interval (Phase 4)
-  useRealtimeDashboard({
-    onDeviceOnline: () => fetchStatus(),
-    onDeviceOffline: () => fetchStatus(),
-    onHeartbeat: () => fetchStatus(),
-  });
+  const { lastEvent } = useRealtimeContext();
+
+  useEffect(() => {
+    if (!lastEvent) return;
+
+    const { type, payload } = lastEvent;
+
+    setData(prev => {
+      if (!prev) return prev;
+      
+      let newDevices = [...prev.devices];
+
+      if (type === 'device.online' || type === 'device:status:changed') {
+        newDevices = newDevices.map(d => 
+          d.id === payload.deviceId 
+            ? { ...d, status: DeviceStatus.ONLINE, lastSeen: new Date().toISOString() }
+            : d
+        );
+      }
+
+      if (type === 'device.offline' || type === 'device:heartbeat:missed') {
+        newDevices = newDevices.map(d => 
+          d.id === payload.deviceId 
+            ? { ...d, status: DeviceStatus.OFFLINE }
+            : d
+        );
+      }
+
+      if (type === 'telemetry.received' || type === 'telemetry:new') {
+        newDevices = newDevices.map(d => 
+          d.id === payload.deviceId 
+            ? { ...d, lastSeen: new Date().toISOString() }
+            : d
+        );
+      }
+      
+      return { ...prev, devices: newDevices };
+    });
+  }, [lastEvent]);
 
   const formatUptime = (seconds: number) => {
     if (!seconds && seconds !== 0) return 'N/A';
@@ -108,7 +139,6 @@ function DeviceRosterPageContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <RealtimeStatusBadge />
 
             <button
               onClick={() => fetchStatus()}

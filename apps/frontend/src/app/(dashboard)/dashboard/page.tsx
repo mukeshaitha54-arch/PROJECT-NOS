@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useRealtimeDashboard } from '@/features/realtime/hooks/useRealtimeDashboard';
 import { RealtimeStatusBadge } from '@/features/realtime/components/RealtimeStatusBadge';
+import { useRealtimeContext } from '@/realtime/providers/RealtimeProvider';
 
 function OperationalDashboardPageContent() {
   const [overview, setOverview] = useState<DashboardOverviewResponse | null>(null);
@@ -52,6 +53,19 @@ function OperationalDashboardPageContent() {
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  const { lastEvent } = useRealtimeContext();
+
+  useEffect(() => {
+    if (!lastEvent) return;
+    
+    if (lastEvent.type === 'device.online' || lastEvent.type === 'device:status:changed') {
+      setOverview(prev => prev ? ({ ...prev, online: prev.online + 1, offline: prev.offline - 1 }) : prev);
+    }
+    if (lastEvent.type === 'device.offline' || lastEvent.type === 'device:heartbeat:missed') {
+      setOverview(prev => prev ? ({ ...prev, online: prev.online - 1, offline: prev.offline + 1 }) : prev);
+    }
+  }, [lastEvent]);
 
   // Enterprise Real-Time Socket Layer Replacing Dashboard Polling (Phase 4)
   useRealtimeDashboard({
@@ -282,8 +296,8 @@ function OperationalDashboardPageContent() {
         </div>
 
         {/* Device Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse hidden md:table">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 text-xs font-bold uppercase tracking-wider">
                 <th className="py-4 px-6">Hostname / OS</th>

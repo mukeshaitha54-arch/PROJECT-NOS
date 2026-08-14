@@ -60,10 +60,9 @@ namespace NOS.Agent.Services
                 try
                 {
                     var machineInfo = CollectMachineInfo();
-                    var serverUrl = _configuration["AgentConfiguration:ServerUrl"]?.TrimEnd('/');
-                    var registerUrl = $"{serverUrl}/device/register";
+                    var registerUrl = BuildApiUrl("api/v1/device/register");
 
-                    _logger.LogInformation("Attempting registration with {ServerUrl}", serverUrl);
+                    _logger.LogInformation("Attempting registration with {ServerUrl}", _configuration["AgentConfiguration:ServerUrl"]);
 
                     using var client = _httpClientFactory.CreateClient();
                     var response = await client.PostAsJsonAsync(registerUrl, machineInfo, stoppingToken);
@@ -138,8 +137,17 @@ namespace NOS.Agent.Services
                 os = osCaption,
                 osVersion = osVersion,
                 architecture = RuntimeInformation.ProcessArchitecture.ToString(),
-                agentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0"
+                agentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+                organizationId = "default-org"
             };  
+        }
+
+        private string BuildApiUrl(string endpoint)
+        {
+            var serverUrl = _configuration["AgentConfiguration:ServerUrl"] ?? "";
+            var baseUri = new Uri(serverUrl.EndsWith("/") ? serverUrl : serverUrl + "/");
+            var fullUri = new Uri(baseUri, endpoint.TrimStart('/'));
+            return fullUri.ToString();
         }
 
         private void UpdateAppsettings(string newDeviceId)
