@@ -103,23 +103,23 @@ export default function ProfilePage() {
                 NOS Platform
               </h1>
               <p className="text-xs text-slate-400">
-                Enterprise Operations & Identity Control
+                Personal Operations & Identity Control
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
-              href="/device"
+              href="/devices"
               className="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-400 border border-cyan-500/30 transition-colors flex items-center gap-1.5"
             >
-              <span>Agent Roster (/device)</span>
+              <span>Devices (/devices)</span>
             </Link>
             <Link
-              href="/"
+              href="/dashboard"
               className="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-xs font-medium text-slate-300 transition-colors"
             >
-              Home Portal
+              Dashboard
             </Link>
             <button
               onClick={handleLogout}
@@ -131,20 +131,20 @@ export default function ProfilePage() {
               ) : (
                 <LogOut className="w-3.5 h-3.5" />
               )}
-              <span>Disconnect Session</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
 
-        {/* Notice: Enterprise Compliance Banner */}
+        {/* Notice: Open Source Personal Platform Banner */}
         <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-cyan-950/40 border border-cyan-500/30 text-xs sm:text-sm text-cyan-200 flex items-center gap-3">
           <Server className="w-5 h-5 flex-shrink-0 text-cyan-400" />
           <div>
             <span className="font-semibold text-white">
-              Phase 6: Multi-Tenant Enterprise Platform Active.
+              Open-Source Personal Workspace Platform Active.
             </span>{" "}
-            Core security sessions are operating with JWT RS256/HMAC, automated
-            token rotation, granular RBAC, and real-time telemetry streaming.
+            Security sessions are operating with JWT tokens, automated rotation,
+            workspace permissions, and real-time telemetry streaming.
           </div>
         </div>
 

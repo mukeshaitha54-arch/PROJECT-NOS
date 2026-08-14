@@ -16,7 +16,7 @@ class Program
     static async Task Main(string[] args)
     {
         Console.WriteLine("==================================================");
-        Console.WriteLine("  NOS Monitoring Agent - Enterprise Installer");
+        Console.WriteLine("  NOS Monitoring Agent - Personal Setup");
         Console.WriteLine("==================================================");
         Console.WriteLine();
         Console.WriteLine("Welcome to the NOS Agent Setup.");

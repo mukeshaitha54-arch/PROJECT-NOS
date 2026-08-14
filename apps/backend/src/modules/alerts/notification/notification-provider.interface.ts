@@ -29,7 +29,7 @@ export class EmailNotificationProvider implements INotificationProvider {
   async send(
     payload: NotificationPayload,
   ): Promise<{ success: boolean; response: string }> {
-    // Enterprise Email formatting with variable interpolation
+    // Email formatting with variable interpolation
     const template = `[${payload.severity}] Incident ${payload.incidentNumber} on ${payload.hostname}: ${payload.metric} reached ${payload.value} (threshold ${payload.threshold}) at ${payload.timestamp}. Assigned Operator: ${payload.operator}`;
     console.log(
       `[EmailProvider] Delivering to ${payload.recipient}: ${template}`,

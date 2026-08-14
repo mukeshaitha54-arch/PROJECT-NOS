@@ -69,6 +69,31 @@ export class AuthController {
     };
   }
 
+  @Get("me")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get current authenticated user session profile" })
+  async getMe(@CurrentUser() user: User): Promise<ApiResponse<User>> {
+    return {
+      success: true,
+      data: user,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post("resend-otp")
+  @Throttle({ auth: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Resend email verification OTP" })
+  async resendOtp(@Body("email") email: string): Promise<ApiResponse> {
+    const result = await this.authService.resendVerificationOtp(email);
+    return {
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Post("verify-email")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Verify account email using SMTP OTP" })

@@ -152,72 +152,70 @@ export default function OperationalAuditCenterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-6 sm:p-10">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <FileText className="w-6 h-6 text-cyan-400" />
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                Operational Audit Center
-              </h1>
-            </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Immutable security audit trail logging authentication, device
-              configuration, inventory changes, and admin operations.
-            </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <FileText className="w-6 h-6 text-cyan-400" />
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              Operational Audit Center
+            </h1>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={exportCsv}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export CSV
-            </button>
-            <button
-              onClick={loadAuditLogs}
-              disabled={loading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </button>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Immutable security audit trail logging authentication, device
+            configuration, inventory changes, and admin operations.
+          </p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search audit trail by user, action, resource..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500"
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+          <button
+            onClick={loadAuditLogs}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
             />
-          </div>
+            Refresh
+          </button>
         </div>
+      </div>
 
-        {/* Audit Log Table */}
-        <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-6 backdrop-blur-xl">
-          <DataTable
-            columns={auditColumns}
-            data={logs}
-            loading={loading}
-            searchable={false}
-            emptyTitle="No audit log entries found"
-            emptyDescription="Platform operations and security actions will record here automatically."
-            onRowClick={(row) =>
-              setExpandedId(expandedId === row.id ? null : row.id)
-            }
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search audit trail by user, action, resource..."
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500"
           />
         </div>
+      </div>
+
+      {/* Audit Log Table */}
+      <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-6 backdrop-blur-xl">
+        <DataTable
+          columns={auditColumns}
+          data={logs}
+          loading={loading}
+          searchable={false}
+          emptyTitle="No audit log entries found"
+          emptyDescription="Platform operations and security actions will record here automatically."
+          onRowClick={(row) =>
+            setExpandedId(expandedId === row.id ? null : row.id)
+          }
+        />
       </div>
     </div>
   );

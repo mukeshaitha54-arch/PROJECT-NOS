@@ -64,7 +64,7 @@ Set-Content -Path $ExePath -Value "Simulated EXE"
 # 4. Register Windows Service
 $ServiceName = "NOSAgent"
 Write-Host "Registering Windows Service ($ServiceName)..."
-# New-Service -Name $ServiceName -BinaryPathName $ExePath -DisplayName "NOS Monitoring Agent" -StartupType Automatic -Description "Enterprise telemetry and inventory agent for NOS Platform"
+# New-Service -Name $ServiceName -BinaryPathName $ExePath -DisplayName "NOS Monitoring Agent" -StartupType Automatic -Description "Telemetry and inventory agent for NOS Platform"
 # Start-Service -Name $ServiceName
 
 Write-Host "NOS Agent installed successfully!" -ForegroundColor Green

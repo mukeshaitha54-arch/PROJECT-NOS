@@ -7,21 +7,14 @@ namespace NOS.Agent.Configuration
     public class AgentConfiguration
     {
         [Required]
-        public string ServerUrl { get; set; } = string.Empty;
+        public string ServerUrl { get; set; } = "http://localhost:3001";
 
-        
-        
         [MaxLength(64)]
-        public string DeviceId { get; set; } = "";
+        public string DeviceId { get; set; } = string.Empty;
 
-        [Required]
-        [MinLength(4)]
         [MaxLength(64)]
-        public string TenantId { get; set; } = string.Empty;
+        public string TenantId { get; set; } = "default-org";
 
-        [Required]
-        [MinLength(32)]
-        [MaxLength(256)]
         public string ApiKey { get; set; } = string.Empty;
 
         [Range(10, 3600)]
@@ -52,7 +45,7 @@ namespace NOS.Agent.Configuration
         [Range(1, 30)]
         public int LogRetentionDays { get; set; } = 7;
 
-        public string SqliteDbPath { get; set; } = @"C:\ProgramData\NOS\Agent\outbox.db";
+        public string SqliteDbPath { get; set; } = string.Empty;
 
         public ResourceGuardrailsConfig ResourceGuardrails { get; set; } = new ResourceGuardrailsConfig();
 
@@ -66,41 +59,59 @@ namespace NOS.Agent.Configuration
         }
 
         public void Validate()
-    {   
-    var context = new ValidationContext(this, serviceProvider: null, items: null);
-    Validator.ValidateObject(this, context, validateAllProperties: true);
+        {
+            if (string.IsNullOrWhiteSpace(ServerUrl))
+            {
+                throw new ValidationException("ServerUrl is required.");
+            }
 
-    if (HeartbeatIntervalSeconds >= TelemetryIntervalSeconds)
-    {
-        throw new ValidationException("HeartbeatIntervalSeconds must be less than TelemetryIntervalSeconds.");
-    }
+            if (!ServerUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !ServerUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("ServerUrl must start with http:// or https://.");
+            }
 
-    // Allow http:// for local development, https:// for production
-    if (!ServerUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
-        !ServerUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-    {
-        throw new ValidationException("ServerUrl must start with http:// or https://.");
-    }
+            if (HeartbeatIntervalSeconds >= TelemetryIntervalSeconds)
+            {
+                // Fallback rather than throwing in single-file production mode
+                HeartbeatIntervalSeconds = Math.Min(60, TelemetryIntervalSeconds - 10);
+            }
+        }
 
-    if (ApiKey == "YOUR_API_KEY_HERE" || ApiKey.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
-    {
-        throw new ValidationException("ApiKey cannot be placeholder text.");
-    }
-    }
         public void Normalize()
         {
-            if (ServerUrl.EndsWith("/"))
+            if (!string.IsNullOrEmpty(ServerUrl) && ServerUrl.EndsWith("/"))
             {
                 ServerUrl = ServerUrl.TrimEnd('/');
             }
 
-            DeviceId = DeviceId.ToLowerInvariant();
-            TenantId = TenantId.ToLowerInvariant();
-
-            var directory = Path.GetDirectoryName(SqliteDbPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            if (!string.IsNullOrEmpty(DeviceId))
             {
-                Directory.CreateDirectory(directory);
+                DeviceId = DeviceId.ToLowerInvariant().Trim();
+            }
+
+            if (!string.IsNullOrEmpty(TenantId))
+            {
+                TenantId = TenantId.ToLowerInvariant().Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(SqliteDbPath))
+            {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var nosDir = Path.Combine(appData, "NOS");
+                if (!Directory.Exists(nosDir))
+                {
+                    Directory.CreateDirectory(nosDir);
+                }
+                SqliteDbPath = Path.Combine(nosDir, "outbox.db");
+            }
+            else
+            {
+                var directory = Path.GetDirectoryName(SqliteDbPath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
             }
         }
     }

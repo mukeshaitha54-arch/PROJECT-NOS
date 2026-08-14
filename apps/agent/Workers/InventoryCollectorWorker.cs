@@ -44,7 +44,7 @@ public class InventoryCollectorWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("📦 NOS Enterprise Agent (Phase 3 Inventory & Asset Discovery Worker) booting up. Target Server: [{ApiEndpoint}], Schedule Interval: [{Hours} Hours]", _apiEndpoint, _inventoryIntervalHours);
+        _logger.LogInformation("📦 NOS Monitoring Agent (Phase 3 Inventory & Asset Discovery Worker) booting up. Target Server: [{ApiEndpoint}], Schedule Interval: [{Hours} Hours]", _apiEndpoint, _inventoryIntervalHours);
 
         var client = _httpClientFactory.CreateClient("NOSAgentClient");
         client.Timeout = TimeSpan.FromSeconds(30); // Allow sufficient timeout for comprehensive asset serialization
@@ -109,7 +109,7 @@ public class InventoryCollectorWorker : BackgroundService
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("✅ Phase 3 Device Inventory snapshot verified and persisted successfully by Enterprise Control Plane.");
+                _logger.LogInformation("✅ Phase 3 Device Inventory snapshot verified and persisted successfully by NOS Backend.");
             }
             else
             {

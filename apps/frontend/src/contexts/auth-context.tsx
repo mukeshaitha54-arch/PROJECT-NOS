@@ -10,12 +10,23 @@ import React, {
 import { api, rawApi } from "../lib/api-client";
 import { User, ApiResponse } from "../types/api";
 
+interface RegisterPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   error: Error | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (
+    emailOrCredentials: string | { email: string; password: string },
+    password?: string,
+  ) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
 }
@@ -29,8 +40,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUser = useCallback(async () => {
     try {
-      const response = await api.get<ApiResponse<User>>("/auth/me");
-      setUser(response.data);
+      const response = await api.get<any>("/auth/me");
+      const userData = response.data?.data || response.data;
+      setUser(userData);
     } catch (err) {
       setUser(null);
       if (typeof window !== "undefined") {
@@ -54,28 +66,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [fetchUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (
+    emailOrCredentials: string | { email: string; password: string },
+    passwordArg?: string,
+  ) => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await rawApi.post("/auth/login", { email, password });
-      const data = res.data.data || res.data;
+      const email =
+        typeof emailOrCredentials === "string"
+          ? emailOrCredentials
+          : emailOrCredentials.email;
+      const password =
+        typeof emailOrCredentials === "string"
+          ? passwordArg
+          : emailOrCredentials.password;
 
-      if (typeof window !== "undefined") {
+      const res = await rawApi.post("/auth/login", { email, password });
+      const data = res.data?.data || res.data;
+
+      if (typeof window !== "undefined" && data?.accessToken) {
         localStorage.setItem("nos_access_token", data.accessToken);
         if (data.refreshToken) {
           localStorage.setItem("nos_refresh_token", data.refreshToken);
         }
       }
 
-      // Wait for fetch user before resolving
-      await fetchUser();
-
-      if (typeof window !== "undefined") {
-        window.location.href = "/dashboard";
+      if (data?.user) {
+        setUser(data.user);
+      } else {
+        await fetchUser();
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Login failed"));
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  const register = async (payload: RegisterPayload) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await rawApi.post("/auth/register", payload);
+      // Automatically log the newly registered user in
+      await login(payload.email, payload.password);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Registration failed"));
       setIsLoading(false);
       throw err;
     }
@@ -131,6 +168,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isAuthenticated: !!user,
         error,
         login,
+        register,
         logout,
         refreshToken,
       }}
@@ -142,7 +180,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

@@ -56,7 +56,7 @@ public class TelemetryCollectorWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("🚀 NOS Enterprise Agent (Telemetry & Heartbeat Worker) booting up. Target Server: [{ApiEndpoint}], Interval: [{Interval}s]", _apiEndpoint, _pollIntervalSeconds);
+        _logger.LogInformation("🚀 NOS Monitoring Agent (Telemetry & Heartbeat Worker) booting up. Target Server: [{ApiEndpoint}], Interval: [{Interval}s]", _apiEndpoint, _pollIntervalSeconds);
 
         var client = _httpClientFactory.CreateClient("NOSAgentClient");
         client.Timeout = TimeSpan.FromSeconds(15);
@@ -198,7 +198,7 @@ public class TelemetryCollectorWorker : BackgroundService
             await Task.Delay(TimeSpan.FromSeconds(_pollIntervalSeconds), stoppingToken);
         }
 
-        _logger.LogInformation("🛑 NOS Enterprise Agent Worker shutting down gracefully.");
+        _logger.LogInformation("🛑 NOS Monitoring Agent Worker shutting down gracefully.");
     }
 
     private async Task<TokenCredentials?> RegisterAgentAsync(HttpClient client, CancellationToken cancellationToken)

@@ -1,16 +1,31 @@
-import { DashboardStatsSkeleton } from "@/components/ui/skeleton/DashboardStatsSkeleton";
-import { DeviceTableSkeleton } from "@/components/ui/skeleton/DeviceTableSkeleton";
+import React from "react";
+import { SkeletonCard } from "@/components/SkeletonCard";
 
-export default function Loading() {
+export default function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-slate-950 p-6 sm:p-8 space-y-8">
+    <div className="space-y-6">
       {/* Header Skeleton */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-        <div className="h-10 w-64 bg-slate-800/50 rounded-xl animate-pulse"></div>
-        <div className="h-10 w-32 bg-slate-800/50 rounded-xl animate-pulse"></div>
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <div className="h-7 w-64 bg-gray-800 rounded animate-pulse" />
+          <div className="h-4 w-96 bg-gray-800/60 rounded animate-pulse" />
+        </div>
+        <div className="h-8 w-28 bg-gray-800 rounded-lg animate-pulse" />
       </div>
-      <DashboardStatsSkeleton />
-      <DeviceTableSkeleton />
+
+      {/* 4 Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SkeletonCard variant="metric" count={4} />
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <SkeletonCard variant="chart" className="lg:col-span-2" />
+        <SkeletonCard variant="chart" />
+      </div>
+
+      {/* Table Skeleton */}
+      <SkeletonCard variant="table" />
     </div>
   );
 }

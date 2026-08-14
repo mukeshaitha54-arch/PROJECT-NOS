@@ -65,6 +65,18 @@ namespace NOS.Agent.Services
             var outboxCount = await dbContext.OutboxMessages.CountAsync(stoppingToken);
             var deadLetterCount = await dbContext.DeadLetterMessages.CountAsync(stoppingToken);
 
+            // BUG 5 FIX: Log queue depth every monitoring cycle
+            _logger.LogInformation(
+                "Outbox status: {Pending} pending, {Dead} dead-letter messages. DB size: {Size:F2}MB",
+                outboxCount, deadLetterCount, dbSizeMb);
+
+            if (outboxCount > 100)
+            {
+                _logger.LogWarning(
+                    "Outbox queue depth is {Count} — dispatcher may be falling behind. Consider checking connectivity.",
+                    outboxCount);
+            }
+
             if (deadLetterCount > 100)
             {
                 _eventLog.WriteEvent(1003, $"CRITICAL: Dead letter queue has {deadLetterCount} messages.", EventLogEntryType.Error);
@@ -73,8 +85,6 @@ namespace NOS.Agent.Services
             if (outboxCount > 1000 || dbSizeMb > 50)
             {
                 _logger.LogWarning("High pressure detected. DB Size: {Size}MB, Outbox: {Count}", dbSizeMb, outboxCount);
-                // Aggressive drain logic could be signaled here by setting a smaller delay on the dispatcher.
-                // However, since we're batching 10 per cycle, we are at least churning through the backlog.
             }
 
             if (dbSizeMb > 100)

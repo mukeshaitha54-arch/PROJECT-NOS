@@ -77,7 +77,7 @@ async function bootstrap() {
   // Enable Graceful Shutdown Hooks
   app.enableShutdownHooks();
 
-  // Wire enterprise Socket.IO realtime adapter
+  // Wire Socket.IO realtime adapter
   app.useWebSocketAdapter(new IoAdapter(app));
 
   // Integrate Winston structured logging globally
@@ -107,14 +107,14 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix);
   app.enableVersioning({ type: VersioningType.URI });
 
-  // OpenAPI Swagger Documentation — Phase 7 Enterprise Edition
+  // OpenAPI Swagger Documentation — Developer Edition
   const config = new DocumentBuilder()
-    .setTitle("NOS — Network Operations & Security Platform API")
+    .setTitle("NOS — Network Operations & Monitoring Platform API")
     .setDescription(
-      "Enterprise-grade telemetry, network node management, alerting, inventory, and multi-tenant administration API. " +
-        "Powering real-time NOC operations for hundreds of monitored endpoints.",
+      "Developer-grade telemetry, network node management, alerting, inventory, and personal workspace administration API. " +
+        "Powering real-time device monitoring for home lab setups and personal computers.",
     )
-    .setVersion("7.0.0")
+    .setVersion("1.0.0")
     .addBearerAuth(
       { type: "http", scheme: "bearer", bearerFormat: "JWT" },
       "JWT",
@@ -138,15 +138,12 @@ async function bootstrap() {
       "Inventory",
       "Hardware, software, network, and security asset discovery",
     )
-    .addTag(
-      "Dashboard",
-      "Operational NOC overview and device status aggregations",
-    )
+    .addTag("Dashboard", "Operational overview and device status aggregations")
     .addTag("Realtime", "Socket.IO gateway and room management")
     .addTag("Users", "User management and profile operations")
     .addTag(
-      "Tenant",
-      "Multi-tenant organization, roles, API keys, and governance",
+      "Workspace",
+      "Personal workspace settings, roles, API keys, and governance",
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);

@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Management;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,7 +66,11 @@ namespace NOS.Agent.Services
                 }
 
                 await _outboxQueue.EnqueueAsync("heartbeat", payload, 1, stoppingToken);
-                _logger.LogInformation("Enqueued heartbeat. CPU: {CpuUsage}, RAM: {RamUsage}", payload.CpuUsage, payload.RamUsage);
+                // BUG 2 FIX: Round to 2 decimal places in log
+                _logger.LogInformation(
+                    "Enqueued heartbeat. CPU: {CpuUsage}%, RAM: {RamUsage}%",
+                    Math.Round(payload.CpuUsage, 2),
+                    Math.Round(payload.RamUsage, 2));
             }
             catch (Exception ex)
             {
@@ -74,27 +78,68 @@ namespace NOS.Agent.Services
             }
         }
 
+        /// <summary>
+        /// BUG 1 + 4 FIX: Average 3 samples over 300ms using Win32_PerfFormattedData_PerfOS_Processor,
+        /// remove min/max outliers, round to 2 decimal places, and clamp to 0-100.
+        /// </summary>
+        private double GetCpuUsageAveraged()
+        {
+            var samples = new List<double>();
+            try
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    using var searcher = new ManagementObjectSearcher(
+                        "SELECT PercentProcessorTime FROM Win32_PerfFormattedData_PerfOS_Processor WHERE Name='_Total'");
+                    
+                    foreach (ManagementObject obj in searcher.Get())
+                    {
+                        var cpu = obj["PercentProcessorTime"];
+                        if (cpu != null)
+                        {
+                            samples.Add(Convert.ToDouble(cpu));
+                        }
+                    }
+
+                    if (i < 2) Thread.Sleep(150); // 150ms between samples
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to read CPU usage. Falling back to 0.");
+                return 0.0;
+            }
+
+            if (samples.Count == 0) return 0.0;
+
+            // Remove min/max outliers if we have 3 or more samples
+            if (samples.Count >= 3)
+            {
+                samples.Remove(samples.Min());
+                samples.Remove(samples.Max());
+            }
+
+            double avg = samples.Average();
+            return Math.Clamp(Math.Round(avg, 2), 0.0, 100.0);
+        }
+
         private HeartbeatPayload? CollectHeartbeatData()
         {
-            double? cpuUsage = null;
-            double? ramUsage = null;
+            double cpuUsage = 0.0;
+            double ramUsage = 0.0;
             double uptime = 0.0;
             string ipAddress = "Unknown";
 
             try
             {
-                try
-                {
-                    using var searcher = new ManagementObjectSearcher("SELECT LoadPercentage FROM Win32_Processor");
-                    var cpu = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
-                    if (cpu != null && cpu["LoadPercentage"] != null)
-                        cpuUsage = Convert.ToDouble(cpu["LoadPercentage"]);
-                }
+                // BUG 1 + 4 FIX: Use averaged multi-sample CPU read
+                try { cpuUsage = GetCpuUsageAveraged(); }
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect CPU usage."); }
 
                 try
                 {
-                    using var searcher = new ManagementObjectSearcher("SELECT TotalVisibleMemorySize, FreePhysicalMemory, LastBootUpTime FROM Win32_OperatingSystem");
+                    using var searcher = new ManagementObjectSearcher(
+                        "SELECT TotalVisibleMemorySize, FreePhysicalMemory, LastBootUpTime FROM Win32_OperatingSystem");
                     var os = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
                     if (os != null)
                     {
@@ -103,7 +148,8 @@ namespace NOS.Agent.Services
                             double totalRam = Convert.ToDouble(os["TotalVisibleMemorySize"]);
                             double freeRam = Convert.ToDouble(os["FreePhysicalMemory"]);
                             if (totalRam > 0)
-                                ramUsage = ((totalRam - freeRam) / totalRam) * 100.0;
+                                // BUG 2 FIX: Round RAM to 2 decimal places
+                                ramUsage = Math.Round(((totalRam - freeRam) / totalRam) * 100.0, 2);
                         }
                         if (os["LastBootUpTime"] != null)
                         {
@@ -117,7 +163,8 @@ namespace NOS.Agent.Services
 
                 try
                 {
-                    using var searcher = new ManagementObjectSearcher("SELECT IPAddress FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled = True");
+                    using var searcher = new ManagementObjectSearcher(
+                        "SELECT IPAddress FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled = True");
                     var adapter = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
                     if (adapter != null && adapter["IPAddress"] is string[] ips && ips.Length > 0)
                         ipAddress = ips.FirstOrDefault(ip => !ip.Contains(":")) ?? ips[0];
@@ -127,8 +174,8 @@ namespace NOS.Agent.Services
                 return new HeartbeatPayload
                 {
                     Timestamp = DateTime.UtcNow.ToString("O"),
-                    CpuUsage = cpuUsage ?? 0.0,
-                    RamUsage = ramUsage ?? 0.0,
+                    CpuUsage = cpuUsage,
+                    RamUsage = ramUsage,
                     Uptime = uptime,
                     IpAddress = string.IsNullOrEmpty(ipAddress) ? "0.0.0.0" : ipAddress,
                 };

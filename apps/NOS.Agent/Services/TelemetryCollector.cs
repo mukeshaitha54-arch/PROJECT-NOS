@@ -27,6 +27,10 @@ namespace NOS.Agent.Services
         private readonly IWindowsEventLogService _eventLog;
         private readonly ISafeModeService _safeMode;
 
+        // BUG 3 FIX: Cache WMI admin availability — only log AccessDenied once per lifetime
+        private static bool _cpuTempAdminChecked = false;
+        private static bool _cpuTempAdminAvailable = false;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TelemetryCollector"/> class.
         /// </summary>
@@ -130,15 +134,32 @@ namespace NOS.Agent.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher("SELECT LoadPercentage, CurrentClockSpeed, NumberOfLogicalProcessors, NumberOfCores FROM Win32_Processor");
+                // Static CPU metadata from Win32_Processor
+                using var searcher = new ManagementObjectSearcher("SELECT CurrentClockSpeed, NumberOfLogicalProcessors, NumberOfCores FROM Win32_Processor");
                 var cpu = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
                 if (cpu != null)
                 {
-                    dto.CpuUsage = cpu["LoadPercentage"] != null ? Convert.ToDouble(cpu["LoadPercentage"]) : 0.0;
                     dto.CpuFrequency = cpu["CurrentClockSpeed"] != null ? Convert.ToDouble(cpu["CurrentClockSpeed"]) / 1000.0 : 0.0;
                     dto.LogicalProcessors = cpu["NumberOfLogicalProcessors"] != null ? Convert.ToInt32(cpu["NumberOfLogicalProcessors"]) : 0;
                     dto.PhysicalProcessors = cpu["NumberOfCores"] != null ? Convert.ToInt32(cpu["NumberOfCores"]) : 0;
                 }
+
+                // BUG 1+4 FIX: Average 3 samples over 300ms using Win32_PerfFormattedData_PerfOS_Processor
+                var samples = new System.Collections.Generic.List<double>();
+                for (int i = 0; i < 3; i++)
+                {
+                    using var s2 = new ManagementObjectSearcher("SELECT PercentProcessorTime FROM Win32_PerfFormattedData_PerfOS_Processor WHERE Name='_Total'");
+                    foreach (ManagementObject obj in s2.Get())
+                    {
+                        var pct = obj["PercentProcessorTime"];
+                        if (pct != null) samples.Add(Convert.ToDouble(pct));
+                    }
+                    if (i < 2) Thread.Sleep(150);
+                }
+
+                if (samples.Count >= 3) { samples.Remove(samples.Min()); samples.Remove(samples.Max()); }
+                // BUG 2 FIX: Round to 2dp
+                dto.CpuUsage = samples.Count > 0 ? Math.Clamp(Math.Round(samples.Average(), 2), 0.0, 100.0) : 0.0;
             }
             catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
             {
@@ -150,19 +171,34 @@ namespace NOS.Agent.Services
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect basic CPU WMI data."); }
 
+            // BUG 3 FIX: Only attempt WMI temp if we haven't already confirmed access denied
+            if (_cpuTempAdminChecked && !_cpuTempAdminAvailable)
+            {
+                dto.CpuTemperature = 0.0; // silently return fallback — warning was already logged once
+                return;
+            }
+
             try
             {
                 using var thermalSearcher = new ManagementObjectSearcher(@"root\WMI", "SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature");
                 var thermal = thermalSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
                 if (thermal != null && thermal["CurrentTemperature"] != null)
                 {
+                    _cpuTempAdminChecked = true;
+                    _cpuTempAdminAvailable = true;
                     double tempTenthsKelvin = Convert.ToDouble(thermal["CurrentTemperature"]);
-                    dto.CpuTemperature = (tempTenthsKelvin / 10.0) - 273.15;
+                    dto.CpuTemperature = Math.Round((tempTenthsKelvin / 10.0) - 273.15, 2);
                 }
             }
             catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
             {
-                _logger.LogWarning("WMI Access Denied reading CPU temperature. Run agent as Administrator for thermal data. Falling back to 0.");
+                _cpuTempAdminChecked = true;
+                _cpuTempAdminAvailable = false;
+                // BUG 3 FIX: Log ONLY once — this branch will never be reached again
+                _logger.LogWarning(
+                    "WMI Access Denied reading CPU temperature. Run agent as Administrator for thermal data. " +
+                    "Temperature will report 0\u00b0C. This warning will NOT repeat.");
+                dto.CpuTemperature = 0.0;
             }
             catch (ManagementException ex)
             {
@@ -191,7 +227,11 @@ namespace NOS.Agent.Services
                     
                     if (dto.MemoryTotal > 0)
                     {
-                        dto.MemoryUsagePercent = (dto.MemoryUsed / dto.MemoryTotal) * 100.0;
+                        // BUG 2 FIX: Round to 2 decimal places
+                        dto.MemoryUsagePercent = Math.Round((dto.MemoryUsed / dto.MemoryTotal) * 100.0, 2);
+                        dto.MemoryTotal = Math.Round(dto.MemoryTotal, 3);
+                        dto.MemoryFree = Math.Round(dto.MemoryFree, 3);
+                        dto.MemoryUsed = Math.Round(dto.MemoryUsed, 3);
                     }
                 }
             }
@@ -224,7 +264,10 @@ namespace NOS.Agent.Services
                     
                     if (dto.DiskTotal > 0)
                     {
-                        dto.DiskUsagePercent = ((dto.DiskTotal - dto.DiskFree) / dto.DiskTotal) * 100.0;
+                        // BUG 2 FIX: Round to 2 decimal places
+                        dto.DiskUsagePercent = Math.Round(((dto.DiskTotal - dto.DiskFree) / dto.DiskTotal) * 100.0, 2);
+                        dto.DiskTotal = Math.Round(dto.DiskTotal, 2);
+                        dto.DiskFree = Math.Round(dto.DiskFree, 2);
                     }
                 }
             }

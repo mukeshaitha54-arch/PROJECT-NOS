@@ -116,10 +116,10 @@ export default function MembersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-500" /> Organization Members
+            <Users className="w-6 h-6 text-blue-500" /> Workspace Members
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Manage user access, roles, and permissions across your tenant.
+            Manage user access, roles, and permissions across your workspace.
           </p>
         </div>
         <Button

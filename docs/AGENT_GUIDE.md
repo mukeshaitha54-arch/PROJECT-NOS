@@ -26,7 +26,7 @@ The NOS Monitoring Agent is a high-reliability .NET 8 Windows Background Service
     "PollIntervalSeconds": 30,
     "InventoryIntervalHours": 24,
     "ApiIngestionEndpoint": "http://localhost:4000/api/v1",
-    "OrganizationId": "org-enterprise-alpha",
+    "WorkspaceId": "workspace-demo",
     "Buffer": {
       "MaxBufferSize": 1000,
       "DrainBatchSize": 10

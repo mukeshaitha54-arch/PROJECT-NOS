@@ -137,7 +137,7 @@ export function DeviceClaimWizard({
               </h3>
               <input
                 type="text"
-                placeholder="e.g. production, db-server"
+                placeholder="e.g. home-lab, media-server, dev-pc"
                 className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-blue-500"
                 value={data.tags}
                 onChange={(e) => setData({ ...data, tags: e.target.value })}
@@ -147,16 +147,16 @@ export function DeviceClaimWizard({
           {step === 5 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-white">
-                Select Business Unit
+                Select Workspace Category
               </h3>
               <select
                 className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-blue-500"
                 value={data.bu}
                 onChange={(e) => setData({ ...data, bu: e.target.value })}
               >
-                <option value="">Select BU...</option>
-                <option value="retail">Retail Operations</option>
-                <option value="enterprise">Enterprise Software</option>
+                <option value="">Select Category...</option>
+                <option value="homelab">Home Lab & Edge</option>
+                <option value="developer">Developer Workstations</option>
               </select>
             </div>
           )}
@@ -166,7 +166,7 @@ export function DeviceClaimWizard({
               <h3 className="text-lg font-bold text-white">Ready to Claim</h3>
               <p className="text-gray-400">
                 Review the assignments. The device will be moved from UNASSIGNED
-                to the target organization structure.
+                to the target workspace structure.
               </p>
             </div>
           )}

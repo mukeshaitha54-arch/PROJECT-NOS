@@ -1,7 +1,19 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
+const resolveBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    if (window.location.port === "3000") {
+      return "http://localhost:3001/api/v1";
+    }
+    return process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+  }
+  return process.env.INTERNAL_BACKEND_URL
+    ? `${process.env.INTERNAL_BACKEND_URL}/api/v1`
+    : "http://backend:3001/api/v1";
+};
+
 export const rawApi = axios.create({
-  baseURL: "/api/v1",
+  baseURL: resolveBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },
@@ -93,9 +105,12 @@ rawApi.interceptors.response.use(
         if (!refreshToken) throw new Error("No refresh token");
 
         // Use a new axios instance to avoid interceptor loops
-        const refreshResponse = await axios.post("/api/v1/auth/refresh", {
-          refreshToken,
-        });
+        const refreshResponse = await axios.post(
+          `${resolveBaseUrl()}/auth/refresh`,
+          {
+            refreshToken,
+          },
+        );
         const { accessToken, refreshToken: newRefreshToken } =
           refreshResponse.data.data || refreshResponse.data;
 

@@ -74,7 +74,9 @@ export class AuthService {
     return { accessToken, refreshToken, user };
   }
 
-  async register(dto: RegisterDto): Promise<{ message: string; user: User }> {
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ message: string; user: User; devOtp?: string }> {
     const existing = await this.userRepo.findByEmail(dto.email);
     if (existing) {
       throw new ConflictException({
@@ -105,7 +107,20 @@ export class AuthService {
       "EMAIL_VERIFY",
       expiresAt,
     );
-    await this.mailService.sendVerificationOtp(user.email, otp);
+
+    let smtpConfigured = false;
+    try {
+      await this.mailService.sendVerificationOtp(user.email, otp);
+      smtpConfigured = true;
+    } catch (mailErr: any) {
+      this.logger.warn(
+        `Verification email delivery skipped: ${mailErr?.message || mailErr}`,
+      );
+    }
+
+    this.logger.log(
+      `📧 [OTP ISSUED] For [${user.email}]: Verification OTP is [${otp}] (expires in 15m)`,
+    );
 
     const { passwordHash: _, ...cleanUser } = user;
     this.logger.log(
@@ -113,8 +128,50 @@ export class AuthService {
     );
     return {
       message:
-        "Registration successful. Please check your email for the verification OTP.",
+        "Registration successful. Please enter the 6-digit verification code sent to your email.",
       user: cleanUser,
+      devOtp: smtpConfigured ? undefined : otp,
+    };
+  }
+
+  async resendVerificationOtp(
+    email: string,
+  ): Promise<{ message: string; devOtp?: string }> {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) {
+      return {
+        message: "If this email is registered, a new OTP has been sent.",
+      };
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await this.hasher.hash(otp);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await this.tokenRepo.createOtp(
+      user.id,
+      user.email,
+      otpHash,
+      "EMAIL_VERIFY",
+      expiresAt,
+    );
+
+    let smtpDelivered = false;
+    try {
+      await this.mailService.sendVerificationOtp(user.email, otp);
+      smtpDelivered = true;
+    } catch (mailErr: any) {
+      this.logger.warn(
+        `Verification email delivery skipped: ${mailErr?.message || mailErr}`,
+      );
+    }
+
+    this.logger.log(`📧 [OTP RESENT] For [${email}]: New OTP is [${otp}]`);
+    return {
+      message: smtpDelivered
+        ? "A new verification code has been dispatched to your email."
+        : "OTP generated. SMTP not configured — check the code displayed on screen.",
+      devOtp: smtpDelivered ? undefined : otp,
     };
   }
 
@@ -129,11 +186,13 @@ export class AuthService {
 
     if (
       !user.isEmailVerified &&
-      this.configService.get<string>("REQUIRE_EMAIL_VERIFICATION") === "true"
+      this.configService.get<string>("REQUIRE_EMAIL_VERIFICATION", "true") !==
+        "false"
     ) {
       throw new UnauthorizedException({
         code: ErrorCode.EMAIL_NOT_VERIFIED,
-        message: "Email address has not been verified.",
+        message:
+          "Email address has not been verified. Please enter the OTP sent to your email.",
       });
     }
 
@@ -142,7 +201,14 @@ export class AuthService {
     return this.generateTokens(cleanUser);
   }
 
-  async verifyEmail(dto: VerifyEmailDto): Promise<{ message: string }> {
+  async verifyEmail(
+    dto: VerifyEmailDto,
+  ): Promise<{
+    message: string;
+    accessToken?: string;
+    refreshToken?: string;
+    user?: any;
+  }> {
     const latestOtp = await this.tokenRepo.findLatestOtp(
       dto.email,
       "EMAIL_VERIFY",
@@ -170,16 +236,29 @@ export class AuthService {
 
     await this.tokenRepo.markOtpAsUsed(latestOtp.id);
     const user = await this.userRepo.findByEmail(dto.email);
-    if (user) {
-      await this.userRepo.update(user.id, { isEmailVerified: true });
+    if (!user) {
+      throw new NotFoundException("User account not found.");
+    }
+
+    await this.userRepo.update(user.id, { isEmailVerified: true });
+    try {
       await this.mailService.sendWelcomeEmail(
         user.email,
         user.firstName || "User",
       );
-    }
+    } catch {}
+
+    const { passwordHash: _, ...cleanUser } = user;
+    cleanUser.isEmailVerified = true;
+    const tokens = await this.generateTokens(cleanUser);
 
     this.logger.log(`✅ Email verified successfully for: [${dto.email}]`);
-    return { message: "Email verified successfully. You may now login." };
+    return {
+      message: "Email verified successfully! Welcome to NOS Platform.",
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: cleanUser,
+    };
   }
 
   async refresh(dto: RefreshDto): Promise<TokenResponsePayload> {

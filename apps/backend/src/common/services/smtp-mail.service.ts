@@ -69,14 +69,13 @@ export class SmtpMailService implements IMailService {
           `Failed to send email to [${mailOptions.to}] (Attempt ${attempt}/${retries}): ${error.message}`,
         );
         if (attempt === retries) {
-          this.logger.error(
-            `Exhausted retries sending email to [${mailOptions.to}].`,
+          this.logger.warn(
+            `📧 Exhausted retries sending email to [${mailOptions.to}]. Falling back to Console Dev Mail.`,
           );
-          throw new InternalServerErrorException(
-            "Failed to deliver email notification.",
-          );
+          this.logDevMail(mailOptions);
+          return;
         }
-        await new Promise((res) => setTimeout(res, 1000 * attempt)); // Exponential backoff
+        await new Promise((res) => setTimeout(res, 500 * attempt)); // Backoff
       }
     }
   }

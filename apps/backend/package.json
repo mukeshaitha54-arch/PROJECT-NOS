@@ -15,7 +15,11 @@
     "test": "jest",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@fastify/compress": "^7.0.3",
@@ -76,6 +80,7 @@
     "jest": "^30.4.2",
     "prisma": "^6.1.0",
     "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   }
 }

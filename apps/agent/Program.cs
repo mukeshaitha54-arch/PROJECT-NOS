@@ -27,7 +27,7 @@ var builder = Host.CreateDefaultBuilder(args)
             services.AddSingleton<IMetricCollector, LinuxMetricCollector>();
         }
 
-        // Bind enterprise Clean Architecture agent services
+        // Bind Clean Architecture agent services
         services.AddSingleton<IMetricsService, MetricsService>(); // Retained for backwards compatibility
         services.AddSingleton<ISystemDiagnosticsService, SystemDiagnosticsService>();
         services.AddSingleton<ITokenStorageService, TokenStorageService>();
