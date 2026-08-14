@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { User, TokenResponsePayload } from '@nos/shared-types';
+import { create } from "zustand";
+import { User, TokenResponsePayload } from "@nos/shared-types";
 
 interface AuthState {
   user: User | null;
@@ -17,16 +17,16 @@ export const useAuthStore = create<AuthState>((set) => {
   let initialAccess: string | null = null;
   let initialRefresh: string | null = null;
 
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     try {
-      const storedUser = localStorage.getItem('nos_user');
-      initialAccess = localStorage.getItem('nos_access_token');
-      initialRefresh = localStorage.getItem('nos_refresh_token');
+      const storedUser = localStorage.getItem("nos_user");
+      initialAccess = localStorage.getItem("nos_access_token");
+      initialRefresh = localStorage.getItem("nos_refresh_token");
       if (storedUser) {
         initialUser = JSON.parse(storedUser);
       }
     } catch (err) {
-      console.error('Failed to restore authentication state:', err);
+      console.error("Failed to restore authentication state:", err);
     }
   }
 
@@ -37,10 +37,10 @@ export const useAuthStore = create<AuthState>((set) => {
     isAuthenticated: !!initialAccess && !!initialUser,
 
     setSession: (session: TokenResponsePayload) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('nos_access_token', session.accessToken);
-        localStorage.setItem('nos_refresh_token', session.refreshToken);
-        localStorage.setItem('nos_user', JSON.stringify(session.user));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("nos_access_token", session.accessToken);
+        localStorage.setItem("nos_refresh_token", session.refreshToken);
+        localStorage.setItem("nos_user", JSON.stringify(session.user));
       }
       set({
         user: session.user,
@@ -51,17 +51,17 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     updateUser: (updatedUser: User) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('nos_user', JSON.stringify(updatedUser));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("nos_user", JSON.stringify(updatedUser));
       }
       set({ user: updatedUser });
     },
 
     clearSession: () => {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('nos_access_token');
-        localStorage.removeItem('nos_refresh_token');
-        localStorage.removeItem('nos_user');
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("nos_access_token");
+        localStorage.removeItem("nos_refresh_token");
+        localStorage.removeItem("nos_user");
       }
       set({
         user: null,

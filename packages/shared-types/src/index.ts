@@ -29,34 +29,34 @@ export interface PaginationMeta {
  * Standardized Enterprise Error Code Enumerations
  */
 export enum ErrorCode {
-  UNAUTHORIZED = 'UNAUTHORIZED',
-  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
-  TOKEN_REVOKED = 'TOKEN_REVOKED',
-  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
-  USER_NOT_FOUND = 'USER_NOT_FOUND',
-  USER_ALREADY_EXISTS = 'USER_ALREADY_EXISTS',
-  EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED',
-  INVALID_OTP = 'INVALID_OTP',
-  OTP_EXPIRED = 'OTP_EXPIRED',
-  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  UNAUTHORIZED = "UNAUTHORIZED",
+  TOKEN_EXPIRED = "TOKEN_EXPIRED",
+  TOKEN_REVOKED = "TOKEN_REVOKED",
+  INVALID_CREDENTIALS = "INVALID_CREDENTIALS",
+  USER_NOT_FOUND = "USER_NOT_FOUND",
+  USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS",
+  EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED",
+  INVALID_OTP = "INVALID_OTP",
+  OTP_EXPIRED = "OTP_EXPIRED",
+  INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
 }
 
 /**
  * Role-Based Access Control (RBAC) Hierarchy Enums
  */
 export enum UserRole {
-  OWNER = 'OWNER',
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  OPERATOR = 'OPERATOR',
-  ANALYST = 'ANALYST',
-  VIEWER = 'VIEWER',
-  AUDITOR = 'AUDITOR',
-  CUSTOM_ROLE = 'CUSTOM_ROLE',
-  USER = 'USER', // Backward compatibility preservation
+  OWNER = "OWNER",
+  SUPER_ADMIN = "SUPER_ADMIN",
+  ADMIN = "ADMIN",
+  MANAGER = "MANAGER",
+  OPERATOR = "OPERATOR",
+  ANALYST = "ANALYST",
+  VIEWER = "VIEWER",
+  AUDITOR = "AUDITOR",
+  CUSTOM_ROLE = "CUSTOM_ROLE",
+  USER = "USER", // Backward compatibility preservation
 }
 
 /**
@@ -123,11 +123,11 @@ export interface RefreshTokenPayload {
  * System Operational Status
  */
 export enum SystemStatus {
-  HEALTHY = 'HEALTHY',
-  DEGRADED = 'DEGRADED',
-  CRITICAL = 'CRITICAL',
-  OFFLINE = 'OFFLINE',
-  MAINTENANCE = 'MAINTENANCE',
+  HEALTHY = "HEALTHY",
+  DEGRADED = "DEGRADED",
+  CRITICAL = "CRITICAL",
+  OFFLINE = "OFFLINE",
+  MAINTENANCE = "MAINTENANCE",
 }
 
 /**
@@ -150,11 +150,11 @@ export interface NodeIdentifier {
  */
 
 export enum DeviceStatus {
-  ONLINE = 'ONLINE',
-  OFFLINE = 'OFFLINE',
-  DEGRADED = 'DEGRADED',
-  CRITICAL = 'CRITICAL',
-  MAINTENANCE = 'MAINTENANCE',
+  ONLINE = "ONLINE",
+  OFFLINE = "OFFLINE",
+  DEGRADED = "DEGRADED",
+  CRITICAL = "CRITICAL",
+  MAINTENANCE = "MAINTENANCE",
 }
 
 export interface Device {
@@ -170,7 +170,7 @@ export interface Device {
   lastSeen: string | null;
   registeredAt: string;
   organizationId?: string | null;
-  claimStatus?: 'UNASSIGNED' | 'ASSIGNED';
+  claimStatus?: "UNASSIGNED" | "ASSIGNED";
   createdAt: string;
   updatedAt: string;
 }
@@ -247,31 +247,31 @@ export interface DeviceSummaryStats {
 export interface TelemetrySnapshot {
   id: string;
   deviceId: string;
-  cpuUsage: number;             // 0 - 100%
-  cpuTemperature: number;       // degrees Celsius
-  cpuFrequency: number;         // MHz / GHz
+  cpuUsage: number; // 0 - 100%
+  cpuTemperature: number; // degrees Celsius
+  cpuFrequency: number; // MHz / GHz
   logicalProcessors: number;
   physicalProcessors: number;
-  memoryUsed: number;           // bytes or MB
-  memoryFree: number;           // bytes or MB
-  memoryTotal: number;          // bytes or MB
-  memoryUsagePercent: number;   // 0 - 100%
-  diskReadSpeed: number;        // bytes/sec
-  diskWriteSpeed: number;       // bytes/sec
-  diskUsagePercent: number;     // 0 - 100%
-  diskFree: number;             // bytes or MB/GB
-  diskTotal: number;            // bytes or MB/GB
-  networkUploadSpeed: number;   // bytes/sec (>= 0)
+  memoryUsed: number; // bytes or MB
+  memoryFree: number; // bytes or MB
+  memoryTotal: number; // bytes or MB
+  memoryUsagePercent: number; // 0 - 100%
+  diskReadSpeed: number; // bytes/sec
+  diskWriteSpeed: number; // bytes/sec
+  diskUsagePercent: number; // 0 - 100%
+  diskFree: number; // bytes or MB/GB
+  diskTotal: number; // bytes or MB/GB
+  networkUploadSpeed: number; // bytes/sec (>= 0)
   networkDownloadSpeed: number; // bytes/sec (>= 0)
-  bytesSent: number;            // total bytes transmitted
-  bytesReceived: number;        // total bytes received
+  bytesSent: number; // total bytes transmitted
+  bytesReceived: number; // total bytes received
   activeConnections: number;
   runningProcesses: number;
-  systemUptime: number;         // seconds
-  bootTime: string;             // ISO 8601 UTC string
+  systemUptime: number; // seconds
+  bootTime: string; // ISO 8601 UTC string
   ipAddress: string;
   macAddress: string;
-  timestamp: string;            // ISO 8601 UTC string
+  timestamp: string; // ISO 8601 UTC string
   runningServices?: string[] | null;
   gateway?: string | null;
   dns?: string[] | null;
@@ -317,10 +317,10 @@ export interface SubmitTelemetryResponse {
 }
 
 export interface TelemetryHistoryQuery {
-  from?: string;  // ISO 8601 UTC start date
-  to?: string;    // ISO 8601 UTC end date
+  from?: string; // ISO 8601 UTC start date
+  to?: string; // ISO 8601 UTC end date
   limit?: number; // max records per page (default 50)
-  page?: number;  // 1-indexed page number
+  page?: number; // 1-indexed page number
 }
 
 export interface PaginatedTelemetryResponse {
@@ -341,16 +341,16 @@ export interface ReservedHardwareMetrics {
   gpuTemperature?: number;
   gpuMemoryUsed?: number;
   gpuMemoryTotal?: number;
-  
+
   // Power & Battery Telemetry
   batteryPercentage?: number;
-  batteryChargingStatus?: 'CHARGING' | 'DISCHARGING' | 'FULL' | 'NOT_PRESENT';
-  
+  batteryChargingStatus?: "CHARGING" | "DISCHARGING" | "FULL" | "NOT_PRESENT";
+
   // Virtualization & Hypervisor Sensing
   virtualizationActive?: boolean;
   hypervisorPresent?: boolean;
   hypervisorVendor?: string;
-  
+
   // Enterprise Hardware Security & Compliance
   secureBootEnabled?: boolean;
   tpmPresent?: boolean;
@@ -581,7 +581,7 @@ export interface DeviceInventoryDto {
 export interface InventoryAuditLogDto {
   id: string;
   deviceId: string;
-  action: 'Inventory Created' | 'Inventory Updated' | 'Inventory Refreshed';
+  action: "Inventory Created" | "Inventory Updated" | "Inventory Refreshed";
   changeDetails: string;
   timestamp: string;
 }
@@ -625,7 +625,7 @@ export interface InventoryHealthResponse {
   agentVersion: string;
   lastScan: string;
   inventoryAgeSeconds: number;
-  status: 'HEALTHY' | 'STALE' | 'NOT_INITIALIZED';
+  status: "HEALTHY" | "STALE" | "NOT_INITIALIZED";
 }
 
 export interface CompleteInventoryResponse {
@@ -680,34 +680,35 @@ export interface SecurityInventoryResponse {
  */
 
 export enum SocketEvents {
-  DEVICE_CONNECTED = 'device.connected',
-  DEVICE_DISCONNECTED = 'device.disconnected',
-  DEVICE_ONLINE = 'device.online',
-  DEVICE_OFFLINE = 'device.offline',
-  HEARTBEAT_RECEIVED = 'heartbeat.received',
-  TELEMETRY_RECEIVED = 'telemetry.received',
-  INVENTORY_UPDATED = 'inventory.updated',
-  DASHBOARD_UPDATED = 'dashboard.updated',
-  SYSTEM_STATUS_CHANGED = 'system.status.changed',
+  DEVICE_CONNECTED = "device.connected",
+  DEVICE_DISCONNECTED = "device.disconnected",
+  DEVICE_ONLINE = "device.online",
+  DEVICE_OFFLINE = "device.offline",
+  HEARTBEAT_RECEIVED = "heartbeat.received",
+  TELEMETRY_RECEIVED = "telemetry.received",
+  INVENTORY_UPDATED = "inventory.updated",
+  DASHBOARD_UPDATED = "dashboard.updated",
+  SYSTEM_STATUS_CHANGED = "system.status.changed",
   // Phase 5: Alert & Notification Events
-  ALERT_CREATED = 'alert.created',
-  ALERT_UPDATED = 'alert.updated',
-  ALERT_ACKNOWLEDGED = 'alert.acknowledged',
-  ALERT_RESOLVED = 'alert.resolved',
-  ALERT_CLOSED = 'alert.closed',
-  ALERT_SUPPRESSED = 'alert.suppressed',
-  ALERT_ESCALATED = 'alert.escalated',
-  NOTIFICATION_SENT = 'notification.sent',
+  ALERT_CREATED = "alert.created",
+  ALERT_UPDATED = "alert.updated",
+  ALERT_ACKNOWLEDGED = "alert.acknowledged",
+  ALERT_RESOLVED = "alert.resolved",
+  ALERT_CLOSED = "alert.closed",
+  ALERT_SUPPRESSED = "alert.suppressed",
+  ALERT_ESCALATED = "alert.escalated",
+  NOTIFICATION_SENT = "notification.sent",
 }
 
 export enum SocketRooms {
-  DASHBOARD = 'dashboard',
-  ADMINS = 'admins',
-  OPERATORS = 'operators',
+  DASHBOARD = "dashboard",
+  ADMINS = "admins",
+  OPERATORS = "operators",
 }
 
-export const DEVICE_ROOM_PREFIX = 'device:';
-export const getDeviceRoom = (deviceId: string) => `${DEVICE_ROOM_PREFIX}${deviceId}`;
+export const DEVICE_ROOM_PREFIX = "device:";
+export const getDeviceRoom = (deviceId: string) =>
+  `${DEVICE_ROOM_PREFIX}${deviceId}`;
 
 /**
  * SPL FEATURE 1: Socket Versioning & SPL FEATURE 2: Correlation ID
@@ -768,7 +769,7 @@ export interface RealtimeDashboardEvent {
 export interface RealtimeTelemetryEvent {
   deviceId: string;
   snapshot: TelemetrySnapshot;
-  alertState?: 'NORMAL' | 'WARNING' | 'CRITICAL';
+  alertState?: "NORMAL" | "WARNING" | "CRITICAL";
 }
 
 export interface RealtimeInventoryEvent {
@@ -785,7 +786,7 @@ export interface RealtimeHeartbeatEvent {
   uptime: number;
   ipAddress: string;
   timestamp: string;
-  status: 'ONLINE' | 'OFFLINE' | 'DEGRADED';
+  status: "ONLINE" | "OFFLINE" | "DEGRADED";
 }
 
 /**
@@ -795,73 +796,73 @@ export interface RealtimeHeartbeatEvent {
  */
 
 export enum AlertSeverity {
-  INFO = 'INFO',
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
+  INFO = "INFO",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
 }
 
 export enum AlertStatus {
-  NEW = 'NEW',
-  OPEN = 'OPEN',
-  ACKNOWLEDGED = 'ACKNOWLEDGED',
-  RESOLVED = 'RESOLVED',
-  CLOSED = 'CLOSED',
-  SUPPRESSED = 'SUPPRESSED',
-  EXPIRED = 'EXPIRED',
-  SNOOZED = 'SNOOZED',
+  NEW = "NEW",
+  OPEN = "OPEN",
+  ACKNOWLEDGED = "ACKNOWLEDGED",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED",
+  SUPPRESSED = "SUPPRESSED",
+  EXPIRED = "EXPIRED",
+  SNOOZED = "SNOOZED",
 }
 
 export enum AlertCategory {
-  CPU = 'CPU',
-  RAM = 'RAM',
-  DISK = 'DISK',
-  TEMPERATURE = 'TEMPERATURE',
-  NETWORK = 'NETWORK',
-  HEARTBEAT = 'HEARTBEAT',
-  INVENTORY = 'INVENTORY',
-  SECURITY = 'SECURITY',
-  WINDOWS_SERVICE = 'WINDOWS_SERVICE',
-  STARTUP_APP = 'STARTUP_APP',
-  SYSTEM = 'SYSTEM',
-  CORRELATION = 'CORRELATION',
+  CPU = "CPU",
+  RAM = "RAM",
+  DISK = "DISK",
+  TEMPERATURE = "TEMPERATURE",
+  NETWORK = "NETWORK",
+  HEARTBEAT = "HEARTBEAT",
+  INVENTORY = "INVENTORY",
+  SECURITY = "SECURITY",
+  WINDOWS_SERVICE = "WINDOWS_SERVICE",
+  STARTUP_APP = "STARTUP_APP",
+  SYSTEM = "SYSTEM",
+  CORRELATION = "CORRELATION",
 }
 
 export enum NotificationProvider {
-  EMAIL = 'EMAIL',
-  SLACK = 'SLACK',
-  DISCORD = 'DISCORD',
-  TEAMS = 'TEAMS',
-  SMS = 'SMS',
-  PUSH = 'PUSH',
-  WEBHOOK = 'WEBHOOK',
+  EMAIL = "EMAIL",
+  SLACK = "SLACK",
+  DISCORD = "DISCORD",
+  TEAMS = "TEAMS",
+  SMS = "SMS",
+  PUSH = "PUSH",
+  WEBHOOK = "WEBHOOK",
 }
 
 export enum AlertOperatorRole {
-  OPERATOR = 'OPERATOR',
-  SENIOR = 'SENIOR',
-  MANAGER = 'MANAGER',
-  DIRECTOR = 'DIRECTOR',
-  ON_CALL = 'ON_CALL',
+  OPERATOR = "OPERATOR",
+  SENIOR = "SENIOR",
+  MANAGER = "MANAGER",
+  DIRECTOR = "DIRECTOR",
+  ON_CALL = "ON_CALL",
 }
 
 export enum AlertConfidence {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
 }
 
 export enum AlertRuleOperator {
-  GREATER_THAN = '>',
-  GREATER_THAN_OR_EQUAL = '>=',
-  LESS_THAN = '<',
-  LESS_THAN_OR_EQUAL = '<=',
-  EQUAL = '==',
-  NOT_EQUAL = '!=',
-  CONTAINS = 'CONTAINS',
-  NOT_CONTAINS = 'NOT_CONTAINS',
-  MUTATED = 'MUTATED',
+  GREATER_THAN = ">",
+  GREATER_THAN_OR_EQUAL = ">=",
+  LESS_THAN = "<",
+  LESS_THAN_OR_EQUAL = "<=",
+  EQUAL = "==",
+  NOT_EQUAL = "!=",
+  CONTAINS = "CONTAINS",
+  NOT_CONTAINS = "NOT_CONTAINS",
+  MUTATED = "MUTATED",
 }
 
 export interface AlertDto {
@@ -952,7 +953,7 @@ export interface NotificationLogDto {
   alertId: string;
   provider: NotificationProvider;
   recipient: string;
-  status: 'SUCCESS' | 'FAILED' | 'QUEUED' | 'RETRYING' | 'DLQ';
+  status: "SUCCESS" | "FAILED" | "QUEUED" | "RETRYING" | "DLQ";
   response?: string | null;
   retryCount: number;
   isDlq: boolean;
@@ -967,7 +968,7 @@ export interface MaintenanceWindowDto {
   startTime: string;
   endTime: string;
   reason: string;
-  type: 'SCHEDULED' | 'EMERGENCY' | 'RECURRING';
+  type: "SCHEDULED" | "EMERGENCY" | "RECURRING";
   enabled: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -981,7 +982,7 @@ export interface AlertOverviewDto {
   acknowledgedAlerts: number;
   resolvedToday: number;
   fleetAlertScore: number; // 0-100 overall fleet risk
-  alertHeatLevel: 'HOT' | 'WARM' | 'COLD';
+  alertHeatLevel: "HOT" | "WARM" | "COLD";
   repeatedIncidentCount: number; // e.g., occurred 73 times this month
   lastUpdated: string;
 }
@@ -1013,7 +1014,7 @@ export interface AlertTimelineDto {
 }
 
 export interface AlertHealthResponse {
-  status: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  status: "HEALTHY" | "DEGRADED" | "CRITICAL";
   redisConnected: boolean;
   bullmqWorkersActive: boolean;
   activeQueuedCount: number;
@@ -1037,7 +1038,14 @@ export interface RuleSimulationReportDto {
 
 export interface BulkAlertOperationRequest {
   alertIds: string[];
-  action: 'ACKNOWLEDGE' | 'RESOLVE' | 'SUPPRESS' | 'DELETE' | 'ASSIGN' | 'TAG' | 'SNOOZE';
+  action:
+    | "ACKNOWLEDGE"
+    | "RESOLVE"
+    | "SUPPRESS"
+    | "DELETE"
+    | "ASSIGN"
+    | "TAG"
+    | "SNOOZE";
   payload?: {
     userId?: string;
     tag?: string;
@@ -1048,11 +1056,15 @@ export interface BulkAlertOperationRequest {
 
 export interface RealtimeAlertEvent {
   alert: AlertDto;
-  eventType: 'CREATED' | 'UPDATED' | 'ACKNOWLEDGED' | 'RESOLVED' | 'SUPPRESSED' | 'ESCALATED';
+  eventType:
+    | "CREATED"
+    | "UPDATED"
+    | "ACKNOWLEDGED"
+    | "RESOLVED"
+    | "SUPPRESSED"
+    | "ESCALATED";
   timestamp: string;
 }
-
-
 
 // =========================================================
 // PHASE 5 FINAL HARDENING: Rule Engine Enterprise Types
@@ -1062,51 +1074,51 @@ export interface RealtimeAlertEvent {
 // ─── Enums ────────────────────────────────────────────────
 
 export enum AlertRulePriority {
-  LOW = 'LOW',
-  NORMAL = 'NORMAL',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
+  LOW = "LOW",
+  NORMAL = "NORMAL",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
 }
 
 export enum AlertRuleCategory {
-  PERFORMANCE = 'PERFORMANCE',
-  SECURITY = 'SECURITY',
-  AVAILABILITY = 'AVAILABILITY',
-  INVENTORY = 'INVENTORY',
-  COMPLIANCE = 'COMPLIANCE',
-  MAINTENANCE = 'MAINTENANCE',
-  SYSTEM = 'SYSTEM',
-  NETWORK = 'NETWORK',
+  PERFORMANCE = "PERFORMANCE",
+  SECURITY = "SECURITY",
+  AVAILABILITY = "AVAILABILITY",
+  INVENTORY = "INVENTORY",
+  COMPLIANCE = "COMPLIANCE",
+  MAINTENANCE = "MAINTENANCE",
+  SYSTEM = "SYSTEM",
+  NETWORK = "NETWORK",
 }
 
 export enum AlertRuleScheduleMode {
-  ALWAYS = 'ALWAYS',
-  BUSINESS_HOURS = 'BUSINESS_HOURS',
-  NIGHT = 'NIGHT',
-  WEEKEND = 'WEEKEND',
-  CRON = 'CRON',
+  ALWAYS = "ALWAYS",
+  BUSINESS_HOURS = "BUSINESS_HOURS",
+  NIGHT = "NIGHT",
+  WEEKEND = "WEEKEND",
+  CRON = "CRON",
 }
 
 export enum AlertRuleStatus {
-  ACTIVE = 'ACTIVE',
-  DISABLED = 'DISABLED',
-  ARCHIVED = 'ARCHIVED',
+  ACTIVE = "ACTIVE",
+  DISABLED = "DISABLED",
+  ARCHIVED = "ARCHIVED",
 }
 
 export enum RuleComplexityScore {
-  SIMPLE = 'SIMPLE',
-  MEDIUM = 'MEDIUM',
-  COMPLEX = 'COMPLEX',
-  VERY_COMPLEX = 'VERY_COMPLEX',
+  SIMPLE = "SIMPLE",
+  MEDIUM = "MEDIUM",
+  COMPLEX = "COMPLEX",
+  VERY_COMPLEX = "VERY_COMPLEX",
 }
 
 export enum RuleRecommendationType {
-  MERGE = 'MERGE',
-  REMOVE_DUPLICATE = 'REMOVE_DUPLICATE',
-  NEVER_TRIGGERED = 'NEVER_TRIGGERED',
-  EXPENSIVE = 'EXPENSIVE',
-  HIGH_NOISE = 'HIGH_NOISE',
-  OVERLAPPING = 'OVERLAPPING',
+  MERGE = "MERGE",
+  REMOVE_DUPLICATE = "REMOVE_DUPLICATE",
+  NEVER_TRIGGERED = "NEVER_TRIGGERED",
+  EXPENSIVE = "EXPENSIVE",
+  HIGH_NOISE = "HIGH_NOISE",
+  OVERLAPPING = "OVERLAPPING",
 }
 
 // ─── Enhanced AlertRuleDto (backward-compatible) ──────────
@@ -1156,13 +1168,14 @@ export interface AlertRuleEnhancedDto {
 
 // ─── SPL FEATURE 16: Rule Test ────────────────────────────
 
-export type RuleTestTimeframe = 'LAST_HOUR' | 'LAST_6H' | 'LAST_24H' | 'LAST_7D' | 'CUSTOM';
+export type RuleTestTimeframe =
+  "LAST_HOUR" | "LAST_6H" | "LAST_24H" | "LAST_7D" | "CUSTOM";
 
 export interface RuleTestRequestDto {
   ruleId: string;
   timeframe: RuleTestTimeframe;
-  from?: string;   // ISO string, required if timeframe === 'CUSTOM'
-  to?: string;     // ISO string, required if timeframe === 'CUSTOM'
+  from?: string; // ISO string, required if timeframe === 'CUSTOM'
+  to?: string; // ISO string, required if timeframe === 'CUSTOM'
 }
 
 export interface RuleTestResultDto {
@@ -1183,7 +1196,7 @@ export interface RuleTestResultDto {
   estimatedQueueJobs: number;
   affectedDevices: string[];
   estimatedCooldownSaves: number;
-  noiseReduction: number;       // % of firings suppressed
+  noiseReduction: number; // % of firings suppressed
   simulationDurationMs: number;
 }
 
@@ -1201,9 +1214,9 @@ export interface RuleValidationResultDto {
   valid: boolean;
   errors: RuleValidationError[];
   warnings: RuleValidationError[];
-  duplicateOf?: string | null;        // ruleId if duplicate detected
-  conflictsWith?: string[] | null;    // ruleIds this conflicts with
-  circularDependencies?: string[][];  // chains of circular deps
+  duplicateOf?: string | null; // ruleId if duplicate detected
+  conflictsWith?: string[] | null; // ruleIds this conflicts with
+  circularDependencies?: string[][]; // chains of circular deps
   invalidMetrics?: string[];
   impossibleConditions?: string[];
 }
@@ -1212,12 +1225,12 @@ export interface RuleValidationResultDto {
 
 export interface RulePreviewDto {
   estimatedDevices: number;
-  estimatedAlertVolume: number;     // per day
-  estimatedSuppression: number;     // percentage
-  estimatedCorrelation: number;     // count
+  estimatedAlertVolume: number; // per day
+  estimatedSuppression: number; // percentage
+  estimatedCorrelation: number; // count
   estimatedCooldownSaves: number;
-  estimatedImpact: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  riskRating: number;               // 0–100
+  estimatedImpact: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  riskRating: number; // 0–100
   complexityScore: RuleComplexityScore;
   noiseScore: number;
   affectedTags: string[];
@@ -1239,8 +1252,8 @@ export interface DryRunLogEntry {
 export interface DryRunResultDto {
   ruleId?: string;
   ruleName?: string;
-  stored: false;      // Always false — dry run never stores
-  notified: false;    // Always false — dry run never notifies
+  stored: false; // Always false — dry run never stores
+  notified: false; // Always false — dry run never notifies
   wouldTriggerCount: number;
   suppressedCount: number;
   deduplications: number;
@@ -1283,7 +1296,7 @@ export interface RollbackPreviewDto {
   targetState: AlertRuleEnhancedDto;
   differences: RuleFieldDiff[];
   warnings: string[];
-  estimatedImpact: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  estimatedImpact: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   isRollbackSafe: boolean;
 }
 
@@ -1291,9 +1304,9 @@ export interface RollbackPreviewDto {
 
 export interface ReplayRequestDto {
   ruleId: string;
-  from: string;   // ISO string
-  to: string;     // ISO string
-  deviceIds?: string[];   // Optional filter — if empty, all devices
+  from: string; // ISO string
+  to: string; // ISO string
+  deviceIds?: string[]; // Optional filter — if empty, all devices
 }
 
 export interface ReplayResultDto {
@@ -1301,7 +1314,7 @@ export interface ReplayResultDto {
   ruleName: string;
   from: string;
   to: string;
-  stored: false;      // Always false — simulation only
+  stored: false; // Always false — simulation only
   devicesReplayed: number;
   samplesReplayed: number;
   wouldTriggerCount: number;
@@ -1350,7 +1363,7 @@ export interface RuleHealthDto {
     connectedClients: number;
     uptime: number;
   };
-  overallStatus: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  overallStatus: "HEALTHY" | "DEGRADED" | "CRITICAL";
   lastCheckedAt: string;
 }
 
@@ -1369,8 +1382,8 @@ export interface RulePerformanceMetricsDto {
   deduplicationCount: number;
   escalationCount: number;
   memoryUsageBytes: number;
-  triggerRate: number;          // triggers / evaluations %
-  suppressionRate: number;      // suppressions / triggers %
+  triggerRate: number; // triggers / evaluations %
+  suppressionRate: number; // suppressions / triggers %
   lastEvaluatedAt?: string | null;
   p95ExecutionMs: number;
   p99ExecutionMs: number;
@@ -1382,7 +1395,7 @@ export interface RuleComplexityBreakdownDto {
   ruleId: string;
   ruleName: string;
   score: RuleComplexityScore;
-  scoreValue: number;           // 0–100 numeric
+  scoreValue: number; // 0–100 numeric
   factors: {
     conditionComplexity: number;
     operatorWeight: number;
@@ -1402,7 +1415,7 @@ export interface RuleRecommendationDto {
   ruleId: string;
   ruleName: string;
   message: string;
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  severity: "INFO" | "WARNING" | "CRITICAL";
   actionable: boolean;
   suggestedAction?: string;
   relatedRuleIds?: string[];
@@ -1413,8 +1426,8 @@ export interface RuleRecommendationDto {
 export interface RuleNoiseScoreDto {
   ruleId: string;
   ruleName: string;
-  noiseScore: number;           // 0–100 (100 = extremely noisy)
-  rating: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  noiseScore: number; // 0–100 (100 = extremely noisy)
+  rating: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   breakdown: {
     deduplicationFactor: number;
     suppressionFactor: number;
@@ -1441,7 +1454,7 @@ export interface RuleUsageStatisticsDto {
   lastTriggeredAt?: string | null;
   lastEvaluatedAt?: string | null;
   neverTriggered: boolean;
-  triggerTrend: 'INCREASING' | 'STABLE' | 'DECREASING';
+  triggerTrend: "INCREASING" | "STABLE" | "DECREASING";
 }
 
 // ─── 1% FEATURE 5: Enterprise Rule Audit ─────────────────
@@ -1469,8 +1482,8 @@ export interface RuleDependencyNode {
   ruleName: string;
   priority: AlertRulePriority;
   category: AlertRuleCategory;
-  dependsOn: string[];           // parent rule IDs
-  dependents: string[];          // child rule IDs
+  dependsOn: string[]; // parent rule IDs
+  dependents: string[]; // child rule IDs
   depth: number;
   hasCircularDep: boolean;
 }
@@ -1489,7 +1502,7 @@ export interface RuleDependencyGraphDto {
 export interface RuleExportDto {
   exportedAt: string;
   exportedBy: string;
-  version: string;              // schema version e.g. "1.0.0"
+  version: string; // schema version e.g. "1.0.0"
   totalRules: number;
   rules: AlertRuleEnhancedDto[];
 }
@@ -1537,7 +1550,7 @@ export interface QueueDashboardDto {
   totalWaiting: number;
   totalActive: number;
   totalFailed: number;
-  healthStatus: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  healthStatus: "HEALTHY" | "DEGRADED" | "CRITICAL";
   lastUpdatedAt: string;
 }
 
@@ -1565,10 +1578,10 @@ export interface TenantAwarePayload<T = any> {
 // ─── Organization & Tenant Entities ──────────────────────────
 
 export enum OrganizationStatus {
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  ARCHIVED = 'ARCHIVED',
-  DELETED = 'DELETED', // Soft delete state
+  ACTIVE = "ACTIVE",
+  SUSPENDED = "SUSPENDED",
+  ARCHIVED = "ARCHIVED",
+  DELETED = "DELETED", // Soft delete state
 }
 
 export interface OrganizationSettingsDto {
@@ -1659,10 +1672,10 @@ export interface TeamDto {
 }
 
 export enum InvitationStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REVOKED = 'REVOKED',
-  EXPIRED = 'EXPIRED',
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REVOKED = "REVOKED",
+  EXPIRED = "EXPIRED",
 }
 
 export interface OrganizationInvitationDto {
@@ -1702,18 +1715,18 @@ export interface OrganizationMemberDto {
 // ─── RBAC & ABAC Permissions ─────────────────────────────────
 
 export enum PermissionFlag {
-  DEVICE_MANAGEMENT = 'DEVICE_MANAGEMENT',
-  INVENTORY_READ_WRITE = 'INVENTORY_READ_WRITE',
-  TELEMETRY_READ = 'TELEMETRY_READ',
-  ALERTS_MANAGE = 'ALERTS_MANAGE',
-  RULES_MANAGE = 'RULES_MANAGE',
-  MAINTENANCE_MANAGE = 'MAINTENANCE_MANAGE',
-  USERS_MANAGE = 'USERS_MANAGE',
-  TEAMS_MANAGE = 'TEAMS_MANAGE',
-  SETTINGS_MANAGE = 'SETTINGS_MANAGE',
-  API_KEYS_MANAGE = 'API_KEYS_MANAGE',
-  AUDIT_READ = 'AUDIT_READ',
-  ROLE_BUILDER_MANAGE = 'ROLE_BUILDER_MANAGE',
+  DEVICE_MANAGEMENT = "DEVICE_MANAGEMENT",
+  INVENTORY_READ_WRITE = "INVENTORY_READ_WRITE",
+  TELEMETRY_READ = "TELEMETRY_READ",
+  ALERTS_MANAGE = "ALERTS_MANAGE",
+  RULES_MANAGE = "RULES_MANAGE",
+  MAINTENANCE_MANAGE = "MAINTENANCE_MANAGE",
+  USERS_MANAGE = "USERS_MANAGE",
+  TEAMS_MANAGE = "TEAMS_MANAGE",
+  SETTINGS_MANAGE = "SETTINGS_MANAGE",
+  API_KEYS_MANAGE = "API_KEYS_MANAGE",
+  AUDIT_READ = "AUDIT_READ",
+  ROLE_BUILDER_MANAGE = "ROLE_BUILDER_MANAGE",
 }
 
 export interface PermissionProfileDto {
@@ -1738,15 +1751,20 @@ export interface RoleTemplateDto {
 
 export interface PermissionMatrixDto {
   roles: { role: UserRole | string; permissions: PermissionFlag[] }[];
-  allPermissions: { flag: PermissionFlag; category: string; label: string; description: string }[];
+  allPermissions: {
+    flag: PermissionFlag;
+    category: string;
+    label: string;
+    description: string;
+  }[];
 }
 
 // ─── Device Ownership & Governance ───────────────────────────
 
 export enum DeviceGroupType {
-  STATIC = 'STATIC',
-  DYNAMIC = 'DYNAMIC',
-  SMART = 'SMART',
+  STATIC = "STATIC",
+  DYNAMIC = "DYNAMIC",
+  SMART = "SMART",
 }
 
 export interface DeviceGroupDto {
@@ -1782,10 +1800,10 @@ export interface DeviceOwnershipDto {
 }
 
 export enum DeviceTransferStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
+  PENDING_APPROVAL = "PENDING_APPROVAL",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface DeviceTransferRequestDto {
@@ -1844,14 +1862,14 @@ export interface UserImpersonationDto {
 // ─── API Key Governance ──────────────────────────────────────
 
 export enum ApiKeyScope {
-  DEVICES_READ = 'DEVICES_READ',
-  DEVICES_WRITE = 'DEVICES_WRITE',
-  TELEMETRY_INGEST = 'TELEMETRY_INGEST',
-  ALERTS_READ = 'ALERTS_READ',
-  ALERTS_WRITE = 'ALERTS_WRITE',
-  INVENTORY_READ = 'INVENTORY_READ',
-  AUDIT_READ = 'AUDIT_READ',
-  WEBHOOKS_MANAGE = 'WEBHOOKS_MANAGE',
+  DEVICES_READ = "DEVICES_READ",
+  DEVICES_WRITE = "DEVICES_WRITE",
+  TELEMETRY_INGEST = "TELEMETRY_INGEST",
+  ALERTS_READ = "ALERTS_READ",
+  ALERTS_WRITE = "ALERTS_WRITE",
+  INVENTORY_READ = "INVENTORY_READ",
+  AUDIT_READ = "AUDIT_READ",
+  WEBHOOKS_MANAGE = "WEBHOOKS_MANAGE",
 }
 
 export interface ApiKeyDto {
@@ -1881,27 +1899,27 @@ export interface ApiKeyCreateRequestDto {
 // ─── Universal Audit System ──────────────────────────────────
 
 export enum AuditActionType {
-  LOGIN = 'LOGIN',
-  LOGOUT = 'LOGOUT',
-  DEVICE_REGISTRATION = 'DEVICE_REGISTRATION',
-  DEVICE_TRANSFER = 'DEVICE_TRANSFER',
-  INVENTORY_UPDATE = 'INVENTORY_UPDATE',
-  TELEMETRY_INGEST = 'TELEMETRY_INGEST',
-  RULE_CREATE = 'RULE_CREATE',
-  RULE_UPDATE = 'RULE_UPDATE',
-  RULE_DELETE = 'RULE_DELETE',
-  ALERT_TRIGGER = 'ALERT_TRIGGER',
-  ALERT_ACKNOWLEDGE = 'ALERT_ACKNOWLEDGE',
-  MAINTENANCE_SCHEDULE = 'MAINTENANCE_SCHEDULE',
-  ORG_SETTINGS_UPDATE = 'ORG_SETTINGS_UPDATE',
-  USER_INVITED = 'USER_INVITED',
-  USER_REMOVED = 'USER_REMOVED',
-  USER_IMPERSONATION = 'USER_IMPERSONATION',
-  PERMISSION_CHANGE = 'PERMISSION_CHANGE',
-  API_KEY_CREATE = 'API_KEY_CREATE',
-  API_KEY_REVOKE = 'API_KEY_REVOKE',
-  SESSION_REVOKE = 'SESSION_REVOKE',
-  ORG_LIFECYCLE_CHANGE = 'ORG_LIFECYCLE_CHANGE',
+  LOGIN = "LOGIN",
+  LOGOUT = "LOGOUT",
+  DEVICE_REGISTRATION = "DEVICE_REGISTRATION",
+  DEVICE_TRANSFER = "DEVICE_TRANSFER",
+  INVENTORY_UPDATE = "INVENTORY_UPDATE",
+  TELEMETRY_INGEST = "TELEMETRY_INGEST",
+  RULE_CREATE = "RULE_CREATE",
+  RULE_UPDATE = "RULE_UPDATE",
+  RULE_DELETE = "RULE_DELETE",
+  ALERT_TRIGGER = "ALERT_TRIGGER",
+  ALERT_ACKNOWLEDGE = "ALERT_ACKNOWLEDGE",
+  MAINTENANCE_SCHEDULE = "MAINTENANCE_SCHEDULE",
+  ORG_SETTINGS_UPDATE = "ORG_SETTINGS_UPDATE",
+  USER_INVITED = "USER_INVITED",
+  USER_REMOVED = "USER_REMOVED",
+  USER_IMPERSONATION = "USER_IMPERSONATION",
+  PERMISSION_CHANGE = "PERMISSION_CHANGE",
+  API_KEY_CREATE = "API_KEY_CREATE",
+  API_KEY_REVOKE = "API_KEY_REVOKE",
+  SESSION_REVOKE = "SESSION_REVOKE",
+  ORG_LIFECYCLE_CHANGE = "ORG_LIFECYCLE_CHANGE",
 }
 
 export interface AuditLogDto {
@@ -1947,7 +1965,7 @@ export interface OrganizationHealthScoreDto {
   overallHealthScore: number; // 0 - 100
   deviceAvailabilityPercent: number;
   openCriticalAlertsCount: number;
-  queueHealth: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
+  queueHealth: "HEALTHY" | "DEGRADED" | "CRITICAL";
   storageQuotaPercent: number;
   timestamp: string;
 }
@@ -1984,4 +2002,3 @@ export interface ComplianceScoreDto {
   tenantIsolationVerified: boolean;
   timestamp: string;
 }
-

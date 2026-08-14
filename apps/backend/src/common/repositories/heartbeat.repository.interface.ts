@@ -1,6 +1,6 @@
-import { Heartbeat } from '@prisma/client';
+import { Heartbeat } from "@prisma/client";
 
-export const IHeartbeatRepositoryToken = Symbol('IHeartbeatRepository');
+export const IHeartbeatRepositoryToken = Symbol("IHeartbeatRepository");
 
 export interface CreateHeartbeatInput {
   deviceId: string;

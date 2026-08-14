@@ -7,21 +7,21 @@ import {
   SecurityInventoryResponse,
   InventoryHealthResponse,
   InventoryAuditLogDto,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 
-export const IInventoryRepository = Symbol('IInventoryRepository');
+export const IInventoryRepository = Symbol("IInventoryRepository");
 
 export type InventoryAuditAction =
-  | 'Inventory Created'
-  | 'Inventory Updated'
-  | 'Inventory Refreshed'
-  | 'Hardware Added'
-  | 'Hardware Removed'
-  | 'Software Installed'
-  | 'Software Removed'
-  | 'BIOS Updated'
-  | 'Windows Updated'
-  | 'Network Changed';
+  | "Inventory Created"
+  | "Inventory Updated"
+  | "Inventory Refreshed"
+  | "Hardware Added"
+  | "Hardware Removed"
+  | "Software Installed"
+  | "Software Removed"
+  | "BIOS Updated"
+  | "Windows Updated"
+  | "Network Changed";
 
 export interface IInventoryRepository {
   /**
@@ -45,7 +45,9 @@ export interface IInventoryRepository {
   /**
    * Retrieves strictly hardware components (CPU, Motherboard, BIOS, RAM, Disks, GPUs).
    */
-  findHardwareInventory(deviceId: string): Promise<HardwareInventoryResponse | null>;
+  findHardwareInventory(
+    deviceId: string,
+  ): Promise<HardwareInventoryResponse | null>;
 
   /**
    * Retrieves installed software, windows services, and startup applications with search filtering & pagination.
@@ -60,12 +62,16 @@ export interface IInventoryRepository {
   /**
    * Retrieves network adapters and routing parameters.
    */
-  findNetworkInventory(deviceId: string): Promise<NetworkInventoryResponse | null>;
+  findNetworkInventory(
+    deviceId: string,
+  ): Promise<NetworkInventoryResponse | null>;
 
   /**
    * Retrieves security attributes and system capability evaluations.
    */
-  findSecurityInventory(deviceId: string): Promise<SecurityInventoryResponse | null>;
+  findSecurityInventory(
+    deviceId: string,
+  ): Promise<SecurityInventoryResponse | null>;
 
   /**
    * Retrieves diagnostic health statistics for a target node or global averages.
@@ -84,6 +90,9 @@ export interface IInventoryRepository {
   /**
    * Retrieves the most recent audit events for a monitored node.
    */
-  getRecentAuditLogs(deviceId: string, limit?: number): Promise<InventoryAuditLogDto[]>;
+  getRecentAuditLogs(
+    deviceId: string,
+    limit?: number,
+  ): Promise<InventoryAuditLogDto[]>;
   search(query: string, organizationId: string): Promise<any[]>;
 }

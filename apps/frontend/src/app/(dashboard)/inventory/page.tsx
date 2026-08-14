@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
-  Layers, Search, Filter, RefreshCw, Server, Cpu, HardDrive, Network,
-  Shield, FileText, ChevronRight, CheckCircle, Package, Activity
-} from 'lucide-react';
-import { DataTable, Column } from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
-import { apiClient } from '@/lib/api-client';
+  Layers,
+  Search,
+  Filter,
+  RefreshCw,
+  Server,
+  Cpu,
+  HardDrive,
+  Network,
+  Shield,
+  FileText,
+  ChevronRight,
+  CheckCircle,
+  Package,
+  Activity,
+} from "lucide-react";
+import { DataTable, Column } from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/lib/api-client";
 
 interface GlobalSoftwareRow extends Record<string, unknown> {
   id: string;
@@ -22,16 +34,20 @@ interface GlobalSoftwareRow extends Record<string, unknown> {
 }
 
 export default function GlobalInventoryExplorerPage() {
-  const [activeTab, setActiveTab] = useState<'SOFTWARE' | 'SERVICES' | 'SECURITY' | 'CHANGES'>('SOFTWARE');
+  const [activeTab, setActiveTab] = useState<
+    "SOFTWARE" | "SERVICES" | "SECURITY" | "CHANGES"
+  >("SOFTWARE");
   const [items, setItems] = useState<GlobalSoftwareRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [search, setSearch] = useState<string>('');
-  const [filterOs, setFilterOs] = useState<string>('ALL');
+  const [search, setSearch] = useState<string>("");
+  const [filterOs, setFilterOs] = useState<string>("ALL");
 
   const loadInventoryData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get<any>(`/inventory/search?query=${encodeURIComponent(search)}&tab=${activeTab}`);
+      const res = await apiClient.get<any>(
+        `/inventory/search?query=${encodeURIComponent(search)}&tab=${activeTab}`,
+      );
       const data = res.data?.data?.items || res.data?.items || [];
       setItems(data);
     } catch {
@@ -48,23 +64,30 @@ export default function GlobalInventoryExplorerPage() {
 
   const softwareColumns: Column<GlobalSoftwareRow>[] = [
     {
-      key: 'hostname',
-      header: 'Host Machine',
+      key: "hostname",
+      header: "Host Machine",
       sortable: true,
       render: (row) => (
-        <Link href={`/inventory/${row.deviceId}`} className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5">
+        <Link
+          href={`/inventory/${row.deviceId}`}
+          className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5"
+        >
           <Server className="w-3.5 h-3.5 text-slate-400" />
           {String(row.hostname || row.deviceId)}
         </Link>
       ),
     },
-    { key: 'softwareName', header: 'Application / Asset Name', sortable: true },
-    { key: 'publisher', header: 'Publisher', sortable: true },
-    { key: 'version', header: 'Version', sortable: true },
+    { key: "softwareName", header: "Application / Asset Name", sortable: true },
+    { key: "publisher", header: "Publisher", sortable: true },
+    { key: "version", header: "Version", sortable: true },
     {
-      key: 'osEdition',
-      header: 'Platform OS',
-      render: (row) => <Badge variant="info" size="xs">{String(row.osEdition || 'Windows')}</Badge>,
+      key: "osEdition",
+      header: "Platform OS",
+      render: (row) => (
+        <Badge variant="info" size="xs">
+          {String(row.osEdition || "Windows")}
+        </Badge>
+      ),
     },
   ];
 
@@ -76,10 +99,13 @@ export default function GlobalInventoryExplorerPage() {
           <div>
             <div className="flex items-center gap-2">
               <Layers className="w-6 h-6 text-cyan-400" />
-              <h1 className="text-2xl font-bold tracking-tight text-white">Global Inventory Explorer</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Global Inventory Explorer
+              </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Cross-device software, services, hardware specs, and security compliance search across all monitored nodes.
+              Cross-device software, services, hardware specs, and security
+              compliance search across all monitored nodes.
             </p>
           </div>
 
@@ -95,7 +121,9 @@ export default function GlobalInventoryExplorerPage() {
               disabled={loading}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
           </div>
@@ -103,19 +131,21 @@ export default function GlobalInventoryExplorerPage() {
 
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2">
-          {(['SOFTWARE', 'SERVICES', 'SECURITY', 'CHANGES'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === tab
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          {(["SOFTWARE", "SERVICES", "SECURITY", "CHANGES"] as const).map(
+            (tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                  activeTab === tab
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                }`}
+              >
+                {tab}
+              </button>
+            ),
+          )}
         </div>
 
         {/* Search, Filter & Bulk Actions Controls */}
@@ -137,7 +167,9 @@ export default function GlobalInventoryExplorerPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2">Bulk Actions:</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2">
+              Bulk Actions:
+            </span>
             <select className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-cyan-500">
               <option value="">Select Action...</option>
               <option value="move">Move to Department</option>

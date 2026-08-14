@@ -1,13 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { ITokenRepository, OtpTypeEnum, RefreshTokenRecord, OtpRecord } from '../../common/repositories/token.repository.interface';
-import { OtpType } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import {
+  ITokenRepository,
+  OtpTypeEnum,
+  RefreshTokenRecord,
+  OtpRecord,
+} from "../../common/repositories/token.repository.interface";
+import { OtpType } from "@prisma/client";
 
 @Injectable()
 export class PrismaTokenRepository implements ITokenRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<RefreshTokenRecord> {
+  async createRefreshToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<RefreshTokenRecord> {
     return this.prisma.refreshToken.create({
       data: {
         userId,
@@ -17,7 +26,9 @@ export class PrismaTokenRepository implements ITokenRepository {
     });
   }
 
-  async findRefreshToken(tokenHash: string): Promise<RefreshTokenRecord | null> {
+  async findRefreshToken(
+    tokenHash: string,
+  ): Promise<RefreshTokenRecord | null> {
     return this.prisma.refreshToken.findUnique({
       where: { tokenHash },
     });
@@ -37,7 +48,13 @@ export class PrismaTokenRepository implements ITokenRepository {
     });
   }
 
-  async createOtp(userId: string, email: string, otpHash: string, type: OtpTypeEnum, expiresAt: Date): Promise<OtpRecord> {
+  async createOtp(
+    userId: string,
+    email: string,
+    otpHash: string,
+    type: OtpTypeEnum,
+    expiresAt: Date,
+  ): Promise<OtpRecord> {
     const created = await this.prisma.verificationOtp.create({
       data: {
         userId,
@@ -50,10 +67,17 @@ export class PrismaTokenRepository implements ITokenRepository {
     return { ...created, type: created.type as OtpTypeEnum };
   }
 
-  async findLatestOtp(email: string, type: OtpTypeEnum): Promise<OtpRecord | null> {
+  async findLatestOtp(
+    email: string,
+    type: OtpTypeEnum,
+  ): Promise<OtpRecord | null> {
     const record = await this.prisma.verificationOtp.findFirst({
-      where: { email: email.toLowerCase(), type: type as unknown as OtpType, isUsed: false },
-      orderBy: { createdAt: 'desc' },
+      where: {
+        email: email.toLowerCase(),
+        type: type as unknown as OtpType,
+        isUsed: false,
+      },
+      orderBy: { createdAt: "desc" },
     });
     if (!record) return null;
     return { ...record, type: record.type as OtpTypeEnum };

@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
-import { TelemetrySnapshot, Prisma } from '@prisma/client';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "../../database/prisma.service";
+import { TelemetrySnapshot, Prisma } from "@prisma/client";
 
-export type Granularity = '1m' | '15m' | '1h' | '1d';
+export type Granularity = "1m" | "15m" | "1h" | "1d";
 
 interface BucketAggregation {
   deviceId: string;
@@ -34,7 +34,9 @@ export class TelemetryAggregationService {
     defaultWindowMinutes?: number,
   ): Promise<{ devicesProcessed: number; rowsInserted: number }> {
     const startTime = Date.now();
-    this.logger.log(`Starting telemetry aggregation cycle for granularity [${granularity}]...`);
+    this.logger.log(
+      `Starting telemetry aggregation cycle for granularity [${granularity}]...`,
+    );
 
     const keyName = `aggregation_last_run_${granularity}`;
     const lastRunRecord = await this.prisma.keyValue.findUnique({
@@ -47,7 +49,11 @@ export class TelemetryAggregationService {
     if (lastRunRecord && lastRunRecord.value) {
       lastRun = new Date(lastRunRecord.value);
       if (isNaN(lastRun.getTime())) {
-        lastRun = this.getDefaultLastRun(granularity, defaultWindowMinutes, now);
+        lastRun = this.getDefaultLastRun(
+          granularity,
+          defaultWindowMinutes,
+          now,
+        );
       }
     } else {
       lastRun = this.getDefaultLastRun(granularity, defaultWindowMinutes, now);
@@ -61,7 +67,7 @@ export class TelemetryAggregationService {
           lte: now,
         },
       },
-      orderBy: { timestamp: 'asc' },
+      orderBy: { timestamp: "asc" },
       include: {
         device: {
           select: { id: true, organizationId: true },
@@ -83,14 +89,21 @@ export class TelemetryAggregationService {
     }
 
     const distinctDeviceIds = new Set<string>();
-    const bucketMap = new Map<string, Array<TelemetrySnapshot & { tenantId: string }>>();
+    const bucketMap = new Map<
+      string,
+      Array<TelemetrySnapshot & { tenantId: string }>
+    >();
     const bucketDurationMs = this.getBucketDurationMs(granularity);
 
     // Group snapshots by deviceId and bucket interval
     for (const snap of snapshots) {
       distinctDeviceIds.add(snap.deviceId);
-      const tenantId = (snap as any).device?.organizationId || 'default-org';
-      const bucketStart = this.calculateBucketStart(snap.timestamp, granularity, bucketDurationMs);
+      const tenantId = (snap as any).device?.organizationId || "default-org";
+      const bucketStart = this.calculateBucketStart(
+        snap.timestamp,
+        granularity,
+        bucketDurationMs,
+      );
       const groupKey = `${snap.deviceId}__${bucketStart.getTime()}`;
 
       let group = bucketMap.get(groupKey);
@@ -107,7 +120,11 @@ export class TelemetryAggregationService {
       if (group.length === 0) continue;
 
       const sample = group[0];
-      const periodStart = this.calculateBucketStart(sample.timestamp, granularity, bucketDurationMs);
+      const periodStart = this.calculateBucketStart(
+        sample.timestamp,
+        granularity,
+        bucketDurationMs,
+      );
       const periodEnd = new Date(periodStart.getTime() + bucketDurationMs);
 
       // Extract valid numbers, handling any null/undefined/NaN safely
@@ -124,15 +141,23 @@ export class TelemetryAggregationService {
         .map((g) => (g.networkUploadSpeed ?? 0) + (g.networkDownloadSpeed ?? 0))
         .filter((val) => val != null && !isNaN(val));
 
-      const avgCpu = cpuValues.length ? cpuValues.reduce((a, b) => a + b, 0) / cpuValues.length : 0;
+      const avgCpu = cpuValues.length
+        ? cpuValues.reduce((a, b) => a + b, 0) / cpuValues.length
+        : 0;
       const maxCpu = cpuValues.length ? Math.max(...cpuValues) : 0;
       const minCpu = cpuValues.length ? Math.min(...cpuValues) : 0;
 
-      const avgRam = ramValues.length ? ramValues.reduce((a, b) => a + b, 0) / ramValues.length : 0;
+      const avgRam = ramValues.length
+        ? ramValues.reduce((a, b) => a + b, 0) / ramValues.length
+        : 0;
       const maxRam = ramValues.length ? Math.max(...ramValues) : 0;
 
-      const avgDisk = diskValues.length ? diskValues.reduce((a, b) => a + b, 0) / diskValues.length : 0;
-      const avgNetwork = netValues.length ? netValues.reduce((a, b) => a + b, 0) / netValues.length : 0;
+      const avgDisk = diskValues.length
+        ? diskValues.reduce((a, b) => a + b, 0) / diskValues.length
+        : 0;
+      const avgNetwork = netValues.length
+        ? netValues.reduce((a, b) => a + b, 0) / netValues.length
+        : 0;
 
       aggregatedBuckets.push({
         deviceId: sample.deviceId,
@@ -197,28 +222,42 @@ export class TelemetryAggregationService {
     };
   }
 
-  private getDefaultLastRun(granularity: Granularity, customMinutes: number | undefined, now: Date): Date {
+  private getDefaultLastRun(
+    granularity: Granularity,
+    customMinutes: number | undefined,
+    now: Date,
+  ): Date {
     const minutes =
       customMinutes ??
-      (granularity === '1m' ? 5 : granularity === '15m' ? 30 : granularity === '1h' ? 360 : 1440);
+      (granularity === "1m"
+        ? 5
+        : granularity === "15m"
+          ? 30
+          : granularity === "1h"
+            ? 360
+            : 1440);
     return new Date(now.getTime() - minutes * 60 * 1000);
   }
 
   private getBucketDurationMs(granularity: Granularity): number {
     switch (granularity) {
-      case '1m':
+      case "1m":
         return 60 * 1000;
-      case '15m':
+      case "15m":
         return 15 * 60 * 1000;
-      case '1h':
+      case "1h":
         return 60 * 60 * 1000;
-      case '1d':
+      case "1d":
         return 24 * 60 * 60 * 1000;
     }
   }
 
-  private calculateBucketStart(timestamp: Date, granularity: Granularity, bucketMs: number): Date {
-    if (granularity === '1d') {
+  private calculateBucketStart(
+    timestamp: Date,
+    granularity: Granularity,
+    bucketMs: number,
+  ): Date {
+    if (granularity === "1d") {
       const day = new Date(timestamp);
       day.setUTCHours(0, 0, 0, 0);
       return day;

@@ -1,14 +1,14 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { HierarchyService } from '../services/hierarchy.service';
-import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { Controller, Get, Param, UseGuards } from "@nestjs/common";
+import { HierarchyService } from "../services/hierarchy.service";
+import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 
-@Controller('fleet/hierarchy')
+@Controller("fleet/hierarchy")
 @UseGuards(JwtAuthGuard)
 export class HierarchyController {
-  constructor(private readonly hierarchyService: HierarchyService) { }
+  constructor(private readonly hierarchyService: HierarchyService) {}
 
-  @Get(':orgId')
-  async getHierarchy(@Param('orgId') orgId: string) {
+  @Get(":orgId")
+  async getHierarchy(@Param("orgId") orgId: string) {
     const data = await this.hierarchyService.getHierarchy(orgId);
 
     return {

@@ -1,18 +1,28 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
-  Activity, ShieldAlert, CheckCircle2, AlertTriangle, Info,
-  Wrench, RefreshCw, Cpu, User, FileText, ChevronDown, ChevronUp
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+  Activity,
+  ShieldAlert,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  Wrench,
+  RefreshCw,
+  Cpu,
+  User,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface TimelineEvent {
   id: string;
   deviceId: string;
   eventType: string;
-  severity: 'INFO' | 'SUCCESS' | 'WARNING' | 'CRITICAL';
+  severity: "INFO" | "SUCCESS" | "WARNING" | "CRITICAL";
   title: string;
   detail?: string;
   actorName?: string;
@@ -43,7 +53,11 @@ const EVENT_ICON_MAP: Record<string, React.ReactNode> = {
   SECURITY_EVENT: <ShieldAlert className="w-4 h-4 text-purple-400" />,
 };
 
-export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTimelineProps) {
+export function DeviceTimeline({
+  events,
+  loading = false,
+  onRefresh,
+}: DeviceTimelineProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   if (loading) {
@@ -66,9 +80,12 @@ export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTim
     return (
       <div className="text-center py-12 border border-slate-800 rounded-xl bg-slate-900/40">
         <Activity className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-        <h4 className="text-sm font-semibold text-slate-300">No Timeline Events Recorded</h4>
+        <h4 className="text-sm font-semibold text-slate-300">
+          No Timeline Events Recorded
+        </h4>
         <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-          Operational events, heartbeats, status changes, and alert incidents will automatically record here.
+          Operational events, heartbeats, status changes, and alert incidents
+          will automatically record here.
         </p>
       </div>
     );
@@ -79,8 +96,12 @@ export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTim
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-cyan-400" />
-          <h3 className="text-sm font-semibold text-slate-200">Device Operational Timeline</h3>
-          <span className="text-xs text-slate-500 font-mono">({events.length} events)</span>
+          <h3 className="text-sm font-semibold text-slate-200">
+            Device Operational Timeline
+          </h3>
+          <span className="text-xs text-slate-500 font-mono">
+            ({events.length} events)
+          </span>
         </div>
         {onRefresh && (
           <button
@@ -95,7 +116,9 @@ export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTim
 
       <div className="relative pl-6 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
         {events.map((evt) => {
-          const icon = EVENT_ICON_MAP[evt.eventType] || <Info className="w-4 h-4 text-slate-400" />;
+          const icon = EVENT_ICON_MAP[evt.eventType] || (
+            <Info className="w-4 h-4 text-slate-400" />
+          );
           const isExpanded = expandedId === evt.id;
           const formattedTime = new Date(evt.timestamp).toLocaleString();
 
@@ -111,8 +134,13 @@ export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTim
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-slate-100">{evt.title}</span>
-                      <Badge variant={evt.severity.toLowerCase() as any} size="xs">
+                      <span className="text-sm font-semibold text-slate-100">
+                        {evt.title}
+                      </span>
+                      <Badge
+                        variant={evt.severity.toLowerCase() as any}
+                        size="xs"
+                      >
                         {evt.eventType}
                       </Badge>
                       {evt.actorName && (
@@ -122,7 +150,9 @@ export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTim
                       )}
                     </div>
                     {evt.detail && (
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">{evt.detail}</p>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        {evt.detail}
+                      </p>
                     )}
                   </div>
                   <span className="text-[11px] font-mono text-slate-500 flex-shrink-0 whitespace-nowrap">
@@ -137,8 +167,12 @@ export function DeviceTimeline({ events, loading = false, onRefresh }: DeviceTim
                       onClick={() => setExpandedId(isExpanded ? null : evt.id)}
                       className="flex items-center gap-1 text-[11px] font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
                     >
-                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      {isExpanded ? 'Hide Payload' : 'View Payload Data'}
+                      {isExpanded ? (
+                        <ChevronUp className="w-3 h-3" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3" />
+                      )}
+                      {isExpanded ? "Hide Payload" : "View Payload Data"}
                     </button>
 
                     {isExpanded && (

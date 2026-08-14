@@ -1,7 +1,7 @@
-import { Device } from '@prisma/client';
-import { IDeviceRepository } from '../repositories/device.repository.interface';
+import { Device } from "@prisma/client";
+import { IDeviceRepository } from "../repositories/device.repository.interface";
 
-export const IDeviceAuthenticatorToken = Symbol('IDeviceAuthenticator');
+export const IDeviceAuthenticatorToken = Symbol("IDeviceAuthenticator");
 
 export interface DeviceCredentials {
   rawToken: string;
@@ -15,5 +15,8 @@ export interface DeviceCredentials {
  */
 export interface IDeviceAuthenticator {
   generateCredentials(uuid: string): Promise<DeviceCredentials>;
-  authenticate(headers: Record<string, string | string[] | undefined>, repository: IDeviceRepository): Promise<Device | null>;
+  authenticate(
+    headers: Record<string, string | string[] | undefined>,
+    repository: IDeviceRepository,
+  ): Promise<Device | null>;
 }

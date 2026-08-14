@@ -1,5 +1,5 @@
-import { apiClient } from '../../../lib/api-client';
-import { ApiResponse } from '@nos/shared-types';
+import { apiClient } from "../../../lib/api-client";
+import { ApiResponse } from "@nos/shared-types";
 
 export const onboardingApi = {
   async completeOnboarding(data: {
@@ -10,7 +10,10 @@ export const onboardingApi = {
     ownerLastName: string;
     timezone: string;
   }): Promise<any> {
-    const res = await apiClient.post<any, ApiResponse<any>>('/fleet/onboarding/wizard', data);
+    const res = await apiClient.post<any, ApiResponse<any>>(
+      "/fleet/onboarding/wizard",
+      data,
+    );
     return res.data;
-  }
+  },
 };

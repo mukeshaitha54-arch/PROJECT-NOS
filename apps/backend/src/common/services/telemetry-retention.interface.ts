@@ -6,4 +6,6 @@ export interface ITelemetryRetentionPolicy {
   enforcePolicy(retentionDays: number): Promise<{ deletedCount: number }>;
 }
 
-export const ITelemetryRetentionPolicyToken = Symbol('ITelemetryRetentionPolicy');
+export const ITelemetryRetentionPolicyToken = Symbol(
+  "ITelemetryRetentionPolicy",
+);

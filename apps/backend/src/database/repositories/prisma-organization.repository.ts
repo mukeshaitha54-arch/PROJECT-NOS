@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IOrganizationRepository } from '../../common/repositories/tenant.repository.interface';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { IOrganizationRepository } from "../../common/repositories/tenant.repository.interface";
 import {
   OrganizationDto,
   OrganizationStatus,
   OrganizationSettingsDto,
   OrganizationQuotaDto,
-} from '@nos/shared-types';
-import { Organization, OrganizationQuota, Prisma } from '@prisma/client';
+} from "@nos/shared-types";
+import { Organization, OrganizationQuota, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaOrganizationRepository implements IOrganizationRepository {
@@ -15,8 +15,8 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
 
   private getDefaultSettings(): OrganizationSettingsDto {
     return {
-      timezone: 'UTC',
-      language: 'en-US',
+      timezone: "UTC",
+      language: "en-US",
       retentionDays: 90,
       notificationDefaults: {
         emailEnabled: true,
@@ -54,29 +54,39 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     };
   }
 
-  private mapEntity(org: Organization & { quota?: OrganizationQuota | null }): OrganizationDto {
+  private mapEntity(
+    org: Organization & { quota?: OrganizationQuota | null },
+  ): OrganizationDto {
     const settings = this.getDefaultSettings();
-    const quota = org.quota ? {
-      maxDevices: org.quota.maxDevices,
-      maxUsers: org.quota.maxUsers,
-      maxApiKeys: org.quota.maxApiKeys,
-      maxStorageMb: org.quota.maxStorageMb,
-      maxDailyTelemetry: org.quota.maxDailyTelemetry,
-      maxDailyAlerts: org.quota.maxDailyAlerts,
-    } : this.getDefaultQuota();
+    const quota = org.quota
+      ? {
+          maxDevices: org.quota.maxDevices,
+          maxUsers: org.quota.maxUsers,
+          maxApiKeys: org.quota.maxApiKeys,
+          maxStorageMb: org.quota.maxStorageMb,
+          maxDailyTelemetry: org.quota.maxDailyTelemetry,
+          maxDailyAlerts: org.quota.maxDailyAlerts,
+        }
+      : this.getDefaultQuota();
 
-    const quotaUsage = org.quota ? {
-      ...quota,
-      currentDevices: org.quota.currentDevices,
-      currentUsers: org.quota.currentUsers,
-      currentApiKeys: org.quota.currentApiKeys,
-      currentStorageMb: org.quota.currentStorageMb,
-      currentDailyTelemetry: org.quota.currentDailyTelemetry,
-      currentDailyAlerts: org.quota.currentDailyAlerts,
-      isApproachingLimit: org.quota.currentDevices / org.quota.maxDevices > 0.8,
-      isLimitExceeded: org.quota.currentDevices >= org.quota.maxDevices,
-      percentUsed: Math.min(100, Math.round((org.quota.currentDevices / org.quota.maxDevices) * 100)),
-    } : undefined;
+    const quotaUsage = org.quota
+      ? {
+          ...quota,
+          currentDevices: org.quota.currentDevices,
+          currentUsers: org.quota.currentUsers,
+          currentApiKeys: org.quota.currentApiKeys,
+          currentStorageMb: org.quota.currentStorageMb,
+          currentDailyTelemetry: org.quota.currentDailyTelemetry,
+          currentDailyAlerts: org.quota.currentDailyAlerts,
+          isApproachingLimit:
+            org.quota.currentDevices / org.quota.maxDevices > 0.8,
+          isLimitExceeded: org.quota.currentDevices >= org.quota.maxDevices,
+          percentUsed: Math.min(
+            100,
+            Math.round((org.quota.currentDevices / org.quota.maxDevices) * 100),
+          ),
+        }
+      : undefined;
 
     return {
       id: org.id,
@@ -125,7 +135,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         name: data.name,
         slug: data.slug.toLowerCase(),
         status: data.status || OrganizationStatus.ACTIVE,
-        
+
         quota: {
           create: {
             maxDevices: quotaDefaults.maxDevices,
@@ -143,7 +153,10 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     return this.mapEntity(created);
   }
 
-  async updateStatus(id: string, status: OrganizationStatus): Promise<OrganizationDto> {
+  async updateStatus(
+    id: string,
+    status: OrganizationStatus,
+  ): Promise<OrganizationDto> {
     const updated = await this.prisma.organization.update({
       where: { id },
       data: { status },
@@ -155,7 +168,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
   async updateSettings(id: string, settings: any): Promise<OrganizationDto> {
     const updated = await this.prisma.organization.update({
       where: { id },
-      data: { timezone: settings?.timezone || 'UTC' },
+      data: { timezone: settings?.timezone || "UTC" },
       include: { quota: true },
     });
     return this.mapEntity(updated);
@@ -183,7 +196,12 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     return this.mapEntity(updated);
   }
 
-  async listAll(params?: { search?: string; status?: string; page?: number; limit?: number }): Promise<{
+  async listAll(params?: {
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
     items: OrganizationDto[];
     total: number;
     page: number;
@@ -201,8 +219,8 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     }
     if (params?.search) {
       where.OR = [
-        { name: { contains: params.search, mode: 'insensitive' } },
-        { slug: { contains: params.search, mode: 'insensitive' } },
+        { name: { contains: params.search, mode: "insensitive" } },
+        { slug: { contains: params.search, mode: "insensitive" } },
       ];
     }
 
@@ -212,14 +230,14 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         where,
         skip,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
         include: { quota: true },
       }),
     ]);
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
     return {
-      items: rows.map(r => this.mapEntity(r)),
+      items: rows.map((r) => this.mapEntity(r)),
       total,
       page,
       totalPages,
@@ -241,7 +259,10 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     };
   }
 
-  async updateQuota(organizationId: string, quota: Partial<OrganizationQuotaDto>): Promise<OrganizationQuotaDto> {
+  async updateQuota(
+    organizationId: string,
+    quota: Partial<OrganizationQuotaDto>,
+  ): Promise<OrganizationQuotaDto> {
     const q = await this.prisma.organizationQuota.upsert({
       where: { organizationId },
       update: { ...quota },

@@ -1,4 +1,4 @@
-import { TelemetrySnapshot as PrismaTelemetrySnapshot } from '@prisma/client';
+import { TelemetrySnapshot as PrismaTelemetrySnapshot } from "@prisma/client";
 
 export interface TelemetryCreateInput {
   deviceId: string;
@@ -52,10 +52,16 @@ export interface TelemetryAggregationResult {
 export interface ITelemetryRepository {
   create(data: TelemetryCreateInput): Promise<PrismaTelemetrySnapshot>;
   findLatest(deviceId: string): Promise<PrismaTelemetrySnapshot | null>;
-  findRange(query: TelemetryRangeQuery): Promise<{ items: PrismaTelemetrySnapshot[]; total: number }>;
+  findRange(
+    query: TelemetryRangeQuery,
+  ): Promise<{ items: PrismaTelemetrySnapshot[]; total: number }>;
   exists(id: string): Promise<boolean>;
   deleteOlderThan(cutoffDate: Date): Promise<number>;
-  aggregate(deviceId: string, from?: Date, to?: Date): Promise<TelemetryAggregationResult>;
+  aggregate(
+    deviceId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<TelemetryAggregationResult>;
 }
 
-export const ITelemetryRepositoryToken = Symbol('ITelemetryRepository');
+export const ITelemetryRepositoryToken = Symbol("ITelemetryRepository");

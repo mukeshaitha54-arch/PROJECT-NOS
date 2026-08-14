@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, Logger } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface DeviceTimelineParams {
   deviceId: string;
@@ -29,7 +29,7 @@ export class DeviceTimelineQueryService {
       this.prisma.deviceTimelineEvent.count({ where: { deviceId } }),
       this.prisma.deviceTimelineEvent.findMany({
         where: { deviceId },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         skip,
         take: limit,
       }),
@@ -43,7 +43,7 @@ export class DeviceTimelineQueryService {
       title: event.title,
       detail: event.detail,
       description: event.detail || event.title,
-      actor: event.actorName || event.actorId || 'System',
+      actor: event.actorName || event.actorId || "System",
       actorId: event.actorId,
       actorName: event.actorName,
       relatedId: event.relatedId,

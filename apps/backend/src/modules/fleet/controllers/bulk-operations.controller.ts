@@ -1,16 +1,19 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { BulkOperationsService, BulkActionDto } from '../services/bulk-operations.service';
-import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { Controller, Post, Body, UseGuards } from "@nestjs/common";
+import {
+  BulkOperationsService,
+  BulkActionDto,
+} from "../services/bulk-operations.service";
+import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
+import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 
-@Controller('fleet/bulk')
+@Controller("fleet/bulk")
 @UseGuards(JwtAuthGuard)
 export class BulkOperationsController {
-  constructor(private readonly bulkService: BulkOperationsService) { }
+  constructor(private readonly bulkService: BulkOperationsService) {}
 
-  @Post('action')
+  @Post("action")
   async executeAction(
-    @Body() dto: Omit<BulkActionDto, 'performedByUserId'>,
+    @Body() dto: Omit<BulkActionDto, "performedByUserId">,
     @CurrentUser() user: any,
   ) {
     const result = await this.bulkService.executeBulkAction({

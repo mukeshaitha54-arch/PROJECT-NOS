@@ -1,9 +1,12 @@
-import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
-import { IAlertRuleRepository, AlertRuleCreateInput } from '../../../common/repositories/alert-rule.repository.interface';
-import { IAlertRepository } from '../../../common/repositories/alert.repository.interface';
-import { RuleAuditService } from './rule-audit.service';
-import { RuleMetricsService } from './rule-metrics.service';
-import { AlertRule } from '@prisma/client';
+import { Injectable, Inject, Logger, OnModuleInit } from "@nestjs/common";
+import {
+  IAlertRuleRepository,
+  AlertRuleCreateInput,
+} from "../../../common/repositories/alert-rule.repository.interface";
+import { IAlertRepository } from "../../../common/repositories/alert.repository.interface";
+import { RuleAuditService } from "./rule-audit.service";
+import { RuleMetricsService } from "./rule-metrics.service";
+import { AlertRule } from "@prisma/client";
 import {
   AlertSeverity,
   AlertRulePriority,
@@ -20,7 +23,7 @@ import {
   AlertRuleScheduleMode,
   AlertRuleStatus,
   RuleComplexityScore,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 
 /** Compiled rule expression for fast evaluation (caches parsed conditions) */
 interface CompiledRule {
@@ -83,11 +86,15 @@ export class RuleEngineService implements OnModuleInit {
   private versionHistory = new Map<string, RuleVersionSnapshot[]>();
   // Priority ordering
   private readonly PRIORITY_ORDER: Record<string, number> = {
-    CRITICAL: 4, HIGH: 3, NORMAL: 2, LOW: 1,
+    CRITICAL: 4,
+    HIGH: 3,
+    NORMAL: 2,
+    LOW: 1,
   };
 
   constructor(
-    @Inject(IAlertRuleRepository) private readonly ruleRepo: IAlertRuleRepository,
+    @Inject(IAlertRuleRepository)
+    private readonly ruleRepo: IAlertRuleRepository,
     @Inject(IAlertRepository) private readonly alertRepo: IAlertRepository,
     private readonly auditService: RuleAuditService,
     private readonly metricsService: RuleMetricsService,
@@ -113,14 +120,14 @@ export class RuleEngineService implements OnModuleInit {
     this.orderedRules = [...this.compiledCache.values()].sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
       // Heartbeat rules always first within priority tier
-      if (a.metric === 'heartbeat' && b.metric !== 'heartbeat') return -1;
-      if (b.metric === 'heartbeat' && a.metric !== 'heartbeat') return 1;
+      if (a.metric === "heartbeat" && b.metric !== "heartbeat") return -1;
+      if (b.metric === "heartbeat" && a.metric !== "heartbeat") return 1;
       return 0;
     });
 
     this.logger.log(
       `[RuleEngine] Compiled & loaded ${this.orderedRules.length} active rules. ` +
-      `Order: ${this.orderedRules.map(r => `${r.raw.name}[${r.raw.priority}]`).join(', ')}`,
+        `Order: ${this.orderedRules.map((r) => `${r.raw.name}[${r.raw.priority}]`).join(", ")}`,
     );
   }
 
@@ -161,7 +168,11 @@ export class RuleEngineService implements OnModuleInit {
     isBusinessHours = true,
     currentDate = new Date(),
   ): Array<{ rule: AlertRule; actualValue: number; reason: string }> {
-    const triggered: Array<{ rule: AlertRule; actualValue: number; reason: string }> = [];
+    const triggered: Array<{
+      rule: AlertRule;
+      actualValue: number;
+      reason: string;
+    }> = [];
     const nowMs = Date.now();
 
     for (const compiled of this.orderedRules) {
@@ -180,23 +191,48 @@ export class RuleEngineService implements OnModuleInit {
         // Condition evaluation with timeout
         let conditionMet = false;
         const evaluationPromise = new Promise<boolean>((resolve) => {
-          resolve(this.evaluateCondition(Number(value), compiled.operator, compiled.threshold));
+          resolve(
+            this.evaluateCondition(
+              Number(value),
+              compiled.operator,
+              compiled.threshold,
+            ),
+          );
         });
 
         // Synchronous evaluation (already resolved promise — timeout protection)
         const timeoutPromise = new Promise<boolean>((_, reject) =>
-          setTimeout(() => reject(new Error(`RuleTimeout: ${compiled.id} exceeded ${compiled.timeoutMs}ms`)), compiled.timeoutMs)
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `RuleTimeout: ${compiled.id} exceeded ${compiled.timeoutMs}ms`,
+                ),
+              ),
+            compiled.timeoutMs,
+          ),
         );
 
         Promise.race([evaluationPromise, timeoutPromise])
-          .then(result => { conditionMet = result; })
-          .catch(err => {
-            this.logger.warn(`[RuleEngine] ${err.message} — skipping rule "${compiled.raw.name}"`);
-            this.metricsService.recordExecution(compiled.id, compiled.timeoutMs);
+          .then((result) => {
+            conditionMet = result;
+          })
+          .catch((err) => {
+            this.logger.warn(
+              `[RuleEngine] ${err.message} — skipping rule "${compiled.raw.name}"`,
+            );
+            this.metricsService.recordExecution(
+              compiled.id,
+              compiled.timeoutMs,
+            );
           });
 
         // Since evaluation is synchronous for simple conditions, use direct evaluation
-        conditionMet = this.evaluateCondition(Number(value), compiled.operator, compiled.threshold);
+        conditionMet = this.evaluateCondition(
+          Number(value),
+          compiled.operator,
+          compiled.threshold,
+        );
 
         const trackerKey = `${deviceId}:${compiled.id}`;
 
@@ -210,7 +246,8 @@ export class RuleEngineService implements OnModuleInit {
           if (elapsedSeconds >= (compiled.durationSeconds || 0)) {
             triggered.push({
               rule: compiled.raw,
-              actualValue: typeof value === 'number' ? value : compiled.threshold,
+              actualValue:
+                typeof value === "number" ? value : compiled.threshold,
               reason: `${compiled.raw.name}: ${compiled.metric} ${compiled.operator} ${compiled.threshold} for >=${compiled.durationSeconds}s`,
             });
           }
@@ -222,14 +259,22 @@ export class RuleEngineService implements OnModuleInit {
         this.metricsService.recordExecution(compiled.id, execMs);
 
         // Fire-and-forget performance update (non-blocking)
-        this.ruleRepo.updatePerformanceMetrics(compiled.id, {
-          execMs,
-          triggered: conditionMet,
-        }).catch(() => {/* non-critical */});
-
+        this.ruleRepo
+          .updatePerformanceMetrics(compiled.id, {
+            execMs,
+            triggered: conditionMet,
+          })
+          .catch(() => {
+            /* non-critical */
+          });
       } catch (err: any) {
-        this.logger.error(`[RuleEngine] Rule "${compiled.raw.name}" evaluation failed: ${err.message}`);
-        this.metricsService.recordExecution(compiled.id, Date.now() - execStart);
+        this.logger.error(
+          `[RuleEngine] Rule "${compiled.raw.name}" evaluation failed: ${err.message}`,
+        );
+        this.metricsService.recordExecution(
+          compiled.id,
+          Date.now() - execStart,
+        );
       }
     }
 
@@ -243,33 +288,50 @@ export class RuleEngineService implements OnModuleInit {
     devices: Array<{ deviceId: string; metrics: Record<string, any> }>,
     isBusinessHours = true,
     currentDate = new Date(),
-  ): Map<string, Array<{ rule: AlertRule; actualValue: number; reason: string }>> {
-    const results = new Map<string, Array<{ rule: AlertRule; actualValue: number; reason: string }>>();
+  ): Map<
+    string,
+    Array<{ rule: AlertRule; actualValue: number; reason: string }>
+  > {
+    const results = new Map<
+      string,
+      Array<{ rule: AlertRule; actualValue: number; reason: string }>
+    >();
 
     for (const device of devices) {
-      const triggered = this.evaluate(device.deviceId, device.metrics, isBusinessHours, currentDate);
+      const triggered = this.evaluate(
+        device.deviceId,
+        device.metrics,
+        isBusinessHours,
+        currentDate,
+      );
       if (triggered.length > 0) {
         results.set(device.deviceId, triggered);
       }
     }
 
-    this.logger.log(`[RuleEngine] Batch: ${devices.length} devices, ${results.size} triggered`);
+    this.logger.log(
+      `[RuleEngine] Batch: ${devices.length} devices, ${results.size} triggered`,
+    );
     return results;
   }
 
   // ─── Schedule Mode Enforcement ─────────────────────────────
 
-  private isScheduleActive(compiled: CompiledRule, isBusinessHours: boolean, now: Date): boolean {
+  private isScheduleActive(
+    compiled: CompiledRule,
+    isBusinessHours: boolean,
+    now: Date,
+  ): boolean {
     const mode = compiled.scheduleMode;
-    if (mode === 'ALWAYS') return true;
-    if (mode === 'BUSINESS_HOURS') return isBusinessHours;
+    if (mode === "ALWAYS") return true;
+    if (mode === "BUSINESS_HOURS") return isBusinessHours;
 
     const hour = now.getHours();
     const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
 
-    if (mode === 'NIGHT') return hour < 8 || hour >= 20;
-    if (mode === 'WEEKEND') return dayOfWeek === 0 || dayOfWeek === 6;
-    if (mode === 'CRON' && compiled.cronExpression) {
+    if (mode === "NIGHT") return hour < 8 || hour >= 20;
+    if (mode === "WEEKEND") return dayOfWeek === 0 || dayOfWeek === 6;
+    if (mode === "CRON" && compiled.cronExpression) {
       return this.matchCronExpression(compiled.cronExpression, now);
     }
 
@@ -279,7 +341,7 @@ export class RuleEngineService implements OnModuleInit {
   private matchCronExpression(cron: string, now: Date): boolean {
     try {
       // Simple cron matching: "minute hour dayOfMonth month dayOfWeek"
-      const parts = cron.split(' ');
+      const parts = cron.split(" ");
       if (parts.length !== 5) return true;
 
       const [minutePart, hourPart, , , dayOfWeekPart] = parts;
@@ -287,9 +349,11 @@ export class RuleEngineService implements OnModuleInit {
       const hour = now.getHours();
       const day = now.getDay();
 
-      const minuteMatch = minutePart === '*' || Number(minutePart) === minute;
-      const hourMatch = hourPart === '*' || Number(hourPart) === hour;
-      const dayMatch = dayOfWeekPart === '*' || dayOfWeekPart.split(',').map(Number).includes(day);
+      const minuteMatch = minutePart === "*" || Number(minutePart) === minute;
+      const hourMatch = hourPart === "*" || Number(hourPart) === hour;
+      const dayMatch =
+        dayOfWeekPart === "*" ||
+        dayOfWeekPart.split(",").map(Number).includes(day);
 
       return minuteMatch && hourMatch && dayMatch;
     } catch {
@@ -299,16 +363,28 @@ export class RuleEngineService implements OnModuleInit {
 
   // ─── Condition Evaluator ──────────────────────────────────
 
-  private evaluateCondition(value: number, operator: string, threshold: number): boolean {
+  private evaluateCondition(
+    value: number,
+    operator: string,
+    threshold: number,
+  ): boolean {
     switch (operator) {
-      case '>':        return value > threshold;
-      case '>=':       return value >= threshold;
-      case '<':        return value < threshold;
-      case '<=':       return value <= threshold;
-      case '==':       return value === threshold;
-      case '!=':       return value !== threshold;
-      case 'MUTATED':  return Boolean(value);
-      default:         return false;
+      case ">":
+        return value > threshold;
+      case ">=":
+        return value >= threshold;
+      case "<":
+        return value < threshold;
+      case "<=":
+        return value <= threshold;
+      case "==":
+        return value === threshold;
+      case "!=":
+        return value !== threshold;
+      case "MUTATED":
+        return Boolean(value);
+      default:
+        return false;
     }
   }
 
@@ -316,17 +392,21 @@ export class RuleEngineService implements OnModuleInit {
 
   async createRule(
     data: AlertRuleCreateInput,
-    modifier = 'System Admin',
+    modifier = "System Admin",
     correlationId?: string,
     ipAddress?: string,
     browser?: string,
   ) {
-    const res = await this.ruleRepo.create({ ...data, createdBy: modifier, modifiedBy: modifier });
+    const res = await this.ruleRepo.create({
+      ...data,
+      createdBy: modifier,
+      modifiedBy: modifier,
+    });
     this.snapshotVersion(res, modifier);
 
     await this.auditService.record({
       ruleId: res.id,
-      action: 'CREATE',
+      action: "CREATE",
       version: res.version,
       performedBy: modifier,
       reason: `Rule "${res.name}" created`,
@@ -337,7 +417,9 @@ export class RuleEngineService implements OnModuleInit {
 
     // Update complexity score after creation
     const complexity = this.metricsService.computeComplexityScore(res);
-    await this.ruleRepo.update(res.id, { complexityScore: complexity.score as any });
+    await this.ruleRepo.update(res.id, {
+      complexityScore: complexity.score as any,
+    });
 
     await this.reloadRules();
     return res;
@@ -346,7 +428,7 @@ export class RuleEngineService implements OnModuleInit {
   async updateRule(
     id: string,
     data: Partial<AlertRule>,
-    modifier = 'System Admin',
+    modifier = "System Admin",
     reason?: string,
     correlationId?: string,
     ipAddress?: string,
@@ -365,9 +447,23 @@ export class RuleEngineService implements OnModuleInit {
     });
 
     // Record field-level diffs
-    const diffFields = ['threshold', 'severity', 'cooldownSeconds', 'durationSeconds', 'metric', 'operator', 'enabled', 'priority', 'scheduleMode', 'timeoutMs'] as const;
+    const diffFields = [
+      "threshold",
+      "severity",
+      "cooldownSeconds",
+      "durationSeconds",
+      "metric",
+      "operator",
+      "enabled",
+      "priority",
+      "scheduleMode",
+      "timeoutMs",
+    ] as const;
     for (const field of diffFields) {
-      if (data[field] !== undefined && data[field] !== (existing as any)[field]) {
+      if (
+        data[field] !== undefined &&
+        data[field] !== (existing as any)[field]
+      ) {
         await this.auditService.recordFieldChange({
           ruleId: id,
           field,
@@ -395,12 +491,12 @@ export class RuleEngineService implements OnModuleInit {
     return updated;
   }
 
-  async deleteRule(id: string, performedBy = 'System', correlationId?: string) {
+  async deleteRule(id: string, performedBy = "System", correlationId?: string) {
     const rule = await this.ruleRepo.findById(id);
     if (rule) {
       await this.auditService.record({
         ruleId: id,
-        action: 'DELETE',
+        action: "DELETE",
         version: rule.version,
         performedBy,
         reason: `Rule "${rule.name}" permanently deleted`,
@@ -412,14 +508,18 @@ export class RuleEngineService implements OnModuleInit {
     return res;
   }
 
-  async archiveRule(id: string, performedBy = 'System', correlationId?: string) {
+  async archiveRule(
+    id: string,
+    performedBy = "System",
+    correlationId?: string,
+  ) {
     const existing = await this.ruleRepo.findById(id);
     if (!existing) throw new Error(`Rule ${id} not found`);
 
     const archived = await this.ruleRepo.archive(id, performedBy);
     await this.auditService.record({
       ruleId: id,
-      action: 'ARCHIVE',
+      action: "ARCHIVE",
       version: existing.version,
       performedBy,
       reason: `Rule "${existing.name}" archived (retained for history)`,
@@ -429,14 +529,19 @@ export class RuleEngineService implements OnModuleInit {
     return archived;
   }
 
-  async cloneRule(id: string, newName: string, performedBy = 'System', correlationId?: string) {
+  async cloneRule(
+    id: string,
+    newName: string,
+    performedBy = "System",
+    correlationId?: string,
+  ) {
     const source = await this.ruleRepo.findById(id);
     if (!source) throw new Error(`Rule ${id} not found`);
 
     const cloned = await this.ruleRepo.clone(id, newName, performedBy);
     await this.auditService.record({
       ruleId: cloned.id,
-      action: 'CLONE',
+      action: "CLONE",
       version: 1,
       performedBy,
       reason: `Cloned from rule "${source.name}" (${source.id})`,
@@ -448,7 +553,11 @@ export class RuleEngineService implements OnModuleInit {
 
   // ─── SPL Feature 20: Rule Diff Viewer ─────────────────────
 
-  async getRuleDiff(id: string, fromVersion?: number, toVersion?: number): Promise<RuleDiffDto> {
+  async getRuleDiff(
+    id: string,
+    fromVersion?: number,
+    toVersion?: number,
+  ): Promise<RuleDiffDto> {
     const current = await this.ruleRepo.findById(id);
     if (!current) throw new Error(`Rule ${id} not found`);
 
@@ -463,7 +572,7 @@ export class RuleEngineService implements OnModuleInit {
         fromTimestamp: current.createdAt.toISOString(),
         toTimestamp: current.updatedAt.toISOString(),
         diffs: [],
-        changedBy: current.modifiedBy || 'System',
+        changedBy: current.modifiedBy || "System",
         changeReason: null,
         totalChanges: 0,
       };
@@ -472,16 +581,27 @@ export class RuleEngineService implements OnModuleInit {
     const vFrom = fromVersion ?? history[0]?.version ?? current.version - 1;
     const vTo = toVersion ?? current.version;
 
-    const snapshotFrom = history.find(s => s.version === vFrom);
+    const snapshotFrom = history.find((s) => s.version === vFrom);
     const stateFrom = snapshotFrom?.snapshot || {};
 
     const TRACKED_FIELDS = [
-      'threshold', 'severity', 'cooldownSeconds', 'durationSeconds',
-      'metric', 'operator', 'enabled', 'priority', 'scheduleMode',
-      'timeoutMs', 'silentMode', 'businessHoursOnly', 'name', 'description',
+      "threshold",
+      "severity",
+      "cooldownSeconds",
+      "durationSeconds",
+      "metric",
+      "operator",
+      "enabled",
+      "priority",
+      "scheduleMode",
+      "timeoutMs",
+      "silentMode",
+      "businessHoursOnly",
+      "name",
+      "description",
     ];
 
-    const diffs: RuleFieldDiff[] = TRACKED_FIELDS.map(field => {
+    const diffs: RuleFieldDiff[] = TRACKED_FIELDS.map((field) => {
       const oldVal = (stateFrom as any)[field] ?? null;
       const newVal = (current as any)[field] ?? null;
       return {
@@ -492,17 +612,19 @@ export class RuleEngineService implements OnModuleInit {
       };
     });
 
-    const changedDiffs = diffs.filter(d => d.changed);
+    const changedDiffs = diffs.filter((d) => d.changed);
 
     return {
       ruleId: id,
       ruleName: current.name,
       fromVersion: vFrom,
       toVersion: vTo,
-      fromTimestamp: snapshotFrom?.timestamp.toISOString() ?? current.createdAt.toISOString(),
+      fromTimestamp:
+        snapshotFrom?.timestamp.toISOString() ??
+        current.createdAt.toISOString(),
       toTimestamp: current.updatedAt.toISOString(),
       diffs,
-      changedBy: snapshotFrom?.changedBy || current.modifiedBy || 'System',
+      changedBy: snapshotFrom?.changedBy || current.modifiedBy || "System",
       changeReason: null,
       totalChanges: changedDiffs.length,
     };
@@ -510,45 +632,80 @@ export class RuleEngineService implements OnModuleInit {
 
   // ─── SPL Feature 21: Rollback Preview ─────────────────────
 
-  async getRollbackPreview(id: string, targetVersion: number, performedBy = 'System'): Promise<RollbackPreviewDto> {
+  async getRollbackPreview(
+    id: string,
+    targetVersion: number,
+    performedBy = "System",
+  ): Promise<RollbackPreviewDto> {
     const current = await this.ruleRepo.findById(id);
     if (!current) throw new Error(`Rule ${id} not found`);
 
     const history = this.versionHistory.get(id) || [];
-    const targetSnapshot = history.find(s => s.version === targetVersion);
+    const targetSnapshot = history.find((s) => s.version === targetVersion);
 
     if (!targetSnapshot) {
-      throw new Error(`Version ${targetVersion} not found in history for rule ${id}`);
+      throw new Error(
+        `Version ${targetVersion} not found in history for rule ${id}`,
+      );
     }
 
-    const TRACKED_FIELDS = ['threshold', 'severity', 'cooldownSeconds', 'durationSeconds', 'metric', 'operator', 'enabled', 'priority', 'scheduleMode', 'timeoutMs'];
+    const TRACKED_FIELDS = [
+      "threshold",
+      "severity",
+      "cooldownSeconds",
+      "durationSeconds",
+      "metric",
+      "operator",
+      "enabled",
+      "priority",
+      "scheduleMode",
+      "timeoutMs",
+    ];
 
-    const differences: RuleFieldDiff[] = TRACKED_FIELDS.map(field => ({
+    const differences: RuleFieldDiff[] = TRACKED_FIELDS.map((field) => ({
       field,
       oldValue: (current as any)[field] ?? null,
       newValue: (targetSnapshot.snapshot as any)[field] ?? null,
-      changed: String((current as any)[field]) !== String((targetSnapshot.snapshot as any)[field]),
-    })).filter(d => d.changed);
+      changed:
+        String((current as any)[field]) !==
+        String((targetSnapshot.snapshot as any)[field]),
+    })).filter((d) => d.changed);
 
     const warnings: string[] = [];
-    if (differences.find(d => d.field === 'threshold')) {
-      warnings.push('Threshold change may alter alert volume significantly');
+    if (differences.find((d) => d.field === "threshold")) {
+      warnings.push("Threshold change may alter alert volume significantly");
     }
-    if (differences.find(d => d.field === 'severity')) {
-      warnings.push('Severity change will affect escalation and notification routing');
+    if (differences.find((d) => d.field === "severity")) {
+      warnings.push(
+        "Severity change will affect escalation and notification routing",
+      );
     }
-    if (differences.find(d => d.field === 'enabled' && targetSnapshot.snapshot.enabled === false)) {
-      warnings.push('Rolling back to disabled state will stop this rule from firing');
+    if (
+      differences.find(
+        (d) =>
+          d.field === "enabled" && targetSnapshot.snapshot.enabled === false,
+      )
+    ) {
+      warnings.push(
+        "Rolling back to disabled state will stop this rule from firing",
+      );
     }
     if (current.version - targetVersion > 5) {
-      warnings.push(`Rolling back ${current.version - targetVersion} versions — significant configuration divergence`);
+      warnings.push(
+        `Rolling back ${current.version - targetVersion} versions — significant configuration divergence`,
+      );
     }
 
-    const isRollbackSafe = differences.length <= 3 && !differences.find(d => d.field === 'metric');
-    const estimatedImpact = differences.length >= 5 ? 'CRITICAL'
-      : differences.length >= 3 ? 'HIGH'
-      : differences.length >= 1 ? 'MEDIUM'
-      : 'LOW';
+    const isRollbackSafe =
+      differences.length <= 3 && !differences.find((d) => d.field === "metric");
+    const estimatedImpact =
+      differences.length >= 5
+        ? "CRITICAL"
+        : differences.length >= 3
+          ? "HIGH"
+          : differences.length >= 1
+            ? "MEDIUM"
+            : "LOW";
 
     const mapRule = (r: AlertRule): AlertRuleEnhancedDto => ({
       id: r.id,
@@ -593,7 +750,10 @@ export class RuleEngineService implements OnModuleInit {
       updatedAt: r.updatedAt.toISOString(),
     });
 
-    const targetStateRule = { ...current, ...targetSnapshot.snapshot } as AlertRule;
+    const targetStateRule = {
+      ...current,
+      ...targetSnapshot.snapshot,
+    } as AlertRule;
 
     return {
       ruleId: id,
@@ -612,15 +772,20 @@ export class RuleEngineService implements OnModuleInit {
   async rollbackToVersion(
     id: string,
     targetVersion: number,
-    performedBy = 'System',
+    performedBy = "System",
     correlationId?: string,
     ipAddress?: string,
     browser?: string,
   ): Promise<AlertRule> {
-    const preview = await this.getRollbackPreview(id, targetVersion, performedBy);
+    const preview = await this.getRollbackPreview(
+      id,
+      targetVersion,
+      performedBy,
+    );
     const history = this.versionHistory.get(id) || [];
-    const targetSnapshot = history.find(s => s.version === targetVersion);
-    if (!targetSnapshot) throw new Error(`Version ${targetVersion} not available`);
+    const targetSnapshot = history.find((s) => s.version === targetVersion);
+    if (!targetSnapshot)
+      throw new Error(`Version ${targetVersion} not available`);
 
     const rollbackData = { ...targetSnapshot.snapshot };
     delete (rollbackData as any).id;
@@ -635,7 +800,7 @@ export class RuleEngineService implements OnModuleInit {
 
     await this.auditService.record({
       ruleId: id,
-      action: 'ROLLBACK',
+      action: "ROLLBACK",
       version: updated.version,
       performedBy,
       reason: `Rolled back from v${preview.currentVersion} to v${targetVersion}`,
@@ -652,7 +817,7 @@ export class RuleEngineService implements OnModuleInit {
 
   async getDependencyGraph(): Promise<RuleDependencyGraphDto> {
     const rules = await this.ruleRepo.findMany(false);
-    const ruleMap = new Map(rules.map(r => [r.id, r]));
+    const ruleMap = new Map(rules.map((r) => [r.id, r]));
 
     const nodes: RuleDependencyNode[] = [];
     const edges: Array<{ from: string; to: string }> = [];
@@ -660,7 +825,9 @@ export class RuleEngineService implements OnModuleInit {
 
     for (const rule of rules) {
       const depIds = (rule.dependsOnIds as string[]) || [];
-      const dependents = rules.filter(r => ((r.dependsOnIds as string[]) || []).includes(rule.id));
+      const dependents = rules.filter((r) =>
+        ((r.dependsOnIds as string[]) || []).includes(rule.id),
+      );
 
       // Detect depth via BFS
       let depth = 0;
@@ -695,7 +862,7 @@ export class RuleEngineService implements OnModuleInit {
         priority: (rule.priority as any) || AlertRulePriority.NORMAL,
         category: (rule.category as any) || AlertRuleCategory.SYSTEM,
         dependsOn: depIds,
-        dependents: dependents.map(r => r.id),
+        dependents: dependents.map((r) => r.id),
         depth,
         hasCircularDep,
       });
@@ -713,9 +880,9 @@ export class RuleEngineService implements OnModuleInit {
 
   // ─── Export / Import ──────────────────────────────────────
 
-  async exportRules(performedBy = 'System'): Promise<RuleExportDto> {
+  async exportRules(performedBy = "System"): Promise<RuleExportDto> {
     const rules = await this.ruleRepo.findMany(false);
-    const exportedRules: AlertRuleEnhancedDto[] = rules.map(r => ({
+    const exportedRules: AlertRuleEnhancedDto[] = rules.map((r) => ({
       id: r.id,
       version: r.version,
       name: r.name,
@@ -762,7 +929,7 @@ export class RuleEngineService implements OnModuleInit {
     for (const rule of rules) {
       await this.auditService.record({
         ruleId: rule.id,
-        action: 'EXPORT',
+        action: "EXPORT",
         version: rule.version,
         performedBy,
         reason: `Rule exported as part of bulk export (${rules.length} rules)`,
@@ -772,7 +939,7 @@ export class RuleEngineService implements OnModuleInit {
     return {
       exportedAt: new Date().toISOString(),
       exportedBy: performedBy,
-      version: '1.0.0',
+      version: "1.0.0",
       totalRules: rules.length,
       rules: exportedRules,
     };
@@ -780,7 +947,7 @@ export class RuleEngineService implements OnModuleInit {
 
   async importRules(
     exportData: RuleExportDto,
-    performedBy = 'System',
+    performedBy = "System",
     correlationId?: string,
   ): Promise<RuleImportResultDto> {
     let imported = 0;
@@ -794,7 +961,10 @@ export class RuleEngineService implements OnModuleInit {
         const existing = await this.ruleRepo.findByName(rule.name);
         if (existing) {
           skipped++;
-          warnings.push({ ruleName: rule.name, message: 'Rule with this name already exists — skipped' });
+          warnings.push({
+            ruleName: rule.name,
+            message: "Rule with this name already exists — skipped",
+          });
           continue;
         }
 
@@ -825,7 +995,7 @@ export class RuleEngineService implements OnModuleInit {
 
         await this.auditService.record({
           ruleId: created.id,
-          action: 'IMPORT',
+          action: "IMPORT",
           version: 1,
           performedBy,
           reason: `Imported from export file (schema v${exportData.version})`,
@@ -841,7 +1011,9 @@ export class RuleEngineService implements OnModuleInit {
 
     if (imported > 0) await this.reloadRules();
 
-    this.logger.log(`[RuleEngine] Import: ${imported} imported, ${skipped} skipped, ${failed} failed`);
+    this.logger.log(
+      `[RuleEngine] Import: ${imported} imported, ${skipped} skipped, ${failed} failed`,
+    );
     return { imported, skipped, failed, errors, warnings };
   }
 
@@ -916,88 +1088,88 @@ export class RuleEngineService implements OnModuleInit {
   async seedDefaultTemplates() {
     const defaults: AlertRuleCreateInput[] = [
       {
-        name: 'CPU Critical Spike',
-        metric: 'cpuUsage',
-        operator: '>',
+        name: "CPU Critical Spike",
+        metric: "cpuUsage",
+        operator: ">",
         threshold: 90,
         durationSeconds: 60,
         severity: AlertSeverity.CRITICAL,
-        priority: 'CRITICAL',
-        category: 'PERFORMANCE',
+        priority: "CRITICAL",
+        category: "PERFORMANCE",
         cooldownSeconds: 300,
         timeoutMs: 200,
-        tags: ['CPU', 'Performance', 'Production'],
-        templateName: 'CPU Critical',
+        tags: ["CPU", "Performance", "Production"],
+        templateName: "CPU Critical",
       },
       {
-        name: 'Memory Exhaustion Warning',
-        metric: 'ramUsage',
-        operator: '>=',
+        name: "Memory Exhaustion Warning",
+        metric: "ramUsage",
+        operator: ">=",
         threshold: 85,
         durationSeconds: 120,
         severity: AlertSeverity.HIGH,
-        priority: 'HIGH',
-        category: 'PERFORMANCE',
+        priority: "HIGH",
+        category: "PERFORMANCE",
         cooldownSeconds: 600,
         timeoutMs: 200,
-        tags: ['MEMORY', 'Performance'],
-        templateName: 'Memory Critical',
+        tags: ["MEMORY", "Performance"],
+        templateName: "Memory Critical",
       },
       {
-        name: 'Low Disk Capacity Alert',
-        metric: 'diskUsage',
-        operator: '>=',
+        name: "Low Disk Capacity Alert",
+        metric: "diskUsage",
+        operator: ">=",
         threshold: 90,
         durationSeconds: 30,
         severity: AlertSeverity.HIGH,
-        priority: 'HIGH',
-        category: 'AVAILABILITY',
+        priority: "HIGH",
+        category: "AVAILABILITY",
         cooldownSeconds: 1800,
         timeoutMs: 300,
-        tags: ['STORAGE', 'Availability'],
-        templateName: 'Disk Critical',
+        tags: ["STORAGE", "Availability"],
+        templateName: "Disk Critical",
       },
       {
-        name: 'Device Heartbeat Lost',
-        metric: 'heartbeat',
-        operator: '==',
+        name: "Device Heartbeat Lost",
+        metric: "heartbeat",
+        operator: "==",
         threshold: 0,
         durationSeconds: 30,
         severity: AlertSeverity.CRITICAL,
-        priority: 'CRITICAL',
-        category: 'AVAILABILITY',
+        priority: "CRITICAL",
+        category: "AVAILABILITY",
         cooldownSeconds: 180,
         timeoutMs: 100,
-        tags: ['NETWORK', 'Availability'],
-        templateName: 'Heartbeat Lost',
+        tags: ["NETWORK", "Availability"],
+        templateName: "Heartbeat Lost",
       },
       {
-        name: 'Unauthorized Security Posture Mutation',
-        metric: 'security.defender',
-        operator: '==',
+        name: "Unauthorized Security Posture Mutation",
+        metric: "security.defender",
+        operator: "==",
         threshold: 0,
         durationSeconds: 0,
         severity: AlertSeverity.CRITICAL,
-        priority: 'CRITICAL',
-        category: 'SECURITY',
+        priority: "CRITICAL",
+        category: "SECURITY",
         cooldownSeconds: 60,
         timeoutMs: 500,
-        tags: ['SECURITY', 'Compliance'],
-        templateName: 'Security Changed',
+        tags: ["SECURITY", "Compliance"],
+        templateName: "Security Changed",
       },
       {
-        name: 'Unattended Hardware Inventory Change',
-        metric: 'inventory.version',
-        operator: 'MUTATED',
+        name: "Unattended Hardware Inventory Change",
+        metric: "inventory.version",
+        operator: "MUTATED",
         threshold: 1,
         durationSeconds: 0,
         severity: AlertSeverity.MEDIUM,
-        priority: 'NORMAL',
-        category: 'INVENTORY',
+        priority: "NORMAL",
+        category: "INVENTORY",
         cooldownSeconds: 300,
         timeoutMs: 300,
-        tags: ['INVENTORY', 'Compliance'],
-        templateName: 'Inventory Changed',
+        tags: ["INVENTORY", "Compliance"],
+        templateName: "Inventory Changed",
       },
     ];
 
@@ -1013,7 +1185,12 @@ export class RuleEngineService implements OnModuleInit {
   /**
    * Backward-compatible simulator helper for Phase 5 tests and legacy callers
    */
-  async simulateRule(metric: string, operator: string, threshold: number, timeframeHours = 24): Promise<any> {
+  async simulateRule(
+    metric: string,
+    operator: string,
+    threshold: number,
+    timeframeHours = 24,
+  ): Promise<any> {
     return {
       metric,
       operator,
@@ -1022,8 +1199,8 @@ export class RuleEngineService implements OnModuleInit {
       wouldTriggerCount: 15,
       suppressedCount: 5,
       realAlertsCount: 10,
-      affectedDevices: ['server-prod-01', 'db-node-01', 'edge-gateway-03'],
-      estimatedCooldownSavings: '33.3%',
+      affectedDevices: ["server-prod-01", "db-node-01", "edge-gateway-03"],
+      estimatedCooldownSavings: "33.3%",
     };
   }
 }

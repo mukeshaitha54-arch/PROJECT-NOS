@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { SocketPresenceDto } from '@nos/shared-types';
+import { Injectable, Logger } from "@nestjs/common";
+import { SocketPresenceDto } from "@nos/shared-types";
 
 interface UserPresenceRecord {
   socketId: string;
@@ -23,7 +23,12 @@ export class PresenceService {
   private readonly onlineUsers = new Map<string, UserPresenceRecord>(); // userId -> presence
   private readonly onlineDevices = new Map<string, DevicePresenceRecord>(); // deviceId -> presence
 
-  public updateUserActivity(userId: string, socketId: string, role = 'USER', ipAddress = '0.0.0.0'): void {
+  public updateUserActivity(
+    userId: string,
+    socketId: string,
+    role = "USER",
+    ipAddress = "0.0.0.0",
+  ): void {
     const now = new Date();
     const existing = this.onlineUsers.get(userId);
     if (existing) {
@@ -49,12 +54,16 @@ export class PresenceService {
     }
   }
 
-  public updateDeviceOnline(deviceId: string, ipAddress = '0.0.0.0', timestamp?: Date): void {
+  public updateDeviceOnline(
+    deviceId: string,
+    ipAddress = "0.0.0.0",
+    timestamp?: Date,
+  ): void {
     const now = timestamp || new Date();
     const existing = this.onlineDevices.get(deviceId);
     if (existing) {
       existing.lastActivity = now;
-      if (ipAddress && ipAddress !== '0.0.0.0') existing.ipAddress = ipAddress;
+      if (ipAddress && ipAddress !== "0.0.0.0") existing.ipAddress = ipAddress;
     } else {
       this.onlineDevices.set(deviceId, {
         deviceId,

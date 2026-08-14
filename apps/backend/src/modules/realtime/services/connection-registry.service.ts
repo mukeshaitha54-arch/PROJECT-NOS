@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 
 export interface SocketSessionMetadata {
   socketId: string;
@@ -17,7 +17,9 @@ export class ConnectionRegistryService {
   private readonly userToSockets = new Map<string, Set<string>>();
   private readonly deviceToSockets = new Map<string, Set<string>>();
 
-  public registerSession(metadata: Omit<SocketSessionMetadata, 'rooms' | 'connectedAt'>): SocketSessionMetadata {
+  public registerSession(
+    metadata: Omit<SocketSessionMetadata, "rooms" | "connectedAt">,
+  ): SocketSessionMetadata {
     const session: SocketSessionMetadata = {
       ...metadata,
       connectedAt: Date.now(),
@@ -40,7 +42,9 @@ export class ConnectionRegistryService {
       this.deviceToSockets.get(session.deviceId)!.add(session.socketId);
     }
 
-    this.logger.debug(`Registered session [${session.socketId}] User: [${session.userId || 'N/A'}] Role: [${session.role || 'N/A'}]`);
+    this.logger.debug(
+      `Registered session [${session.socketId}] User: [${session.userId || "N/A"}] Role: [${session.role || "N/A"}]`,
+    );
     return session;
   }
 

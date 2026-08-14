@@ -1,10 +1,10 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from "@nestjs/common";
 import {
   IAlertRuleAuditRepository,
   AlertRuleAuditCreateInput,
-} from '../../../common/repositories/alert-rule-audit.repository.interface';
-import { RuleAuditEntryDto } from '@nos/shared-types';
-import { AlertRuleAuditLog } from '@prisma/client';
+} from "../../../common/repositories/alert-rule-audit.repository.interface";
+import { RuleAuditEntryDto } from "@nos/shared-types";
+import { AlertRuleAuditLog } from "@prisma/client";
 
 /**
  * RuleAuditService — 1% Enterprise Feature 5
@@ -28,7 +28,7 @@ export class RuleAuditService {
   async record(data: AlertRuleAuditCreateInput): Promise<AlertRuleAuditLog> {
     this.logger.log(
       `[RuleAudit] ${data.action} on rule ${data.ruleId} v${data.version} by ${data.performedBy}` +
-      (data.correlationId ? ` (corr: ${data.correlationId})` : ''),
+        (data.correlationId ? ` (corr: ${data.correlationId})` : ""),
     );
     return this.auditRepo.create(data);
   }
@@ -50,10 +50,16 @@ export class RuleAuditService {
   }): Promise<AlertRuleAuditLog> {
     return this.record({
       ruleId: params.ruleId,
-      action: 'UPDATE',
+      action: "UPDATE",
       field: params.field,
-      oldValue: params.oldValue !== null && params.oldValue !== undefined ? String(params.oldValue) : null,
-      newValue: params.newValue !== null && params.newValue !== undefined ? String(params.newValue) : null,
+      oldValue:
+        params.oldValue !== null && params.oldValue !== undefined
+          ? String(params.oldValue)
+          : null,
+      newValue:
+        params.newValue !== null && params.newValue !== undefined
+          ? String(params.newValue)
+          : null,
       version: params.version,
       performedBy: params.performedBy,
       reason: params.reason,
@@ -66,7 +72,11 @@ export class RuleAuditService {
   /**
    * Retrieve full audit trail for a rule, newest-first.
    */
-  async getAuditTrail(ruleId: string, skip = 0, take = 50): Promise<{
+  async getAuditTrail(
+    ruleId: string,
+    skip = 0,
+    take = 50,
+  ): Promise<{
     entries: RuleAuditEntryDto[];
     total: number;
   }> {
@@ -80,7 +90,11 @@ export class RuleAuditService {
   /**
    * Get audit trail filtered by action type.
    */
-  async getByAction(action: string, skip = 0, take = 50): Promise<{
+  async getByAction(
+    action: string,
+    skip = 0,
+    take = 50,
+  ): Promise<{
     entries: RuleAuditEntryDto[];
     total: number;
   }> {

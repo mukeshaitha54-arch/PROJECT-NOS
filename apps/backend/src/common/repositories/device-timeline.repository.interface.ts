@@ -3,29 +3,29 @@
 // Immutable, append-only event log per device.
 // ============================================================================
 
-export const IDeviceTimelineRepository = Symbol('IDeviceTimelineRepository');
+export const IDeviceTimelineRepository = Symbol("IDeviceTimelineRepository");
 
 export type TimelineEventType =
-  | 'REGISTERED'
-  | 'HEARTBEAT'
-  | 'ONLINE'
-  | 'OFFLINE'
-  | 'INVENTORY_UPDATED'
-  | 'INVENTORY_DIFF'
-  | 'ALERT_TRIGGERED'
-  | 'ALERT_ACKNOWLEDGED'
-  | 'ALERT_ESCALATED'
-  | 'ALERT_RESOLVED'
-  | 'ALERT_SUPPRESSED'
-  | 'MAINTENANCE_START'
-  | 'MAINTENANCE_END'
-  | 'AGENT_UPDATE'
-  | 'CONFIG_CHANGE'
-  | 'OPERATOR_NOTE'
-  | 'SECURITY_EVENT'
-  | 'SYSTEM_EVENT';
+  | "REGISTERED"
+  | "HEARTBEAT"
+  | "ONLINE"
+  | "OFFLINE"
+  | "INVENTORY_UPDATED"
+  | "INVENTORY_DIFF"
+  | "ALERT_TRIGGERED"
+  | "ALERT_ACKNOWLEDGED"
+  | "ALERT_ESCALATED"
+  | "ALERT_RESOLVED"
+  | "ALERT_SUPPRESSED"
+  | "MAINTENANCE_START"
+  | "MAINTENANCE_END"
+  | "AGENT_UPDATE"
+  | "CONFIG_CHANGE"
+  | "OPERATOR_NOTE"
+  | "SECURITY_EVENT"
+  | "SYSTEM_EVENT";
 
-export type TimelineSeverity = 'INFO' | 'SUCCESS' | 'WARNING' | 'CRITICAL';
+export type TimelineSeverity = "INFO" | "SUCCESS" | "WARNING" | "CRITICAL";
 
 export interface CreateTimelineEventDto {
   deviceId: string;
@@ -84,7 +84,9 @@ export interface IDeviceTimelineRepository {
    * Retrieves paginated timeline events for a device,
    * ordered newest-first.
    */
-  getPaginated(options: TimelineQueryOptions): Promise<PaginatedTimelineResponse>;
+  getPaginated(
+    options: TimelineQueryOptions,
+  ): Promise<PaginatedTimelineResponse>;
 
   /**
    * Retrieves the most recent N events for a device (for sidebar/preview).

@@ -28,18 +28,22 @@ NOS/
 ## Quick Start
 
 ### 1. Prerequisites
+
 - **Node.js**: >= v22.x
 - **pnpm**: >= v9.x (`npm i -g pnpm`)
 - **.NET SDK**: >= 8.0 (for monitoring agent development)
 - **Docker & Docker Compose**: For database, cache, and PgAdmin provisioning
 
 ### 2. Install Dependencies
+
 ```powershell
 pnpm install
 ```
 
 ### 3. Environment Setup
+
 Copy environmental template files in the root and individual application workspaces:
+
 ```powershell
 cp .env.example .env
 cp apps/frontend/.env.example apps/frontend/.env.local
@@ -47,23 +51,29 @@ cp apps/backend/.env.example apps/backend/.env
 ```
 
 ### 4. Start Infrastructure (PostgreSQL, PgAdmin, Redis)
+
 ```powershell
 docker compose up -d postgres pgadmin redis
 ```
+
 - **PgAdmin GUI**: Accessible at http://localhost:5050 (Credentials: `admin@nos.internal` / `secure_pgadmin_password`)
 
 ### 5. Build and Develop
+
 To execute concurrent development servers across all workspaces via Turborepo:
+
 ```powershell
 pnpm run dev
 ```
 
 To execute strict type checking, linting, and formatting checks:
+
 ```powershell
 pnpm turbo run lint typecheck format:check
 ```
 
 To build all apps and packages in optimal topological order:
+
 ```powershell
 pnpm turbo run build
 ```

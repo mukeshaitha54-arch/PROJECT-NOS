@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { Heartbeat } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
-import { IHeartbeatRepository, CreateHeartbeatInput } from '../../common/repositories/heartbeat.repository.interface';
+import { Injectable } from "@nestjs/common";
+import { Heartbeat } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
+import {
+  IHeartbeatRepository,
+  CreateHeartbeatInput,
+} from "../../common/repositories/heartbeat.repository.interface";
 
 @Injectable()
 export class PrismaHeartbeatRepository implements IHeartbeatRepository {
@@ -23,14 +26,17 @@ export class PrismaHeartbeatRepository implements IHeartbeatRepository {
   async findLatestByDeviceId(deviceId: string): Promise<Heartbeat | null> {
     return this.prisma.heartbeat.findFirst({
       where: { deviceId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
   }
 
-  async findRecentByDeviceId(deviceId: string, limit = 10): Promise<Heartbeat[]> {
+  async findRecentByDeviceId(
+    deviceId: string,
+    limit = 10,
+  ): Promise<Heartbeat[]> {
     return this.prisma.heartbeat.findMany({
       where: { deviceId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: limit,
     });
   }

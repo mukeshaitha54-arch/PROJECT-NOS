@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IDeviceGovernanceRepository } from '../../common/repositories/tenant.repository.interface';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { IDeviceGovernanceRepository } from "../../common/repositories/tenant.repository.interface";
 import {
   DeviceOwnershipDto,
   DeviceGroupDto,
@@ -11,14 +11,18 @@ import {
   PermissionFlag,
   RoleTemplateDto,
   UserRole,
-} from '@nos/shared-types';
-import { Prisma } from '@prisma/client';
+} from "@nos/shared-types";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async assignOwnership(deviceId: string, organizationId: string, data: Partial<DeviceOwnershipDto>): Promise<DeviceOwnershipDto> {
+  async assignOwnership(
+    deviceId: string,
+    organizationId: string,
+    data: Partial<DeviceOwnershipDto>,
+  ): Promise<DeviceOwnershipDto> {
     const upserted = await this.prisma.deviceOwnership.upsert({
       where: { deviceId },
       update: {
@@ -41,10 +45,12 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     });
 
     // Also update device's organizationId
-    await this.prisma.device.update({
-      where: { id: deviceId },
-      data: { organizationId },
-    }).catch(() => null);
+    await this.prisma.device
+      .update({
+        where: { id: deviceId },
+        data: { organizationId },
+      })
+      .catch(() => null);
 
     return {
       id: upserted.id,
@@ -60,7 +66,10 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     };
   }
 
-  async getOwnership(deviceId: string, organizationId: string): Promise<DeviceOwnershipDto | null> {
+  async getOwnership(
+    deviceId: string,
+    organizationId: string,
+  ): Promise<DeviceOwnershipDto | null> {
     const found = await this.prisma.deviceOwnership.findFirst({
       where: { deviceId, organizationId },
     });
@@ -79,14 +88,23 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     };
   }
 
-  async createDeviceGroup(organizationId: string, name: string, groupType: string, description?: string, filterCriteria?: Record<string, unknown>, deviceIds?: string[]): Promise<DeviceGroupDto> {
+  async createDeviceGroup(
+    organizationId: string,
+    name: string,
+    groupType: string,
+    description?: string,
+    filterCriteria?: Record<string, unknown>,
+    deviceIds?: string[],
+  ): Promise<DeviceGroupDto> {
     const created = await this.prisma.deviceGroup.create({
       data: {
         organizationId,
         name,
-        groupType: groupType || 'STATIC',
+        groupType: groupType || "STATIC",
         description: description || null,
-        filterCriteria: filterCriteria ? (filterCriteria as unknown as Prisma.InputJsonValue) : null,
+        filterCriteria: filterCriteria
+          ? (filterCriteria as unknown as Prisma.InputJsonValue)
+          : null,
         deviceIds: deviceIds ?? [],
         deviceCount: deviceIds ? deviceIds.length : 0,
       },
@@ -97,7 +115,9 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
       name: created.name,
       description: created.description || undefined,
       groupType: created.groupType as DeviceGroupType,
-      filterCriteria: created.filterCriteria ? (created.filterCriteria as unknown as Record<string, unknown>) : undefined,
+      filterCriteria: created.filterCriteria
+        ? (created.filterCriteria as unknown as Record<string, unknown>)
+        : undefined,
       deviceIds: created.deviceIds,
       deviceCount: created.deviceCount,
       createdAt: created.createdAt.toISOString(),
@@ -108,15 +128,17 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
   async listDeviceGroups(organizationId: string): Promise<DeviceGroupDto[]> {
     const rows = await this.prisma.deviceGroup.findMany({
       where: { organizationId },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
-    return rows.map(g => ({
+    return rows.map((g) => ({
       id: g.id,
       organizationId: g.organizationId,
       name: g.name,
       description: g.description || undefined,
       groupType: g.groupType as DeviceGroupType,
-      filterCriteria: g.filterCriteria ? (g.filterCriteria as unknown as Record<string, unknown>) : undefined,
+      filterCriteria: g.filterCriteria
+        ? (g.filterCriteria as unknown as Record<string, unknown>)
+        : undefined,
       deviceIds: g.deviceIds,
       deviceCount: g.deviceCount,
       createdAt: g.createdAt.toISOString(),
@@ -124,7 +146,13 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     }));
   }
 
-  async createTransferRequest(deviceId: string, fromOrgId: string, toOrgId: string, requestedBy: string, reason: string): Promise<DeviceTransferRequestDto> {
+  async createTransferRequest(
+    deviceId: string,
+    fromOrgId: string,
+    toOrgId: string,
+    requestedBy: string,
+    reason: string,
+  ): Promise<DeviceTransferRequestDto> {
     const req = await this.prisma.deviceTransferRequest.create({
       data: {
         deviceId,
@@ -149,7 +177,11 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     };
   }
 
-  async resolveTransferRequest(id: string, status: string, approvedByUserId?: string): Promise<DeviceTransferRequestDto> {
+  async resolveTransferRequest(
+    id: string,
+    status: string,
+    approvedByUserId?: string,
+  ): Promise<DeviceTransferRequestDto> {
     const updated = await this.prisma.deviceTransferRequest.update({
       where: { id },
       data: {
@@ -161,7 +193,11 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
 
     if (status === DeviceTransferStatus.APPROVED) {
       // Execute transfer
-      await this.assignOwnership(updated.deviceId, updated.toOrganizationId, {});
+      await this.assignOwnership(
+        updated.deviceId,
+        updated.toOrganizationId,
+        {},
+      );
     }
 
     return {
@@ -178,16 +214,20 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     };
   }
 
-  async listTransferRequests(organizationId: string, type: 'INCOMING' | 'OUTGOING'): Promise<DeviceTransferRequestDto[]> {
-    const where = type === 'INCOMING'
-      ? { toOrganizationId: organizationId }
-      : { fromOrganizationId: organizationId };
+  async listTransferRequests(
+    organizationId: string,
+    type: "INCOMING" | "OUTGOING",
+  ): Promise<DeviceTransferRequestDto[]> {
+    const where =
+      type === "INCOMING"
+        ? { toOrganizationId: organizationId }
+        : { fromOrganizationId: organizationId };
 
     const list = await this.prisma.deviceTransferRequest.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
-    return list.map(r => ({
+    return list.map((r) => ({
       id: r.id,
       deviceId: r.deviceId,
       fromOrganizationId: r.fromOrganizationId,
@@ -201,32 +241,44 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
     }));
   }
 
-  async listPermissionProfiles(organizationId: string): Promise<PermissionProfileDto[]> {
+  async listPermissionProfiles(
+    organizationId: string,
+  ): Promise<PermissionProfileDto[]> {
     const list = await this.prisma.permissionProfile.findMany({
       where: { organizationId },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
-    return list.map(p => ({
+    return list.map((p) => ({
       id: p.id,
       organizationId: p.organizationId,
       name: p.name,
       description: p.description || undefined,
       permissions: p.permissions as PermissionFlag[],
-      abacConditions: p.abacConditions ? (p.abacConditions as unknown as Record<string, unknown>) : undefined,
+      abacConditions: p.abacConditions
+        ? (p.abacConditions as unknown as Record<string, unknown>)
+        : undefined,
       isBuiltIn: p.isBuiltIn,
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
     }));
   }
 
-  async createPermissionProfile(organizationId: string, name: string, permissions: string[], description?: string, abacConditions?: Record<string, unknown>): Promise<PermissionProfileDto> {
+  async createPermissionProfile(
+    organizationId: string,
+    name: string,
+    permissions: string[],
+    description?: string,
+    abacConditions?: Record<string, unknown>,
+  ): Promise<PermissionProfileDto> {
     const created = await this.prisma.permissionProfile.create({
       data: {
         organizationId,
         name,
         permissions,
         description: description || null,
-        abacConditions: abacConditions ? (abacConditions as unknown as Prisma.InputJsonValue) : null,
+        abacConditions: abacConditions
+          ? (abacConditions as unknown as Prisma.InputJsonValue)
+          : null,
         isBuiltIn: false,
       },
     });
@@ -236,7 +288,9 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
       name: created.name,
       description: created.description || undefined,
       permissions: created.permissions as PermissionFlag[],
-      abacConditions: created.abacConditions ? (created.abacConditions as unknown as Record<string, unknown>) : undefined,
+      abacConditions: created.abacConditions
+        ? (created.abacConditions as unknown as Record<string, unknown>)
+        : undefined,
       isBuiltIn: created.isBuiltIn,
       createdAt: created.createdAt.toISOString(),
       updatedAt: created.updatedAt.toISOString(),
@@ -245,7 +299,7 @@ export class PrismaDeviceGovernanceRepository implements IDeviceGovernanceReposi
 
   async listRoleTemplates(): Promise<RoleTemplateDto[]> {
     const list = await this.prisma.roleTemplate.findMany();
-    return list.map(r => ({
+    return list.map((r) => ({
       id: r.id,
       name: r.name,
       baseRole: r.baseRole as UserRole,

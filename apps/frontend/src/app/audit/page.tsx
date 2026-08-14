@@ -1,15 +1,27 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
-  FileText, Search, Filter, Download, RefreshCw, Calendar, User, Shield,
-  CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Server, Database
-} from 'lucide-react';
-import { DataTable, Column } from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
-import { apiClient } from '@/lib/api-client';
-import { toast } from '@/components/ui/toast';
+  FileText,
+  Search,
+  Filter,
+  Download,
+  RefreshCw,
+  Calendar,
+  User,
+  Shield,
+  CheckCircle,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Server,
+  Database,
+} from "lucide-react";
+import { DataTable, Column } from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/lib/api-client";
+import { toast } from "@/components/ui/toast";
 
 interface AuditLogRow extends Record<string, unknown> {
   id: string;
@@ -27,9 +39,9 @@ interface AuditLogRow extends Record<string, unknown> {
 export default function OperationalAuditCenterPage() {
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [search, setSearch] = useState<string>('');
-  const [actionFilter, setActionFilter] = useState<string>('ALL');
-  const [resourceFilter, setResourceFilter] = useState<string>('ALL');
+  const [search, setSearch] = useState<string>("");
+  const [actionFilter, setActionFilter] = useState<string>("ALL");
+  const [resourceFilter, setResourceFilter] = useState<string>("ALL");
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(25);
   const [totalRecords, setTotalRecords] = useState<number>(0);
@@ -40,16 +52,19 @@ export default function OperationalAuditCenterPage() {
       setLoading(true);
       const payload: any = { page, limit };
       if (search) payload.search = search;
-      if (actionFilter !== 'ALL') payload.action = actionFilter;
-      if (resourceFilter !== 'ALL') payload.resourceType = resourceFilter;
+      if (actionFilter !== "ALL") payload.action = actionFilter;
+      if (resourceFilter !== "ALL") payload.resourceType = resourceFilter;
 
-      const res = await apiClient.post<any>('/tenant/audit/search', payload);
+      const res = await apiClient.post<any>("/tenant/audit/search", payload);
       const items = res.data?.data?.items || res.data?.items || [];
       const total = res.data?.data?.total || res.data?.total || items.length;
       setLogs(items);
       setTotalRecords(total);
     } catch (err: any) {
-      toast.error('Failed to load audit logs', err.response?.data?.message || err.message);
+      toast.error(
+        "Failed to load audit logs",
+        err.response?.data?.message || err.message,
+      );
       setLogs([]);
       setTotalRecords(0);
     } finally {
@@ -62,13 +77,22 @@ export default function OperationalAuditCenterPage() {
   }, [loadAuditLogs]);
 
   const exportCsv = () => {
-    toast.success('CSV Audit Report Exported', 'Downloading official compliance audit trail log.');
-    const csvContent = 'data:text/csv;charset=utf-8,ID,Action,Resource,User,Timestamp\n' +
-      logs.map(e => `${e.id},${e.action},${e.resourceType},${e.userName || 'System'},${e.timestamp}`).join('\n');
+    toast.success(
+      "CSV Audit Report Exported",
+      "Downloading official compliance audit trail log.",
+    );
+    const csvContent =
+      "data:text/csv;charset=utf-8,ID,Action,Resource,User,Timestamp\n" +
+      logs
+        .map(
+          (e) =>
+            `${e.id},${e.action},${e.resourceType},${e.userName || "System"},${e.timestamp}`,
+        )
+        .join("\n");
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `NOS_Audit_Trail_${Date.now()}.csv`);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `NOS_Audit_Trail_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -76,8 +100,8 @@ export default function OperationalAuditCenterPage() {
 
   const auditColumns: Column<AuditLogRow>[] = [
     {
-      key: 'timestamp',
-      header: 'Timestamp (UTC)',
+      key: "timestamp",
+      header: "Timestamp (UTC)",
       sortable: true,
       render: (row) => (
         <span className="font-mono text-xs text-slate-300">
@@ -86,8 +110,8 @@ export default function OperationalAuditCenterPage() {
       ),
     },
     {
-      key: 'action',
-      header: 'Audit Action',
+      key: "action",
+      header: "Audit Action",
       sortable: true,
       render: (row) => (
         <Badge variant="info" size="xs">
@@ -96,28 +120,33 @@ export default function OperationalAuditCenterPage() {
       ),
     },
     {
-      key: 'resourceType',
-      header: 'Resource',
+      key: "resourceType",
+      header: "Resource",
       sortable: true,
       render: (row) => (
         <span className="font-medium text-slate-200">
-          {String(row.resourceType)} {row.resourceId ? `(${String(row.resourceId).slice(0, 8)})` : ''}
+          {String(row.resourceType)}{" "}
+          {row.resourceId ? `(${String(row.resourceId).slice(0, 8)})` : ""}
         </span>
       ),
     },
     {
-      key: 'userName',
-      header: 'User / Actor',
+      key: "userName",
+      header: "User / Actor",
       sortable: true,
       render: (row) => (
-        <span className="text-slate-300 font-semibold">{String(row.userName || 'System Engine')}</span>
+        <span className="text-slate-300 font-semibold">
+          {String(row.userName || "System Engine")}
+        </span>
       ),
     },
     {
-      key: 'correlationId',
-      header: 'Correlation ID',
+      key: "correlationId",
+      header: "Correlation ID",
       render: (row) => (
-        <span className="font-mono text-[11px] text-slate-500">{String(row.correlationId || 'N/A')}</span>
+        <span className="font-mono text-[11px] text-slate-500">
+          {String(row.correlationId || "N/A")}
+        </span>
       ),
     },
   ];
@@ -130,10 +159,13 @@ export default function OperationalAuditCenterPage() {
           <div>
             <div className="flex items-center gap-2">
               <FileText className="w-6 h-6 text-cyan-400" />
-              <h1 className="text-2xl font-bold tracking-tight text-white">Operational Audit Center</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Operational Audit Center
+              </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Immutable security audit trail logging authentication, device configuration, inventory changes, and admin operations.
+              Immutable security audit trail logging authentication, device
+              configuration, inventory changes, and admin operations.
             </p>
           </div>
 
@@ -150,7 +182,9 @@ export default function OperationalAuditCenterPage() {
               disabled={loading}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
           </div>
@@ -179,7 +213,9 @@ export default function OperationalAuditCenterPage() {
             searchable={false}
             emptyTitle="No audit log entries found"
             emptyDescription="Platform operations and security actions will record here automatically."
-            onRowClick={(row) => setExpandedId(expandedId === row.id ? null : row.id)}
+            onRowClick={(row) =>
+              setExpandedId(expandedId === row.id ? null : row.id)
+            }
           />
         </div>
       </div>

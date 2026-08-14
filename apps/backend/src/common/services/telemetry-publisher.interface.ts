@@ -1,4 +1,4 @@
-import { TelemetrySnapshot as TelemetrySnapshotDto } from '@nos/shared-types';
+import { TelemetrySnapshot as TelemetrySnapshotDto } from "@nos/shared-types";
 
 /**
  * Event streaming publisher abstraction for Phase 2B.
@@ -8,4 +8,4 @@ export interface ITelemetryPublisher {
   publish(snapshot: TelemetrySnapshotDto): Promise<void>;
 }
 
-export const ITelemetryPublisherToken = Symbol('ITelemetryPublisher');
+export const ITelemetryPublisherToken = Symbol("ITelemetryPublisher");

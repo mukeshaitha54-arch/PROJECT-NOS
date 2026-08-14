@@ -11,6 +11,7 @@
 Module 1 (Core System Architecture & Domain Foundation v1.0) has been comprehensively analyzed and formally documented as the **Constitutional Document** of the repository. Every architectural assumption was challenged, justified with sound engineering reasoning, and firmly grounded in our existing verified codebase (`apps/backend`, `apps/frontend`, `apps/agent`, `packages/shared-types`, and `schema.prisma`).
 
 In strict compliance with **Global Rules 1–10** and the **Zero-Guess Policy**:
+
 - **No speculative redesigns**: Existing stable code took immediate precedence over idealized theoretical rewrites.
 - **Single Responsibility**: Every physical directory and database entity has exactly one documented owning domain.
 - **Zero Circular Dependencies**: An immutable Directed Acyclic Graph (DAG) explicitly bans reverse module dependencies.
@@ -24,6 +25,7 @@ In strict compliance with **Global Rules 1–10** and the **Zero-Guess Policy**:
 All mandatory deliverables have been generated in github-style markdown, embedded with Mermaid architectural syntax diagrams and strict schema alignments:
 
 ### Core Architecture Documents (`docs/architecture/`)
+
 1. 📄 **[system-architecture.md](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/system-architecture.md)** — Constitutional overview, Global Rules 1–10, 3-tier distributed sensor & SaaS engine macro topology diagram, and preservation grounding principles.
 2. 📄 **[repository-map.md](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/repository-map.md)** — Comprehensive monorepo structural directory map defining explicit ownership, authorized usage permissions, and strict access prohibitions for every folder in `apps/*` and `packages/*`.
 3. 📄 **[domain-model.md](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/domain-model.md)** — Formalizes the 11 core bounded contexts (`tenant`, `auth`, `users`, `fleet`, `device`, `inventory`, `telemetry`, `alerts`, `realtime`, `dashboard`, `health`), explicit API route/database ownership, and the immutable downward-only dependency DAG.
@@ -39,17 +41,19 @@ All mandatory deliverables have been generated in github-style markdown, embedde
 ---
 
 ### Architecture Decision Records (`docs/architecture/adr/`)
+
 Every foundational architectural decision was formalized following the complete Context, Problem, Decision, Consequences, and Alternatives format:
-*   📜 **[ADR-001: Monorepo & Repository Workspace Architecture](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-001.md)**
-*   📜 **[ADR-002: Layered Clean Architecture & Dependency Inversion](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-002.md)**
-*   📜 **[ADR-003: Real-Time WebSocket Event Architecture](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-003.md)**
-*   📜 **[ADR-004: PostgreSQL Enterprise Relational Engine & Hybrid JSON Modeling](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-004.md)**
-*   📜 **[ADR-005: JWT Stateless Authentication & Salted Secret Hashing](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-005.md)**
-*   📜 **[ADR-006: Platform-Agnostic Metric Collector Abstraction & Deterministic Sensing](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-006.md)**
-*   📜 **[ADR-007: High-Frequency Telemetry Ingestion, Compression & Resilient Buffering](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-007.md)**
-*   📜 **[ADR-008: Secure Zero-Touch Agent Registration Flow & Opaque Token Handshake](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-008.md)**
-*   📜 **[ADR-009: Multi-Tenant SaaS Isolation, Quota Enforcement & ABAC/RBAC Governance](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-009.md)**
-*   📜 **[ADR-010: Enterprise Alert Notification Engine, Dead-Letter Queues & Resilience](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-010.md)**
+
+- 📜 **[ADR-001: Monorepo & Repository Workspace Architecture](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-001.md)**
+- 📜 **[ADR-002: Layered Clean Architecture & Dependency Inversion](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-002.md)**
+- 📜 **[ADR-003: Real-Time WebSocket Event Architecture](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-003.md)**
+- 📜 **[ADR-004: PostgreSQL Enterprise Relational Engine & Hybrid JSON Modeling](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-004.md)**
+- 📜 **[ADR-005: JWT Stateless Authentication & Salted Secret Hashing](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-005.md)**
+- 📜 **[ADR-006: Platform-Agnostic Metric Collector Abstraction & Deterministic Sensing](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-006.md)**
+- 📜 **[ADR-007: High-Frequency Telemetry Ingestion, Compression & Resilient Buffering](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-007.md)**
+- 📜 **[ADR-008: Secure Zero-Touch Agent Registration Flow & Opaque Token Handshake](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-008.md)**
+- 📜 **[ADR-009: Multi-Tenant SaaS Isolation, Quota Enforcement & ABAC/RBAC Governance](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-009.md)**
+- 📜 **[ADR-010: Enterprise Alert Notification Engine, Dead-Letter Queues & Resilience](file:///c:/Users/mukes/OneDrive/Desktop/NOS/docs/architecture/adr/ADR-010.md)**
 
 ---
 
@@ -57,13 +61,13 @@ Every foundational architectural decision was formalized following the complete 
 
 To satisfy the mandatory requirement to inspect existing stable infrastructure before specifying architecture, every specification explicitly mapped to and preserved verified production implementations:
 
-| Domain Dimension | Verified Existing Implementation | Grounded Architectural Formalization | Churn / Impact |
-| :--- | :--- | :--- | :--- |
-| **Database Schema** | 37 Prisma tables in `apps/backend/prisma/schema.prisma` using standard UUID PKs and cascading relations. | Retained 100% of tables without destructive redesigns; assigned strict domain module ownership per Global Rule 5. | **Zero** |
-| **Agent Sensor Abstraction** | C# .NET worker utilizing `IMetricCollector`, `WindowsMetricCollector`, and `SimulationMetricCollector` DI patterns. | Formalized Clean Architecture DI pattern as immutable standard; banned hardcoded WMI calls or synthetic `Random()` numbers. | **Zero** |
-| **Backend API Structure** | NestJS bounded modules (`alerts`, `device`, `inventory`, `telemetry`, etc.) communicating via `@nos/shared-types`. | Formalized 5-tier Layered Clean Architecture (Controller -> Application -> Domain -> Repository -> Infrastructure). | **Zero** |
-| **Realtime Gateway** | Socket.io server gateway under `apps/backend/src/modules/realtime` pushing to Next.js SWR/React Query client hooks. | Solidified multi-tenant room isolation (`room:org:<slug>`) and optimistic localized DOM state cache mutations. | **Zero** |
-| **System Stability** | 31/31 passing unit and Operational Acceptance Tests (`operational-acceptance.spec.ts`). | Established 100% automated verification passing rate as an immutable CI build quality gate (`QG-10`). | **Zero** |
+| Domain Dimension             | Verified Existing Implementation                                                                                    | Grounded Architectural Formalization                                                                                        | Churn / Impact |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------- | :------------- |
+| **Database Schema**          | 37 Prisma tables in `apps/backend/prisma/schema.prisma` using standard UUID PKs and cascading relations.            | Retained 100% of tables without destructive redesigns; assigned strict domain module ownership per Global Rule 5.           | **Zero**       |
+| **Agent Sensor Abstraction** | C# .NET worker utilizing `IMetricCollector`, `WindowsMetricCollector`, and `SimulationMetricCollector` DI patterns. | Formalized Clean Architecture DI pattern as immutable standard; banned hardcoded WMI calls or synthetic `Random()` numbers. | **Zero**       |
+| **Backend API Structure**    | NestJS bounded modules (`alerts`, `device`, `inventory`, `telemetry`, etc.) communicating via `@nos/shared-types`.  | Formalized 5-tier Layered Clean Architecture (Controller -> Application -> Domain -> Repository -> Infrastructure).         | **Zero**       |
+| **Realtime Gateway**         | Socket.io server gateway under `apps/backend/src/modules/realtime` pushing to Next.js SWR/React Query client hooks. | Solidified multi-tenant room isolation (`room:org:<slug>`) and optimistic localized DOM state cache mutations.              | **Zero**       |
+| **System Stability**         | 31/31 passing unit and Operational Acceptance Tests (`operational-acceptance.spec.ts`).                             | Established 100% automated verification passing rate as an immutable CI build quality gate (`QG-10`).                       | **Zero**       |
 
 ---
 

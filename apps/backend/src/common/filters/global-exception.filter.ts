@@ -5,9 +5,9 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-} from '@nestjs/common';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { ApiResponse, ApiErrorPayload } from '@nos/shared-types';
+} from "@nestjs/common";
+import { FastifyReply, FastifyRequest } from "fastify";
+import { ApiResponse, ApiErrorPayload } from "@nos/shared-types";
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -26,27 +26,27 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const errorResponse: any =
       exception instanceof HttpException
         ? exception.getResponse()
-        : { message: 'Internal server error occurred' };
+        : { message: "Internal server error occurred" };
 
     const message: string =
-      typeof errorResponse === 'string'
+      typeof errorResponse === "string"
         ? errorResponse
         : errorResponse?.message ||
           (exception as any)?.message ||
-          'Unknown exception encountered';
+          "Unknown exception encountered";
 
     const details =
-      typeof errorResponse === 'object' && errorResponse !== null
+      typeof errorResponse === "object" && errorResponse !== null
         ? errorResponse
         : undefined;
 
-    const requestId = (request.headers['x-request-id'] ||
-      request.headers['x-correlation-id'] ||
-      'untracked') as string;
+    const requestId = (request.headers["x-request-id"] ||
+      request.headers["x-correlation-id"] ||
+      "untracked") as string;
 
     const errorPayload: ApiErrorPayload = {
       code: status,
-      message: Array.isArray(message) ? message.join(', ') : message,
+      message: Array.isArray(message) ? message.join(", ") : message,
       details,
       path: request.url,
     };

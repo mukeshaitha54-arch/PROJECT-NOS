@@ -1,8 +1,12 @@
-import { SocketEventEnvelope } from '@nos/shared-types';
+import { SocketEventEnvelope } from "@nos/shared-types";
 
-export const ISocketEventBusToken = Symbol('ISocketEventBus');
+export const ISocketEventBusToken = Symbol("ISocketEventBus");
 
-export type EventBusCallback = (room: string, event: string, envelope: SocketEventEnvelope) => void;
+export type EventBusCallback = (
+  room: string,
+  event: string,
+  envelope: SocketEventEnvelope,
+) => void;
 
 /**
  * Distributed Event Bus Interface (SPL Feature 14)
@@ -10,7 +14,11 @@ export type EventBusCallback = (room: string, event: string, envelope: SocketEve
  * Currently backed by LocalSocketEventBus, easily swapable for Redis/NATS later.
  */
 export interface ISocketEventBus {
-  publish(room: string, event: string, envelope: SocketEventEnvelope): Promise<void>;
+  publish(
+    room: string,
+    event: string,
+    envelope: SocketEventEnvelope,
+  ): Promise<void>;
   subscribe(callback: EventBusCallback): void;
   unsubscribe(callback: EventBusCallback): void;
 }

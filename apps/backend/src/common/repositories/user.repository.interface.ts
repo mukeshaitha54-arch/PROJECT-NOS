@@ -1,4 +1,4 @@
-import { User, UserRole } from '@nos/shared-types';
+import { User, UserRole } from "@nos/shared-types";
 
 export interface CreateUserData {
   email: string;
@@ -22,8 +22,11 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<(User & { passwordHash: string }) | null>;
   search(query: string, organizationId: string): Promise<any[]>;
   create(data: CreateUserData): Promise<User & { passwordHash: string }>;
-  update(id: string, data: UpdateUserData): Promise<User & { passwordHash: string }>;
+  update(
+    id: string,
+    data: UpdateUserData,
+  ): Promise<User & { passwordHash: string }>;
   delete(id: string): Promise<boolean>;
 }
 
-export const IUserRepositoryToken = Symbol('IUserRepository');
+export const IUserRepositoryToken = Symbol("IUserRepository");

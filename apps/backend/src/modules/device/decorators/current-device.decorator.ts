@@ -1,5 +1,5 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Device } from '@prisma/client';
+import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { Device } from "@prisma/client";
 
 export const CurrentDevice = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): Device => {

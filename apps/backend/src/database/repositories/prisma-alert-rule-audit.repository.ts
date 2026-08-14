@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
 import {
   IAlertRuleAuditRepository,
   AlertRuleAuditCreateInput,
-} from '../../common/repositories/alert-rule-audit.repository.interface';
-import { AlertRuleAuditLog } from '@prisma/client';
+} from "../../common/repositories/alert-rule-audit.repository.interface";
+import { AlertRuleAuditLog } from "@prisma/client";
 
 @Injectable()
 export class PrismaAlertRuleAuditRepository implements IAlertRuleAuditRepository {
@@ -28,11 +28,15 @@ export class PrismaAlertRuleAuditRepository implements IAlertRuleAuditRepository
     });
   }
 
-  async findByRuleId(ruleId: string, skip = 0, take = 50): Promise<[AlertRuleAuditLog[], number]> {
+  async findByRuleId(
+    ruleId: string,
+    skip = 0,
+    take = 50,
+  ): Promise<[AlertRuleAuditLog[], number]> {
     const [data, total] = await Promise.all([
       this.prisma.alertRuleAuditLog.findMany({
         where: { ruleId },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         skip,
         take,
       }),
@@ -41,11 +45,15 @@ export class PrismaAlertRuleAuditRepository implements IAlertRuleAuditRepository
     return [data, total];
   }
 
-  async findByAction(action: string, skip = 0, take = 50): Promise<[AlertRuleAuditLog[], number]> {
+  async findByAction(
+    action: string,
+    skip = 0,
+    take = 50,
+  ): Promise<[AlertRuleAuditLog[], number]> {
     const [data, total] = await Promise.all([
       this.prisma.alertRuleAuditLog.findMany({
         where: { action },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         skip,
         take,
       }),
@@ -54,16 +62,20 @@ export class PrismaAlertRuleAuditRepository implements IAlertRuleAuditRepository
     return [data, total];
   }
 
-  async findByPerformedBy(performedBy: string, skip = 0, take = 50): Promise<[AlertRuleAuditLog[], number]> {
+  async findByPerformedBy(
+    performedBy: string,
+    skip = 0,
+    take = 50,
+  ): Promise<[AlertRuleAuditLog[], number]> {
     const [data, total] = await Promise.all([
       this.prisma.alertRuleAuditLog.findMany({
-        where: { performedBy: { contains: performedBy, mode: 'insensitive' } },
-        orderBy: { timestamp: 'desc' },
+        where: { performedBy: { contains: performedBy, mode: "insensitive" } },
+        orderBy: { timestamp: "desc" },
         skip,
         take,
       }),
       this.prisma.alertRuleAuditLog.count({
-        where: { performedBy: { contains: performedBy, mode: 'insensitive' } },
+        where: { performedBy: { contains: performedBy, mode: "insensitive" } },
       }),
     ]);
     return [data, total];

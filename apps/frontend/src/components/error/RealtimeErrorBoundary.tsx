@@ -1,6 +1,6 @@
-'use client';
-import React, { Component, ReactNode } from 'react';
-import { WifiOff } from 'lucide-react';
+"use client";
+import React, { Component, ReactNode } from "react";
+import { WifiOff } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -22,7 +22,11 @@ export class RealtimeErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Real-time connection boundary caught error:', error, errorInfo);
+    console.error(
+      "Real-time connection boundary caught error:",
+      error,
+      errorInfo,
+    );
   }
 
   handleForceReconnect = () => {
@@ -41,7 +45,9 @@ export class RealtimeErrorBoundary extends Component<Props, State> {
             <div className="bg-red-500/20 p-4 rounded-full mb-4">
               <WifiOff className="w-8 h-8 text-red-500" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Real-time connection interrupted</h3>
+            <h3 className="text-xl font-bold text-white mb-2">
+              Real-time connection interrupted
+            </h3>
             <p className="text-sm text-slate-400 mb-6">
               Dashboard data may be stale. Attempting to reconnect...
             </p>

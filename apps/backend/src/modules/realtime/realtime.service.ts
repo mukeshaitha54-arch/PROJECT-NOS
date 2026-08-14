@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ApiResponse, SocketHealthResponse } from '@nos/shared-types';
-import { SocketMetricsService } from './services/socket-metrics.service';
-import { ConnectionRegistryService } from './services/connection-registry.service';
-import { PresenceService } from './services/presence.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { ApiResponse, SocketHealthResponse } from "@nos/shared-types";
+import { SocketMetricsService } from "./services/socket-metrics.service";
+import { ConnectionRegistryService } from "./services/connection-registry.service";
+import { PresenceService } from "./services/presence.service";
 
 @Injectable()
 export class RealtimeService {
@@ -14,9 +14,13 @@ export class RealtimeService {
     private readonly presenceService: PresenceService,
   ) {}
 
-  async getSocketHealth(correlationId?: string): Promise<ApiResponse<SocketHealthResponse>> {
-    this.logger.debug(`Evaluating enterprise realtime Socket.IO health telemetry. CorId: [${correlationId || 'none'}]`);
-    
+  async getSocketHealth(
+    correlationId?: string,
+  ): Promise<ApiResponse<SocketHealthResponse>> {
+    this.logger.debug(
+      `Evaluating enterprise realtime Socket.IO health telemetry. CorId: [${correlationId || "none"}]`,
+    );
+
     const totalRooms = this.registryService.getTotalActiveRooms();
     const healthData = this.metricsService.buildHealthResponse(totalRooms, 1); // 1 primary namespace (/realtime)
 

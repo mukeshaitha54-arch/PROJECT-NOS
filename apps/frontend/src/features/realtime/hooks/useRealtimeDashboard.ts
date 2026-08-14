@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useSocketContext } from '../contexts/socket.context';
+import { useEffect, useRef } from "react";
+import { useSocketContext } from "../contexts/socket.context";
 import {
   SocketEvents,
   SocketRooms,
@@ -9,14 +9,23 @@ import {
   RealtimeDashboardEvent,
   RealtimeHeartbeatEvent,
   RealtimeTelemetryEvent,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 
 export interface DashboardRealtimeHandlers {
-  onDashboardUpdate?: (event: RealtimeDashboardEvent, envelope: SocketEventEnvelope) => void;
+  onDashboardUpdate?: (
+    event: RealtimeDashboardEvent,
+    envelope: SocketEventEnvelope,
+  ) => void;
   onDeviceOnline?: (payload: any, envelope: SocketEventEnvelope) => void;
   onDeviceOffline?: (payload: any, envelope: SocketEventEnvelope) => void;
-  onHeartbeat?: (event: RealtimeHeartbeatEvent, envelope: SocketEventEnvelope) => void;
-  onTelemetry?: (event: RealtimeTelemetryEvent, envelope: SocketEventEnvelope) => void;
+  onHeartbeat?: (
+    event: RealtimeHeartbeatEvent,
+    envelope: SocketEventEnvelope,
+  ) => void;
+  onTelemetry?: (
+    event: RealtimeTelemetryEvent,
+    envelope: SocketEventEnvelope,
+  ) => void;
 }
 
 /**
@@ -29,7 +38,7 @@ export const useRealtimeDashboard = (handlers: DashboardRealtimeHandlers) => {
   handlersRef.current = handlers;
 
   useEffect(() => {
-    if (status === 'LIVE') {
+    if (status === "LIVE") {
       joinRoom(SocketRooms.DASHBOARD);
     }
   }, [status, joinRoom]);
@@ -39,7 +48,10 @@ export const useRealtimeDashboard = (handlers: DashboardRealtimeHandlers) => {
 
     unsubscribers.push(
       subscribe(SocketEvents.DASHBOARD_UPDATED, (env) => {
-        handlersRef.current.onDashboardUpdate?.(env.payload as RealtimeDashboardEvent, env);
+        handlersRef.current.onDashboardUpdate?.(
+          env.payload as RealtimeDashboardEvent,
+          env,
+        );
       }),
     );
     unsubscribers.push(
@@ -54,12 +66,18 @@ export const useRealtimeDashboard = (handlers: DashboardRealtimeHandlers) => {
     );
     unsubscribers.push(
       subscribe(SocketEvents.HEARTBEAT_RECEIVED, (env) => {
-        handlersRef.current.onHeartbeat?.(env.payload as RealtimeHeartbeatEvent, env);
+        handlersRef.current.onHeartbeat?.(
+          env.payload as RealtimeHeartbeatEvent,
+          env,
+        );
       }),
     );
     unsubscribers.push(
       subscribe(SocketEvents.TELEMETRY_RECEIVED, (env) => {
-        handlersRef.current.onTelemetry?.(env.payload as RealtimeTelemetryEvent, env);
+        handlersRef.current.onTelemetry?.(
+          env.payload as RealtimeTelemetryEvent,
+          env,
+        );
       }),
     );
 

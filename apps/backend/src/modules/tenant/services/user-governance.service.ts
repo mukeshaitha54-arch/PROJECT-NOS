@@ -1,5 +1,11 @@
-import { Injectable, Inject, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import * as crypto from 'crypto';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
+import * as crypto from "crypto";
 import {
   DepartmentDto,
   TeamDto,
@@ -11,36 +17,60 @@ import {
   AuditActionType,
   TenantContext,
   ErrorCode,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 import {
   ITeamRepository,
   ITeamRepositoryToken,
   IUserSessionRepository,
   IUserSessionRepositoryToken,
-} from '../../../common/repositories/tenant.repository.interface';
-import { QuotaEngineService } from './quota-engine.service';
-import { AuditEngineService } from './audit-engine.service';
+} from "../../../common/repositories/tenant.repository.interface";
+import { QuotaEngineService } from "./quota-engine.service";
+import { AuditEngineService } from "./audit-engine.service";
 
 @Injectable()
 export class UserGovernanceService {
   constructor(
-    @Inject(ITeamRepositoryToken) private readonly teamRepository: ITeamRepository,
-    @Inject(IUserSessionRepositoryToken) private readonly sessionRepository: IUserSessionRepository,
+    @Inject(ITeamRepositoryToken)
+    private readonly teamRepository: ITeamRepository,
+    @Inject(IUserSessionRepositoryToken)
+    private readonly sessionRepository: IUserSessionRepository,
     private readonly quotaService: QuotaEngineService,
     private readonly auditService: AuditEngineService,
   ) {}
 
   // Departments & Teams
-  async createDepartment(organizationId: string, name: string, description?: string, headUserId?: string): Promise<DepartmentDto> {
-    return this.teamRepository.createDepartment(organizationId, name, description, headUserId);
+  async createDepartment(
+    organizationId: string,
+    name: string,
+    description?: string,
+    headUserId?: string,
+  ): Promise<DepartmentDto> {
+    return this.teamRepository.createDepartment(
+      organizationId,
+      name,
+      description,
+      headUserId,
+    );
   }
 
   async listDepartments(organizationId: string): Promise<DepartmentDto[]> {
     return this.teamRepository.listDepartments(organizationId);
   }
 
-  async createTeam(organizationId: string, name: string, departmentId?: string, description?: string, leadUserId?: string): Promise<TeamDto> {
-    return this.teamRepository.createTeam(organizationId, name, departmentId, description, leadUserId);
+  async createTeam(
+    organizationId: string,
+    name: string,
+    departmentId?: string,
+    description?: string,
+    leadUserId?: string,
+  ): Promise<TeamDto> {
+    return this.teamRepository.createTeam(
+      organizationId,
+      name,
+      departmentId,
+      description,
+      leadUserId,
+    );
   }
 
   async listTeams(organizationId: string): Promise<TeamDto[]> {
@@ -57,13 +87,20 @@ export class UserGovernanceService {
     departmentIds?: string[],
     customRoleId?: string,
   ): Promise<OrganizationMemberDto> {
-    await this.quotaService.checkQuotaConsumption(organizationId, 'USERS');
+    await this.quotaService.checkQuotaConsumption(organizationId, "USERS");
 
-    const member = await this.teamRepository.addMember(organizationId, userId, role, teamIds, departmentIds, customRoleId);
+    const member = await this.teamRepository.addMember(
+      organizationId,
+      userId,
+      role,
+      teamIds,
+      departmentIds,
+      customRoleId,
+    );
     await this.auditService.logEvent(
       context,
       AuditActionType.PERMISSION_CHANGE,
-      'MEMBER',
+      "MEMBER",
       member.id,
       `Assigned user [${userId}] to role [${role}] in organization [${organizationId}]`,
       { role, teamIds, departmentIds, customRoleId },
@@ -79,11 +116,16 @@ export class UserGovernanceService {
     context: TenantContext,
     customRoleId?: string,
   ): Promise<OrganizationMemberDto> {
-    const member = await this.teamRepository.updateMemberRole(organizationId, userId, role, customRoleId);
+    const member = await this.teamRepository.updateMemberRole(
+      organizationId,
+      userId,
+      role,
+      customRoleId,
+    );
     await this.auditService.logEvent(
       context,
       AuditActionType.PERMISSION_CHANGE,
-      'MEMBER',
+      "MEMBER",
       member.id,
       `Updated member [${userId}] role to [${role}] in org [${organizationId}]`,
       { role, customRoleId },
@@ -91,20 +133,29 @@ export class UserGovernanceService {
     return member;
   }
 
-  async removeMember(organizationId: string, userId: string, context: TenantContext, reason?: string): Promise<void> {
+  async removeMember(
+    organizationId: string,
+    userId: string,
+    context: TenantContext,
+    reason?: string,
+  ): Promise<void> {
     await this.teamRepository.removeMember(organizationId, userId);
     await this.sessionRepository.revokeAllUserSessions(userId, organizationId);
 
     await this.auditService.logEvent(
       context,
       AuditActionType.USER_REMOVED,
-      'MEMBER',
+      "MEMBER",
       userId,
-      reason || `Removed user [${userId}] from organization [${organizationId}] and revoked sessions`,
+      reason ||
+        `Removed user [${userId}] from organization [${organizationId}] and revoked sessions`,
     );
   }
 
-  async listMembers(organizationId: string, params?: { search?: string; role?: string; page?: number; limit?: number }) {
+  async listMembers(
+    organizationId: string,
+    params?: { search?: string; role?: string; page?: number; limit?: number },
+  ) {
     return this.teamRepository.listMembers(organizationId, params);
   }
 
@@ -117,10 +168,10 @@ export class UserGovernanceService {
     teamIds?: string[],
     departmentIds?: string[],
   ): Promise<{ invitation: OrganizationInvitationDto; inviteLink: string }> {
-    await this.quotaService.checkQuotaConsumption(organizationId, 'USERS');
+    await this.quotaService.checkQuotaConsumption(organizationId, "USERS");
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
@@ -128,7 +179,7 @@ export class UserGovernanceService {
       organizationId,
       email,
       role,
-      context.userId || 'system',
+      context.userId || "system",
       tokenHash,
       expiresAt,
       teamIds,
@@ -140,7 +191,7 @@ export class UserGovernanceService {
     await this.auditService.logEvent(
       context,
       AuditActionType.USER_INVITED,
-      'INVITE',
+      "INVITE",
       invitation.id,
       `Invited user [${email}] with role [${role}]`,
       { email, role },
@@ -149,31 +200,54 @@ export class UserGovernanceService {
     return { invitation, inviteLink };
   }
 
-  async listInvitations(organizationId: string): Promise<OrganizationInvitationDto[]> {
+  async listInvitations(
+    organizationId: string,
+  ): Promise<OrganizationInvitationDto[]> {
     return this.teamRepository.listInvitations(organizationId);
   }
 
-  async revokeInvitation(organizationId: string, id: string, context: TenantContext): Promise<void> {
+  async revokeInvitation(
+    organizationId: string,
+    id: string,
+    context: TenantContext,
+  ): Promise<void> {
     await this.teamRepository.revokeInvitation(organizationId, id);
-    await this.auditService.logEvent(context, AuditActionType.USER_REMOVED, 'INVITE', id, 'Revoked user invitation');
+    await this.auditService.logEvent(
+      context,
+      AuditActionType.USER_REMOVED,
+      "INVITE",
+      id,
+      "Revoked user invitation",
+    );
   }
 
   async importUsersFromCsv(
     organizationId: string,
     csvContent: string,
     context: TenantContext,
-  ): Promise<{ total: number; success: number; errors: Array<{ row: number; email: string; error: string }> }> {
-    const lines = csvContent.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+  ): Promise<{
+    total: number;
+    success: number;
+    errors: Array<{ row: number; email: string; error: string }>;
+  }> {
+    const lines = csvContent
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith("#"));
     const errors: Array<{ row: number; email: string; error: string }> = [];
     let success = 0;
 
     for (let i = 0; i < lines.length; i++) {
-      const parts = lines[i].split(',').map(p => p.trim());
+      const parts = lines[i].split(",").map((p) => p.trim());
       const email = parts[0];
-      const roleStr = (parts[1] || 'OPERATOR').toUpperCase() as UserRole;
+      const roleStr = (parts[1] || "OPERATOR").toUpperCase() as UserRole;
 
-      if (!email || !email.includes('@')) {
-        errors.push({ row: i + 1, email, error: 'Invalid email address syntax' });
+      if (!email || !email.includes("@")) {
+        errors.push({
+          row: i + 1,
+          email,
+          error: "Invalid email address syntax",
+        });
         continue;
       }
 
@@ -181,7 +255,11 @@ export class UserGovernanceService {
         await this.inviteUser(organizationId, email, roleStr, context);
         success++;
       } catch (err: any) {
-        errors.push({ row: i + 1, email, error: err?.message || 'Quota exceeded or import error' });
+        errors.push({
+          row: i + 1,
+          email,
+          error: err?.message || "Quota exceeded or import error",
+        });
       }
     }
 
@@ -189,26 +267,78 @@ export class UserGovernanceService {
   }
 
   // Session & Security Governance
-  async listActiveSessions(organizationId: string, userId?: string): Promise<UserSessionDto[]> {
+  async listActiveSessions(
+    organizationId: string,
+    userId?: string,
+  ): Promise<UserSessionDto[]> {
     return this.sessionRepository.listActiveSessions(organizationId, userId);
   }
 
-  async revokeSession(organizationId: string, sessionId: string, context: TenantContext, reason?: string): Promise<void> {
+  async revokeSession(
+    organizationId: string,
+    sessionId: string,
+    context: TenantContext,
+    reason?: string,
+  ): Promise<void> {
     await this.sessionRepository.revokeSession(sessionId, organizationId);
-    await this.auditService.logEvent(context, AuditActionType.SESSION_REVOKE, 'SESSION', sessionId, reason || 'Revoked active session');
+    await this.auditService.logEvent(
+      context,
+      AuditActionType.SESSION_REVOKE,
+      "SESSION",
+      sessionId,
+      reason || "Revoked active session",
+    );
   }
 
-  async revokeAllUserSessions(organizationId: string, targetUserId: string, context: TenantContext, reason?: string): Promise<void> {
-    await this.sessionRepository.revokeAllUserSessions(targetUserId, organizationId);
-    await this.auditService.logEvent(context, AuditActionType.SESSION_REVOKE, 'USER_SESSIONS', targetUserId, reason || 'Force logout from all devices');
+  async revokeAllUserSessions(
+    organizationId: string,
+    targetUserId: string,
+    context: TenantContext,
+    reason?: string,
+  ): Promise<void> {
+    await this.sessionRepository.revokeAllUserSessions(
+      targetUserId,
+      organizationId,
+    );
+    await this.auditService.logEvent(
+      context,
+      AuditActionType.SESSION_REVOKE,
+      "USER_SESSIONS",
+      targetUserId,
+      reason || "Force logout from all devices",
+    );
   }
 
-  async recordActivity(organizationId: string, userId: string, action: string, ipAddress: string, browser: string, resourceType?: string, resourceId?: string): Promise<void> {
-    await this.sessionRepository.recordActivity({ organizationId, userId, action, ipAddress, browser, resourceType, resourceId });
+  async recordActivity(
+    organizationId: string,
+    userId: string,
+    action: string,
+    ipAddress: string,
+    browser: string,
+    resourceType?: string,
+    resourceId?: string,
+  ): Promise<void> {
+    await this.sessionRepository.recordActivity({
+      organizationId,
+      userId,
+      action,
+      ipAddress,
+      browser,
+      resourceType,
+      resourceId,
+    });
   }
 
-  async listUserActivities(organizationId: string, userId?: string, limit = 50): Promise<UserActivityDto[]> {
-    return this.sessionRepository.listUserActivities(organizationId, userId, limit);
+  async listUserActivities(
+    organizationId: string,
+    userId?: string,
+    limit = 50,
+  ): Promise<UserActivityDto[]> {
+    return this.sessionRepository.listUserActivities(
+      organizationId,
+      userId,
+      limit,
+    );
   }
 
   // Enterprise Impersonation (Mandatory Audit Logging)
@@ -217,22 +347,29 @@ export class UserGovernanceService {
     targetUserId: string,
     reason: string,
     context: TenantContext,
-  ): Promise<{ impersonationToken: string; targetUserId: string; expiresAt: string }> {
+  ): Promise<{
+    impersonationToken: string;
+    targetUserId: string;
+    expiresAt: string;
+  }> {
     if (!reason || reason.trim().length < 5) {
-      throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Mandatory justification reason required for impersonation.' });
+      throw new BadRequestException({
+        code: ErrorCode.VALIDATION_ERROR,
+        message: "Mandatory justification reason required for impersonation.",
+      });
     }
 
     // Must record mandatory audit trace BEFORE issuing impersonation session
     await this.auditService.logEvent(
       context,
       AuditActionType.USER_IMPERSONATION,
-      'IMPERSONATION',
+      "IMPERSONATION",
       targetUserId,
       `IMPERSONATION TRACE: User [${context.userId}] initiated impersonation of [${targetUserId}]. Justification: ${reason}`,
       { targetUserId, reason },
     );
 
-    const token = `imp_${crypto.randomBytes(32).toString('hex')}`;
+    const token = `imp_${crypto.randomBytes(32).toString("hex")}`;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 min duration limit
 
     return { impersonationToken: token, targetUserId, expiresAt };

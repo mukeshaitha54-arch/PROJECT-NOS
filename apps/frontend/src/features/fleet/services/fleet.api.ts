@@ -1,5 +1,5 @@
-import { apiClient } from '../../../lib/api-client';
-import { ApiResponse } from '@nos/shared-types';
+import { apiClient } from "../../../lib/api-client";
+import { ApiResponse } from "@nos/shared-types";
 
 export interface SearchResult {
   type: string;
@@ -16,7 +16,9 @@ export const fleetApi = {
   async globalSearch(orgId: string, query: string): Promise<SearchResult[]> {
     if (!query || query.length < 2) return [];
     const params = new URLSearchParams({ q: query });
-    const res = await apiClient.get<any, ApiResponse<SearchResult[]>>(`/fleet/search/${orgId}?${params.toString()}`);
+    const res = await apiClient.get<any, ApiResponse<SearchResult[]>>(
+      `/fleet/search/${orgId}?${params.toString()}`,
+    );
     return res.data || [];
   },
 
@@ -24,7 +26,9 @@ export const fleetApi = {
    * Fetch the organizational hierarchy tree
    */
   async getHierarchy(orgId: string): Promise<any> {
-    const res = await apiClient.get<any, ApiResponse<any>>(`/fleet/hierarchy/${orgId}`);
+    const res = await apiClient.get<any, ApiResponse<any>>(
+      `/fleet/hierarchy/${orgId}`,
+    );
     return res.data || null;
   },
 
@@ -32,17 +36,25 @@ export const fleetApi = {
    * Registration Keys
    */
   async getRegistrationKeys(orgId: string): Promise<any[]> {
-    const res = await apiClient.get<any, ApiResponse<any[]>>(`/fleet/registration-keys/organization/${orgId}`);
+    const res = await apiClient.get<any, ApiResponse<any[]>>(
+      `/fleet/registration-keys/organization/${orgId}`,
+    );
     return res.data || [];
   },
 
   async generateRegistrationKey(data: any): Promise<any> {
-    const res = await apiClient.post<any, ApiResponse<any>>('/fleet/registration-keys', data);
+    const res = await apiClient.post<any, ApiResponse<any>>(
+      "/fleet/registration-keys",
+      data,
+    );
     return res.data;
   },
 
   async revokeRegistrationKey(id: string, reason: string): Promise<any> {
-    const res = await apiClient.post<any, ApiResponse<any>>(`/fleet/registration-keys/${id}/revoke`, { reason });
+    const res = await apiClient.post<any, ApiResponse<any>>(
+      `/fleet/registration-keys/${id}/revoke`,
+      { reason },
+    );
     return res.data;
-  }
+  },
 };

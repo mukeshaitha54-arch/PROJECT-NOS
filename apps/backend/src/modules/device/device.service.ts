@@ -1,15 +1,37 @@
-import { Injectable, Inject, Logger, NotFoundException, BadRequestException, forwardRef } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import * as crypto from 'crypto';
-import { Device, DeviceStatus } from '@prisma/client';
-import { RegisterDeviceDto, HeartbeatDto } from './dto/device.dto';
-import { IDeviceRepositoryToken, IDeviceRepository } from '../../common/repositories/device.repository.interface';
-import { IHeartbeatRepositoryToken, IHeartbeatRepository } from '../../common/repositories/heartbeat.repository.interface';
-import { IDeviceAuthenticatorToken, IDeviceAuthenticator } from '../../common/services/device-authenticator.interface';
-import { HeartbeatPresenceService } from '../realtime/services/heartbeat-presence.service';
-import { DeviceTimelineService } from './services/device-timeline.service';
-import { RegistrationKeyService } from '../fleet/services/registration-key.service';
-import { RegisterDeviceResponse, HeartbeatResponse, DeviceStatusResponse, Device as SharedDevice, Heartbeat as SharedHeartbeat } from '@nos/shared-types';
+import {
+  Injectable,
+  Inject,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  forwardRef,
+} from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import * as crypto from "crypto";
+import { Device, DeviceStatus } from "@prisma/client";
+import { RegisterDeviceDto, HeartbeatDto } from "./dto/device.dto";
+import {
+  IDeviceRepositoryToken,
+  IDeviceRepository,
+} from "../../common/repositories/device.repository.interface";
+import {
+  IHeartbeatRepositoryToken,
+  IHeartbeatRepository,
+} from "../../common/repositories/heartbeat.repository.interface";
+import {
+  IDeviceAuthenticatorToken,
+  IDeviceAuthenticator,
+} from "../../common/services/device-authenticator.interface";
+import { HeartbeatPresenceService } from "../realtime/services/heartbeat-presence.service";
+import { DeviceTimelineService } from "./services/device-timeline.service";
+import { RegistrationKeyService } from "../fleet/services/registration-key.service";
+import {
+  RegisterDeviceResponse,
+  HeartbeatResponse,
+  DeviceStatusResponse,
+  Device as SharedDevice,
+  Heartbeat as SharedHeartbeat,
+} from "@nos/shared-types";
 import {
   DeviceRegisteredEvent,
   DeviceReconnectedEvent,
@@ -19,7 +41,7 @@ import {
   DeviceRetiredEvent,
   DeviceClaimedEvent,
   DeviceBulkStatusEvent,
-} from '../../common/events/domain-events';
+} from "../../common/events/domain-events";
 
 @Injectable()
 export class DeviceService {
@@ -27,62 +49,97 @@ export class DeviceService {
   private readonly STALE_HEARTBEAT_THRESHOLD_MS = 90 * 1000; // 90 seconds (3 missed 30s poll cycles)
 
   constructor(
-    @Inject(IDeviceRepositoryToken) private readonly deviceRepository: IDeviceRepository,
-    @Inject(IHeartbeatRepositoryToken) private readonly heartbeatRepository: IHeartbeatRepository,
-    @Inject(IDeviceAuthenticatorToken) private readonly authenticator: IDeviceAuthenticator,
+    @Inject(IDeviceRepositoryToken)
+    private readonly deviceRepository: IDeviceRepository,
+    @Inject(IHeartbeatRepositoryToken)
+    private readonly heartbeatRepository: IHeartbeatRepository,
+    @Inject(IDeviceAuthenticatorToken)
+    private readonly authenticator: IDeviceAuthenticator,
     private readonly heartbeatPresence: HeartbeatPresenceService,
     private readonly timelineService: DeviceTimelineService,
-    @Inject(forwardRef(() => RegistrationKeyService)) private readonly registrationKeyService: RegistrationKeyService,
+    @Inject(forwardRef(() => RegistrationKeyService))
+    private readonly registrationKeyService: RegistrationKeyService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async getUnassignedDevices(organizationId: string): Promise<SharedDevice[]> {
     const allDevices = await this.deviceRepository.findAll(organizationId);
-    const devices = allDevices.filter(d => d.claimStatus === 'UNASSIGNED');
-    return devices.map(d => this.sanitizeDevice(d));
+    const devices = allDevices.filter((d) => d.claimStatus === "UNASSIGNED");
+    return devices.map((d) => this.sanitizeDevice(d));
   }
 
-  async claimDevice(deviceId: string, organizationId: string, claimedByUserId: string, teamId?: string, departmentId?: string): Promise<SharedDevice> {
+  async claimDevice(
+    deviceId: string,
+    organizationId: string,
+    claimedByUserId: string,
+    teamId?: string,
+    departmentId?: string,
+  ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device || device.organizationId !== organizationId) {
-      throw new NotFoundException('Device not found or not in this organization');
+      throw new NotFoundException(
+        "Device not found or not in this organization",
+      );
     }
 
     const updatedDevice = await this.deviceRepository.update(deviceId, {
-      claimStatus: 'CLAIMED' as any,
+      claimStatus: "CLAIMED" as any,
     });
 
     // Emit domain event — timeline and realtime handlers subscribe independently
     this.eventEmitter.emit(
-      'device.claimed',
-      new DeviceClaimedEvent(organizationId, device.id, claimedByUserId, teamId, departmentId),
+      "device.claimed",
+      new DeviceClaimedEvent(
+        organizationId,
+        device.id,
+        claimedByUserId,
+        teamId,
+        departmentId,
+      ),
     );
 
     return this.sanitizeDevice(updatedDevice);
   }
 
-  async register(dto: RegisterDeviceDto, ipAddress?: string): Promise<RegisterDeviceResponse> {
-    this.logger.log(`Registering monitoring agent UUID [${dto.uuid}] Hostname [${dto.hostname}] (${dto.os})`);
+  async register(
+    dto: RegisterDeviceDto,
+    ipAddress?: string,
+  ): Promise<RegisterDeviceResponse> {
+    this.logger.log(
+      `Registering monitoring agent UUID [${dto.uuid}] Hostname [${dto.hostname}] (${dto.os})`,
+    );
 
     let organizationId: string | undefined = dto.organizationId;
 
     if (dto.registrationKey) {
-      const regKey = await this.registrationKeyService.validateKey(dto.registrationKey);
+      const regKey = await this.registrationKeyService.validateKey(
+        dto.registrationKey,
+      );
       organizationId = regKey.organizationId;
       // Increment the key usage asynchronously
-      this.registrationKeyService.incrementKeyUsage(regKey.id, ipAddress).catch(err => {
-        this.logger.error(`Failed to increment registration key usage: ${err.message}`, err.stack);
-      });
+      this.registrationKeyService
+        .incrementKeyUsage(regKey.id, ipAddress)
+        .catch((err) => {
+          this.logger.error(
+            `Failed to increment registration key usage: ${err.message}`,
+            err.stack,
+          );
+        });
     }
 
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
     const existing = await this.deviceRepository.findByUuid(dto.uuid);
     const isNew = !existing;
     let device: Device;
 
     if (existing) {
-      this.logger.log(`Agent UUID [${dto.uuid}] recognized. Refreshing cryptographic token and metadata.`);
+      this.logger.log(
+        `Agent UUID [${dto.uuid}] recognized. Refreshing cryptographic token and metadata.`,
+      );
       device = await this.deviceRepository.update(existing.id, {
         hostname: dto.hostname,
         deviceName: dto.deviceName,
@@ -97,7 +154,10 @@ export class DeviceService {
       });
     } else {
       // Registration key check bypassed for local development
-      if (!organizationId) throw new BadRequestException('A valid registration key is required...');
+      if (!organizationId)
+        throw new BadRequestException(
+          "A valid registration key is required...",
+        );
       device = await this.deviceRepository.create({
         uuid: dto.uuid,
         hostname: dto.hostname,
@@ -118,9 +178,9 @@ export class DeviceService {
     // Emit domain events — timeline and realtime handlers subscribe independently
     if (isNew) {
       this.eventEmitter.emit(
-        'device.registered',
+        "device.registered",
         new DeviceRegisteredEvent(
-          device.organizationId || 'default-org',
+          device.organizationId || "default-org",
           device.id,
           dto.hostname,
           dto.os,
@@ -131,9 +191,9 @@ export class DeviceService {
       );
     } else {
       this.eventEmitter.emit(
-        'device.reconnected',
+        "device.reconnected",
         new DeviceReconnectedEvent(
-          device.organizationId || 'default-org',
+          device.organizationId || "default-org",
           device.id,
           dto.hostname,
         ),
@@ -148,8 +208,13 @@ export class DeviceService {
     } as any;
   }
 
-  async recordHeartbeat(device: Device, dto: HeartbeatDto): Promise<HeartbeatResponse> {
-    this.logger.debug(`Heartbeat ingested from Agent [${device.hostname}] (${dto.ipAddress}): CPU ${dto.cpuUsage}%, RAM ${dto.ramUsage}%`);
+  async recordHeartbeat(
+    device: Device,
+    dto: HeartbeatDto,
+  ): Promise<HeartbeatResponse> {
+    this.logger.debug(
+      `Heartbeat ingested from Agent [${device.hostname}] (${dto.ipAddress}): CPU ${dto.cpuUsage}%, RAM ${dto.ramUsage}%`,
+    );
 
     const wasOffline = device.status === DeviceStatus.OFFLINE;
 
@@ -160,7 +225,9 @@ export class DeviceService {
       ...(dto.os && { os: dto.os }),
     });
 
-    const timestampDate = !isNaN(Date.parse(dto.timestamp)) ? new Date(dto.timestamp) : new Date();
+    const timestampDate = !isNaN(Date.parse(dto.timestamp))
+      ? new Date(dto.timestamp)
+      : new Date();
     const heartbeat = await this.heartbeatRepository.create({
       deviceId: device.id,
       cpuUsage: dto.cpuUsage,
@@ -180,9 +247,9 @@ export class DeviceService {
 
     // Emit domain event — timeline and realtime handlers subscribe independently
     this.eventEmitter.emit(
-      'heartbeat.received',
+      "heartbeat.received",
       new HeartbeatReceivedEvent(
-        device.organizationId || 'default-org',
+        device.organizationId || "default-org",
         device.id,
         dto.ipAddress,
         dto.cpuUsage,
@@ -200,11 +267,17 @@ export class DeviceService {
     };
   }
 
-  async getDeviceProfile(device: Device): Promise<SharedDevice & { lastHeartbeat?: SharedHeartbeat | null }> {
-    const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(device.id);
+  async getDeviceProfile(
+    device: Device,
+  ): Promise<SharedDevice & { lastHeartbeat?: SharedHeartbeat | null }> {
+    const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(
+      device.id,
+    );
     return {
       ...this.sanitizeDevice(device),
-      lastHeartbeat: latestHeartbeat ? this.sanitizeHeartbeat(latestHeartbeat) : null,
+      lastHeartbeat: latestHeartbeat
+        ? this.sanitizeHeartbeat(latestHeartbeat)
+        : null,
     };
   }
 
@@ -216,25 +289,29 @@ export class DeviceService {
     let totalOffline = 0;
     let totalDegraded = 0;
 
-    const deviceResults: (SharedDevice & { lastHeartbeat?: SharedHeartbeat | null })[] = [];
+    const deviceResults: (SharedDevice & {
+      lastHeartbeat?: SharedHeartbeat | null;
+    })[] = [];
 
     for (const d of devices) {
       let currentStatus = d.status;
       const lastSeenMs = d.lastSeen ? d.lastSeen.getTime() : 0;
-      const isStale = (now - lastSeenMs) > this.STALE_HEARTBEAT_THRESHOLD_MS;
+      const isStale = now - lastSeenMs > this.STALE_HEARTBEAT_THRESHOLD_MS;
 
       // Automatically evaluate stale heartbeats to maintain accurate operational status
       if (currentStatus === DeviceStatus.ONLINE && isStale) {
-        await this.deviceRepository.update(d.id, { status: DeviceStatus.OFFLINE });
+        await this.deviceRepository.update(d.id, {
+          status: DeviceStatus.OFFLINE,
+        });
         currentStatus = DeviceStatus.OFFLINE;
 
         // Emit domain event for offline transition — timeline and realtime handlers subscribe
         this.eventEmitter.emit(
-          'device.offline',
+          "device.offline",
           new DeviceOfflineEvent(
-            d.organizationId || 'default-org',
+            d.organizationId || "default-org",
             d.id,
-            '3 consecutive missed heartbeat windows (stale sweep)',
+            "3 consecutive missed heartbeat windows (stale sweep)",
           ),
         );
       }
@@ -243,10 +320,13 @@ export class DeviceService {
       else if (currentStatus === DeviceStatus.DEGRADED) totalDegraded++;
       else totalOffline++;
 
-      const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(d.id);
+      const latestHeartbeat =
+        await this.heartbeatRepository.findLatestByDeviceId(d.id);
       deviceResults.push({
         ...this.sanitizeDevice({ ...d, status: currentStatus }),
-        lastHeartbeat: latestHeartbeat ? this.sanitizeHeartbeat(latestHeartbeat) : null,
+        lastHeartbeat: latestHeartbeat
+          ? this.sanitizeHeartbeat(latestHeartbeat)
+          : null,
       });
     }
 
@@ -262,32 +342,47 @@ export class DeviceService {
     };
   }
 
-  async getDeviceById(id: string): Promise<SharedDevice & { lastHeartbeat?: SharedHeartbeat | null }> {
+  async getDeviceById(
+    id: string,
+  ): Promise<SharedDevice & { lastHeartbeat?: SharedHeartbeat | null }> {
     const device = await this.deviceRepository.findById(id);
     if (!device) {
-      throw new NotFoundException(`Monitored agent node with primary UUID [${id}] not found in platform inventory.`);
+      throw new NotFoundException(
+        `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
+      );
     }
-    const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(device.id);
+    const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(
+      device.id,
+    );
     return {
       ...this.sanitizeDevice(device),
-      lastHeartbeat: latestHeartbeat ? this.sanitizeHeartbeat(latestHeartbeat) : null,
+      lastHeartbeat: latestHeartbeat
+        ? this.sanitizeHeartbeat(latestHeartbeat)
+        : null,
     };
   }
 
   // ── Step 3 Device Lifecycle Management Methods ─────────────────────────
 
-  async setMaintenanceMode(deviceId: string, enabled: boolean, actorId?: string, actorName?: string): Promise<SharedDevice> {
+  async setMaintenanceMode(
+    deviceId: string,
+    enabled: boolean,
+    actorId?: string,
+    actorName?: string,
+  ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
 
     const newStatus = enabled ? DeviceStatus.MAINTENANCE : DeviceStatus.ONLINE;
-    const updated = await this.deviceRepository.update(deviceId, { status: newStatus });
+    const updated = await this.deviceRepository.update(deviceId, {
+      status: newStatus,
+    });
 
     // Emit domain event — timeline and realtime handlers subscribe independently
     this.eventEmitter.emit(
-      'device.maintenance',
+      "device.maintenance",
       new DeviceMaintenanceEvent(
-        device.organizationId || 'default-org',
+        device.organizationId || "default-org",
         deviceId,
         enabled,
         actorId,
@@ -298,17 +393,23 @@ export class DeviceService {
     return this.sanitizeDevice(updated);
   }
 
-  async retireDevice(deviceId: string, actorId?: string, actorName?: string): Promise<SharedDevice> {
+  async retireDevice(
+    deviceId: string,
+    actorId?: string,
+    actorName?: string,
+  ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
 
-    const updated = await this.deviceRepository.update(deviceId, { status: DeviceStatus.OFFLINE });
+    const updated = await this.deviceRepository.update(deviceId, {
+      status: DeviceStatus.OFFLINE,
+    });
 
     // Emit domain event — timeline and realtime handlers subscribe independently
     this.eventEmitter.emit(
-      'device.retired',
+      "device.retired",
       new DeviceRetiredEvent(
-        device.organizationId || 'default-org',
+        device.organizationId || "default-org",
         deviceId,
         actorId,
         actorName,
@@ -318,7 +419,12 @@ export class DeviceService {
     return this.sanitizeDevice(updated);
   }
 
-  async bulkUpdateStatus(deviceIds: string[], status: DeviceStatus, actorId?: string, actorName?: string): Promise<{ updatedCount: number }> {
+  async bulkUpdateStatus(
+    deviceIds: string[],
+    status: DeviceStatus,
+    actorId?: string,
+    actorName?: string,
+  ): Promise<{ updatedCount: number }> {
     let count = 0;
     for (const id of deviceIds) {
       try {
@@ -328,9 +434,9 @@ export class DeviceService {
 
         // Emit domain event per device — timeline and realtime handlers subscribe independently
         this.eventEmitter.emit(
-          'device.bulk_status',
+          "device.bulk_status",
           new DeviceBulkStatusEvent(
-            device?.organizationId || 'default-org',
+            device?.organizationId || "default-org",
             id,
             status,
             actorId,
@@ -338,7 +444,9 @@ export class DeviceService {
           ),
         );
       } catch (e: any) {
-        this.logger.warn(`Failed to bulk update status for device ${id}: ${e?.message}`);
+        this.logger.warn(
+          `Failed to bulk update status for device ${id}: ${e?.message}`,
+        );
       }
     }
     return { updatedCount: count };
@@ -377,7 +485,10 @@ export class DeviceService {
       ramUsage: hb.ramUsage,
       uptime: hb.uptime,
       ipAddress: hb.ipAddress,
-      timestamp: hb.timestamp instanceof Date ? hb.timestamp.toISOString() : String(hb.timestamp),
+      timestamp:
+        hb.timestamp instanceof Date
+          ? hb.timestamp.toISOString()
+          : String(hb.timestamp),
     };
   }
 }

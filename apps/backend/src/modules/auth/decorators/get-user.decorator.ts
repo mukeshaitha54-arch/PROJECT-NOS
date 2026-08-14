@@ -1,1 +1,4 @@
-export { CurrentUser as GetUser, CurrentUser } from '../../../common/decorators/current-user.decorator';
+export {
+  CurrentUser as GetUser,
+  CurrentUser,
+} from "../../../common/decorators/current-user.decorator";

@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
-import { ConfigModule as NestConfigModule } from '@nestjs/config';
-import configuration from './configuration';
-import { envValidationSchema } from './env.validation';
+import { Global, Module } from "@nestjs/common";
+import { ConfigModule as NestConfigModule } from "@nestjs/config";
+import configuration from "./configuration";
+import { envValidationSchema } from "./env.validation";
 
 @Global()
 @Module({
@@ -9,7 +9,7 @@ import { envValidationSchema } from './env.validation';
     NestConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      envFilePath: ['.env', '.env.local'],
+      envFilePath: [".env", ".env.local"],
       validationSchema: envValidationSchema,
       validationOptions: {
         allowUnknown: true,

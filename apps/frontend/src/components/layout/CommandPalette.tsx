@@ -1,19 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Monitor, User, Users, Building2, ShieldAlert, Clock, Database, Activity, Key, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { fleetApi, SearchResult } from '@/features/fleet/services/fleet.api';
-import { useAuthStore } from '@/features/auth/stores/auth.store';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Search,
+  Monitor,
+  User,
+  Users,
+  Building2,
+  ShieldAlert,
+  Clock,
+  Database,
+  Activity,
+  Key,
+  X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { fleetApi, SearchResult } from "@/features/fleet/services/fleet.api";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +35,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
-      setQuery('');
+      setQuery("");
       setResults([]);
     }
   }, [isOpen]);
@@ -40,7 +51,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         const data = await fleetApi.globalSearch(user.organizationId, query);
         setResults(data);
       } catch (err) {
-        console.error('Search failed', err);
+        console.error("Search failed", err);
       } finally {
         setIsLoading(false);
       }
@@ -53,13 +64,22 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   if (!isOpen) return null;
 
   const handleSelect = (result: SearchResult) => {
-    let url = '';
+    let url = "";
     switch (result.type) {
-      case 'DEVICE': url = `/device/${result.id}`; break;
-      case 'USER': url = `/members/${result.id}`; break;
-      case 'ALERT': url = `/alerts`; break;
-      case 'INVENTORY': url = `/inventory`; break;
-      default: url = '/dashboard';
+      case "DEVICE":
+        url = `/device/${result.id}`;
+        break;
+      case "USER":
+        url = `/members/${result.id}`;
+        break;
+      case "ALERT":
+        url = `/alerts`;
+        break;
+      case "INVENTORY":
+        url = `/inventory`;
+        break;
+      default:
+        url = "/dashboard";
     }
     router.push(url);
     onClose();
@@ -67,11 +87,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'DEVICE': return Monitor;
-      case 'USER': return User;
-      case 'ALERT': return ShieldAlert;
-      case 'INVENTORY': return Database;
-      default: return Search;
+      case "DEVICE":
+        return Monitor;
+      case "USER":
+        return User;
+      case "ALERT":
+        return ShieldAlert;
+      case "INVENTORY":
+        return Database;
+      default:
+        return Search;
     }
   };
 
@@ -92,8 +117,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          {isLoading && <div className="h-4 w-4 rounded-full border-2 border-t-blue-500 border-gray-600 animate-spin mr-3"></div>}
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-gray-800">
+          {isLoading && (
+            <div className="h-4 w-4 rounded-full border-2 border-t-blue-500 border-gray-600 animate-spin mr-3"></div>
+          )}
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-gray-800"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -116,8 +146,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="ml-4 flex-auto">
-                        <p className="text-sm font-medium text-white group-hover:text-blue-100">{result.title}</p>
-                        <p className="text-xs text-gray-400 group-hover:text-blue-300">{result.subtitle}</p>
+                        <p className="text-sm font-medium text-white group-hover:text-blue-100">
+                          {result.title}
+                        </p>
+                        <p className="text-xs text-gray-400 group-hover:text-blue-300">
+                          {result.subtitle}
+                        </p>
                       </div>
                       <div className="text-xs font-mono text-gray-500 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
                         Enter ↵
@@ -143,7 +177,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {query.length < 2 && (
           <div className="px-4 py-6 text-center sm:px-14">
             <p className="text-sm text-gray-400">
-              Try searching for <span className="text-gray-200">PC-1045</span>, <span className="text-gray-200">Sarah</span>, or <span className="text-gray-200">High CPU</span>
+              Try searching for <span className="text-gray-200">PC-1045</span>,{" "}
+              <span className="text-gray-200">Sarah</span>, or{" "}
+              <span className="text-gray-200">High CPU</span>
             </p>
           </div>
         )}

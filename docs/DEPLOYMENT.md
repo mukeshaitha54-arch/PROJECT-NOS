@@ -57,6 +57,7 @@ docker ps
 ```
 
 Expected containers:
+
 - `nos_postgres` (Healthy)
 - `nos_redis` (Healthy)
 - `nos_backend` (Running on port 4000)

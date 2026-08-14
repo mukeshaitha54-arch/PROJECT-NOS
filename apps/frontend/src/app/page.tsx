@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { useAuthStore } from '../features/auth/stores/auth.store';
-import { Shield, Lock, ArrowRight, Activity, Terminal, Layers } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { useAuthStore } from "../features/auth/stores/auth.store";
+import {
+  Shield,
+  Lock,
+  ArrowRight,
+  Activity,
+  Terminal,
+  Layers,
+} from "lucide-react";
 
 export default function Home() {
   const { isAuthenticated, user } = useAuthStore();
@@ -19,29 +26,49 @@ export default function Home() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/20">
             <span className="font-bold text-lg text-white">N</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">NOS Platform</span>
+          <span className="text-xl font-bold tracking-tight text-white">
+            NOS Platform
+          </span>
           <span className="px-2.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
             Enterprise NOC Active
           </span>
         </div>
 
         <nav className="flex items-center space-x-3 text-xs font-semibold">
-          <Link href="/dashboard" className="px-3 py-1.5 rounded-xl bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 transition">
+          <Link
+            href="/dashboard"
+            className="px-3 py-1.5 rounded-xl bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 transition"
+          >
             NOC Dashboard
           </Link>
-          <Link href="/device" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+          <Link
+            href="/device"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition"
+          >
             Devices
           </Link>
-          <Link href="/inventory" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+          <Link
+            href="/inventory"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition"
+          >
             Inventory
           </Link>
-          <Link href="/alerts" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+          <Link
+            href="/alerts"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition"
+          >
             Alerts
           </Link>
-          <Link href="/audit" className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition">
+          <Link
+            href="/audit"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 hover:text-white transition"
+          >
             Audit
           </Link>
-          <Link href="/admin" className="px-3 py-1.5 rounded-xl bg-slate-900 text-purple-400 border border-purple-500/30 hover:bg-purple-600/20 transition">
+          <Link
+            href="/admin"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 text-purple-400 border border-purple-500/30 hover:bg-purple-600/20 transition"
+          >
             Admin
           </Link>
           {isAuthenticated ? (
@@ -78,7 +105,9 @@ export default function Home() {
             </span>
           </h1>
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed">
-            Architected for scale with high-throughput monitoring agents, Clean Architecture role-based access governance, and real-time JWT cryptographic sessions.
+            Architected for scale with high-throughput monitoring agents, Clean
+            Architecture role-based access governance, and real-time JWT
+            cryptographic sessions.
           </p>
         </div>
 
@@ -123,7 +152,8 @@ export default function Home() {
               </span>
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Clean Architecture repository patterns, Argon2id encryption, SMTP OTP email verification, and automatic JWT refresh rotation.
+              Clean Architecture repository patterns, Argon2id encryption, SMTP
+              OTP email verification, and automatic JWT refresh rotation.
             </p>
           </div>
 
@@ -138,7 +168,8 @@ export default function Home() {
               </span>
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Real-time Socket.IO streaming telemetry dashboard, device inventory matrix, and multi-tenant operational insights.
+              Real-time Socket.IO streaming telemetry dashboard, device
+              inventory matrix, and multi-tenant operational insights.
             </p>
           </div>
 
@@ -153,14 +184,18 @@ export default function Home() {
               </span>
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              High-throughput system monitoring agent with real-time heartbeat, system metrics collectors, and automatic reconnection.
+              High-throughput system monitoring agent with real-time heartbeat,
+              system metrics collectors, and automatic reconnection.
             </p>
           </div>
         </div>
       </main>
 
       <footer className="relative z-10 max-w-6xl mx-auto px-6 py-10 border-t border-slate-800/60 text-center text-xs text-slate-500">
-        <p>© {new Date().getFullYear()} NOS Platform. Engineered with enterprise Clean Architecture & Zero-Trust security principles.</p>
+        <p>
+          © {new Date().getFullYear()} NOS Platform. Engineered with enterprise
+          Clean Architecture & Zero-Trust security principles.
+        </p>
       </footer>
     </div>
   );

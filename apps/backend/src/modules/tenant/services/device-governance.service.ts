@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
 import {
   DeviceOwnershipDto,
   DeviceGroupDto,
@@ -9,13 +14,16 @@ import {
   AuditActionType,
   TenantContext,
   ErrorCode,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 import {
   IDeviceGovernanceRepository,
   IDeviceGovernanceRepositoryToken,
-} from '../../../common/repositories/tenant.repository.interface';
-import { IDeviceRepository, IDeviceRepositoryToken } from '../../../common/repositories/device.repository.interface';
-import { AuditEngineService } from './audit-engine.service';
+} from "../../../common/repositories/tenant.repository.interface";
+import {
+  IDeviceRepository,
+  IDeviceRepositoryToken,
+} from "../../../common/repositories/device.repository.interface";
+import { AuditEngineService } from "./audit-engine.service";
 
 @Injectable()
 export class DeviceGovernanceService {
@@ -35,24 +43,34 @@ export class DeviceGovernanceService {
   ): Promise<DeviceOwnershipDto> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) {
-      throw new NotFoundException({ code: 'RESOURCE_NOT_FOUND', message: `Device [${deviceId}] not found.` });
+      throw new NotFoundException({
+        code: "RESOURCE_NOT_FOUND",
+        message: `Device [${deviceId}] not found.`,
+      });
     }
 
-    const ownership = await this.governanceRepository.assignOwnership(deviceId, organizationId, data);
+    const ownership = await this.governanceRepository.assignOwnership(
+      deviceId,
+      organizationId,
+      data,
+    );
 
     await this.auditService.logEvent(
       context,
       AuditActionType.INVENTORY_UPDATE,
-      'DEVICE',
+      "DEVICE",
       deviceId,
-      `Assigned device to owner user [${data.ownerUserId || 'none'}], team [${data.assignedTeamId || 'none'}] in org [${organizationId}]`,
+      `Assigned device to owner user [${data.ownerUserId || "none"}], team [${data.assignedTeamId || "none"}] in org [${organizationId}]`,
       data,
     );
 
     return ownership;
   }
 
-  async getOwnership(deviceId: string, organizationId: string): Promise<DeviceOwnershipDto | null> {
+  async getOwnership(
+    deviceId: string,
+    organizationId: string,
+  ): Promise<DeviceOwnershipDto | null> {
     return this.governanceRepository.getOwnership(deviceId, organizationId);
   }
 
@@ -68,14 +86,25 @@ export class DeviceGovernanceService {
     let matchedDeviceIds = deviceIds || [];
 
     // If Smart/Dynamic group, evaluate filters against current organization devices
-    if (groupType === 'DYNAMIC' && filterCriteria) {
+    if (groupType === "DYNAMIC" && filterCriteria) {
       const allDevices = await this.deviceRepository.findAll(organizationId);
       matchedDeviceIds = allDevices
         .filter((d: any) => {
           if (filterCriteria.os && d.os !== filterCriteria.os) return false;
-          if (filterCriteria.status && d.status !== filterCriteria.status) return false;
-          if (filterCriteria.architecture && d.architecture !== filterCriteria.architecture) return false;
-          if (filterCriteria.hostnameContains && !d.hostname?.toLowerCase().includes(String(filterCriteria.hostnameContains).toLowerCase())) return false;
+          if (filterCriteria.status && d.status !== filterCriteria.status)
+            return false;
+          if (
+            filterCriteria.architecture &&
+            d.architecture !== filterCriteria.architecture
+          )
+            return false;
+          if (
+            filterCriteria.hostnameContains &&
+            !d.hostname
+              ?.toLowerCase()
+              .includes(String(filterCriteria.hostnameContains).toLowerCase())
+          )
+            return false;
           return true;
         })
         .map((d: any) => d.id);
@@ -93,7 +122,7 @@ export class DeviceGovernanceService {
     await this.auditService.logEvent(
       context,
       AuditActionType.ORG_SETTINGS_UPDATE,
-      'DEVICE_GROUP',
+      "DEVICE_GROUP",
       group.id,
       `Created ${groupType} device group [${name}] matching ${matchedDeviceIds.length} devices`,
       { filterCriteria, matchedCount: matchedDeviceIds.length },
@@ -117,14 +146,14 @@ export class DeviceGovernanceService {
       deviceId,
       fromOrgId,
       toOrgId,
-      context.userId || 'system',
+      context.userId || "system",
       reason,
     );
 
     await this.auditService.logEvent(
       context,
       AuditActionType.DEVICE_TRANSFER,
-      'DEVICE_TRANSFER',
+      "DEVICE_TRANSFER",
       request.id,
       `Requested device transfer from [${fromOrgId}] to [${toOrgId}]: ${reason}`,
       { deviceId, fromOrgId, toOrgId },
@@ -138,17 +167,27 @@ export class DeviceGovernanceService {
     status: DeviceTransferStatus,
     context: TenantContext,
   ): Promise<DeviceTransferRequestDto> {
-    if (status !== DeviceTransferStatus.APPROVED && status !== DeviceTransferStatus.REJECTED) {
-      throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Status must be APPROVED or REJECTED.' });
+    if (
+      status !== DeviceTransferStatus.APPROVED &&
+      status !== DeviceTransferStatus.REJECTED
+    ) {
+      throw new BadRequestException({
+        code: ErrorCode.VALIDATION_ERROR,
+        message: "Status must be APPROVED or REJECTED.",
+      });
     }
 
-    const resolved = await this.governanceRepository.resolveTransferRequest(id, status, context.userId);
+    const resolved = await this.governanceRepository.resolveTransferRequest(
+      id,
+      status,
+      context.userId,
+    );
 
     const auditType = AuditActionType.DEVICE_TRANSFER;
     await this.auditService.logEvent(
       context,
       auditType,
-      'DEVICE_TRANSFER',
+      "DEVICE_TRANSFER",
       resolved.id,
       `Resolved device transfer request with status: ${status}`,
       { approvedByUserId: context.userId },
@@ -157,11 +196,16 @@ export class DeviceGovernanceService {
     return resolved;
   }
 
-  async listTransferRequests(organizationId: string, type: 'INCOMING' | 'OUTGOING') {
+  async listTransferRequests(
+    organizationId: string,
+    type: "INCOMING" | "OUTGOING",
+  ) {
     return this.governanceRepository.listTransferRequests(organizationId, type);
   }
 
-  async listPermissionProfiles(organizationId: string): Promise<PermissionProfileDto[]> {
+  async listPermissionProfiles(
+    organizationId: string,
+  ): Promise<PermissionProfileDto[]> {
     return this.governanceRepository.listPermissionProfiles(organizationId);
   }
 
@@ -172,7 +216,13 @@ export class DeviceGovernanceService {
     description?: string,
     abacConditions?: Record<string, any>,
   ): Promise<PermissionProfileDto> {
-    return this.governanceRepository.createPermissionProfile(organizationId, name, permissions, description, abacConditions);
+    return this.governanceRepository.createPermissionProfile(
+      organizationId,
+      name,
+      permissions,
+      description,
+      abacConditions,
+    );
   }
 
   async listRoleTemplates(): Promise<RoleTemplateDto[]> {

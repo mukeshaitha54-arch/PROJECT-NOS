@@ -1,13 +1,13 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import { Providers } from './providers';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'NOS — Neural Operating System',
-  description: 'AI-assisted Network Operations & Security Platform',
+  title: "NOS — Neural Operating System",
+  description: "AI-assisted Network Operations & Security Platform",
 };
 
 export default function RootLayout({

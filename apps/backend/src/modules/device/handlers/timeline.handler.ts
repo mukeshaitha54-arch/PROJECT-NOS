@@ -1,16 +1,16 @@
 /**
  * TimelineHandler — Domain Event Subscriber
- * 
+ *
  * Constitutional Mandate (§8.6): Timeline insertions occur EXCLUSIVELY
  * via domain event subscriptions. Business services MUST NOT call
  * TimelineService.logEvent() directly.
- * 
+ *
  * This handler listens for all domain events and creates the appropriate
  * timeline entries automatically.
  */
-import { Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
-import { DeviceTimelineService } from '../services/device-timeline.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { OnEvent } from "@nestjs/event-emitter";
+import { DeviceTimelineService } from "../services/device-timeline.service";
 import {
   DomainEventNames,
   DeviceRegisteredEvent,
@@ -23,7 +23,7 @@ import {
   DeviceBulkStatusEvent,
   TelemetryReceivedEvent,
   InventoryUpdatedEvent,
-} from '../../../common/events/domain-events';
+} from "../../../common/events/domain-events";
 
 @Injectable()
 export class TimelineHandler {
@@ -36,9 +36,9 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: 'REGISTERED',
-        severity: 'INFO',
-        title: 'Agent Registered',
+        eventType: "REGISTERED",
+        severity: "INFO",
+        title: "Agent Registered",
         detail: `Monitoring agent registered for host ${event.hostname} (${event.os} ${event.architecture}, Agent v${event.agentVersion}).`,
         metadata: {
           os: event.os,
@@ -48,7 +48,9 @@ export class TimelineHandler {
         },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -57,14 +59,16 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: 'ONLINE',
-        severity: 'SUCCESS',
-        title: 'Agent Reconnected',
+        eventType: "ONLINE",
+        severity: "SUCCESS",
+        title: "Agent Reconnected",
         detail: `Agent re-established Zero-Trust session from host ${event.hostname}.`,
         metadata: { correlationId: event.correlationId },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -75,9 +79,9 @@ export class TimelineHandler {
       if (event.wasOffline) {
         await this.timelineService.logEvent({
           deviceId: event.deviceId,
-          eventType: 'ONLINE',
-          severity: 'SUCCESS',
-          title: 'Device Reconnected',
+          eventType: "ONLINE",
+          severity: "SUCCESS",
+          title: "Device Reconnected",
           detail: `Device returned ONLINE via live heartbeat ingestion (${event.ipAddress}).`,
           metadata: {
             ipAddress: event.ipAddress,
@@ -88,7 +92,9 @@ export class TimelineHandler {
         });
       }
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -97,14 +103,16 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: 'OFFLINE',
-        severity: 'WARNING',
-        title: 'Device Offline',
+        eventType: "OFFLINE",
+        severity: "WARNING",
+        title: "Device Offline",
         detail: `Device marked OFFLINE: ${event.reason}.`,
         metadata: { correlationId: event.correlationId },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -113,18 +121,22 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: event.enabled ? 'MAINTENANCE_START' : 'MAINTENANCE_END',
-        severity: 'INFO',
-        title: event.enabled ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled',
+        eventType: event.enabled ? "MAINTENANCE_START" : "MAINTENANCE_END",
+        severity: "INFO",
+        title: event.enabled
+          ? "Maintenance Mode Enabled"
+          : "Maintenance Mode Disabled",
         detail: event.enabled
-          ? `Device placed in maintenance mode by ${event.actorName || 'operator'}. Alert evaluation suspended.`
+          ? `Device placed in maintenance mode by ${event.actorName || "operator"}. Alert evaluation suspended.`
           : `Device resumed active operational monitoring.`,
         actorId: event.actorId,
         actorName: event.actorName,
         metadata: { correlationId: event.correlationId },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -133,16 +145,18 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: 'OFFLINE',
-        severity: 'WARNING',
-        title: 'Device Retired',
-        detail: `Device retired from active operations by ${event.actorName || 'administrator'}.`,
+        eventType: "OFFLINE",
+        severity: "WARNING",
+        title: "Device Retired",
+        detail: `Device retired from active operations by ${event.actorName || "administrator"}.`,
         actorId: event.actorId,
         actorName: event.actorName,
         metadata: { correlationId: event.correlationId },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -151,9 +165,9 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: 'SYSTEM_EVENT',
-        severity: 'SUCCESS',
-        title: 'Device Claimed',
+        eventType: "SYSTEM_EVENT",
+        severity: "SUCCESS",
+        title: "Device Claimed",
         detail: `Device was claimed and assigned to a team/department by operator.`,
         actorId: event.claimedByUserId,
         metadata: {
@@ -163,7 +177,9 @@ export class TimelineHandler {
         },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -172,8 +188,11 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: event.newStatus === 'MAINTENANCE' ? 'MAINTENANCE_START' : 'CONFIG_CHANGE',
-        severity: 'INFO',
+        eventType:
+          event.newStatus === "MAINTENANCE"
+            ? "MAINTENANCE_START"
+            : "CONFIG_CHANGE",
+        severity: "INFO",
         title: `Bulk Status Update: ${event.newStatus}`,
         detail: `Status updated to ${event.newStatus} via bulk operations toolbar.`,
         actorId: event.actorId,
@@ -181,7 +200,9 @@ export class TimelineHandler {
         metadata: { correlationId: event.correlationId },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 
@@ -190,10 +211,14 @@ export class TimelineHandler {
     try {
       await this.timelineService.logEvent({
         deviceId: event.deviceId,
-        eventType: event.diffDetected ? 'INVENTORY_DIFF' : 'INVENTORY_UPDATED',
-        severity: event.diffDetected ? 'WARNING' : 'INFO',
-        title: event.diffDetected ? 'Inventory Change Detected' : 'Inventory Snapshot Updated',
-        detail: event.changeSummary || `Inventory version ${event.inventoryVersion} recorded.`,
+        eventType: event.diffDetected ? "INVENTORY_DIFF" : "INVENTORY_UPDATED",
+        severity: event.diffDetected ? "WARNING" : "INFO",
+        title: event.diffDetected
+          ? "Inventory Change Detected"
+          : "Inventory Snapshot Updated",
+        detail:
+          event.changeSummary ||
+          `Inventory version ${event.inventoryVersion} recorded.`,
         metadata: {
           inventoryVersion: event.inventoryVersion,
           fingerprint: event.fingerprint,
@@ -201,7 +226,9 @@ export class TimelineHandler {
         },
       });
     } catch (err: any) {
-      this.logger.error(`Timeline write failed for ${event.eventType}: ${err.message}`);
+      this.logger.error(
+        `Timeline write failed for ${event.eventType}: ${err.message}`,
+      );
     }
   }
 }

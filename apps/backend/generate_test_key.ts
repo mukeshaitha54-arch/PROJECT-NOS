@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './src/app.module';
-import { RegistrationKeyService } from './src/modules/fleet/services/registration-key.service';
-import { PrismaService } from './src/common/prisma/prisma.service';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./src/app.module";
+import { RegistrationKeyService } from "./src/modules/fleet/services/registration-key.service";
+import { PrismaService } from "./src/common/prisma/prisma.service";
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -20,14 +20,14 @@ async function bootstrap() {
   const result = await keyService.generateKey({
     organizationId: org.id,
     createdByUserId: user.id,
-    displayName: 'E2E Test Key',
+    displayName: "E2E Test Key",
     maxUses: 10,
-    expiresAt: new Date(Date.now() + 86400000).toISOString()
+    expiresAt: new Date(Date.now() + 86400000).toISOString(),
   });
 
-  console.log('--- GENERATED REGISTRATION KEY ---');
+  console.log("--- GENERATED REGISTRATION KEY ---");
   console.log(result.key);
-  console.log('----------------------------------');
+  console.log("----------------------------------");
 
   await app.close();
 }

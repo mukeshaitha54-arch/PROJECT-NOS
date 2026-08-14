@@ -1,17 +1,24 @@
-import { Controller, Get, Query, Res, BadRequestException } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  Controller,
+  Get,
+  Query,
+  Res,
+  BadRequestException,
+} from "@nestjs/common";
+import { Response } from "express";
 
-@Controller('fleet/installer')
+@Controller("fleet/installer")
 export class InstallerController {
-
-  @Get('windows')
+  @Get("windows")
   async getWindowsInstaller(
-    @Query('registrationKey') registrationKey: string,
-    @Query('serverUrl') serverUrl: string,
+    @Query("registrationKey") registrationKey: string,
+    @Query("serverUrl") serverUrl: string,
     @Res() res: Response,
   ) {
     if (!registrationKey || !serverUrl) {
-      throw new BadRequestException('registrationKey and serverUrl are required');
+      throw new BadRequestException(
+        "registrationKey and serverUrl are required",
+      );
     }
 
     const script = `
@@ -64,8 +71,11 @@ Write-Host "NOS Agent installed successfully!" -ForegroundColor Green
 Write-Host "The agent will automatically register with the server and appear in your dashboard." -ForegroundColor Cyan
 `;
 
-    res.setHeader('Content-Type', 'text/plain');
-    res.setHeader('Content-Disposition', 'attachment; filename="install-nos-agent.ps1"');
+    res.setHeader("Content-Type", "text/plain");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="install-nos-agent.ps1"',
+    );
     return res.status(200).send(script.trim());
   }
 }

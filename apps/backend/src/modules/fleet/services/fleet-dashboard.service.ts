@@ -1,6 +1,6 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
-import { DeviceStatus } from '@prisma/client';
+import { Injectable, Inject } from "@nestjs/common";
+import { PrismaService } from "../../../database/prisma.service";
+import { DeviceStatus } from "@prisma/client";
 
 export interface FleetTreeNode {
   id: string;
@@ -13,9 +13,7 @@ export interface FleetTreeNode {
 
 @Injectable()
 export class FleetDashboardService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getOrganizationTree(organizationId: string): Promise<FleetTreeNode> {
     const devices = await this.prisma.device.findMany({
@@ -25,14 +23,14 @@ export class FleetDashboardService {
 
     // Fetch ownership separately if relation is not in Prisma schema
     const ownerships = await this.prisma.deviceOwnership.findMany({
-      where: { organizationId }
+      where: { organizationId },
     });
-    
-    const ownershipMap = new Map(ownerships.map(o => [o.deviceId, o]));
+
+    const ownershipMap = new Map(ownerships.map((o) => [o.deviceId, o]));
 
     const root: FleetTreeNode = {
-      id: 'root',
-      name: 'Organization Root',
+      id: "root",
+      name: "Organization Root",
       onlineCount: 0,
       offlineCount: 0,
       totalCount: 0,
@@ -43,15 +41,16 @@ export class FleetDashboardService {
 
     for (const device of devices) {
       const isOnline = device.status === DeviceStatus.ONLINE;
-      
+
       root.totalCount++;
       if (isOnline) root.onlineCount++;
       else root.offlineCount++;
 
       const ownership: any = ownershipMap.get(device.id);
-      const branchName = ownership?.branch || 'Unassigned Branch';
-      const deptName = ownership?.assignedDepartmentId || 'Unassigned Department';
-      const teamName = ownership?.assignedTeamId || 'Unassigned Team';
+      const branchName = ownership?.branch || "Unassigned Branch";
+      const deptName =
+        ownership?.assignedDepartmentId || "Unassigned Department";
+      const teamName = ownership?.assignedTeamId || "Unassigned Team";
 
       // Ensure Branch
       if (!branchMap.has(branchName)) {
@@ -71,7 +70,7 @@ export class FleetDashboardService {
       else branch.offlineCount++;
 
       // Ensure Dept
-      let dept = branch.children.find(c => c.name === deptName);
+      let dept = branch.children.find((c) => c.name === deptName);
       if (!dept) {
         dept = {
           id: `dept_${branchName}_${deptName}`,
@@ -88,7 +87,7 @@ export class FleetDashboardService {
       else dept.offlineCount++;
 
       // Ensure Team
-      let team = dept.children.find(c => c.name === teamName);
+      let team = dept.children.find((c) => c.name === teamName);
       if (!team) {
         team = {
           id: `team_${branchName}_${deptName}_${teamName}`,

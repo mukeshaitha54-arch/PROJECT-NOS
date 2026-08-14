@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { INotificationRepository, NotificationCreateInput } from '../../common/repositories/notification.repository.interface';
-import { NotificationLog, Prisma, NotificationProvider } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import {
+  INotificationRepository,
+  NotificationCreateInput,
+} from "../../common/repositories/notification.repository.interface";
+import { NotificationLog, Prisma, NotificationProvider } from "@prisma/client";
 
 @Injectable()
 export class PrismaNotificationRepository implements INotificationRepository {
@@ -28,12 +31,22 @@ export class PrismaNotificationRepository implements INotificationRepository {
   async findByAlertId(alertId: string): Promise<NotificationLog[]> {
     return this.prisma.notificationLog.findMany({
       where: { alertId },
-      orderBy: { sentAt: 'desc' },
+      orderBy: { sentAt: "desc" },
     });
   }
 
-  async updateStatus(id: string, status: string, retryCount: number, isDlq = false, response?: string): Promise<NotificationLog> {
-    const updateData: Prisma.NotificationLogUpdateInput = { status, retryCount, isDlq };
+  async updateStatus(
+    id: string,
+    status: string,
+    retryCount: number,
+    isDlq = false,
+    response?: string,
+  ): Promise<NotificationLog> {
+    const updateData: Prisma.NotificationLogUpdateInput = {
+      status,
+      retryCount,
+      isDlq,
+    };
     if (response !== undefined) updateData.response = response;
     return this.prisma.notificationLog.update({
       where: { id },
@@ -48,7 +61,7 @@ export class PrismaNotificationRepository implements INotificationRepository {
         where,
         skip,
         take,
-        orderBy: { sentAt: 'desc' },
+        orderBy: { sentAt: "desc" },
       }),
       this.prisma.notificationLog.count({ where }),
     ]);

@@ -1,5 +1,5 @@
-import { Logger } from '@nestjs/common';
-import { TenantContext } from '@nos/shared-types';
+import { Logger } from "@nestjs/common";
+import { TenantContext } from "@nos/shared-types";
 
 export interface TenantAwareJobPayload<T = any> {
   tenantContext: TenantContext;
@@ -7,12 +7,15 @@ export interface TenantAwareJobPayload<T = any> {
 }
 
 export class TenantJobContext {
-  private static readonly logger = new Logger('TenantJobContext');
+  private static readonly logger = new Logger("TenantJobContext");
 
-  public static wrapPayload<T>(payload: T, context?: Partial<TenantContext>): TenantAwareJobPayload<T> {
+  public static wrapPayload<T>(
+    payload: T,
+    context?: Partial<TenantContext>,
+  ): TenantAwareJobPayload<T> {
     return {
       tenantContext: {
-        organizationId: context?.organizationId || 'default-org',
+        organizationId: context?.organizationId || "default-org",
         correlationId: context?.correlationId || `worker-${Date.now()}`,
         requestId: context?.requestId || `req-${Date.now()}`,
         userId: context?.userId,
@@ -21,15 +24,19 @@ export class TenantJobContext {
     };
   }
 
-  public static extractContext<T>(jobData: TenantAwareJobPayload<T> | any): TenantContext {
+  public static extractContext<T>(
+    jobData: TenantAwareJobPayload<T> | any,
+  ): TenantContext {
     if (jobData?.tenantContext && jobData.tenantContext.organizationId) {
       return jobData.tenantContext as TenantContext;
     }
-    this.logger.debug('Job payload lacking explicit tenantContext; using default backward-compatible context.');
+    this.logger.debug(
+      "Job payload lacking explicit tenantContext; using default backward-compatible context.",
+    );
     return {
-      organizationId: jobData?.organizationId || 'default-org',
-      correlationId: jobData?.correlationId || 'job-no-corr-id',
-      requestId: jobData?.requestId || 'job-no-req-id',
+      organizationId: jobData?.organizationId || "default-org",
+      correlationId: jobData?.correlationId || "job-no-corr-id",
+      requestId: jobData?.requestId || "job-no-req-id",
     };
   }
 }

@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
 import {
   IDeviceTimelineRepository,
   CreateTimelineEventDto,
   TimelineEventDto,
   TimelineQueryOptions,
   PaginatedTimelineResponse,
-} from '../../common/repositories/device-timeline.repository.interface';
-import { TimelineEventType, TimelineSeverity, Prisma } from '@prisma/client';
+} from "../../common/repositories/device-timeline.repository.interface";
+import { TimelineEventType, TimelineSeverity, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaDeviceTimelineRepository implements IDeviceTimelineRepository {
@@ -18,21 +18,25 @@ export class PrismaDeviceTimelineRepository implements IDeviceTimelineRepository
       data: {
         deviceId: dto.deviceId,
         eventType: dto.eventType as TimelineEventType,
-        severity: (dto.severity || 'INFO') as TimelineSeverity,
+        severity: (dto.severity || "INFO") as TimelineSeverity,
         title: dto.title,
         detail: dto.detail,
         actorId: dto.actorId,
         actorName: dto.actorName,
         relatedId: dto.relatedId,
         relatedType: dto.relatedType,
-        metadata: dto.metadata ? (dto.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+        metadata: dto.metadata
+          ? (dto.metadata as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       },
     });
 
     return this.mapToDto(record);
   }
 
-  async getPaginated(options: TimelineQueryOptions): Promise<PaginatedTimelineResponse> {
+  async getPaginated(
+    options: TimelineQueryOptions,
+  ): Promise<PaginatedTimelineResponse> {
     const limit = options.limit || 20;
     const page = options.page || 1;
     const skip = (page - 1) * limit;
@@ -58,7 +62,7 @@ export class PrismaDeviceTimelineRepository implements IDeviceTimelineRepository
     const [items, total] = await Promise.all([
       this.prisma.deviceTimelineEvent.findMany({
         where,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         skip,
         take: limit,
       }),
@@ -79,7 +83,7 @@ export class PrismaDeviceTimelineRepository implements IDeviceTimelineRepository
   async getRecent(deviceId: string, limit = 10): Promise<TimelineEventDto[]> {
     const records = await this.prisma.deviceTimelineEvent.findMany({
       where: { deviceId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: limit,
     });
     return records.map((e) => this.mapToDto(e));
@@ -98,7 +102,9 @@ export class PrismaDeviceTimelineRepository implements IDeviceTimelineRepository
       relatedId: record.relatedId || undefined,
       relatedType: record.relatedType || undefined,
       metadata: record.metadata || undefined,
-      timestamp: record.timestamp ? new Date(record.timestamp).toISOString() : new Date().toISOString(),
+      timestamp: record.timestamp
+        ? new Date(record.timestamp).toISOString()
+        : new Date().toISOString(),
     };
   }
 }

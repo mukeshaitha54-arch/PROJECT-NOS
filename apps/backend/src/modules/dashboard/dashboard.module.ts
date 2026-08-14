@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { DashboardController } from './dashboard.controller';
-import { DashboardService } from './dashboard.service';
-import { IDashboardRepository } from '../../common/repositories/dashboard.repository.interface';
-import { PrismaDashboardRepository } from '../../database/repositories/prisma-dashboard.repository';
-import { DatabaseModule } from '../../database/database.module';
+import { Module } from "@nestjs/common";
+import { DashboardController } from "./dashboard.controller";
+import { DashboardService } from "./dashboard.service";
+import { IDashboardRepository } from "../../common/repositories/dashboard.repository.interface";
+import { PrismaDashboardRepository } from "../../database/repositories/prisma-dashboard.repository";
+import { DatabaseModule } from "../../database/database.module";
 
 @Module({
   imports: [DatabaseModule],

@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IRegistrationKeyRepository } from '../../common/repositories/registration-key.repository.interface';
-import { RegistrationKey } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { IRegistrationKeyRepository } from "../../common/repositories/registration-key.repository.interface";
+import { RegistrationKey } from "@prisma/client";
 
 @Injectable()
 export class PrismaRegistrationKeyRepository implements IRegistrationKeyRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Omit<RegistrationKey, 'id' | 'createdAt'>): Promise<RegistrationKey> {
+  async create(
+    data: Omit<RegistrationKey, "id" | "createdAt">,
+  ): Promise<RegistrationKey> {
     return this.prisma.registrationKey.create({
       data,
     });
@@ -25,21 +27,30 @@ export class PrismaRegistrationKeyRepository implements IRegistrationKeyReposito
     });
   }
 
-  async findByOrganizationId(organizationId: string): Promise<RegistrationKey[]> {
+  async findByOrganizationId(
+    organizationId: string,
+  ): Promise<RegistrationKey[]> {
     return this.prisma.registrationKey.findMany({
       where: { organizationId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
-  async update(id: string, data: Partial<RegistrationKey>): Promise<RegistrationKey> {
+  async update(
+    id: string,
+    data: Partial<RegistrationKey>,
+  ): Promise<RegistrationKey> {
     return this.prisma.registrationKey.update({
       where: { id },
       data,
     });
   }
 
-  async incrementUsage(id: string, deviceId: string, ipAddress?: string): Promise<void> {
+  async incrementUsage(
+    id: string,
+    deviceId: string,
+    ipAddress?: string,
+  ): Promise<void> {
     await this.prisma.registrationKey.update({
       where: { id },
       data: {

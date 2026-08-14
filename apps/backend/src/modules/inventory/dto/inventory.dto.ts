@@ -8,9 +8,9 @@ import {
   IsNotEmpty,
   Min,
   IsInt,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+} from "class-validator";
+import { Type } from "class-transformer";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
   SubmitInventoryPayload,
   MemoryModuleDto,
@@ -22,10 +22,10 @@ import {
   StartupApplicationDto,
   SecurityInventoryDto,
   DeviceCapabilitiesDto,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 
 export class MemoryModulePayloadDto implements MemoryModuleDto {
-  @ApiProperty({ example: 'DIMM 1' })
+  @ApiProperty({ example: "DIMM 1" })
   @IsString()
   @IsNotEmpty()
   slot!: string;
@@ -39,35 +39,35 @@ export class MemoryModulePayloadDto implements MemoryModuleDto {
   @Min(0)
   speedMHz!: number;
 
-  @ApiProperty({ example: 'Samsung' })
+  @ApiProperty({ example: "Samsung" })
   @IsString()
   manufacturer!: string;
 
-  @ApiProperty({ example: 'M378A2K43D10-KH2' })
+  @ApiProperty({ example: "M378A2K43D10-KH2" })
   @IsString()
   partNumber!: string;
 
-  @ApiProperty({ example: '12345678' })
+  @ApiProperty({ example: "12345678" })
   @IsString()
   serialNumber!: string;
 }
 
 export class DiskDrivePayloadDto implements DiskDriveDto {
-  @ApiProperty({ example: 'C:\\' })
+  @ApiProperty({ example: "C:\\" })
   @IsString()
   @IsNotEmpty()
   driveName!: string;
 
-  @ApiProperty({ example: 'Samsung SSD 980 PRO 1TB' })
+  @ApiProperty({ example: "Samsung SSD 980 PRO 1TB" })
   @IsString()
   model!: string;
 
-  @ApiProperty({ example: 'S5GXNF0R123456' })
+  @ApiProperty({ example: "S5GXNF0R123456" })
   @IsString()
   @IsNotEmpty()
   serialNumber!: string;
 
-  @ApiProperty({ example: 'NVMe' })
+  @ApiProperty({ example: "NVMe" })
   @IsString()
   mediaType!: string;
 
@@ -75,7 +75,7 @@ export class DiskDrivePayloadDto implements DiskDriveDto {
   @IsNumber()
   sizeBytes!: number;
 
-  @ApiProperty({ example: 'NTFS' })
+  @ApiProperty({ example: "NTFS" })
   @IsString()
   fileSystem!: string;
 
@@ -85,16 +85,16 @@ export class DiskDrivePayloadDto implements DiskDriveDto {
 }
 
 export class GpuPayloadDto implements GpuDto {
-  @ApiProperty({ example: 'NVIDIA GeForce RTX 4080' })
+  @ApiProperty({ example: "NVIDIA GeForce RTX 4080" })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({ example: 'NVIDIA' })
+  @ApiProperty({ example: "NVIDIA" })
   @IsString()
   manufacturer!: string;
 
-  @ApiProperty({ example: '537.58' })
+  @ApiProperty({ example: "537.58" })
   @IsString()
   driverVersion!: string;
 
@@ -102,40 +102,40 @@ export class GpuPayloadDto implements GpuDto {
   @IsNumber()
   vRamBytes!: number;
 
-  @ApiProperty({ example: '3840x2160' })
+  @ApiProperty({ example: "3840x2160" })
   @IsString()
   resolution!: string;
 }
 
 export class NetworkAdapterPayloadDto implements NetworkAdapterDto {
-  @ApiProperty({ example: 'Intel(R) Ethernet Controller I225-V' })
+  @ApiProperty({ example: "Intel(R) Ethernet Controller I225-V" })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiPropertyOptional({ example: 'Gigabit Network Connection' })
+  @ApiPropertyOptional({ example: "Gigabit Network Connection" })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: '00:1B:2C:3D:4E:5F' })
+  @ApiProperty({ example: "00:1B:2C:3D:4E:5F" })
   @IsString()
   @IsNotEmpty()
   macAddress!: string;
 
-  @ApiProperty({ example: '192.168.1.100' })
+  @ApiProperty({ example: "192.168.1.100" })
   @IsString()
   ipv4!: string;
 
-  @ApiProperty({ example: 'fe80::21b:2cff:fe3d:4e5f' })
+  @ApiProperty({ example: "fe80::21b:2cff:fe3d:4e5f" })
   @IsString()
   ipv6!: string;
 
-  @ApiProperty({ example: '192.168.1.1' })
+  @ApiProperty({ example: "192.168.1.1" })
   @IsString()
   gateway!: string;
 
-  @ApiProperty({ example: '8.8.8.8, 1.1.1.1' })
+  @ApiProperty({ example: "8.8.8.8, 1.1.1.1" })
   @IsString()
   dns!: string;
 
@@ -157,67 +157,71 @@ export class NetworkAdapterPayloadDto implements NetworkAdapterDto {
 }
 
 export class InstalledSoftwarePayloadDto implements InstalledSoftwareDto {
-  @ApiProperty({ example: 'Google Chrome' })
+  @ApiProperty({ example: "Google Chrome" })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({ example: 'Google LLC' })
+  @ApiProperty({ example: "Google LLC" })
   @IsString()
   publisher!: string;
 
-  @ApiProperty({ example: '120.0.6099.225' })
+  @ApiProperty({ example: "120.0.6099.225" })
   @IsString()
   version!: string;
 
-  @ApiProperty({ example: '2025-01-15' })
+  @ApiProperty({ example: "2025-01-15" })
   @IsString()
   installDate!: string;
 
-  @ApiPropertyOptional({ example: 'C:\\Program Files\\Google\\Chrome' })
+  @ApiPropertyOptional({ example: "C:\\Program Files\\Google\\Chrome" })
   @IsOptional()
   @IsString()
   installLocation?: string;
 }
 
 export class WindowsServicePayloadDto implements WindowsServiceDto {
-  @ApiProperty({ example: 'Winmgmt' })
+  @ApiProperty({ example: "Winmgmt" })
   @IsString()
   @IsNotEmpty()
   serviceName!: string;
 
-  @ApiProperty({ example: 'Windows Management Instrumentation' })
+  @ApiProperty({ example: "Windows Management Instrumentation" })
   @IsString()
   displayName!: string;
 
-  @ApiProperty({ example: 'Running' })
+  @ApiProperty({ example: "Running" })
   @IsString()
   status!: string;
 
-  @ApiProperty({ example: 'Automatic' })
+  @ApiProperty({ example: "Automatic" })
   @IsString()
   startType!: string;
 
-  @ApiProperty({ example: 'LocalSystem' })
+  @ApiProperty({ example: "LocalSystem" })
   @IsString()
   account!: string;
 }
 
 export class StartupApplicationPayloadDto implements StartupApplicationDto {
-  @ApiProperty({ example: 'OneDrive' })
+  @ApiProperty({ example: "OneDrive" })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({ example: 'C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe /background' })
+  @ApiProperty({
+    example: "C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe /background",
+  })
   @IsString()
   command!: string;
 
-  @ApiProperty({ example: 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' })
+  @ApiProperty({
+    example: "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+  })
   @IsString()
   location!: string;
 
-  @ApiProperty({ example: 'Current User' })
+  @ApiProperty({ example: "Current User" })
   @IsString()
   user!: string;
 }
@@ -235,7 +239,7 @@ export class SecurityInventoryPayloadDto implements SecurityInventoryDto {
   @IsBoolean()
   bitLockerEnabled!: boolean;
 
-  @ApiPropertyOptional({ example: 'C:' })
+  @ApiPropertyOptional({ example: "C:" })
   @IsOptional()
   @IsString()
   bitLockerDrive?: string;
@@ -248,7 +252,7 @@ export class SecurityInventoryPayloadDto implements SecurityInventoryDto {
   @IsBoolean()
   tpmEnabled!: boolean;
 
-  @ApiPropertyOptional({ example: '2.0' })
+  @ApiPropertyOptional({ example: "2.0" })
   @IsOptional()
   @IsString()
   tpmVersion?: string;
@@ -298,50 +302,50 @@ export class DeviceCapabilitiesPayloadDto implements DeviceCapabilitiesDto {
 }
 
 export class SubmitInventoryRequestDto implements SubmitInventoryPayload {
-  @ApiPropertyOptional({ example: 'uuid' })
+  @ApiPropertyOptional({ example: "uuid" })
   @IsOptional()
   @IsString()
   deviceId?: string;
 
-  @ApiProperty({ example: 'Dell Inc.' })
+  @ApiProperty({ example: "Dell Inc." })
   @IsString()
   @IsNotEmpty()
   manufacturer!: string;
 
-  @ApiProperty({ example: 'PowerEdge R750' })
+  @ApiProperty({ example: "PowerEdge R750" })
   @IsString()
   @IsNotEmpty()
   model!: string;
 
-  @ApiProperty({ example: 'CN-12345' })
+  @ApiProperty({ example: "CN-12345" })
   @IsString()
   @IsNotEmpty()
   serialNumber!: string;
 
-  @ApiProperty({ example: '0X1Y2Z' })
+  @ApiProperty({ example: "0X1Y2Z" })
   @IsString()
   @IsNotEmpty()
   motherboard!: string;
 
-  @ApiProperty({ example: 'American Megatrends Inc.' })
+  @ApiProperty({ example: "American Megatrends Inc." })
   @IsString()
   biosVendor!: string;
 
-  @ApiProperty({ example: '2.14.0' })
+  @ApiProperty({ example: "2.14.0" })
   @IsString()
   biosVersion!: string;
 
-  @ApiPropertyOptional({ example: '2024-05-10' })
+  @ApiPropertyOptional({ example: "2024-05-10" })
   @IsOptional()
   @IsString()
   biosReleaseDate?: string;
 
-  @ApiProperty({ example: 'Intel Xeon Platinum 8368' })
+  @ApiProperty({ example: "Intel Xeon Platinum 8368" })
   @IsString()
   @IsNotEmpty()
   cpuModel!: string;
 
-  @ApiProperty({ example: 'GenuineIntel' })
+  @ApiProperty({ example: "GenuineIntel" })
   @IsString()
   cpuVendor!: string;
 
@@ -355,39 +359,39 @@ export class SubmitInventoryRequestDto implements SubmitInventoryPayload {
   @Min(1)
   logicalCores!: number;
 
-  @ApiProperty({ example: 'EDGE-NODE-01' })
+  @ApiProperty({ example: "EDGE-NODE-01" })
   @IsString()
   @IsNotEmpty()
   hostname!: string;
 
-  @ApiPropertyOptional({ example: 'CORP.LOCAL' })
+  @ApiPropertyOptional({ example: "CORP.LOCAL" })
   @IsOptional()
   @IsString()
   domain?: string;
 
-  @ApiPropertyOptional({ example: 'WORKGROUP' })
+  @ApiPropertyOptional({ example: "WORKGROUP" })
   @IsOptional()
   @IsString()
   workgroup?: string;
 
-  @ApiProperty({ example: 'Windows Server 2022 Datacenter' })
+  @ApiProperty({ example: "Windows Server 2022 Datacenter" })
   @IsString()
   osEdition!: string;
 
-  @ApiProperty({ example: '20348.2227' })
+  @ApiProperty({ example: "20348.2227" })
   @IsString()
   osBuild!: string;
 
-  @ApiProperty({ example: 'x64' })
+  @ApiProperty({ example: "x64" })
   @IsString()
   architecture!: string;
 
-  @ApiPropertyOptional({ example: '2.0.0-phase3' })
+  @ApiPropertyOptional({ example: "2.0.0-phase3" })
   @IsOptional()
   @IsString()
   agentVersion?: string;
 
-  @ApiPropertyOptional({ example: '1.0.0' })
+  @ApiPropertyOptional({ example: "1.0.0" })
   @IsOptional()
   @IsString()
   schemaVersion?: string;
@@ -446,7 +450,7 @@ export class SubmitInventoryRequestDto implements SubmitInventoryPayload {
 }
 
 export class InventoryQueryDto {
-  @ApiPropertyOptional({ example: 'Chrome' })
+  @ApiPropertyOptional({ example: "Chrome" })
   @IsOptional()
   @IsString()
   search?: string;

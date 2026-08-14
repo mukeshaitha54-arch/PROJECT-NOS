@@ -1,13 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
-  Users, Search, Plus, RefreshCw, ArrowLeft, Shield, UserCheck, CheckCircle, Mail
-} from 'lucide-react';
-import { DataTable, Column } from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
-import { apiClient } from '@/lib/api-client';
+  Users,
+  Search,
+  Plus,
+  RefreshCw,
+  ArrowLeft,
+  Shield,
+  UserCheck,
+  CheckCircle,
+  Mail,
+} from "lucide-react";
+import { DataTable, Column } from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/lib/api-client";
 
 interface UserRow extends Record<string, unknown> {
   id: string;
@@ -22,19 +30,19 @@ interface UserRow extends Record<string, unknown> {
 export default function UserGovernancePage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [search, setSearch] = useState<string>('');
+  const [search, setSearch] = useState<string>("");
 
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get<any>('/tenant/members');
+      const res = await apiClient.get<any>("/tenant/members");
       const members = res.data?.data?.items || [];
-      
+
       const mapped: UserRow[] = members.map((m: any) => ({
         id: m.userId || m.id,
-        email: m.user?.email || 'N/A',
-        firstName: m.user?.firstName || 'Unknown',
-        lastName: m.user?.lastName || '',
+        email: m.user?.email || "N/A",
+        firstName: m.user?.firstName || "Unknown",
+        lastName: m.user?.lastName || "",
         role: m.role,
         isEmailVerified: !m.isSuspended,
         createdAt: m.joinedAt || new Date().toISOString(),
@@ -53,8 +61,8 @@ export default function UserGovernancePage() {
 
   const userColumns: Column<UserRow>[] = [
     {
-      key: 'email',
-      header: 'User Email',
+      key: "email",
+      header: "User Email",
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-2">
@@ -64,27 +72,38 @@ export default function UserGovernancePage() {
       ),
     },
     {
-      key: 'name',
-      header: 'Full Name',
-      sortable: true,
-      render: (row) => <span>{String(row.firstName)} {String(row.lastName)}</span>,
-    },
-    {
-      key: 'role',
-      header: 'RBAC Role',
+      key: "name",
+      header: "Full Name",
       sortable: true,
       render: (row) => (
-        <Badge variant={row.role === 'ADMIN' || row.role === 'SUPER_ADMIN' ? 'critical' : 'info'} size="xs">
+        <span>
+          {String(row.firstName)} {String(row.lastName)}
+        </span>
+      ),
+    },
+    {
+      key: "role",
+      header: "RBAC Role",
+      sortable: true,
+      render: (row) => (
+        <Badge
+          variant={
+            row.role === "ADMIN" || row.role === "SUPER_ADMIN"
+              ? "critical"
+              : "info"
+          }
+          size="xs"
+        >
           {String(row.role)}
         </Badge>
       ),
     },
     {
-      key: 'isEmailVerified',
-      header: 'Status',
+      key: "isEmailVerified",
+      header: "Status",
       render: (row) => (
-        <Badge variant={row.isEmailVerified ? 'online' : 'warning'} size="xs">
-          {row.isEmailVerified ? 'Verified' : 'Pending OTP'}
+        <Badge variant={row.isEmailVerified ? "online" : "warning"} size="xs">
+          {row.isEmailVerified ? "Verified" : "Pending OTP"}
         </Badge>
       ),
     },
@@ -107,7 +126,10 @@ export default function UserGovernancePage() {
                 <Users className="w-5 h-5 text-cyan-400" />
                 User Governance & Roles
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">Provision users, assign RBAC permissions, and manage verification.</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Provision users, assign RBAC permissions, and manage
+                verification.
+              </p>
             </div>
           </div>
 
@@ -116,7 +138,9 @@ export default function UserGovernancePage() {
             disabled={loading}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh
           </button>
         </div>

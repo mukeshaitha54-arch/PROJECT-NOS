@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # ----------------------------------------------------------------------------
@@ -17,7 +17,11 @@ services:
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nos_admin} -d ${POSTGRES_DB:-nos_database_dev}" ]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-nos_admin} -d ${POSTGRES_DB:-nos_database_dev}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -34,7 +38,14 @@ services:
     volumes:
       - redis_dev_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secure_redis_password}", "ping" ]
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "-a",
+          "${REDIS_PASSWORD:-secure_redis_password}",
+          "ping",
+        ]
       interval: 5s
       timeout: 3s
       retries: 5

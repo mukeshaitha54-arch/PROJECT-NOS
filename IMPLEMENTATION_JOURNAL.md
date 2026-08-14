@@ -10,19 +10,23 @@ This journal chronicles the real engineering implementation, problems encountere
 - **Status**: Conditionally Approved (9.2/10) — Implementation Complete, Field Verification Pending
 
 ### Problems Found
+
 1. **Windows Service LocalSystem Credential Partitioning Bug**: When running `NOS.Installer.exe` interactively as an Administrator, cryptographic device credentials were written to user-specific `%LOCALAPPDATA%\NOSAgent`. However, when `NOS.Agent.exe` initialized as an automated Windows Service under `LocalSystem`, `%LOCALAPPDATA%` mapped to `C:\Windows\System32\config\systemprofile\AppData\Local`, resulting in silent authentication failure and forced duplicate re-registration on restart.
 2. **Control Plane Port & Configuration Schema Disconnect**: The installer (`NOS.Installer`) defaulted to port `4000` and wrote `BackendUrl` to `appsettings.json`, whereas the worker daemon (`TelemetryCollectorWorker.cs`) defaulted to port `3001` and queried `ApiIngestionEndpoint`. Additionally, the installer lacked an interactive prompt for the server/dashboard URL.
 
 ### Root Cause
+
 1. Isolated development of frontend installer versus background service daemon without full-stack Windows Service user-context awareness.
 2. Unaligned environment defaults across separate `.NET` projects without shared config keys.
 
 ### Fix
+
 1. Upgraded `TokenStorageService.cs` and `NOS.Installer/Program.cs` to utilize `Environment.SpecialFolder.CommonApplicationData` (`%ProgramData%\NOSAgent`), guaranteeing shared filesystem read/write capability across both Administrator installation and background `LocalSystem` service execution. Added fallback credential migration and automated token restoration directly from `appsettings.json` on first service boot.
 2. Synchronized `TelemetryCollectorWorker.cs` and `NOS.Installer` to default to `http://localhost:4000/api/v1`. Updated `NOS.Installer` to interactively prompt for the Server/Dashboard URL (DoD #2) and Registration Key (DoD #3), saving both `ApiIngestionEndpoint` and `BackendUrl` to ensure perfect interoperability.
 3. Added comprehensive vertical slice test suite in `operational-acceptance.spec.ts` covering all 10 Definition of Done requirements.
 
 ### Evidence
+
 - **OAT Complete Vertical Slice Suite (`operational-acceptance.spec.ts`)**:
   - Test Case: `Module 2 DoD Verification: Registers via Registration Key, issues JWT/token, emits WebSocket online event, ingests heartbeat, and recovers session`
   - Result: `PASS src/modules/operational-acceptance.spec.ts (8.476 s) - 11 passed, 11 total`
@@ -34,6 +38,7 @@ This journal chronicles the real engineering implementation, problems encountere
   5. **Zero-Touch Session Recovery**: Simulated reboot verified clean recovery via `getDeviceProfile` using cached tokens without triggering duplicate onboarding requests.
 
 ### Lessons Learned
+
 1. **Windows Service Context Awareness**: Always store machine-wide service identity credentials in `CommonApplicationData` (`%ProgramData%`) rather than user-specific `LocalApplicationData` (`%LOCALAPPDATA%`), as background Windows Services executing under `LocalSystem` operate in a completely separate system profile directory.
 2. **Strict Socket Payload & Signature Consistency**: Real-time event emitters across backend services and Socket publishers must maintain strictly aligned parameter signatures and correlation IDs to guarantee error-free dashboard updates.
 3. **Rigorous Operational Verification State Model**: To prevent ambiguity between automated testing and physical operational proof, all requirements follow a strict 4-stage lifecycle: `Implemented` (Code exists) -> `Integration Tested` (Automated suite passed) -> `Field Verified` (Proven on physical machine) -> `Accepted` (Final sign-off).
@@ -42,12 +47,13 @@ This journal chronicles the real engineering implementation, problems encountere
 ---
 
 ### Project Maturity Tracking Summary
-| Module | Core Responsibility | Status |
-|---|---|---|
-| **Module 0** | Engineering Audit & Stabilization Sprint v1.0 | ✅ Closed |
-| **Module 1** | Core System Architecture & Domain Foundation v1.0 | ✅ Closed |
-| **Module 2** | Device Registration & Fleet Provisioning v1.0 | 🟡 Code Complete — Field Validation Pending |
+
+| Module       | Core Responsibility                               | Status                                      |
+| ------------ | ------------------------------------------------- | ------------------------------------------- |
+| **Module 0** | Engineering Audit & Stabilization Sprint v1.0     | ✅ Closed                                   |
+| **Module 1** | Core System Architecture & Domain Foundation v1.0 | ✅ Closed                                   |
+| **Module 2** | Device Registration & Fleet Provisioning v1.0     | 🟡 Code Complete — Field Validation Pending |
 
 ---
-*Ready for physical host field validation and progression to Module 3.*
 
+_Ready for physical host field validation and progression to Module 3._

@@ -1,7 +1,11 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { IMailService } from './mail-service.interface';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as nodemailer from "nodemailer";
+import { IMailService } from "./mail-service.interface";
 
 @Injectable()
 export class SmtpMailService implements IMailService {
@@ -10,11 +14,14 @@ export class SmtpMailService implements IMailService {
   private readonly fromAddress: string;
 
   constructor(private readonly configService: ConfigService) {
-    const host = this.configService.get<string>('SMTP_HOST');
-    const port = this.configService.get<number>('SMTP_PORT', 587);
-    const user = this.configService.get<string>('SMTP_USER');
-    const pass = this.configService.get<string>('SMTP_PASS');
-    this.fromAddress = this.configService.get<string>('SMTP_FROM', '"NOS Platform" <no-reply@nos.local>');
+    const host = this.configService.get<string>("SMTP_HOST");
+    const port = this.configService.get<number>("SMTP_PORT", 587);
+    const user = this.configService.get<string>("SMTP_USER");
+    const pass = this.configService.get<string>("SMTP_PASS");
+    this.fromAddress = this.configService.get<string>(
+      "SMTP_FROM",
+      '"NOS Platform" <no-reply@nos.local>',
+    );
 
     if (host && user && pass) {
       this.transporter = nodemailer.createTransport({
@@ -30,14 +37,21 @@ export class SmtpMailService implements IMailService {
         socketTimeout: 15000,
       });
       // Mask credentials in logs
-      const maskedUser = user.replace(/^(.{2})(.*)(@.*)$/, '$1***$3');
-      this.logger.log(`📧 SMTP Transporter initialized: ${host}:${port} as ${maskedUser}`);
+      const maskedUser = user.replace(/^(.{2})(.*)(@.*)$/, "$1***$3");
+      this.logger.log(
+        `📧 SMTP Transporter initialized: ${host}:${port} as ${maskedUser}`,
+      );
     } else {
-      this.logger.warn('📧 SMTP credentials not provided; defaulting to Dev Console Logging fallback.');
+      this.logger.warn(
+        "📧 SMTP credentials not provided; defaulting to Dev Console Logging fallback.",
+      );
     }
   }
 
-  private async sendMailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3): Promise<void> {
+  private async sendMailWithRetry(
+    mailOptions: nodemailer.SendMailOptions,
+    retries = 3,
+  ): Promise<void> {
     if (!this.transporter) {
       this.logDevMail(mailOptions);
       return;
@@ -46,26 +60,34 @@ export class SmtpMailService implements IMailService {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         await this.transporter.sendMail(mailOptions);
-        this.logger.log(`📧 Sent email to [${mailOptions.to}] via SMTP successfully (Subject: ${mailOptions.subject}).`);
+        this.logger.log(
+          `📧 Sent email to [${mailOptions.to}] via SMTP successfully (Subject: ${mailOptions.subject}).`,
+        );
         return;
       } catch (error: any) {
-        this.logger.warn(`Failed to send email to [${mailOptions.to}] (Attempt ${attempt}/${retries}): ${error.message}`);
+        this.logger.warn(
+          `Failed to send email to [${mailOptions.to}] (Attempt ${attempt}/${retries}): ${error.message}`,
+        );
         if (attempt === retries) {
-          this.logger.error(`Exhausted retries sending email to [${mailOptions.to}].`);
-          throw new InternalServerErrorException('Failed to deliver email notification.');
+          this.logger.error(
+            `Exhausted retries sending email to [${mailOptions.to}].`,
+          );
+          throw new InternalServerErrorException(
+            "Failed to deliver email notification.",
+          );
         }
-        await new Promise(res => setTimeout(res, 1000 * attempt)); // Exponential backoff
+        await new Promise((res) => setTimeout(res, 1000 * attempt)); // Exponential backoff
       }
     }
   }
 
   private logDevMail(mailOptions: nodemailer.SendMailOptions) {
-    this.logger.log('========================================');
-    this.logger.log('DEV EMAIL OUTPUT');
+    this.logger.log("========================================");
+    this.logger.log("DEV EMAIL OUTPUT");
     this.logger.log(`To: ${mailOptions.to}`);
     this.logger.log(`Subject: ${mailOptions.subject}`);
     this.logger.log(`Text Body: ${mailOptions.text}`);
-    this.logger.log('========================================');
+    this.logger.log("========================================");
   }
 
   private getHtmlTemplate(title: string, bodyHtml: string): string {
@@ -106,18 +128,18 @@ export class SmtpMailService implements IMailService {
   async sendVerificationOtp(email: string, otp: string): Promise<void> {
     const text = `Your email verification OTP code is: ${otp}. This code expires in 15 minutes.`;
     const html = this.getHtmlTemplate(
-      'Verify Your Email Address',
+      "Verify Your Email Address",
       `<p>Thank you for registering. Please use the following One-Time Password (OTP) to verify your email address. This code is valid for 15 minutes.</p>
        <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; text-align: center; margin: 30px 0; border: 1px dashed #cbd5e1;">
          <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #2563eb;">${otp}</span>
        </div>
-       <p>If you did not request this, please ignore this email.</p>`
+       <p>If you did not request this, please ignore this email.</p>`,
     );
 
     await this.sendMailWithRetry({
       from: this.fromAddress,
       to: email,
-      subject: 'Verify your NOS Platform Account',
+      subject: "Verify your NOS Platform Account",
       text,
       html,
     });
@@ -126,34 +148,38 @@ export class SmtpMailService implements IMailService {
   async sendPasswordResetOtp(email: string, otp: string): Promise<void> {
     const text = `Your password reset OTP code is: ${otp}. This code expires in 15 minutes.`;
     const html = this.getHtmlTemplate(
-      'Password Reset Request',
+      "Password Reset Request",
       `<p>We received a request to reset the password for your account. Use the following One-Time Password (OTP) to proceed. This code is valid for 15 minutes.</p>
        <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; text-align: center; margin: 30px 0; border: 1px dashed #cbd5e1;">
          <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #e11d48;">${otp}</span>
        </div>
-       <p>If you did not request this, please ensure your account is secure and ignore this email.</p>`
+       <p>If you did not request this, please ensure your account is secure and ignore this email.</p>`,
     );
 
     await this.sendMailWithRetry({
       from: this.fromAddress,
       to: email,
-      subject: 'Reset your NOS Platform Password',
+      subject: "Reset your NOS Platform Password",
       text,
       html,
     });
   }
 
-  async sendInvitationEmail(email: string, orgName: string, inviteUrl: string): Promise<void> {
+  async sendInvitationEmail(
+    email: string,
+    orgName: string,
+    inviteUrl: string,
+  ): Promise<void> {
     const text = `You have been invited to join ${orgName} on the NOS Platform. Join here: ${inviteUrl}`;
     const html = this.getHtmlTemplate(
-      'Organization Invitation',
+      "Organization Invitation",
       `<p>You have been invited to join <strong>${orgName}</strong> on the NOS Enterprise Platform.</p>
        <p>To accept this invitation and set up your account, please click the button below:</p>
        <div style="text-align: center; margin: 30px 0;">
          <a href="${inviteUrl}" class="btn">Accept Invitation</a>
        </div>
        <p>If the button doesn't work, copy and paste this link into your browser:</p>
-       <p style="word-break: break-all; color: #2563eb; font-size: 14px;">${inviteUrl}</p>`
+       <p style="word-break: break-all; color: #2563eb; font-size: 14px;">${inviteUrl}</p>`,
     );
 
     await this.sendMailWithRetry({
@@ -165,15 +191,19 @@ export class SmtpMailService implements IMailService {
     });
   }
 
-  async sendRegistrationKeyNotification(email: string, keyName: string, orgName: string): Promise<void> {
+  async sendRegistrationKeyNotification(
+    email: string,
+    keyName: string,
+    orgName: string,
+  ): Promise<void> {
     const text = `A new agent registration key (${keyName}) has been generated for ${orgName}.`;
     const html = this.getHtmlTemplate(
-      'New Registration Key Generated',
+      "New Registration Key Generated",
       `<p>A new agent deployment Registration Key has been generated in your organization: <strong>${orgName}</strong>.</p>
        <p><strong>Key Details:</strong><br/>
        Name: ${keyName}<br/>
        Date: ${new Date().toUTCString()}</p>
-       <p>If this was unexpected, please review your audit logs immediately.</p>`
+       <p>If this was unexpected, please review your audit logs immediately.</p>`,
     );
 
     await this.sendMailWithRetry({
@@ -188,19 +218,19 @@ export class SmtpMailService implements IMailService {
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
     const text = `Welcome to NOS Platform, ${name}! Your account has been successfully verified.`;
     const html = this.getHtmlTemplate(
-      'Welcome to NOS Platform',
+      "Welcome to NOS Platform",
       `<p>Hello ${name},</p>
        <p>Your email has been verified and your account is fully active. You are now ready to start managing your enterprise fleet.</p>
        <p>We recommend starting by completing the Onboarding Wizard to set up your first Organization and deploy your first agent.</p>
        <div style="text-align: center; margin: 30px 0;">
          <a href="#" class="btn">Go to Dashboard</a>
-       </div>`
+       </div>`,
     );
 
     await this.sendMailWithRetry({
       from: this.fromAddress,
       to: email,
-      subject: 'Welcome to NOS Platform',
+      subject: "Welcome to NOS Platform",
       text,
       html,
     });

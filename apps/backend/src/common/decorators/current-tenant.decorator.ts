@@ -1,5 +1,5 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { TenantContext } from '@nos/shared-types';
+import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { TenantContext } from "@nos/shared-types";
 
 export const CurrentTenant = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): TenantContext => {
@@ -8,9 +8,9 @@ export const CurrentTenant = createParamDecorator(
       return request.tenantContext as TenantContext;
     }
     return {
-      organizationId: 'default-org',
-      correlationId: 'fallback-corr-id',
-      requestId: 'fallback-req-id',
+      organizationId: "default-org",
+      correlationId: "fallback-corr-id",
+      requestId: "fallback-req-id",
     };
   },
 );

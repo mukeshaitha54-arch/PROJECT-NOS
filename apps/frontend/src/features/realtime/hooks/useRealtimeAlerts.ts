@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useSocketContext } from '../contexts/socket.context';
+import { useEffect, useRef } from "react";
+import { useSocketContext } from "../contexts/socket.context";
 import {
   SocketEvents,
   SocketRooms,
   SocketEventEnvelope,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 
 export interface AlertsRealtimeHandlers {
   onAlertCreated?: (payload: any, envelope: SocketEventEnvelope) => void;
@@ -28,7 +28,7 @@ export const useRealtimeAlerts = (handlers: AlertsRealtimeHandlers) => {
   handlersRef.current = handlers;
 
   useEffect(() => {
-    if (status === 'LIVE') {
+    if (status === "LIVE") {
       joinRoom(SocketRooms.DASHBOARD);
       joinRoom(SocketRooms.OPERATORS);
       joinRoom(SocketRooms.ADMINS);

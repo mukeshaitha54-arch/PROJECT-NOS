@@ -1,7 +1,16 @@
-import { Injectable, Inject, Logger, OnModuleDestroy, forwardRef } from '@nestjs/common';
-import { PresenceService } from './presence.service';
-import { ISocketPublisher, ISocketPublisherToken } from '../../../common/services/socket-publisher.interface';
-import { RealtimeHeartbeatEvent } from '@nos/shared-types';
+import {
+  Injectable,
+  Inject,
+  Logger,
+  OnModuleDestroy,
+  forwardRef,
+} from "@nestjs/common";
+import { PresenceService } from "./presence.service";
+import {
+  ISocketPublisher,
+  ISocketPublisherToken,
+} from "../../../common/services/socket-publisher.interface";
+import { RealtimeHeartbeatEvent } from "@nos/shared-types";
 
 @Injectable()
 export class HeartbeatPresenceService implements OnModuleDestroy {
@@ -17,7 +26,7 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
   ) {
     // Background sweep timer with unref to prevent blocking event loop and memory leaks (SPL Feature 15 & 18)
     this.sweepTimer = setInterval(() => this.sweepOfflineDevices(), 15000);
-    if (this.sweepTimer && typeof this.sweepTimer.unref === 'function') {
+    if (this.sweepTimer && typeof this.sweepTimer.unref === "function") {
       this.sweepTimer.unref();
     }
   }
@@ -45,7 +54,9 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
 
     // SPL Feature 18: Offline Detection / State Transition Recovery
     if (!wasOnline) {
-      this.logger.log(`Device [${deviceId}] re-established heartbeat. Transitioning to ONLINE.`);
+      this.logger.log(
+        `Device [${deviceId}] re-established heartbeat. Transitioning to ONLINE.`,
+      );
       await this.socketPublisher.emitDeviceOnline(
         deviceId,
         { deviceId, ipAddress, timestamp: new Date(now).toISOString() },
@@ -60,28 +71,40 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
       uptime,
       ipAddress,
       timestamp: new Date(now).toISOString(),
-      status: 'ONLINE',
+      status: "ONLINE",
     };
 
-    await this.socketPublisher.emitHeartbeatReceived(deviceId, heartbeatEvent, correlationId);
+    await this.socketPublisher.emitHeartbeatReceived(
+      deviceId,
+      heartbeatEvent,
+      correlationId,
+    );
   }
 
   private async sweepOfflineDevices(): Promise<void> {
     const now = Date.now();
     for (const [deviceId, lastSeen] of this.lastHeartbeatTimes.entries()) {
       if (now - lastSeen > this.STALE_THRESHOLD_MS) {
-        this.logger.warn(`Device [${deviceId}] missed heartbeat threshold (${Math.round((now - lastSeen)/1000)}s). Marking OFFLINE.`);
+        this.logger.warn(
+          `Device [${deviceId}] missed heartbeat threshold (${Math.round((now - lastSeen) / 1000)}s). Marking OFFLINE.`,
+        );
         this.lastHeartbeatTimes.delete(deviceId);
         this.presenceService.updateDeviceOffline(deviceId);
 
         try {
           await this.socketPublisher.emitDeviceOffline(
             deviceId,
-            { deviceId, reason: 'HEARTBEAT_TIMEOUT', timestamp: new Date(now).toISOString() },
+            {
+              deviceId,
+              reason: "HEARTBEAT_TIMEOUT",
+              timestamp: new Date(now).toISOString(),
+            },
             `nos-offline-sweep-${now}`,
           );
         } catch (err: any) {
-          this.logger.error(`Error emitting offline transition for device [${deviceId}]: ${err.message}`);
+          this.logger.error(
+            `Error emitting offline transition for device [${deviceId}]: ${err.message}`,
+          );
         }
       }
     }

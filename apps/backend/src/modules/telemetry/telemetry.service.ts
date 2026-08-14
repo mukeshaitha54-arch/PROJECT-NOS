@@ -1,18 +1,31 @@
-import { Inject, Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Device as PrismaDevice, TelemetryAggregation } from '@prisma/client';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Device as PrismaDevice, TelemetryAggregation } from "@prisma/client";
 import {
   ITelemetryRepository,
   ITelemetryRepositoryToken,
-} from '../../common/repositories/telemetry.repository.interface';
+} from "../../common/repositories/telemetry.repository.interface";
 import {
   ITelemetryPublisher,
   ITelemetryPublisherToken,
-} from '../../common/services/telemetry-publisher.interface';
-import { SubmitTelemetryDto, TelemetryHistoryQueryDto, toTelemetrySnapshotDto } from './dto/telemetry.dto';
-import { TelemetrySnapshot as TelemetrySnapshotContract, PaginatedTelemetryResponse } from '@nos/shared-types';
-import { TelemetryReceivedEvent } from '../../common/events/domain-events';
-import { PrismaService } from '../../database/prisma.service';
+} from "../../common/services/telemetry-publisher.interface";
+import {
+  SubmitTelemetryDto,
+  TelemetryHistoryQueryDto,
+  toTelemetrySnapshotDto,
+} from "./dto/telemetry.dto";
+import {
+  TelemetrySnapshot as TelemetrySnapshotContract,
+  PaginatedTelemetryResponse,
+} from "@nos/shared-types";
+import { TelemetryReceivedEvent } from "../../common/events/domain-events";
+import { PrismaService } from "../../database/prisma.service";
 
 @Injectable()
 export class TelemetryService {
@@ -27,10 +40,15 @@ export class TelemetryService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async recordTelemetry(authenticatedDevice: PrismaDevice, dto: SubmitTelemetryDto): Promise<TelemetrySnapshotContract> {
+  async recordTelemetry(
+    authenticatedDevice: PrismaDevice,
+    dto: SubmitTelemetryDto,
+  ): Promise<TelemetrySnapshotContract> {
     const targetDeviceId = dto.deviceId || authenticatedDevice.id;
     if (targetDeviceId !== authenticatedDevice.id) {
-      throw new BadRequestException('Security violation: Cannot submit telemetry metrics on behalf of a differing device UUID.');
+      throw new BadRequestException(
+        "Security violation: Cannot submit telemetry metrics on behalf of a differing device UUID.",
+      );
     }
 
     let bootTimeDate: Date;
@@ -84,9 +102,9 @@ export class TelemetryService {
 
     // Emit domain event — realtime handler subscribes and broadcasts via Socket.IO
     this.eventEmitter.emit(
-      'telemetry.received',
+      "telemetry.received",
       new TelemetryReceivedEvent(
-        authenticatedDevice.organizationId || 'default-org',
+        authenticatedDevice.organizationId || "default-org",
         targetDeviceId,
         dtoResult,
       ),
@@ -95,10 +113,14 @@ export class TelemetryService {
     return dtoResult;
   }
 
-  async getLatestTelemetry(deviceId: string): Promise<TelemetrySnapshotContract> {
+  async getLatestTelemetry(
+    deviceId: string,
+  ): Promise<TelemetrySnapshotContract> {
     const entity = await this.telemetryRepo.findLatest(deviceId);
     if (!entity) {
-      throw new NotFoundException(`No telemetry snapshots recorded yet for device ID [${deviceId}].`);
+      throw new NotFoundException(
+        `No telemetry snapshots recorded yet for device ID [${deviceId}].`,
+      );
     }
     return toTelemetrySnapshotDto(entity);
   }
@@ -106,17 +128,22 @@ export class TelemetryService {
   /**
    * Retrieves the most recent aggregated telemetry row for a device at a specific time granularity.
    */
-  async getLatestAggregated(deviceId: string, granularity: '1m' | '15m' | '1h' | '1d'): Promise<TelemetryAggregation> {
+  async getLatestAggregated(
+    deviceId: string,
+    granularity: "1m" | "15m" | "1h" | "1d",
+  ): Promise<TelemetryAggregation> {
     const entity = await this.prisma.telemetryAggregation.findFirst({
       where: {
         deviceId,
         OR: [{ granularity }, { tier: granularity }],
       },
-      orderBy: { periodStart: 'desc' },
+      orderBy: { periodStart: "desc" },
     });
 
     if (!entity) {
-      throw new NotFoundException(`No telemetry aggregations recorded for device [${deviceId}] at granularity [${granularity}].`);
+      throw new NotFoundException(
+        `No telemetry aggregations recorded for device [${deviceId}] at granularity [${granularity}].`,
+      );
     }
 
     return entity;
@@ -138,7 +165,9 @@ export class TelemetryService {
     const skip = (pageNum - 1) * limitNum;
 
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate ? new Date(startDate) : new Date(end.getTime() - 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
     const durationMs = Math.abs(end.getTime() - start.getTime());
     const oneHourMs = 60 * 60 * 1000;
@@ -147,7 +176,9 @@ export class TelemetryService {
 
     // 1. If range <= 1 hour: query TelemetrySnapshot (raw) directly
     if (durationMs <= oneHourMs) {
-      this.logger.debug(`Range <= 1h (${Math.round(durationMs / 60000)}m). Querying raw TelemetrySnapshot table.`);
+      this.logger.debug(
+        `Range <= 1h (${Math.round(durationMs / 60000)}m). Querying raw TelemetrySnapshot table.`,
+      );
       const { items, total } = await this.telemetryRepo.findRange({
         deviceId,
         from: start,
@@ -164,16 +195,18 @@ export class TelemetryService {
     let targetGranularities: string[];
     if (durationMs <= oneDayMs) {
       // Range <= 24 hours: query 1m or 15m aggregates
-      targetGranularities = ['1m', '15m'];
+      targetGranularities = ["1m", "15m"];
     } else if (durationMs <= sevenDaysMs) {
       // Range <= 7 days: query 15m or 1h aggregates
-      targetGranularities = ['15m', '1h'];
+      targetGranularities = ["15m", "1h"];
     } else {
       // Range > 7 days: query 1d aggregates
-      targetGranularities = ['1d'];
+      targetGranularities = ["1d"];
     }
 
-    this.logger.debug(`Range > 1h. Querying TelemetryAggregation table for tiers [${targetGranularities.join(', ')}].`);
+    this.logger.debug(
+      `Range > 1h. Querying TelemetryAggregation table for tiers [${targetGranularities.join(", ")}].`,
+    );
 
     const where = {
       deviceId,
@@ -190,14 +223,16 @@ export class TelemetryService {
     const [aggItems, total] = await Promise.all([
       this.prisma.telemetryAggregation.findMany({
         where,
-        orderBy: { periodStart: 'desc' },
+        orderBy: { periodStart: "desc" },
         skip,
         take: limitNum,
       }),
       this.prisma.telemetryAggregation.count({ where }),
     ]);
 
-    const snapshots = aggItems.map((agg) => mapAggregationToSnapshotContract(agg));
+    const snapshots = aggItems.map((agg) =>
+      mapAggregationToSnapshotContract(agg),
+    );
     const totalPages = Math.ceil(total / limitNum) || 1;
 
     return {
@@ -209,12 +244,23 @@ export class TelemetryService {
     };
   }
 
-  async getTelemetryHistory(deviceId: string, query: TelemetryHistoryQueryDto): Promise<PaginatedTelemetryResponse> {
-    return this.getHistory(deviceId, query.from, query.to, query.page, query.limit);
+  async getTelemetryHistory(
+    deviceId: string,
+    query: TelemetryHistoryQueryDto,
+  ): Promise<PaginatedTelemetryResponse> {
+    return this.getHistory(
+      deviceId,
+      query.from,
+      query.to,
+      query.page,
+      query.limit,
+    );
   }
 }
 
-function mapAggregationToSnapshotContract(agg: TelemetryAggregation): TelemetrySnapshotContract {
+function mapAggregationToSnapshotContract(
+  agg: TelemetryAggregation,
+): TelemetrySnapshotContract {
   return {
     id: agg.id,
     deviceId: agg.deviceId,
@@ -240,8 +286,8 @@ function mapAggregationToSnapshotContract(agg: TelemetryAggregation): TelemetryS
     runningProcesses: 0,
     systemUptime: 0,
     bootTime: agg.periodStart.toISOString(),
-    ipAddress: 'aggregated',
-    macAddress: 'aggregated',
+    ipAddress: "aggregated",
+    macAddress: "aggregated",
     timestamp: agg.periodStart.toISOString(),
   };
 }

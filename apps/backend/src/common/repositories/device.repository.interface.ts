@@ -1,6 +1,6 @@
-import { Device, DeviceStatus } from '@prisma/client';
+import { Device, DeviceStatus } from "@prisma/client";
 
-export const IDeviceRepositoryToken = Symbol('IDeviceRepository');
+export const IDeviceRepositoryToken = Symbol("IDeviceRepository");
 
 export interface CreateDeviceInput {
   uuid: string;

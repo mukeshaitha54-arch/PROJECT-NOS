@@ -1,4 +1,4 @@
-import { AlertRule } from '@prisma/client';
+import { AlertRule } from "@prisma/client";
 
 export interface AlertRuleCreateInput {
   version?: number;
@@ -50,19 +50,24 @@ export interface IAlertRuleRepository {
   findById(id: string): Promise<AlertRule | null>;
   findByName(name: string): Promise<AlertRule | null>;
   findMany(enabledOnly?: boolean, metric?: string): Promise<AlertRule[]>;
-  findManyPaginated(query: AlertRuleFindManyQuery): Promise<[AlertRule[], number]>;
+  findManyPaginated(
+    query: AlertRuleFindManyQuery,
+  ): Promise<[AlertRule[], number]>;
   update(id: string, data: Partial<AlertRule>): Promise<AlertRule>;
   delete(id: string): Promise<boolean>;
   archive(id: string, performedBy: string): Promise<AlertRule>;
   clone(id: string, newName: string, performedBy: string): Promise<AlertRule>;
   incrementVersion(id: string, modifier: string): Promise<AlertRule>;
-  updatePerformanceMetrics(id: string, metrics: {
-    execMs: number;
-    triggered: boolean;
-    suppressed?: boolean;
-    deduplicated?: boolean;
-    escalated?: boolean;
-  }): Promise<void>;
+  updatePerformanceMetrics(
+    id: string,
+    metrics: {
+      execMs: number;
+      triggered: boolean;
+      suppressed?: boolean;
+      deduplicated?: boolean;
+      escalated?: boolean;
+    },
+  ): Promise<void>;
   findConflicting(): Promise<Array<{ ruleIds: string[]; reason: string }>>;
   findDuplicates(): Promise<Array<{ ruleIds: string[]; reason: string }>>;
   findByIds(ids: string[]): Promise<AlertRule[]>;
@@ -70,4 +75,4 @@ export interface IAlertRuleRepository {
   getTags(): Promise<string[]>;
 }
 
-export const IAlertRuleRepository = Symbol('IAlertRuleRepository');
+export const IAlertRuleRepository = Symbol("IAlertRuleRepository");

@@ -1,1 +1,1 @@
-export { PrismaService } from '../../database/prisma.service';
+export { PrismaService } from "../../database/prisma.service";

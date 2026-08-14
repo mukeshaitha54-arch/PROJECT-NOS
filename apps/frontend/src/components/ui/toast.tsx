@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from "react";
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from "lucide-react";
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+type ToastType = "success" | "error" | "warning" | "info";
 
 interface Toast {
   id: string;
@@ -13,22 +13,25 @@ interface Toast {
   duration?: number;
 }
 
-const TOAST_CONFIG: Record<ToastType, { icon: React.ReactNode; classes: string }> = {
+const TOAST_CONFIG: Record<
+  ToastType,
+  { icon: React.ReactNode; classes: string }
+> = {
   success: {
     icon: <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />,
-    classes: 'border-emerald-500/30 bg-emerald-500/10',
+    classes: "border-emerald-500/30 bg-emerald-500/10",
   },
   error: {
     icon: <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />,
-    classes: 'border-red-500/30 bg-red-500/10',
+    classes: "border-red-500/30 bg-red-500/10",
   },
   warning: {
     icon: <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />,
-    classes: 'border-amber-500/30 bg-amber-500/10',
+    classes: "border-amber-500/30 bg-amber-500/10",
   },
   info: {
     icon: <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />,
-    classes: 'border-cyan-500/30 bg-cyan-500/10',
+    classes: "border-cyan-500/30 bg-cyan-500/10",
   },
 };
 
@@ -38,13 +41,13 @@ const listeners: Set<ToastListener> = new Set();
 
 export const toast = {
   success: (title: string, message?: string, duration?: number) =>
-    emit({ id: uid(), type: 'success', title, message, duration }),
+    emit({ id: uid(), type: "success", title, message, duration }),
   error: (title: string, message?: string, duration?: number) =>
-    emit({ id: uid(), type: 'error', title, message, duration }),
+    emit({ id: uid(), type: "error", title, message, duration }),
   warning: (title: string, message?: string, duration?: number) =>
-    emit({ id: uid(), type: 'warning', title, message, duration }),
+    emit({ id: uid(), type: "warning", title, message, duration }),
   info: (title: string, message?: string, duration?: number) =>
-    emit({ id: uid(), type: 'info', title, message, duration }),
+    emit({ id: uid(), type: "info", title, message, duration }),
 };
 
 function uid() {
@@ -68,7 +71,9 @@ export function ToastContainer() {
       setTimeout(() => remove(t.id), duration);
     };
     listeners.add(listener);
-    return () => { listeners.delete(listener); };
+    return () => {
+      listeners.delete(listener);
+    };
   }, [remove]);
 
   return (
@@ -90,9 +95,13 @@ export function ToastContainer() {
           >
             {cfg.icon}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-200 leading-tight">{t.title}</p>
+              <p className="text-sm font-semibold text-slate-200 leading-tight">
+                {t.title}
+              </p>
               {t.message && (
-                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{t.message}</p>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  {t.message}
+                </p>
               )}
             </div>
             <button

@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { SocketConnectionMetrics, SocketHealthResponse } from '@nos/shared-types';
+import { Injectable } from "@nestjs/common";
+import {
+  SocketConnectionMetrics,
+  SocketHealthResponse,
+} from "@nos/shared-types";
 
 @Injectable()
 export class SocketMetricsService {
@@ -38,14 +41,17 @@ export class SocketMetricsService {
   public updateLatency(latencyMs: number): void {
     if (latencyMs >= 0) {
       // Exponential moving average latency tracking
-      this.latestLatencyMs = Math.round((this.latestLatencyMs * 0.7) + (latencyMs * 0.3));
+      this.latestLatencyMs = Math.round(
+        this.latestLatencyMs * 0.7 + latencyMs * 0.3,
+      );
     }
   }
 
   public getConnectionMetrics(): SocketConnectionMetrics {
-    const averageSessionTimeMs = this.disconnectCount > 0
-      ? Math.round(this.totalSessionDurationMs / this.disconnectCount)
-      : 0;
+    const averageSessionTimeMs =
+      this.disconnectCount > 0
+        ? Math.round(this.totalSessionDurationMs / this.disconnectCount)
+        : 0;
 
     return {
       connectedClients: this.connectedClientsCount,
@@ -57,7 +63,10 @@ export class SocketMetricsService {
     };
   }
 
-  public buildHealthResponse(totalRooms = 0, namespacesCount = 1): SocketHealthResponse {
+  public buildHealthResponse(
+    totalRooms = 0,
+    namespacesCount = 1,
+  ): SocketHealthResponse {
     const metrics = this.getConnectionMetrics();
     const memoryUsage = process.memoryUsage().heapUsed;
     const uptimeSeconds = Math.floor((Date.now() - this.startTime) / 1000);

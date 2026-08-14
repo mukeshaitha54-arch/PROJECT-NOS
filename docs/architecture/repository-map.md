@@ -29,21 +29,21 @@ NOS/ (Monorepo Root)
 
 ### Root Applications (`apps/*`)
 
-| Folder Path | Purpose & Single Responsibility | Owning Domain | Who is Allowed to Use It | Who Cannot Use It (Forbidden) |
-| :--- | :--- | :--- | :--- | :--- |
-| **`apps/agent/`** | C# .NET daemon responsible for system diagnostic collection and secure HTTP ingestion payload submission. | Monitoring Infrastructure Engineering | Monitored target operating systems (Windows/Linux); CI test simulation execution. | Frontend Application; Backend Application (backend never pushes commands directly to unauthenticated agent filesystem). |
-| **`apps/backend/`** | NestJS enterprise API gateway, multi-tenant authentication engine, telemetry processing pipeline, and domain services. | Backend Core Engineering | Web web applications via REST/WebSocket; Endpoint agents via verified HTTPS ingestion. | Database direct consumers (all storage queries MUST terminate in backend service layer). |
-| **`apps/frontend/`** | Next.js App Router presentation UI providing interactive fleet telemetry, rule simulation, and administrative dashboards. | Frontend Presentation Engineering | Human system operators, tenant managers, and enterprise auditors via web browsers. | Backend domain logic; Monitoring Agents (no agent communication terminates at frontend). |
+| Folder Path          | Purpose & Single Responsibility                                                                                           | Owning Domain                         | Who is Allowed to Use It                                                               | Who Cannot Use It (Forbidden)                                                                                           |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------ | :------------------------------------ | :------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| **`apps/agent/`**    | C# .NET daemon responsible for system diagnostic collection and secure HTTP ingestion payload submission.                 | Monitoring Infrastructure Engineering | Monitored target operating systems (Windows/Linux); CI test simulation execution.      | Frontend Application; Backend Application (backend never pushes commands directly to unauthenticated agent filesystem). |
+| **`apps/backend/`**  | NestJS enterprise API gateway, multi-tenant authentication engine, telemetry processing pipeline, and domain services.    | Backend Core Engineering              | Web web applications via REST/WebSocket; Endpoint agents via verified HTTPS ingestion. | Database direct consumers (all storage queries MUST terminate in backend service layer).                                |
+| **`apps/frontend/`** | Next.js App Router presentation UI providing interactive fleet telemetry, rule simulation, and administrative dashboards. | Frontend Presentation Engineering     | Human system operators, tenant managers, and enterprise auditors via web browsers.     | Backend domain logic; Monitoring Agents (no agent communication terminates at frontend).                                |
 
 ---
 
 ### Shared Monorepo Packages (`packages/*`)
 
-| Folder Path | Purpose & Single Responsibility | Owning Domain | Who is Allowed to Use It | Who Cannot Use It (Forbidden) |
-| :--- | :--- | :--- | :--- | :--- |
-| **`packages/shared-types/`** | Immovable contract repository containing pure TypeScript interfaces, enums, and DTO structures shared across boundaries. | Full-Stack Architecture Board | `apps/backend`, `apps/frontend`, automation verification harnesses. | External unauthenticated third-party code; non-TypeScript runtimes without transpile translation. |
-| **`packages/config-eslint/`** | Centralized static syntax and linting rules enforcing absolute consistency and zero placeholder code patterns. | DevOps & Quality Assurance | Entire workspace (`apps/*`, `packages/*`). | None (universal adherence required). |
-| **`packages/config-typescript/`** | Universal `tsconfig` inheritance trees guaranteeing strict type checking, non-nullable types, and compilation stability. | Core Platform Engineering | All TypeScript-based apps and packages in the workspace. | Non-TypeScript projects (`apps/agent`). |
+| Folder Path                       | Purpose & Single Responsibility                                                                                          | Owning Domain                 | Who is Allowed to Use It                                            | Who Cannot Use It (Forbidden)                                                                     |
+| :-------------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :---------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
+| **`packages/shared-types/`**      | Immovable contract repository containing pure TypeScript interfaces, enums, and DTO structures shared across boundaries. | Full-Stack Architecture Board | `apps/backend`, `apps/frontend`, automation verification harnesses. | External unauthenticated third-party code; non-TypeScript runtimes without transpile translation. |
+| **`packages/config-eslint/`**     | Centralized static syntax and linting rules enforcing absolute consistency and zero placeholder code patterns.           | DevOps & Quality Assurance    | Entire workspace (`apps/*`, `packages/*`).                          | None (universal adherence required).                                                              |
+| **`packages/config-typescript/`** | Universal `tsconfig` inheritance trees guaranteeing strict type checking, non-nullable types, and compilation stability. | Core Platform Engineering     | All TypeScript-based apps and packages in the workspace.            | Non-TypeScript projects (`apps/agent`).                                                           |
 
 ---
 
@@ -69,6 +69,7 @@ apps/backend/src/
 ```
 
 #### Backend Boundary Enforcement:
+
 - **`src/modules/<domain>/`**: Every module encapsulates its own controllers, services, DTOs, and repository logic. **Rule 3**: Module A may import services from Module B (via NestJS Module exports), but Module B must never import from Module A. No direct circular module bindings allowed.
 - **`src/prisma/`**: Exclusively owned by Infrastructure Database engineering. Directly consumed by `PrismaService` inside `common/` or dedicated module repository injections. Never directly instantiated by controllers or external scripts.
 
@@ -93,6 +94,7 @@ apps/frontend/src/
 ```
 
 #### Frontend Boundary Enforcement:
+
 - **`src/features/<domain>/`**: Encapsulates self-contained presentation components, state hooks, and domain-specific view logic. Feature modules must never cross-import internal implementation files of another feature module; communication occurs via universal state stores or routed URL parameters.
 - **`src/app/`**: Route definition layer only. Must not contain thick business logic or complex data parsing; all heavy transformations delegate to dedicated feature modules or client services.
 
@@ -113,6 +115,7 @@ apps/agent/
 ```
 
 #### Agent Boundary Enforcement:
+
 - **`Services/IMetricCollector.cs`**: Pure interface boundary. Platform implementations (`WindowsMetricCollector.cs`, `LinuxMetricCollector.cs`, `SimulationMetricCollector.cs`) must never directly interact with transport serialization or network sockets; they exclusively generate deterministic diagnostic snapshots for consumption by `SystemDiagnosticsService`.
 
 ---

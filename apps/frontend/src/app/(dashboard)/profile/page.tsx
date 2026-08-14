@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuthStore } from '@/features/auth/stores/auth.store';
-import { authApi } from '@/features/auth/services/auth.api';
-import { changePasswordSchema, ChangePasswordFormValues } from '@/features/auth/schemas/auth.schemas';
-import { Shield, User as UserIcon, LogOut, KeyRound, AlertCircle, CheckCircle2, Loader2, Server } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { authApi } from "@/features/auth/services/auth.api";
+import {
+  changePasswordSchema,
+  ChangePasswordFormValues,
+} from "@/features/auth/schemas/auth.schemas";
+import {
+  Shield,
+  User as UserIcon,
+  LogOut,
+  KeyRound,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Server,
+} from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -24,12 +36,16 @@ export default function ProfilePage() {
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
-    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
   });
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/auth/login');
+      router.replace("/auth/login");
     }
   }, [isAuthenticated, router]);
 
@@ -49,7 +65,7 @@ export default function ProfilePage() {
       // Clean up local store regardless of server response
     } finally {
       clearSession();
-      router.push('/auth/login');
+      router.push("/auth/login");
     }
   };
 
@@ -61,10 +77,15 @@ export default function ProfilePage() {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
-      setSuccessMsg('Password successfully updated. All other active sessions have been revoked.');
+      setSuccessMsg(
+        "Password successfully updated. All other active sessions have been revoked.",
+      );
       reset();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to update password. Please check your current password.');
+      setErrorMsg(
+        err?.message ||
+          "Failed to update password. Please check your current password.",
+      );
     }
   };
 
@@ -78,8 +99,12 @@ export default function ProfilePage() {
               N
             </div>
             <div>
-              <h1 className="text-base font-bold text-white tracking-tight">NOS Platform</h1>
-              <p className="text-xs text-slate-400">Enterprise Operations & Identity Control</p>
+              <h1 className="text-base font-bold text-white tracking-tight">
+                NOS Platform
+              </h1>
+              <p className="text-xs text-slate-400">
+                Enterprise Operations & Identity Control
+              </p>
             </div>
           </div>
 
@@ -101,7 +126,11 @@ export default function ProfilePage() {
               disabled={isLoggingOut}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-colors cursor-pointer"
             >
-              {isLoggingOut ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+              {isLoggingOut ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <LogOut className="w-3.5 h-3.5" />
+              )}
               <span>Disconnect Session</span>
             </button>
           </div>
@@ -111,7 +140,11 @@ export default function ProfilePage() {
         <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-cyan-950/40 border border-cyan-500/30 text-xs sm:text-sm text-cyan-200 flex items-center gap-3">
           <Server className="w-5 h-5 flex-shrink-0 text-cyan-400" />
           <div>
-            <span className="font-semibold text-white">Phase 6: Multi-Tenant Enterprise Platform Active.</span> Core security sessions are operating with JWT RS256/HMAC, automated token rotation, granular RBAC, and real-time telemetry streaming.
+            <span className="font-semibold text-white">
+              Phase 6: Multi-Tenant Enterprise Platform Active.
+            </span>{" "}
+            Core security sessions are operating with JWT RS256/HMAC, automated
+            token rotation, granular RBAC, and real-time telemetry streaming.
           </div>
         </div>
 
@@ -127,7 +160,9 @@ export default function ProfilePage() {
                 <h2 className="text-xl font-bold text-white">
                   {user.firstName} {user.lastName}
                 </h2>
-                <p className="text-xs font-mono text-slate-400 mt-0.5">{user.email}</p>
+                <p className="text-xs font-mono text-slate-400 mt-0.5">
+                  {user.email}
+                </p>
               </div>
 
               <div className="pt-4 border-t border-slate-800/80 space-y-3">
@@ -146,13 +181,16 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">Account ID</span>
-                  <span className="font-mono text-slate-500 truncate max-w-[140px]">{user.id}</span>
+                  <span className="font-mono text-slate-500 truncate max-w-[140px]">
+                    {user.id}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="text-[11px] text-slate-500 leading-relaxed pt-4 border-t border-slate-800/80">
-              Session protected by short-lived JWT access tokens with Argon2id encrypted refresh rotation.
+              Session protected by short-lived JWT access tokens with Argon2id
+              encrypted refresh rotation.
             </div>
           </div>
 
@@ -163,8 +201,12 @@ export default function ProfilePage() {
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Security & Password Management</h3>
-                <p className="text-xs text-slate-400">Update your account credentials and revoke outstanding tokens.</p>
+                <h3 className="text-lg font-bold text-white">
+                  Security & Password Management
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Update your account credentials and revoke outstanding tokens.
+                </p>
               </div>
             </div>
 
@@ -182,39 +224,60 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmitChangePassword)} className="space-y-4">
+            <form
+              onSubmit={handleSubmit(onSubmitChangePassword)}
+              className="space-y-4"
+            >
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">Current Password</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Current Password
+                </label>
                 <input
                   type="password"
-                  {...register('currentPassword')}
+                  {...register("currentPassword")}
                   placeholder="••••••••••••"
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                 />
-                {errors.currentPassword && <p className="text-xs text-red-400">{errors.currentPassword.message}</p>}
+                {errors.currentPassword && (
+                  <p className="text-xs text-red-400">
+                    {errors.currentPassword.message}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">New Password</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    New Password
+                  </label>
                   <input
                     type="password"
-                    {...register('newPassword')}
+                    {...register("newPassword")}
                     placeholder="Min 8 chars, uppercase & symbol"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                   />
-                  {errors.newPassword && <p className="text-xs text-red-400">{errors.newPassword.message}</p>}
+                  {errors.newPassword && (
+                    <p className="text-xs text-red-400">
+                      {errors.newPassword.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">Confirm New Password</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    Confirm New Password
+                  </label>
                   <input
                     type="password"
-                    {...register('confirmPassword')}
+                    {...register("confirmPassword")}
                     placeholder="Repeat new password"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                   />
-                  {errors.confirmPassword && <p className="text-xs text-red-400">{errors.confirmPassword.message}</p>}
+                  {errors.confirmPassword && (
+                    <p className="text-xs text-red-400">
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

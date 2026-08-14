@@ -24,6 +24,7 @@ public class TelemetryCollectorWorker : BackgroundService
     private readonly IOfflineBufferService _offlineBufferService;
     private readonly ICollectorSchedulerService _schedulerService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _configuration;
     private readonly int _pollIntervalSeconds;
     private readonly string _apiEndpoint;
     private readonly string _registrationKey;
@@ -43,6 +44,7 @@ public class TelemetryCollectorWorker : BackgroundService
         _offlineBufferService = offlineBufferService;
         _schedulerService = schedulerService;
         _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
         
         _pollIntervalSeconds = configuration.GetValue<int>("AgentConfig:PollIntervalSeconds", 30);
         var endpoint = configuration.GetValue<string>("AgentConfig:ApiIngestionEndpoint") 
@@ -65,8 +67,8 @@ public class TelemetryCollectorWorker : BackgroundService
         if (credentials == null)
         {
             // If credentials were provisioned into appsettings.json by installer or automated deployment, restore them directly
-            var configDeviceId = configuration.GetValue<string>("AgentConfig:DeviceId");
-            var configDeviceToken = configuration.GetValue<string>("AgentConfig:DeviceToken");
+            var configDeviceId = _configuration.GetValue<string>("AgentConfig:DeviceId");
+            var configDeviceToken = _configuration.GetValue<string>("AgentConfig:DeviceToken");
             if (!string.IsNullOrEmpty(configDeviceId) && !string.IsNullOrEmpty(configDeviceToken))
             {
                 _logger.LogInformation("🛡️ Restoring device credentials from configuration file for Device ID: [{Id}]...", configDeviceId);

@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React from "react";
+import { AlertTriangle } from "lucide-react";
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -14,7 +14,7 @@ export function EmptyState({
   title,
   description,
   action,
-  className = '',
+  className = "",
 }: EmptyStateProps) {
   return (
     <div
@@ -27,7 +27,9 @@ export function EmptyState({
       </div>
       <h3 className="text-sm font-semibold text-slate-300 mb-1">{title}</h3>
       {description && (
-        <p className="text-xs text-slate-500 max-w-xs leading-relaxed">{description}</p>
+        <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+          {description}
+        </p>
       )}
       {action && <div className="mt-4">{action}</div>}
     </div>

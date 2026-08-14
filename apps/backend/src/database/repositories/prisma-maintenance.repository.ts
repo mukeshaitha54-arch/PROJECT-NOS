@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IMaintenanceRepository, MaintenanceWindowCreateInput } from '../../common/repositories/maintenance.repository.interface';
-import { MaintenanceWindow, Prisma } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import {
+  IMaintenanceRepository,
+  MaintenanceWindowCreateInput,
+} from "../../common/repositories/maintenance.repository.interface";
+import { MaintenanceWindow, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaMaintenanceRepository implements IMaintenanceRepository {
@@ -16,7 +19,7 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
         startTime: data.startTime,
         endTime: data.endTime,
         reason: data.reason,
-        type: data.type || 'SCHEDULED',
+        type: data.type || "SCHEDULED",
         enabled: data.enabled ?? true,
       },
     });
@@ -26,7 +29,10 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
     return this.prisma.maintenanceWindow.findUnique({ where: { id } });
   }
 
-  async findActiveByDevice(deviceId: string, atTime = new Date()): Promise<MaintenanceWindow[]> {
+  async findActiveByDevice(
+    deviceId: string,
+    atTime = new Date(),
+  ): Promise<MaintenanceWindow[]> {
     return this.prisma.maintenanceWindow.findMany({
       where: {
         enabled: true,
@@ -45,11 +51,14 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
     if (enabledOnly) where.enabled = true;
     return this.prisma.maintenanceWindow.findMany({
       where,
-      orderBy: { startTime: 'desc' },
+      orderBy: { startTime: "desc" },
     });
   }
 
-  async update(id: string, data: Partial<MaintenanceWindow>): Promise<MaintenanceWindow> {
+  async update(
+    id: string,
+    data: Partial<MaintenanceWindow>,
+  ): Promise<MaintenanceWindow> {
     const updateData: Record<string, unknown> = { ...data };
     delete updateData.id;
     delete updateData.createdAt;

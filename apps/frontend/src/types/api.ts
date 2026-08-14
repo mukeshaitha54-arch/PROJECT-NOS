@@ -30,8 +30,8 @@ export interface Alert {
   ruleId: string;
   title: string;
   description: string | null;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
-  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED' | 'CLOSED';
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
+  status: "ACTIVE" | "ACKNOWLEDGED" | "RESOLVED" | "CLOSED";
   metric: string;
   value: number;
   threshold: number;

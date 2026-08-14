@@ -1,14 +1,17 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { Server } from 'socket.io';
+import { Injectable, Inject, Logger } from "@nestjs/common";
+import { Server } from "socket.io";
 import {
   SocketEvents,
   SocketRooms,
   getDeviceRoom,
   SocketEventEnvelope,
-} from '@nos/shared-types';
-import { ISocketPublisher } from '../../../common/services/socket-publisher.interface';
-import { ISocketEventBus, ISocketEventBusToken } from '../../../common/services/socket-event-bus.interface';
-import { SocketMetricsService } from './socket-metrics.service';
+} from "@nos/shared-types";
+import { ISocketPublisher } from "../../../common/services/socket-publisher.interface";
+import {
+  ISocketEventBus,
+  ISocketEventBusToken,
+} from "../../../common/services/socket-event-bus.interface";
+import { SocketMetricsService } from "./socket-metrics.service";
 
 @Injectable()
 export class SocketPublisherService implements ISocketPublisher {
@@ -25,71 +28,176 @@ export class SocketPublisherService implements ISocketPublisher {
   ) {
     // Self-cleaning GC for deduplication map (SPL Feature 15)
     const timer = setInterval(() => this.cleanupDedup(), 30000);
-    if (timer && typeof timer.unref === 'function') {
+    if (timer && typeof timer.unref === "function") {
       timer.unref();
     }
   }
 
   public setServer(server: Server): void {
     this.server = server;
-    this.logger.log('Socket.IO Server instance registered in SocketPublisherService.');
+    this.logger.log(
+      "Socket.IO Server instance registered in SocketPublisherService.",
+    );
   }
 
-  async emitDeviceConnected(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitDeviceConnected(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
-    await this.broadcast(SocketEvents.DEVICE_CONNECTED, rooms, payload, correlationId, `conn-${deviceId}`);
+    await this.broadcast(
+      SocketEvents.DEVICE_CONNECTED,
+      rooms,
+      payload,
+      correlationId,
+      `conn-${deviceId}`,
+    );
   }
 
-  async emitDeviceDisconnected(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitDeviceDisconnected(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
-    await this.broadcast(SocketEvents.DEVICE_DISCONNECTED, rooms, payload, correlationId, `disc-${deviceId}`);
+    await this.broadcast(
+      SocketEvents.DEVICE_DISCONNECTED,
+      rooms,
+      payload,
+      correlationId,
+      `disc-${deviceId}`,
+    );
   }
 
-  async emitDeviceOnline(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitDeviceOnline(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
-    await this.broadcast(SocketEvents.DEVICE_ONLINE, rooms, payload, correlationId, `online-${deviceId}`);
+    await this.broadcast(
+      SocketEvents.DEVICE_ONLINE,
+      rooms,
+      payload,
+      correlationId,
+      `online-${deviceId}`,
+    );
   }
 
-  async emitDeviceOffline(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitDeviceOffline(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
-    await this.broadcast(SocketEvents.DEVICE_OFFLINE, rooms, payload, correlationId, `offline-${deviceId}`);
+    await this.broadcast(
+      SocketEvents.DEVICE_OFFLINE,
+      rooms,
+      payload,
+      correlationId,
+      `offline-${deviceId}`,
+    );
   }
 
-  async emitHeartbeatReceived(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitHeartbeatReceived(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
     // Deduplicate by heartbeat timestamp or cpu+ram state
     const dedupKey = `hb-${deviceId}-${payload.timestamp || payload.uptime}`;
-    await this.broadcast(SocketEvents.HEARTBEAT_RECEIVED, rooms, payload, correlationId, dedupKey);
+    await this.broadcast(
+      SocketEvents.HEARTBEAT_RECEIVED,
+      rooms,
+      payload,
+      correlationId,
+      dedupKey,
+    );
   }
 
-  async emitTelemetryReceived(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitTelemetryReceived(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
     const dedupKey = `tele-${deviceId}-${payload.timestamp || payload.id}`;
-    await this.broadcast(SocketEvents.TELEMETRY_RECEIVED, rooms, payload, correlationId, dedupKey);
+    await this.broadcast(
+      SocketEvents.TELEMETRY_RECEIVED,
+      rooms,
+      payload,
+      correlationId,
+      dedupKey,
+    );
   }
 
-  async emitInventoryUpdated(deviceId: string, payload: any, correlationId?: string): Promise<void> {
+  async emitInventoryUpdated(
+    deviceId: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD, getDeviceRoom(deviceId)];
     const dedupKey = `inv-${deviceId}-${payload.inventoryVersion || payload.timestamp}`;
-    await this.broadcast(SocketEvents.INVENTORY_UPDATED, rooms, payload, correlationId, dedupKey);
+    await this.broadcast(
+      SocketEvents.INVENTORY_UPDATED,
+      rooms,
+      payload,
+      correlationId,
+      dedupKey,
+    );
   }
 
-  async emitDashboardUpdated(payload: any, correlationId?: string): Promise<void> {
+  async emitDashboardUpdated(
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [SocketRooms.DASHBOARD];
-    await this.broadcast(SocketEvents.DASHBOARD_UPDATED, rooms, payload, correlationId);
+    await this.broadcast(
+      SocketEvents.DASHBOARD_UPDATED,
+      rooms,
+      payload,
+      correlationId,
+    );
   }
 
-  async emitSystemStatusChanged(payload: any, correlationId?: string): Promise<void> {
-    const rooms = [SocketRooms.DASHBOARD, SocketRooms.ADMINS, SocketRooms.OPERATORS];
-    await this.broadcast(SocketEvents.SYSTEM_STATUS_CHANGED, rooms, payload, correlationId);
+  async emitSystemStatusChanged(
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
+    const rooms = [
+      SocketRooms.DASHBOARD,
+      SocketRooms.ADMINS,
+      SocketRooms.OPERATORS,
+    ];
+    await this.broadcast(
+      SocketEvents.SYSTEM_STATUS_CHANGED,
+      rooms,
+      payload,
+      correlationId,
+    );
   }
 
-  async emitAlertEvent(event: string, payload: any, correlationId?: string): Promise<void> {
-    const rooms = [SocketRooms.DASHBOARD, SocketRooms.ADMINS, SocketRooms.OPERATORS];
+  async emitAlertEvent(
+    event: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
+    const rooms = [
+      SocketRooms.DASHBOARD,
+      SocketRooms.ADMINS,
+      SocketRooms.OPERATORS,
+    ];
     await this.broadcast(event as any, rooms, payload, correlationId);
   }
 
-  async emitTenantEvent(organizationId: string, event: string, payload: any, correlationId?: string): Promise<void> {
+  async emitTenantEvent(
+    organizationId: string,
+    event: string,
+    payload: any,
+    correlationId?: string,
+  ): Promise<void> {
     const rooms = [`org_${organizationId}`];
     await this.broadcast(event as any, rooms, payload, correlationId);
   }
@@ -111,8 +219,10 @@ export class SocketPublisherService implements ISocketPublisher {
     // 1. Deduplication evaluation
     if (dedupKey) {
       const existing = this.dedupCache.get(dedupKey);
-      if (existing && (now - existing) < this.DEDUP_TTL_MS) {
-        this.logger.debug(`Dropped duplicate socket broadcast event [${event}] Key: [${dedupKey}]`);
+      if (existing && now - existing < this.DEDUP_TTL_MS) {
+        this.logger.debug(
+          `Dropped duplicate socket broadcast event [${event}] Key: [${dedupKey}]`,
+        );
         this.metrics.recordDroppedEvent();
         return;
       }
@@ -122,16 +232,21 @@ export class SocketPublisherService implements ISocketPublisher {
     // 2. Payload Minimization & Versioned Envelope creation
     const cleanPayload = this.minimizePayload(payload);
     const eventId = `evt-${now}-${Math.random().toString(36).substring(2, 8)}`;
-    const deviceId = cleanPayload?.deviceId || cleanPayload?.snapshot?.deviceId || (dedupKey ? dedupKey.split('-')[1] : undefined);
+    const deviceId =
+      cleanPayload?.deviceId ||
+      cleanPayload?.snapshot?.deviceId ||
+      (dedupKey ? dedupKey.split("-")[1] : undefined);
     const envelope: SocketEventEnvelope = {
       eventId,
       eventType: event,
       version: 1,
       event,
       timestamp: new Date().toISOString(),
-      organizationId: cleanPayload?.organizationId || 'default-org',
+      organizationId: cleanPayload?.organizationId || "default-org",
       deviceId,
-      correlationId: correlationId || `nos-pub-${now}-${Math.random().toString(36).substring(2, 6)}`,
+      correlationId:
+        correlationId ||
+        `nos-pub-${now}-${Math.random().toString(36).substring(2, 6)}`,
       payload: cleanPayload,
     };
 
@@ -144,12 +259,19 @@ export class SocketPublisherService implements ISocketPublisher {
     if (this.server) {
       try {
         this.server.to(rooms).compress(true).emit(event, envelope);
-        this.logger.verbose(`Broadcasted [${event}] to rooms [${rooms.join(', ')}] CorId: [${envelope.correlationId}]`);
+        this.logger.verbose(
+          `Broadcasted [${event}] to rooms [${rooms.join(", ")}] CorId: [${envelope.correlationId}]`,
+        );
       } catch (err: any) {
-        this.logger.error(`Failed to broadcast event [${event}] to rooms [${rooms.join(', ')}]: ${err.message}`, err.stack);
+        this.logger.error(
+          `Failed to broadcast event [${event}] to rooms [${rooms.join(", ")}]: ${err.message}`,
+          err.stack,
+        );
       }
     } else {
-      this.logger.debug(`Socket server instance not ready yet. Event [${event}] queued to local event bus only.`);
+      this.logger.debug(
+        `Socket server instance not ready yet. Event [${event}] queued to local event bus only.`,
+      );
     }
   }
 
@@ -158,13 +280,23 @@ export class SocketPublisherService implements ISocketPublisher {
    * Removes undefined or bloated internal DB symbols before network transport.
    */
   private minimizePayload(data: any): any {
-    if (!data || typeof data !== 'object') return data;
-    if (Array.isArray(data)) return data.map((item) => this.minimizePayload(item));
+    if (!data || typeof data !== "object") return data;
+    if (Array.isArray(data))
+      return data.map((item) => this.minimizePayload(item));
 
     const clean: any = {};
     for (const [key, val] of Object.entries(data)) {
-      if (val !== undefined && val !== null && typeof val !== 'function' && !key.startsWith('_') && !key.startsWith('$')) {
-        clean[key] = typeof val === 'object' && !(val instanceof Date) ? this.minimizePayload(val) : val;
+      if (
+        val !== undefined &&
+        val !== null &&
+        typeof val !== "function" &&
+        !key.startsWith("_") &&
+        !key.startsWith("$")
+      ) {
+        clean[key] =
+          typeof val === "object" && !(val instanceof Date)
+            ? this.minimizePayload(val)
+            : val;
       }
     }
     return clean;

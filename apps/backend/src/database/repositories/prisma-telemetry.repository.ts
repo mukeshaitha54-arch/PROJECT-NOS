@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { TelemetrySnapshot as PrismaTelemetrySnapshot, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
+import { Injectable } from "@nestjs/common";
+import {
+  TelemetrySnapshot as PrismaTelemetrySnapshot,
+  Prisma,
+} from "@prisma/client";
+import { PrismaService } from "../prisma.service";
 import {
   ITelemetryRepository,
   TelemetryCreateInput,
   TelemetryRangeQuery,
   TelemetryAggregationResult,
-} from '../../common/repositories/telemetry.repository.interface';
+} from "../../common/repositories/telemetry.repository.interface";
 
 @Injectable()
 export class PrismaTelemetryRepository implements ITelemetryRepository {
@@ -48,11 +51,13 @@ export class PrismaTelemetryRepository implements ITelemetryRepository {
   async findLatest(deviceId: string): Promise<PrismaTelemetrySnapshot | null> {
     return this.prisma.telemetrySnapshot.findFirst({
       where: { deviceId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
   }
 
-  async findRange(query: TelemetryRangeQuery): Promise<{ items: PrismaTelemetrySnapshot[]; total: number }> {
+  async findRange(
+    query: TelemetryRangeQuery,
+  ): Promise<{ items: PrismaTelemetrySnapshot[]; total: number }> {
     const where: Prisma.TelemetrySnapshotWhereInput = {
       deviceId: query.deviceId,
     };
@@ -65,7 +70,7 @@ export class PrismaTelemetryRepository implements ITelemetryRepository {
     const [items, total] = await Promise.all([
       this.prisma.telemetrySnapshot.findMany({
         where,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         skip: query.skip || 0,
         take: query.take || 50,
       }),
@@ -87,7 +92,11 @@ export class PrismaTelemetryRepository implements ITelemetryRepository {
     return result.count;
   }
 
-  async aggregate(deviceId: string, from?: Date, to?: Date): Promise<TelemetryAggregationResult> {
+  async aggregate(
+    deviceId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<TelemetryAggregationResult> {
     const where: Prisma.TelemetrySnapshotWhereInput = { deviceId };
     if (from || to) {
       where.timestamp = {};

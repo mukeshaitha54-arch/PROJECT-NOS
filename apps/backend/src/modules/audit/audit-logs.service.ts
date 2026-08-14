@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface AuditLogQueryParams {
   tenantId: string;
@@ -22,18 +22,18 @@ export class AuditLogsService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (tenantId && tenantId !== 'default-org') {
+    if (tenantId && tenantId !== "default-org") {
       where.organizationId = tenantId;
     }
 
     if (action) {
-      where.action = { contains: action, mode: 'insensitive' };
+      where.action = { contains: action, mode: "insensitive" };
     }
 
     if (actor) {
       where.OR = [
-        { userId: { contains: actor, mode: 'insensitive' } },
-        { userEmail: { contains: actor, mode: 'insensitive' } },
+        { userId: { contains: actor, mode: "insensitive" } },
+        { userEmail: { contains: actor, mode: "insensitive" } },
       ];
     }
 
@@ -60,7 +60,7 @@ export class AuditLogsService {
       this.prisma.auditLog.count({ where }),
       this.prisma.auditLog.findMany({
         where,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         skip,
         take: limit,
       }),
@@ -69,7 +69,7 @@ export class AuditLogsService {
     const data = items.map((item) => ({
       ...item,
       createdAt: item.timestamp,
-      actor: item.userEmail || item.userId || 'System',
+      actor: item.userEmail || item.userId || "System",
     }));
 
     return {
@@ -92,22 +92,24 @@ export class AuditLogsService {
     organizationId?: string;
   }): Promise<void> {
     try {
-      const orgId = params.tenantId || params.organizationId || 'default-org';
+      const orgId = params.tenantId || params.organizationId || "default-org";
       await this.prisma.auditLog.create({
         data: {
           organizationId: orgId,
           userId: params.actor,
           userEmail: params.actor,
           action: params.action,
-          resourceType: 'ALERT_ENGINE',
+          resourceType: "ALERT_ENGINE",
           resourceId: params.target,
-          ipAddress: '127.0.0.1',
-          browser: 'Alert Rule Engine',
+          ipAddress: "127.0.0.1",
+          browser: "Alert Rule Engine",
           details: params.details || {},
         },
       });
     } catch (err) {
-      this.logger.error(`Error logging action ${params.action}: ${err instanceof Error ? err.message : err}`);
+      this.logger.error(
+        `Error logging action ${params.action}: ${err instanceof Error ? err.message : err}`,
+      );
     }
   }
 
@@ -122,4 +124,3 @@ export class AuditLogsService {
     return this.log(params);
   }
 }
-

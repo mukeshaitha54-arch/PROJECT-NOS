@@ -1,7 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { Device, DeviceStatus } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
-import { IDeviceRepository, CreateDeviceInput, UpdateDeviceInput } from '../../common/repositories/device.repository.interface';
+import { Injectable } from "@nestjs/common";
+import { Device, DeviceStatus } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
+import {
+  IDeviceRepository,
+  CreateDeviceInput,
+  UpdateDeviceInput,
+} from "../../common/repositories/device.repository.interface";
 
 @Injectable()
 export class PrismaDeviceRepository implements IDeviceRepository {
@@ -20,15 +24,21 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   }
 
   async findAll(organizationId?: string): Promise<Device[]> {
-    const where = organizationId && organizationId !== 'default-org' ? { organizationId } : {};
+    const where =
+      organizationId && organizationId !== "default-org"
+        ? { organizationId }
+        : {};
     return this.prisma.device.findMany({
       where,
-      orderBy: { lastSeen: 'desc' },
+      orderBy: { lastSeen: "desc" },
     });
   }
 
   async countByOrganization(organizationId?: string): Promise<number> {
-    const where = organizationId && organizationId !== 'default-org' ? { organizationId } : {};
+    const where =
+      organizationId && organizationId !== "default-org"
+        ? { organizationId }
+        : {};
     return this.prisma.device.count({ where });
   }
 
@@ -68,7 +78,7 @@ export class PrismaDeviceRepository implements IDeviceRepository {
 
   async countByStatus(): Promise<Record<DeviceStatus, number>> {
     const counts = await this.prisma.device.groupBy({
-      by: ['status'],
+      by: ["status"],
       _count: { status: true },
     });
 
@@ -92,12 +102,12 @@ export class PrismaDeviceRepository implements IDeviceRepository {
       where: {
         organizationId,
         OR: [
-          { hostname: { contains: query, mode: 'insensitive' } },
-          { deviceName: { contains: query, mode: 'insensitive' } },
-          { uuid: { contains: query, mode: 'insensitive' } }
-        ]
+          { hostname: { contains: query, mode: "insensitive" } },
+          { deviceName: { contains: query, mode: "insensitive" } },
+          { uuid: { contains: query, mode: "insensitive" } },
+        ],
       },
-      take: 20
+      take: 20,
     });
   }
 }

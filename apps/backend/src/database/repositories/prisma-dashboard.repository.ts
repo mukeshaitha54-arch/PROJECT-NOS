@@ -1,13 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
 import {
   IDashboardRepository,
   DashboardOverviewCounts,
   DeviceRowRaw,
   DeviceDetailRaw,
   TelemetryHistoryRaw,
-} from '../../common/repositories/dashboard.repository.interface';
-import { DeviceStatus, Prisma } from '@prisma/client';
+} from "../../common/repositories/dashboard.repository.interface";
+import { DeviceStatus, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaDashboardRepository implements IDashboardRepository {
@@ -15,11 +15,13 @@ export class PrismaDashboardRepository implements IDashboardRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getOverviewCounts(organizationId: string): Promise<DashboardOverviewCounts> {
+  async getOverviewCounts(
+    organizationId: string,
+  ): Promise<DashboardOverviewCounts> {
     const [total, statusGroups] = await Promise.all([
       this.prisma.device.count({ where: { organizationId } }),
       this.prisma.device.groupBy({
-        by: ['status'],
+        by: ["status"],
         where: { organizationId },
         _count: { status: true },
       }),
@@ -68,24 +70,30 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     status?: string;
     os?: string;
   }): Promise<{ devices: DeviceRowRaw[]; total: number }> {
-    const where: Prisma.DeviceWhereInput = { organizationId: params.organizationId };
+    const where: Prisma.DeviceWhereInput = {
+      organizationId: params.organizationId,
+    };
 
     if (params.search && params.search.trim().length > 0) {
       const term = params.search.trim();
       where.OR = [
-        { hostname: { contains: term, mode: 'insensitive' } },
-        { uuid: { contains: term, mode: 'insensitive' } },
-        { deviceName: { contains: term, mode: 'insensitive' } },
-        { os: { contains: term, mode: 'insensitive' } },
+        { hostname: { contains: term, mode: "insensitive" } },
+        { uuid: { contains: term, mode: "insensitive" } },
+        { deviceName: { contains: term, mode: "insensitive" } },
+        { os: { contains: term, mode: "insensitive" } },
       ];
     }
 
-    if (params.status && params.status !== 'ALL' && params.status.trim() !== '') {
+    if (
+      params.status &&
+      params.status !== "ALL" &&
+      params.status.trim() !== ""
+    ) {
       where.status = params.status.toUpperCase() as DeviceStatus;
     }
 
-    if (params.os && params.os !== 'ALL' && params.os.trim() !== '') {
-      where.os = { contains: params.os.trim(), mode: 'insensitive' };
+    if (params.os && params.os !== "ALL" && params.os.trim() !== "") {
+      where.os = { contains: params.os.trim(), mode: "insensitive" };
     }
 
     const [total, records] = await Promise.all([
@@ -94,7 +102,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
         where,
         skip: params.skip,
         take: params.take,
-        orderBy: [{ lastSeen: 'desc' }, { hostname: 'asc' }],
+        orderBy: [{ lastSeen: "desc" }, { hostname: "asc" }],
         select: {
           id: true,
           uuid: true,
@@ -105,7 +113,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
           osVersion: true,
           agentVersion: true,
           telemetrySnapshots: {
-            orderBy: { timestamp: 'desc' },
+            orderBy: { timestamp: "desc" },
             take: 1,
             select: {
               cpuUsage: true,
@@ -118,7 +126,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
             },
           },
           heartbeats: {
-            orderBy: { timestamp: 'desc' },
+            orderBy: { timestamp: "desc" },
             take: 1,
             select: {
               cpuUsage: true,
@@ -147,7 +155,10 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     return { devices, total };
   }
 
-  async getDeviceDetail(organizationId: string, deviceId: string): Promise<DeviceDetailRaw | null> {
+  async getDeviceDetail(
+    organizationId: string,
+    deviceId: string,
+  ): Promise<DeviceDetailRaw | null> {
     const device = await this.prisma.device.findFirst({
       where: {
         organizationId,
@@ -155,11 +166,11 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       },
       include: {
         telemetrySnapshots: {
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           take: 1,
         },
         heartbeats: {
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           take: 1,
         },
       },
@@ -211,7 +222,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
         where,
         skip: params.skip,
         take: params.take,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
       }),
     ]);
 

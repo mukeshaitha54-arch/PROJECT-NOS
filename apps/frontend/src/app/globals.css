@@ -42,7 +42,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground;
-    background-image: 
+    background-image:
       radial-gradient(at 10% 10%, rgba(59, 130, 246, 0.08) 0, transparent 50%),
       radial-gradient(at 90% 90%, rgba(139, 92, 246, 0.08) 0, transparent 50%);
     background-attachment: fixed;

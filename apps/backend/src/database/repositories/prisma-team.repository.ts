@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { ITeamRepository } from '../../common/repositories/tenant.repository.interface';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { ITeamRepository } from "../../common/repositories/tenant.repository.interface";
 import {
   DepartmentDto,
   TeamDto,
@@ -8,14 +8,19 @@ import {
   OrganizationInvitationDto,
   InvitationStatus,
   UserRole,
-} from '@nos/shared-types';
-import { Prisma } from '@prisma/client';
+} from "@nos/shared-types";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaTeamRepository implements ITeamRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createDepartment(organizationId: string, name: string, description?: string, headUserId?: string): Promise<DepartmentDto> {
+  async createDepartment(
+    organizationId: string,
+    name: string,
+    description?: string,
+    headUserId?: string,
+  ): Promise<DepartmentDto> {
     const dept = await this.prisma.department.create({
       data: {
         organizationId,
@@ -38,9 +43,9 @@ export class PrismaTeamRepository implements ITeamRepository {
   async listDepartments(organizationId: string): Promise<DepartmentDto[]> {
     const depts = await this.prisma.department.findMany({
       where: { organizationId },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
-    return depts.map(dept => ({
+    return depts.map((dept) => ({
       id: dept.id,
       organizationId: dept.organizationId,
       name: dept.name,
@@ -51,7 +56,13 @@ export class PrismaTeamRepository implements ITeamRepository {
     }));
   }
 
-  async createTeam(organizationId: string, name: string, departmentId?: string, description?: string, leadUserId?: string): Promise<TeamDto> {
+  async createTeam(
+    organizationId: string,
+    name: string,
+    departmentId?: string,
+    description?: string,
+    leadUserId?: string,
+  ): Promise<TeamDto> {
     const team = await this.prisma.team.create({
       data: {
         organizationId,
@@ -76,9 +87,9 @@ export class PrismaTeamRepository implements ITeamRepository {
   async listTeams(organizationId: string): Promise<TeamDto[]> {
     const teams = await this.prisma.team.findMany({
       where: { organizationId },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
-    return teams.map(team => ({
+    return teams.map((team) => ({
       id: team.id,
       organizationId: team.organizationId,
       departmentId: team.departmentId ?? undefined,
@@ -90,7 +101,14 @@ export class PrismaTeamRepository implements ITeamRepository {
     }));
   }
 
-  async addMember(organizationId: string, userId: string, role: UserRole, teamIds?: string[], departmentIds?: string[], customRoleId?: string): Promise<OrganizationMemberDto> {
+  async addMember(
+    organizationId: string,
+    userId: string,
+    role: UserRole,
+    teamIds?: string[],
+    departmentIds?: string[],
+    customRoleId?: string,
+  ): Promise<OrganizationMemberDto> {
     const member = await this.prisma.organizationMember.upsert({
       where: { organizationId_userId: { organizationId, userId } },
       update: {
@@ -123,16 +141,23 @@ export class PrismaTeamRepository implements ITeamRepository {
       departmentIds: member.departmentIds,
       joinedAt: member.joinedAt.toISOString(),
       isSuspended: member.isSuspended,
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      } : undefined,
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          }
+        : undefined,
     };
   }
 
-  async updateMemberRole(organizationId: string, userId: string, role: UserRole, customRoleId?: string): Promise<OrganizationMemberDto> {
+  async updateMemberRole(
+    organizationId: string,
+    userId: string,
+    role: UserRole,
+    customRoleId?: string,
+  ): Promise<OrganizationMemberDto> {
     const member = await this.prisma.organizationMember.update({
       where: { organizationId_userId: { organizationId, userId } },
       data: {
@@ -159,7 +184,10 @@ export class PrismaTeamRepository implements ITeamRepository {
     });
   }
 
-  async listMembers(organizationId: string, params?: { search?: string; role?: string; page?: number; limit?: number }): Promise<{ items: OrganizationMemberDto[]; total: number }> {
+  async listMembers(
+    organizationId: string,
+    params?: { search?: string; role?: string; page?: number; limit?: number },
+  ): Promise<{ items: OrganizationMemberDto[]; total: number }> {
     const page = params?.page && params.page > 0 ? params.page : 1;
     const limit = params?.limit && params.limit > 0 ? params.limit : 50;
     const skip = (page - 1) * limit;
@@ -175,17 +203,17 @@ export class PrismaTeamRepository implements ITeamRepository {
         where,
         skip,
         take: limit,
-        orderBy: { joinedAt: 'desc' },
+        orderBy: { joinedAt: "desc" },
       }),
     ]);
 
-    const userIds = rows.map(r => r.userId);
+    const userIds = rows.map((r) => r.userId);
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
     });
-    const userMap = new Map(users.map(u => [u.id, u]));
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
-    const items: OrganizationMemberDto[] = rows.map(m => {
+    const items: OrganizationMemberDto[] = rows.map((m) => {
       const u = userMap.get(m.userId);
       return {
         id: m.id,
@@ -197,19 +225,24 @@ export class PrismaTeamRepository implements ITeamRepository {
         departmentIds: m.departmentIds,
         joinedAt: m.joinedAt.toISOString(),
         isSuspended: m.isSuspended,
-        user: u ? {
-          id: u.id,
-          email: u.email,
-          firstName: u.firstName,
-          lastName: u.lastName,
-        } : undefined,
+        user: u
+          ? {
+              id: u.id,
+              email: u.email,
+              firstName: u.firstName,
+              lastName: u.lastName,
+            }
+          : undefined,
       };
     });
 
     return { items, total };
   }
 
-  async findMember(organizationId: string, userId: string): Promise<OrganizationMemberDto | null> {
+  async findMember(
+    organizationId: string,
+    userId: string,
+  ): Promise<OrganizationMemberDto | null> {
     const m = await this.prisma.organizationMember.findUnique({
       where: { organizationId_userId: { organizationId, userId } },
     });
@@ -225,16 +258,27 @@ export class PrismaTeamRepository implements ITeamRepository {
       departmentIds: m.departmentIds,
       joinedAt: m.joinedAt.toISOString(),
       isSuspended: m.isSuspended,
-      user: u ? {
-        id: u.id,
-        email: u.email,
-        firstName: u.firstName,
-        lastName: u.lastName,
-      } : undefined,
+      user: u
+        ? {
+            id: u.id,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+          }
+        : undefined,
     };
   }
 
-  async createInvitation(organizationId: string, email: string, role: UserRole, invitedByUserId: string, tokenHash: string, expiresAt: Date, teamIds?: string[], departmentIds?: string[]): Promise<OrganizationInvitationDto> {
+  async createInvitation(
+    organizationId: string,
+    email: string,
+    role: UserRole,
+    invitedByUserId: string,
+    tokenHash: string,
+    expiresAt: Date,
+    teamIds?: string[],
+    departmentIds?: string[],
+  ): Promise<OrganizationInvitationDto> {
     const inv = await this.prisma.organizationInvitation.create({
       data: {
         organizationId,
@@ -264,12 +308,14 @@ export class PrismaTeamRepository implements ITeamRepository {
     };
   }
 
-  async listInvitations(organizationId: string): Promise<OrganizationInvitationDto[]> {
+  async listInvitations(
+    organizationId: string,
+  ): Promise<OrganizationInvitationDto[]> {
     const invs = await this.prisma.organizationInvitation.findMany({
       where: { organizationId, status: InvitationStatus.PENDING },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
-    return invs.map(inv => ({
+    return invs.map((inv) => ({
       id: inv.id,
       organizationId: inv.organizationId,
       email: inv.email,

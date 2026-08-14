@@ -1,31 +1,44 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, Server, ShieldAlert, Database, 
-  Settings, Users, Network, Activity, Key, ShieldCheck, Tag
-} from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Server,
+  ShieldAlert,
+  Database,
+  Settings,
+  Users,
+  Network,
+  Activity,
+  Key,
+  ShieldCheck,
+  Tag,
+} from "lucide-react";
 
 const mainLinks = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/fleet', label: 'Fleet', icon: Network },
-  { href: '/device', label: 'Devices', icon: Server },
-  { href: '/inventory', label: 'Inventory', icon: Database },
-  { href: '/alerts', label: 'Alerts', icon: ShieldAlert },
-  { href: '/audit', label: 'Audit', icon: Activity },
-  { href: '/smart-groups', label: 'Smart Groups', icon: Tag },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/fleet", label: "Fleet", icon: Network },
+  { href: "/device", label: "Devices", icon: Server },
+  { href: "/inventory", label: "Inventory", icon: Database },
+  { href: "/alerts", label: "Alerts", icon: ShieldAlert },
+  { href: "/audit", label: "Audit", icon: Activity },
+  { href: "/smart-groups", label: "Smart Groups", icon: Tag },
 ];
 
 const organizationLinks = [
-  { href: '/members', label: 'Members', icon: Users },
-  { href: '/settings/registration-keys', label: 'Registration Keys', icon: Key },
+  { href: "/members", label: "Members", icon: Users },
+  {
+    href: "/settings/registration-keys",
+    label: "Registration Keys",
+    icon: Key,
+  },
 ];
 
 const adminLinks = [
-  { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/admin', label: 'Admin', icon: ShieldCheck },
+  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Admin", icon: ShieldCheck },
 ];
 
 export function Sidebar() {
@@ -39,15 +52,17 @@ export function Sidebar() {
       <div className="space-y-1">
         {links.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href || (link.href !== '/dashboard' && pathname?.startsWith(link.href));
+          const isActive =
+            pathname === link.href ||
+            (link.href !== "/dashboard" && pathname?.startsWith(link.href));
           return (
             <Link
               key={link.href}
               href={link.href}
               className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 isActive
-                  ? 'bg-blue-900/50 text-blue-400'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? "bg-blue-900/50 text-blue-400"
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}
             >
               <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -66,9 +81,9 @@ export function Sidebar() {
         <span className="ml-3 text-xl font-bold text-white">NOS Platform</span>
       </div>
       <div className="flex-1 py-4 px-3">
-        {renderLinks(mainLinks, 'Operations')}
-        {renderLinks(organizationLinks, 'Tenant & Access')}
-        {renderLinks(adminLinks, 'System')}
+        {renderLinks(mainLinks, "Operations")}
+        {renderLinks(organizationLinks, "Tenant & Access")}
+        {renderLinks(adminLinks, "System")}
       </div>
     </div>
   );

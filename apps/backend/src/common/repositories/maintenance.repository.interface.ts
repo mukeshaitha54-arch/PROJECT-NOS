@@ -1,4 +1,4 @@
-import { MaintenanceWindow } from '@prisma/client';
+import { MaintenanceWindow } from "@prisma/client";
 
 export interface MaintenanceWindowCreateInput {
   deviceId?: string | null;
@@ -14,10 +14,16 @@ export interface MaintenanceWindowCreateInput {
 export interface IMaintenanceRepository {
   create(data: MaintenanceWindowCreateInput): Promise<MaintenanceWindow>;
   findById(id: string): Promise<MaintenanceWindow | null>;
-  findActiveByDevice(deviceId: string, atTime?: Date): Promise<MaintenanceWindow[]>;
+  findActiveByDevice(
+    deviceId: string,
+    atTime?: Date,
+  ): Promise<MaintenanceWindow[]>;
   findMany(enabledOnly?: boolean): Promise<MaintenanceWindow[]>;
-  update(id: string, data: Partial<MaintenanceWindow>): Promise<MaintenanceWindow>;
+  update(
+    id: string,
+    data: Partial<MaintenanceWindow>,
+  ): Promise<MaintenanceWindow>;
   delete(id: string): Promise<boolean>;
 }
 
-export const IMaintenanceRepository = Symbol('IMaintenanceRepository');
+export const IMaintenanceRepository = Symbol("IMaintenanceRepository");

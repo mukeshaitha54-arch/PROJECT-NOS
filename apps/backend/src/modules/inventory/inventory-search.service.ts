@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface InventorySearchParams {
   tenantId: string;
@@ -20,17 +20,20 @@ export class InventorySearchService {
     const { tenantId, query, category, deviceId, page, limit } = params;
     const skip = (page - 1) * limit;
 
-    const tenantFilter: any = tenantId && tenantId !== 'default-org' ? { organizationId: tenantId } : {};
+    const tenantFilter: any =
+      tenantId && tenantId !== "default-org"
+        ? { organizationId: tenantId }
+        : {};
 
-    if (category === 'SERVICES') {
+    if (category === "SERVICES") {
       const where: any = {};
       where.deviceInventory = {
         device: { ...tenantFilter, ...(deviceId ? { id: deviceId } : {}) },
       };
       if (query) {
         where.OR = [
-          { serviceName: { contains: query, mode: 'insensitive' } },
-          { displayName: { contains: query, mode: 'insensitive' } },
+          { serviceName: { contains: query, mode: "insensitive" } },
+          { displayName: { contains: query, mode: "insensitive" } },
         ];
       }
 
@@ -47,19 +50,22 @@ export class InventorySearchService {
       const data = items.map((i) => ({
         id: i.id,
         deviceId: i.deviceInventory?.deviceId,
-        hostname: i.deviceInventory?.device?.hostname || 'Unknown',
+        hostname: i.deviceInventory?.device?.hostname || "Unknown",
         serviceName: i.serviceName,
         displayName: i.displayName,
         status: i.status,
         startType: i.startType,
-        osEdition: i.deviceInventory?.device?.os || 'Unknown',
+        osEdition: i.deviceInventory?.device?.os || "Unknown",
       }));
 
       return { success: true, data, meta: { total, page, limit } };
-    } else if (category === 'SECURITY') {
-      const where: any = { ...tenantFilter, ...(deviceId ? { id: deviceId } : {}) };
+    } else if (category === "SECURITY") {
+      const where: any = {
+        ...tenantFilter,
+        ...(deviceId ? { id: deviceId } : {}),
+      };
       if (query) {
-        where.hostname = { contains: query, mode: 'insensitive' };
+        where.hostname = { contains: query, mode: "insensitive" };
       }
       where.inventory = { isNot: null };
 
@@ -81,23 +87,25 @@ export class InventorySearchService {
           hostname: d.hostname,
           defenderEnabled: d.inventory!.security!.windowsDefenderEnabled,
           firewallEnabled: d.inventory!.security!.firewallEnabled,
-          bitLockerStatus: d.inventory!.security!.bitLockerEnabled ? 'Enabled' : 'Disabled',
+          bitLockerStatus: d.inventory!.security!.bitLockerEnabled
+            ? "Enabled"
+            : "Disabled",
           tpmVersion: d.inventory!.security!.tpmVersion,
-          osEdition: d.os || 'Unknown',
+          osEdition: d.os || "Unknown",
         }));
 
       return { success: true, data, meta: { total: data.length, page, limit } };
-    } else if (category === 'CHANGES') {
+    } else if (category === "CHANGES") {
       const where: any = { ...(deviceId ? { deviceId } : {}) };
       if (query) {
-        where.changeDetails = { contains: query, mode: 'insensitive' };
+        where.changeDetails = { contains: query, mode: "insensitive" };
       }
 
       const [total, items] = await Promise.all([
         this.prisma.inventoryAuditLog.count({ where }),
         this.prisma.inventoryAuditLog.findMany({
           where,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           skip,
           take: limit,
           include: { device: true },
@@ -107,11 +115,11 @@ export class InventorySearchService {
       const data = items.map((i) => ({
         id: i.id,
         deviceId: i.deviceId,
-        hostname: i.device?.hostname || 'Unknown',
+        hostname: i.device?.hostname || "Unknown",
         action: i.action,
         details: i.changeDetails,
         timestamp: i.timestamp,
-        osEdition: i.device?.os || 'Unknown',
+        osEdition: i.device?.os || "Unknown",
       }));
 
       return { success: true, data, meta: { total, page, limit } };
@@ -123,9 +131,9 @@ export class InventorySearchService {
       };
       if (query) {
         where.OR = [
-          { name: { contains: query, mode: 'insensitive' } },
-          { publisher: { contains: query, mode: 'insensitive' } },
-          { version: { contains: query, mode: 'insensitive' } },
+          { name: { contains: query, mode: "insensitive" } },
+          { publisher: { contains: query, mode: "insensitive" } },
+          { version: { contains: query, mode: "insensitive" } },
         ];
       }
 
@@ -142,12 +150,12 @@ export class InventorySearchService {
       const data = items.map((i) => ({
         id: i.id,
         deviceId: i.deviceInventory?.deviceId,
-        hostname: i.deviceInventory?.device?.hostname || 'Unknown',
+        hostname: i.deviceInventory?.device?.hostname || "Unknown",
         softwareName: i.name,
-        publisher: i.publisher || 'Unknown',
-        version: i.version || '0.0.0',
+        publisher: i.publisher || "Unknown",
+        version: i.version || "0.0.0",
         installDate: i.installDate,
-        osEdition: i.deviceInventory?.device?.os || 'Unknown',
+        osEdition: i.deviceInventory?.device?.os || "Unknown",
       }));
 
       return { success: true, data, meta: { total, page, limit } };

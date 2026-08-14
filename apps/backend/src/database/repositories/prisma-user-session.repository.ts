@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IUserSessionRepository } from '../../common/repositories/tenant.repository.interface';
-import { UserSessionDto, UserActivityDto } from '@nos/shared-types';
-import { UserSession, Prisma } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { IUserSessionRepository } from "../../common/repositories/tenant.repository.interface";
+import { UserSessionDto, UserActivityDto } from "@nos/shared-types";
+import { UserSession, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaUserSessionRepository implements IUserSessionRepository {
@@ -16,7 +16,7 @@ export class PrismaUserSessionRepository implements IUserSessionRepository {
       tokenHash: s.tokenHash,
       ipAddress: s.ipAddress,
       browser: s.browser,
-      os: s.os || 'Unknown',
+      os: s.os || "Unknown",
       isActive: s.isActive,
       isRevoked: s.isRevoked,
       lastUsedAt: s.lastUsedAt.toISOString(),
@@ -53,16 +53,23 @@ export class PrismaUserSessionRepository implements IUserSessionRepository {
     return this.mapSession(s);
   }
 
-  async listActiveSessions(organizationId: string, userId?: string): Promise<UserSessionDto[]> {
-    const where: Prisma.UserSessionWhereInput = { organizationId, isActive: true, isRevoked: false };
+  async listActiveSessions(
+    organizationId: string,
+    userId?: string,
+  ): Promise<UserSessionDto[]> {
+    const where: Prisma.UserSessionWhereInput = {
+      organizationId,
+      isActive: true,
+      isRevoked: false,
+    };
     if (userId) {
       where.userId = userId;
     }
     const list = await this.prisma.userSession.findMany({
       where,
-      orderBy: { lastUsedAt: 'desc' },
+      orderBy: { lastUsedAt: "desc" },
     });
-    return list.map(s => this.mapSession(s));
+    return list.map((s) => this.mapSession(s));
   }
 
   async revokeSession(id: string, organizationId: string): Promise<void> {
@@ -72,7 +79,10 @@ export class PrismaUserSessionRepository implements IUserSessionRepository {
     });
   }
 
-  async revokeAllUserSessions(userId: string, organizationId?: string): Promise<void> {
+  async revokeAllUserSessions(
+    userId: string,
+    organizationId?: string,
+  ): Promise<void> {
     const where: Prisma.UserSessionWhereInput = { userId };
     if (organizationId) where.organizationId = organizationId;
     await this.prisma.userSession.updateMany({
@@ -81,7 +91,9 @@ export class PrismaUserSessionRepository implements IUserSessionRepository {
     });
   }
 
-  async recordActivity(data: Omit<UserActivityDto, 'id' | 'timestamp'>): Promise<void> {
+  async recordActivity(
+    data: Omit<UserActivityDto, "id" | "timestamp">,
+  ): Promise<void> {
     await this.prisma.userActivity.create({
       data: {
         userId: data.userId,
@@ -95,15 +107,19 @@ export class PrismaUserSessionRepository implements IUserSessionRepository {
     });
   }
 
-  async listUserActivities(organizationId: string, userId?: string, limit = 50): Promise<UserActivityDto[]> {
+  async listUserActivities(
+    organizationId: string,
+    userId?: string,
+    limit = 50,
+  ): Promise<UserActivityDto[]> {
     const where: Prisma.UserActivityWhereInput = { organizationId };
     if (userId) where.userId = userId;
     const list = await this.prisma.userActivity.findMany({
       where,
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: limit,
     });
-    return list.map(a => ({
+    return list.map((a) => ({
       id: a.id,
       userId: a.userId,
       organizationId: a.organizationId,

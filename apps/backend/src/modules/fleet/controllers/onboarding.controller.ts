@@ -1,9 +1,21 @@
-import { Controller, Post, Body, Inject, BadRequestException } from '@nestjs/common';
-import { RegistrationKeyService } from '../services/registration-key.service';
-import { IOrganizationRepositoryToken, IOrganizationRepository } from '../../../common/repositories/tenant.repository.interface';
-import { PrismaService } from '../../../database/prisma.service';
-import { IPasswordHasher, IPasswordHasherToken } from '../../../common/services/password-hasher.interface';
-import * as crypto from 'crypto';
+import {
+  Controller,
+  Post,
+  Body,
+  Inject,
+  BadRequestException,
+} from "@nestjs/common";
+import { RegistrationKeyService } from "../services/registration-key.service";
+import {
+  IOrganizationRepositoryToken,
+  IOrganizationRepository,
+} from "../../../common/repositories/tenant.repository.interface";
+import { PrismaService } from "../../../database/prisma.service";
+import {
+  IPasswordHasher,
+  IPasswordHasherToken,
+} from "../../../common/services/password-hasher.interface";
+import * as crypto from "crypto";
 // Assuming we might have a TenantService or similar to handle Org creation,
 // but for now we'll inject PrismaService to handle the transaction if needed,
 // or use the repositories.
@@ -15,11 +27,11 @@ export interface OnboardingWizardDto {
   ownerFirstName: string;
   ownerLastName: string;
   // password handling usually separate or included here
-  passwordHash?: string; 
+  passwordHash?: string;
   timezone?: string;
 }
 
-@Controller('fleet/onboarding')
+@Controller("fleet/onboarding")
 export class OnboardingController {
   constructor(
     private readonly registrationKeyService: RegistrationKeyService,
@@ -30,34 +42,39 @@ export class OnboardingController {
     private readonly prisma: PrismaService, // Direct access for transactional creation
   ) {}
 
-  @Post('wizard')
+  @Post("wizard")
   async completeOnboarding(@Body() dto: OnboardingWizardDto) {
     // 1. Create Organization & Owner User (Transactional)
     // To respect clean architecture as much as possible, this would ideally be in a domain service.
     // However, to keep it functional for Phase 8:
-    
+
     // Check if slug exists
-    const existingOrg = await this.prisma.organization.findUnique({ where: { slug: dto.slug } });
+    const existingOrg = await this.prisma.organization.findUnique({
+      where: { slug: dto.slug },
+    });
     if (existingOrg) {
-      throw new BadRequestException('Organization slug already exists');
+      throw new BadRequestException("Organization slug already exists");
     }
-    
+
     // Check if user exists
-    let user = await this.prisma.user.findUnique({ where: { email: dto.ownerEmail } });
+    let user = await this.prisma.user.findUnique({
+      where: { email: dto.ownerEmail },
+    });
 
     const transactionResult = await this.prisma.$transaction(async (tx) => {
       if (!user) {
         const generatedPassword = crypto.randomUUID();
-        const hash = dto.passwordHash || (await this.hasher.hash(generatedPassword));
+        const hash =
+          dto.passwordHash || (await this.hasher.hash(generatedPassword));
         user = await tx.user.create({
           data: {
             email: dto.ownerEmail,
             firstName: dto.ownerFirstName,
             lastName: dto.ownerLastName,
             passwordHash: hash,
-            role: 'OWNER',
+            role: "OWNER",
             isEmailVerified: true,
-          }
+          },
         });
       }
 
@@ -65,19 +82,19 @@ export class OnboardingController {
         data: {
           name: dto.companyName,
           slug: dto.slug,
-          timezone: dto.timezone || 'UTC',
+          timezone: dto.timezone || "UTC",
           companyName: dto.companyName,
           brandingEnabled: false,
           members: {
             create: {
               userId: user.id,
-              role: 'OWNER',
-            }
+              role: "OWNER",
+            },
           },
           quota: {
-            create: {}
-          }
-        }
+            create: {},
+          },
+        },
       });
 
       return { org, user };
@@ -86,7 +103,7 @@ export class OnboardingController {
     // 2. Generate Registration Key
     const keyResult = await this.registrationKeyService.generateKey({
       organizationId: transactionResult.org.id,
-      displayName: 'Default Deployment Key',
+      displayName: "Default Deployment Key",
       createdBy: transactionResult.user.id,
       maxUses: 0, // unlimited
     });
@@ -98,7 +115,7 @@ export class OnboardingController {
         user: transactionResult.user,
         registrationKey: keyResult,
       },
-      message: 'Onboarding complete. Please save the Registration Key safely.',
+      message: "Onboarding complete. Please save the Registration Key safely.",
     };
   }
 }

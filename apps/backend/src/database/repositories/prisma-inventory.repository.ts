@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
 import {
   IInventoryRepository,
   InventoryAuditAction,
-} from '../../common/repositories/inventory.repository.interface';
+} from "../../common/repositories/inventory.repository.interface";
 import {
   SubmitInventoryPayload,
   DeviceInventoryDto,
@@ -13,7 +13,7 @@ import {
   SecurityInventoryResponse,
   InventoryHealthResponse,
   InventoryAuditLogDto,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 import {
   DeviceInventory,
   MemoryModule,
@@ -25,7 +25,7 @@ import {
   StartupApplication,
   SecurityInventory,
   DeviceCapabilities,
-} from '@prisma/client';
+} from "@prisma/client";
 
 type CompleteInventory = DeviceInventory & {
   memoryModules?: MemoryModule[];
@@ -45,7 +45,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToDto(raw: CompleteInventory | null | undefined): DeviceInventoryDto {
+  private mapToDto(
+    raw: CompleteInventory | null | undefined,
+  ): DeviceInventoryDto {
     if (!raw) return null as unknown as DeviceInventoryDto;
     return {
       id: raw.id,
@@ -171,24 +173,43 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     deviceId: string,
     payload: SubmitInventoryPayload,
     assetFingerprint: string,
-  ): Promise<{ inventory: DeviceInventoryDto; previousInventory: DeviceInventoryDto | null }> {
+  ): Promise<{
+    inventory: DeviceInventoryDto;
+    previousInventory: DeviceInventoryDto | null;
+  }> {
     const existing = await this.findCompleteInventory(deviceId);
 
     const version = existing ? existing.inventoryVersion + 1 : 1;
-    const schemaVersion = payload.schemaVersion || '1.0.0';
+    const schemaVersion = payload.schemaVersion || "1.0.0";
 
     const updatedRaw = await this.prisma.$transaction(async (tx) => {
       if (existing) {
         await Promise.all([
-          tx.memoryModule.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.diskDrive.deleteMany({ where: { deviceInventoryId: existing.id } }),
+          tx.memoryModule.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
+          tx.diskDrive.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
           tx.gpu.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.networkAdapter.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.installedSoftware.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.windowsService.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.startupApplication.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.securityInventory.deleteMany({ where: { deviceInventoryId: existing.id } }),
-          tx.deviceCapabilities.deleteMany({ where: { deviceInventoryId: existing.id } }),
+          tx.networkAdapter.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
+          tx.installedSoftware.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
+          tx.windowsService.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
+          tx.startupApplication.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
+          tx.securityInventory.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
+          tx.deviceCapabilities.deleteMany({
+            where: { deviceInventoryId: existing.id },
+          }),
         ]);
       }
 
@@ -208,8 +229,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
           physicalCores: payload.physicalCores,
           logicalCores: payload.logicalCores,
           hostname: payload.hostname,
-          domain: payload.domain || 'WORKGROUP',
-          workgroup: payload.workgroup || 'WORKGROUP',
+          domain: payload.domain || "WORKGROUP",
+          workgroup: payload.workgroup || "WORKGROUP",
           osEdition: payload.osEdition,
           osBuild: payload.osBuild,
           architecture: payload.architecture,
@@ -231,8 +252,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
           physicalCores: payload.physicalCores,
           logicalCores: payload.logicalCores,
           hostname: payload.hostname,
-          domain: payload.domain || 'WORKGROUP',
-          workgroup: payload.workgroup || 'WORKGROUP',
+          domain: payload.domain || "WORKGROUP",
+          workgroup: payload.workgroup || "WORKGROUP",
           osEdition: payload.osEdition,
           osBuild: payload.osBuild,
           architecture: payload.architecture,
@@ -369,7 +390,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
             supportsWSL: payload.capabilities.supportsWSL,
             supportsWiFi: payload.capabilities.supportsWiFi,
             supportsEthernet: payload.capabilities.supportsEthernet,
-            virtualMachineDetection: payload.capabilities.virtualMachineDetection,
+            virtualMachineDetection:
+              payload.capabilities.virtualMachineDetection,
             vmVendor: payload.capabilities.vmVendor,
           },
         });
@@ -397,7 +419,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
-  async findCompleteInventory(deviceId: string): Promise<DeviceInventoryDto | null> {
+  async findCompleteInventory(
+    deviceId: string,
+  ): Promise<DeviceInventoryDto | null> {
     const raw = await this.prisma.deviceInventory.findUnique({
       where: { deviceId },
       include: {
@@ -417,7 +441,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     return this.mapToDto(raw);
   }
 
-  async findHardwareInventory(deviceId: string): Promise<HardwareInventoryResponse | null> {
+  async findHardwareInventory(
+    deviceId: string,
+  ): Promise<HardwareInventoryResponse | null> {
     const raw = await this.prisma.deviceInventory.findUnique({
       where: { deviceId },
       select: {
@@ -500,8 +526,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       ? {
           deviceInventoryId: inv.id,
           OR: [
-            { name: { contains: search, mode: 'insensitive' as const } },
-            { publisher: { contains: search, mode: 'insensitive' as const } },
+            { name: { contains: search, mode: "insensitive" as const } },
+            { publisher: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : { deviceInventoryId: inv.id };
@@ -510,8 +536,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       ? {
           deviceInventoryId: inv.id,
           OR: [
-            { serviceName: { contains: search, mode: 'insensitive' as const } },
-            { displayName: { contains: search, mode: 'insensitive' as const } },
+            { serviceName: { contains: search, mode: "insensitive" as const } },
+            { displayName: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : { deviceInventoryId: inv.id };
@@ -519,7 +545,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     const startupWhere = search
       ? {
           deviceInventoryId: inv.id,
-          name: { contains: search, mode: 'insensitive' as const },
+          name: { contains: search, mode: "insensitive" as const },
         }
       : { deviceInventoryId: inv.id };
 
@@ -535,21 +561,21 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         where: softwareWhere,
         skip,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       }),
       this.prisma.installedSoftware.count({ where: softwareWhere }),
       this.prisma.windowsService.findMany({
         where: servicesWhere,
         skip,
         take: limit,
-        orderBy: { displayName: 'asc' },
+        orderBy: { displayName: "asc" },
       }),
       this.prisma.windowsService.count({ where: servicesWhere }),
       this.prisma.startupApplication.findMany({
         where: startupWhere,
         skip,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       }),
       this.prisma.startupApplication.count({ where: startupWhere }),
     ]);
@@ -585,7 +611,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
-  async findNetworkInventory(deviceId: string): Promise<NetworkInventoryResponse | null> {
+  async findNetworkInventory(
+    deviceId: string,
+  ): Promise<NetworkInventoryResponse | null> {
     const inv = await this.prisma.deviceInventory.findUnique({
       where: { deviceId },
       select: { deviceId: true, networkAdapters: true },
@@ -612,7 +640,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
-  async findSecurityInventory(deviceId: string): Promise<SecurityInventoryResponse | null> {
+  async findSecurityInventory(
+    deviceId: string,
+  ): Promise<SecurityInventoryResponse | null> {
     const inv = await this.prisma.deviceInventory.findUnique({
       where: { deviceId },
       select: { deviceId: true, security: true, capabilities: true },
@@ -651,7 +681,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
-  async getInventoryHealth(deviceId?: string): Promise<InventoryHealthResponse> {
+  async getInventoryHealth(
+    deviceId?: string,
+  ): Promise<InventoryHealthResponse> {
     if (deviceId) {
       const inv = await this.prisma.deviceInventory.findUnique({
         where: { deviceId },
@@ -661,48 +693,52 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         return {
           deviceId,
           inventoryVersion: 0,
-          inventorySchemaVersion: '1.0.0',
-          agentVersion: 'Unknown',
+          inventorySchemaVersion: "1.0.0",
+          agentVersion: "Unknown",
           lastScan: new Date(0).toISOString(),
           inventoryAgeSeconds: -1,
-          status: 'NOT_INITIALIZED',
+          status: "NOT_INITIALIZED",
         };
       }
-      const ageSeconds = Math.round((Date.now() - inv.lastScanAt.getTime()) / 1000);
+      const ageSeconds = Math.round(
+        (Date.now() - inv.lastScanAt.getTime()) / 1000,
+      );
       return {
         deviceId,
         inventoryVersion: inv.inventoryVersion,
         inventorySchemaVersion: inv.schemaVersion,
-        agentVersion: inv.device?.agentVersion || '2.0.0-phase3',
+        agentVersion: inv.device?.agentVersion || "2.0.0-phase3",
         lastScan: inv.lastScanAt.toISOString(),
         inventoryAgeSeconds: ageSeconds,
-        status: ageSeconds > 86400 * 2 ? 'STALE' : 'HEALTHY',
+        status: ageSeconds > 86400 * 2 ? "STALE" : "HEALTHY",
       };
     }
 
     // Global health diagnostics across all monitored nodes
     const latestInv = await this.prisma.deviceInventory.findFirst({
-      orderBy: { lastScanAt: 'desc' },
+      orderBy: { lastScanAt: "desc" },
       include: { device: { select: { agentVersion: true } } },
     });
     if (!latestInv) {
       return {
         inventoryVersion: 0,
-        inventorySchemaVersion: '1.0.0',
-        agentVersion: 'None',
+        inventorySchemaVersion: "1.0.0",
+        agentVersion: "None",
         lastScan: new Date(0).toISOString(),
         inventoryAgeSeconds: -1,
-        status: 'NOT_INITIALIZED',
+        status: "NOT_INITIALIZED",
       };
     }
-    const ageSeconds = Math.round((Date.now() - latestInv.lastScanAt.getTime()) / 1000);
+    const ageSeconds = Math.round(
+      (Date.now() - latestInv.lastScanAt.getTime()) / 1000,
+    );
     return {
       inventoryVersion: latestInv.inventoryVersion,
       inventorySchemaVersion: latestInv.schemaVersion,
-      agentVersion: latestInv.device?.agentVersion || '2.0.0-phase3',
+      agentVersion: latestInv.device?.agentVersion || "2.0.0-phase3",
       lastScan: latestInv.lastScanAt.toISOString(),
       inventoryAgeSeconds: ageSeconds,
-      status: ageSeconds > 86400 * 2 ? 'STALE' : 'HEALTHY',
+      status: ageSeconds > 86400 * 2 ? "STALE" : "HEALTHY",
     };
   }
 
@@ -720,16 +756,19 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     });
   }
 
-  async getRecentAuditLogs(deviceId: string, limit = 15): Promise<InventoryAuditLogDto[]> {
+  async getRecentAuditLogs(
+    deviceId: string,
+    limit = 15,
+  ): Promise<InventoryAuditLogDto[]> {
     const logs = await this.prisma.inventoryAuditLog.findMany({
       where: { deviceId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: limit,
     });
     return logs.map((l) => ({
       id: l.id,
       deviceId: l.deviceId,
-      action: l.action as unknown as InventoryAuditLogDto['action'],
+      action: l.action as unknown as InventoryAuditLogDto["action"],
       changeDetails: l.changeDetails,
       timestamp: l.timestamp.toISOString(),
     }));
@@ -740,12 +779,12 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       where: {
         device: { organizationId },
         OR: [
-          { manufacturer: { contains: query, mode: 'insensitive' } },
-          { model: { contains: query, mode: 'insensitive' } },
-          { serialNumber: { contains: query, mode: 'insensitive' } }
-        ]
+          { manufacturer: { contains: query, mode: "insensitive" } },
+          { model: { contains: query, mode: "insensitive" } },
+          { serialNumber: { contains: query, mode: "insensitive" } },
+        ],
       },
-      take: 20
+      take: 20,
     });
   }
 }

@@ -1,6 +1,6 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { IAlertRuleRepository } from '../../../common/repositories/alert-rule.repository.interface';
-import { AlertRule } from '@prisma/client';
+import { Injectable, Inject, Logger } from "@nestjs/common";
+import { IAlertRuleRepository } from "../../../common/repositories/alert-rule.repository.interface";
+import { AlertRule } from "@prisma/client";
 import {
   RuleComplexityScore,
   RuleComplexityBreakdownDto,
@@ -10,7 +10,7 @@ import {
   RuleRecommendationDto,
   RuleRecommendationType,
   AlertRulePriority,
-} from '@nos/shared-types';
+} from "@nos/shared-types";
 
 /**
  * RuleMetricsService
@@ -32,7 +32,8 @@ export class RuleMetricsService {
   private readonly execTimeSamples = new Map<string, number[]>();
 
   constructor(
-    @Inject(IAlertRuleRepository) private readonly ruleRepo: IAlertRuleRepository,
+    @Inject(IAlertRuleRepository)
+    private readonly ruleRepo: IAlertRuleRepository,
   ) {}
 
   /**
@@ -48,7 +49,9 @@ export class RuleMetricsService {
 
   // ─── SPL Feature 24: Performance Metrics ────────────────
 
-  async getPerformanceMetrics(ruleId: string): Promise<RulePerformanceMetricsDto> {
+  async getPerformanceMetrics(
+    ruleId: string,
+  ): Promise<RulePerformanceMetricsDto> {
     const rule = await this.ruleRepo.findById(ruleId);
     if (!rule) throw new Error(`Rule ${ruleId} not found`);
 
@@ -60,11 +63,14 @@ export class RuleMetricsService {
 
     const samples = this.execTimeSamples.get(ruleId) || [];
     const sorted = [...samples].sort((a, b) => a - b);
-    const p95 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.95)] : 0;
-    const p99 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.99)] : 0;
+    const p95 =
+      sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.95)] : 0;
+    const p99 =
+      sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.99)] : 0;
 
     const triggerRate = evalCount > 0 ? (triggerCount / evalCount) * 100 : 0;
-    const suppressionRate = triggerCount > 0 ? (suppressionCount / triggerCount) * 100 : 0;
+    const suppressionRate =
+      triggerCount > 0 ? (suppressionCount / triggerCount) * 100 : 0;
 
     // Approximate memory: rule object size × evaluation overhead
     const memoryUsageBytes = JSON.stringify(rule).length * 2 + evalCount * 8;
@@ -96,12 +102,20 @@ export class RuleMetricsService {
     let score = 0;
 
     // Condition complexity based on metric type
-    const complexMetrics = ['security.defender', 'security.firewall', 'inventory.version'];
+    const complexMetrics = [
+      "security.defender",
+      "security.firewall",
+      "inventory.version",
+    ];
     const conditionComplexity = complexMetrics.includes(rule.metric) ? 25 : 10;
     score += conditionComplexity;
 
     // Operator weight
-    const operatorWeight = ['CONTAINS', 'NOT_CONTAINS', 'MUTATED'].includes(rule.operator) ? 20 : 5;
+    const operatorWeight = ["CONTAINS", "NOT_CONTAINS", "MUTATED"].includes(
+      rule.operator,
+    )
+      ? 20
+      : 5;
     score += operatorWeight;
 
     // Dependencies
@@ -111,7 +125,7 @@ export class RuleMetricsService {
     score += dependencyDepth * 10;
 
     // Correlation (parent/child linkage capable)
-    const hasCorrelation = rule.metric === 'heartbeat';
+    const hasCorrelation = rule.metric === "heartbeat";
     if (hasCorrelation) score += 15;
 
     // Cooldown/Duration
@@ -121,9 +135,14 @@ export class RuleMetricsService {
     if (hasDuration) score += 10;
 
     // Schedule mode complexity
-    const scheduleModeComplexity = rule.scheduleMode === 'CRON' ? 20
-      : rule.scheduleMode === 'BUSINESS_HOURS' || rule.scheduleMode === 'NIGHT' || rule.scheduleMode === 'WEEKEND' ? 10
-      : 0;
+    const scheduleModeComplexity =
+      rule.scheduleMode === "CRON"
+        ? 20
+        : rule.scheduleMode === "BUSINESS_HOURS" ||
+            rule.scheduleMode === "NIGHT" ||
+            rule.scheduleMode === "WEEKEND"
+          ? 10
+          : 0;
     score += scheduleModeComplexity;
 
     let complexityScore: RuleComplexityScore;
@@ -161,29 +180,56 @@ export class RuleMetricsService {
 
     // Each factor scores 0–20 (total max 100)
     // High dedup ratio = noisy
-    const deduplicationFactor = Math.min(20, Math.round((deduplicationCount / Math.max(triggerCount, 1)) * 20));
+    const deduplicationFactor = Math.min(
+      20,
+      Math.round((deduplicationCount / Math.max(triggerCount, 1)) * 20),
+    );
     // High suppression ratio = high maintenance burden
-    const suppressionFactor = Math.min(20, Math.round((suppressionCount / Math.max(evalCount, 1)) * 20));
+    const suppressionFactor = Math.min(
+      20,
+      Math.round((suppressionCount / Math.max(evalCount, 1)) * 20),
+    );
     // Short cooldown = noisy (invert: shorter = noisier)
-    const cooldownFactor = Math.min(20, Math.max(0, 20 - Math.round(((rule.cooldownSeconds || 300) / 3600) * 20)));
+    const cooldownFactor = Math.min(
+      20,
+      Math.max(0, 20 - Math.round(((rule.cooldownSeconds || 300) / 3600) * 20)),
+    );
     // Low correlation = isolated noise
-    const correlationFactor = triggerCount > 0 && escalationCount / triggerCount > 0.1 ? 10 : 5;
+    const correlationFactor =
+      triggerCount > 0 && escalationCount / triggerCount > 0.1 ? 10 : 5;
     // False positives — approximated from high trigger/low escalation ratio
-    const falsePositiveFactor = triggerCount > 10 && escalationCount === 0 ? 15 : 0;
+    const falsePositiveFactor =
+      triggerCount > 10 && escalationCount === 0 ? 15 : 0;
     // Maintenance windows suppressed many alerts
     const maintenanceFactor = suppressionCount > triggerCount ? 10 : 0;
 
-    const noiseScore = Math.min(100, deduplicationFactor + suppressionFactor + cooldownFactor + correlationFactor + falsePositiveFactor + maintenanceFactor);
+    const noiseScore = Math.min(
+      100,
+      deduplicationFactor +
+        suppressionFactor +
+        cooldownFactor +
+        correlationFactor +
+        falsePositiveFactor +
+        maintenanceFactor,
+    );
 
-    const rating = noiseScore <= 25 ? 'LOW'
-      : noiseScore <= 50 ? 'MEDIUM'
-      : noiseScore <= 75 ? 'HIGH'
-      : 'CRITICAL';
+    const rating =
+      noiseScore <= 25
+        ? "LOW"
+        : noiseScore <= 50
+          ? "MEDIUM"
+          : noiseScore <= 75
+            ? "HIGH"
+            : "CRITICAL";
 
-    const recommendation = rating === 'CRITICAL' ? 'Rule is extremely noisy. Consider increasing threshold, cooldown, or enabling maintenance windows.'
-      : rating === 'HIGH' ? 'Rule generates significant noise. Review threshold and cooldown settings.'
-      : rating === 'MEDIUM' ? 'Rule has moderate noise. Monitor for false positives.'
-      : 'Rule noise is within acceptable range.';
+    const recommendation =
+      rating === "CRITICAL"
+        ? "Rule is extremely noisy. Consider increasing threshold, cooldown, or enabling maintenance windows."
+        : rating === "HIGH"
+          ? "Rule generates significant noise. Review threshold and cooldown settings."
+          : rating === "MEDIUM"
+            ? "Rule has moderate noise. Monitor for false positives."
+            : "Rule noise is within acceptable range.";
 
     return {
       ruleId: rule.id,
@@ -215,15 +261,24 @@ export class RuleMetricsService {
     const escalationCount = Number(rule.escalationCount);
 
     const createdAt = rule.createdAt;
-    const ageInDays = Math.max(1, (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-    const dailyTriggerAverage = Math.round((triggerCount / ageInDays) * 100) / 100;
-    const weeklyTriggerAverage = Math.round(dailyTriggerAverage * 7 * 100) / 100;
+    const ageInDays = Math.max(
+      1,
+      (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const dailyTriggerAverage =
+      Math.round((triggerCount / ageInDays) * 100) / 100;
+    const weeklyTriggerAverage =
+      Math.round(dailyTriggerAverage * 7 * 100) / 100;
 
     // Trend: compare recent week vs last week (use evaluation count as proxy)
-    const triggerTrend: 'INCREASING' | 'STABLE' | 'DECREASING' = triggerCount === 0 ? 'STABLE'
-      : dailyTriggerAverage > 10 ? 'INCREASING'
-      : dailyTriggerAverage > 2 ? 'STABLE'
-      : 'DECREASING';
+    const triggerTrend: "INCREASING" | "STABLE" | "DECREASING" =
+      triggerCount === 0
+        ? "STABLE"
+        : dailyTriggerAverage > 10
+          ? "INCREASING"
+          : dailyTriggerAverage > 2
+            ? "STABLE"
+            : "DECREASING";
 
     return {
       ruleId,
@@ -261,9 +316,9 @@ export class RuleMetricsService {
           ruleId: rule.id,
           ruleName: rule.name,
           message: `Rule "${rule.name}" has been evaluated ${evalCount} times but never triggered. Consider removing or adjusting threshold.`,
-          severity: 'WARNING',
+          severity: "WARNING",
           actionable: true,
-          suggestedAction: 'Lower threshold or disable rule',
+          suggestedAction: "Lower threshold or disable rule",
         });
       }
 
@@ -274,9 +329,9 @@ export class RuleMetricsService {
           ruleId: rule.id,
           ruleName: rule.name,
           message: `Rule "${rule.name}" averages ${avgExecMs.toFixed(1)}ms execution (near timeout). High performance impact.`,
-          severity: 'WARNING',
+          severity: "WARNING",
           actionable: true,
-          suggestedAction: 'Review metric complexity or increase timeoutMs',
+          suggestedAction: "Review metric complexity or increase timeoutMs",
         });
       }
 
@@ -288,9 +343,10 @@ export class RuleMetricsService {
           ruleId: rule.id,
           ruleName: rule.name,
           message: `Rule "${rule.name}" noise score is ${noise.noiseScore}/100. Generating excessive alert volume.`,
-          severity: 'CRITICAL',
+          severity: "CRITICAL",
           actionable: true,
-          suggestedAction: 'Increase cooldown, raise threshold, or add maintenance windows',
+          suggestedAction:
+            "Increase cooldown, raise threshold, or add maintenance windows",
         });
       }
 
@@ -298,15 +354,15 @@ export class RuleMetricsService {
       const dupKey = `${rule.metric}:${rule.operator}:${rule.threshold}:${rule.durationSeconds}:${rule.severity}`;
       if (seen.has(dupKey)) {
         const firstRuleId = seen.get(dupKey)!;
-        const firstRule = rules.find(r => r.id === firstRuleId);
+        const firstRule = rules.find((r) => r.id === firstRuleId);
         recommendations.push({
           type: RuleRecommendationType.REMOVE_DUPLICATE,
           ruleId: rule.id,
           ruleName: rule.name,
           message: `Rule "${rule.name}" is a duplicate of "${firstRule?.name}". Remove one or merge into a single rule.`,
-          severity: 'WARNING',
+          severity: "WARNING",
           actionable: true,
-          suggestedAction: 'Archive or delete the duplicate rule',
+          suggestedAction: "Archive or delete the duplicate rule",
           relatedRuleIds: [firstRuleId],
         });
       } else {
@@ -314,7 +370,12 @@ export class RuleMetricsService {
       }
 
       // Overlapping rules (same metric, consecutive threshold ranges)
-      const sameMetricRules = rules.filter(r => r.id !== rule.id && r.metric === rule.metric && r.operator === rule.operator);
+      const sameMetricRules = rules.filter(
+        (r) =>
+          r.id !== rule.id &&
+          r.metric === rule.metric &&
+          r.operator === rule.operator,
+      );
       for (const other of sameMetricRules) {
         const overlap = Math.abs(rule.threshold - other.threshold) < 5;
         if (overlap) {
@@ -323,9 +384,10 @@ export class RuleMetricsService {
             ruleId: rule.id,
             ruleName: rule.name,
             message: `Rule "${rule.name}" (threshold: ${rule.threshold}) overlaps with "${other.name}" (threshold: ${other.threshold}) on metric ${rule.metric}`,
-            severity: 'INFO',
+            severity: "INFO",
             actionable: true,
-            suggestedAction: 'Merge overlapping rules or adjust thresholds to avoid duplicates',
+            suggestedAction:
+              "Merge overlapping rules or adjust thresholds to avoid duplicates",
             relatedRuleIds: [other.id],
           });
           break; // Avoid duplicate overlap recommendations
@@ -333,7 +395,9 @@ export class RuleMetricsService {
       }
     }
 
-    this.logger.log(`[RuleMetrics] Generated ${recommendations.length} rule recommendations`);
+    this.logger.log(
+      `[RuleMetrics] Generated ${recommendations.length} rule recommendations`,
+    );
     return recommendations;
   }
 }

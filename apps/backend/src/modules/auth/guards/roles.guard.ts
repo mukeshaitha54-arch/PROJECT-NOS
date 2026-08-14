@@ -1,1 +1,1 @@
-export { RolesGuard } from '../../../common/guards/roles.guard';
+export { RolesGuard } from "../../../common/guards/roles.guard";

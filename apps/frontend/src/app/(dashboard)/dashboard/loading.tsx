@@ -1,5 +1,5 @@
-import { DashboardStatsSkeleton } from '@/components/ui/skeleton/DashboardStatsSkeleton';
-import { DeviceTableSkeleton } from '@/components/ui/skeleton/DeviceTableSkeleton';
+import { DashboardStatsSkeleton } from "@/components/ui/skeleton/DashboardStatsSkeleton";
+import { DeviceTableSkeleton } from "@/components/ui/skeleton/DeviceTableSkeleton";
 
 export default function Loading() {
   return (

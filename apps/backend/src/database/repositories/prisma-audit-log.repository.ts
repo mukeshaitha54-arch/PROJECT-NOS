@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IAuditLogRepository } from '../../common/repositories/tenant.repository.interface';
-import { AuditLogDto, AuditSearchRequestDto, AuditSearchResultDto, AuditActionType } from '@nos/shared-types';
-import { AuditLog, Prisma } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { IAuditLogRepository } from "../../common/repositories/tenant.repository.interface";
+import {
+  AuditLogDto,
+  AuditSearchRequestDto,
+  AuditSearchResultDto,
+  AuditActionType,
+} from "@nos/shared-types";
+import { AuditLog, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaAuditLogRepository implements IAuditLogRepository {
@@ -21,12 +26,16 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
       ipAddress: log.ipAddress,
       browser: log.browser,
       correlationId: log.correlationId,
-      details: log.details ? (log.details as Record<string, unknown>) : undefined,
+      details: log.details
+        ? (log.details as Record<string, unknown>)
+        : undefined,
       timestamp: log.timestamp.toISOString(),
     };
   }
 
-  async record(data: Omit<AuditLogDto, 'id' | 'timestamp'>): Promise<AuditLogDto> {
+  async record(
+    data: Omit<AuditLogDto, "id" | "timestamp">,
+  ): Promise<AuditLogDto> {
     const created = await this.prisma.auditLog.create({
       data: {
         organizationId: data.organizationId,
@@ -39,7 +48,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         ipAddress: data.ipAddress,
         browser: data.browser,
         correlationId: data.correlationId,
-        details: data.details ? (data.details as unknown as Prisma.InputJsonValue) : null,
+        details: data.details
+          ? (data.details as unknown as Prisma.InputJsonValue)
+          : null,
       },
     });
     return this.mapLog(created);
@@ -70,10 +81,10 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
     }
     if (request.search) {
       where.OR = [
-        { action: { contains: request.search, mode: 'insensitive' } },
-        { userEmail: { contains: request.search, mode: 'insensitive' } },
-        { reason: { contains: request.search, mode: 'insensitive' } },
-        { correlationId: { contains: request.search, mode: 'insensitive' } },
+        { action: { contains: request.search, mode: "insensitive" } },
+        { userEmail: { contains: request.search, mode: "insensitive" } },
+        { reason: { contains: request.search, mode: "insensitive" } },
+        { correlationId: { contains: request.search, mode: "insensitive" } },
       ];
     }
 
@@ -83,14 +94,14 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         where,
         skip,
         take: limit,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
       }),
     ]);
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
     return {
-      items: rows.map(r => this.mapLog(r)),
+      items: rows.map((r) => this.mapLog(r)),
       total,
       page,
       totalPages,

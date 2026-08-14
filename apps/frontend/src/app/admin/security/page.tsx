@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState } from "react";
+import Link from "next/link";
 import {
-  Lock, ArrowLeft, Shield, CheckCircle, AlertTriangle, Key, Clock
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { toast } from '@/components/ui/toast';
+  Lock,
+  ArrowLeft,
+  Shield,
+  CheckCircle,
+  AlertTriangle,
+  Key,
+  Clock,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/toast";
 
 export default function SecurityPoliciesPage() {
   const [jwtTtl, setJwtTtl] = useState<number>(15);
@@ -15,7 +21,10 @@ export default function SecurityPoliciesPage() {
   const [mfaEnforced, setMfaEnforced] = useState<boolean>(true);
 
   const saveSettings = () => {
-    toast.success('Security Policy Updated', 'Global security rate limits and JWT parameters persisted.');
+    toast.success(
+      "Security Policy Updated",
+      "Global security rate limits and JWT parameters persisted.",
+    );
   };
 
   return (
@@ -35,7 +44,10 @@ export default function SecurityPoliciesPage() {
                 <Lock className="w-5 h-5 text-amber-400" />
                 Security Policies & Hardening
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">Configure authentication TTLs, multi-tier rate limiting parameters, and secret guards.</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Configure authentication TTLs, multi-tier rate limiting
+                parameters, and secret guards.
+              </p>
             </div>
           </div>
 
@@ -52,11 +64,15 @@ export default function SecurityPoliciesPage() {
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
             <div className="flex items-center gap-2">
               <Key className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-bold text-white">JWT Access & Refresh Token Hardening</h3>
+              <h3 className="text-sm font-bold text-white">
+                JWT Access & Refresh Token Hardening
+              </h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Access Token Expiry (Minutes)</label>
+                <label className="block text-slate-400 mb-1">
+                  Access Token Expiry (Minutes)
+                </label>
                 <input
                   type="number"
                   value={jwtTtl}
@@ -65,7 +81,9 @@ export default function SecurityPoliciesPage() {
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Refresh Token Family Rotation</label>
+                <label className="block text-slate-400 mb-1">
+                  Refresh Token Family Rotation
+                </label>
                 <input
                   type="text"
                   disabled
@@ -80,11 +98,15 @@ export default function SecurityPoliciesPage() {
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold text-white">Multi-Tier Rate Limiting Policy</h3>
+              <h3 className="text-sm font-bold text-white">
+                Multi-Tier Rate Limiting Policy
+              </h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Auth / Login Limit (Req / 60s per IP)</label>
+                <label className="block text-slate-400 mb-1">
+                  Auth / Login Limit (Req / 60s per IP)
+                </label>
                 <input
                   type="number"
                   value={authLimit}
@@ -93,7 +115,9 @@ export default function SecurityPoliciesPage() {
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Telemetry Ingestion Tier (Req / 60s per device)</label>
+                <label className="block text-slate-400 mb-1">
+                  Telemetry Ingestion Tier (Req / 60s per device)
+                </label>
                 <input
                   type="number"
                   value={telemetryLimit}

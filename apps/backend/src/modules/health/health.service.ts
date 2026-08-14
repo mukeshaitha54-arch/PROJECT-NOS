@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/database/prisma.service';
-import { ApiResponse, SystemStatus } from '@nos/shared-types';
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaService } from "@/database/prisma.service";
+import { ApiResponse, SystemStatus } from "@nos/shared-types";
 
 @Injectable()
 export class HealthService {
@@ -10,21 +10,23 @@ export class HealthService {
 
   async getSystemStatus(requestId?: string): Promise<ApiResponse> {
     let dbStatus = SystemStatus.HEALTHY;
-    let dbMessage = 'PostgreSQL database operational';
+    let dbMessage = "PostgreSQL database operational";
 
     try {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch (e) {
-      this.logger.warn('Health diagnostics check: Database connection unresponsive.');
+      this.logger.warn(
+        "Health diagnostics check: Database connection unresponsive.",
+      );
       dbStatus = SystemStatus.DEGRADED;
-      dbMessage = 'Database connectivity degraded or unreachable';
+      dbMessage = "Database connectivity degraded or unreachable";
     }
 
     return {
       success: true,
       data: {
         status: dbStatus,
-        service: 'nos-backend-fastify',
+        service: "nos-backend-fastify",
         uptime: process.uptime(),
         database: {
           status: dbStatus,

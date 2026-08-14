@@ -1,8 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
-import * as crypto from 'crypto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from "@nestjs/common";
+import { PrismaService } from "../../../database/prisma.service";
+import * as crypto from "crypto";
 
-import { IMailService, IMailServiceToken } from '../../../common/services/mail-service.interface';
+import {
+  IMailService,
+  IMailServiceToken,
+} from "../../../common/services/mail-service.interface";
 
 export interface CreateInvitationDto {
   organizationId: string;
@@ -17,18 +25,20 @@ export interface CreateInvitationDto {
 export class OrganizationInvitationService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(IMailServiceToken) private readonly mailService: IMailService
+    @Inject(IMailServiceToken) private readonly mailService: IMailService,
   ) {}
 
   async inviteMember(dto: CreateInvitationDto) {
-    const org = await this.prisma.organization.findUnique({ where: { id: dto.organizationId } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: dto.organizationId },
+    });
     if (!org) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // Generate unique secure token
-    const token = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
@@ -37,11 +47,11 @@ export class OrganizationInvitationService {
       data: {
         organizationId: dto.organizationId,
         email: dto.email,
-        role: dto.role || 'OPERATOR',
+        role: dto.role || "OPERATOR",
         teamIds: dto.teamIds || [],
         departmentIds: dto.departmentIds || [],
         invitedByUserId: dto.invitedByUserId,
-        status: 'PENDING',
+        status: "PENDING",
         tokenHash,
         expiresAt,
       },
@@ -57,25 +67,27 @@ export class OrganizationInvitationService {
   }
 
   async acceptInvitation(token: string, userId: string) {
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const invitation = await this.prisma.organizationInvitation.findUnique({
       where: { tokenHash },
     });
 
     if (!invitation) {
-      throw new BadRequestException('Invalid or expired invitation token');
+      throw new BadRequestException("Invalid or expired invitation token");
     }
 
-    if (invitation.status !== 'PENDING') {
-      throw new BadRequestException(`Invitation is already ${invitation.status.toLowerCase()}`);
+    if (invitation.status !== "PENDING") {
+      throw new BadRequestException(
+        `Invitation is already ${invitation.status.toLowerCase()}`,
+      );
     }
 
     if (new Date() > invitation.expiresAt) {
       await this.prisma.organizationInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'EXPIRED' },
+        data: { status: "EXPIRED" },
       });
-      throw new BadRequestException('Invitation has expired');
+      throw new BadRequestException("Invitation has expired");
     }
 
     // Check if user is already a member
@@ -89,7 +101,9 @@ export class OrganizationInvitationService {
     });
 
     if (existingMember) {
-      throw new BadRequestException('User is already a member of this organization');
+      throw new BadRequestException(
+        "User is already a member of this organization",
+      );
     }
 
     // Add user as member and update invitation
@@ -107,7 +121,7 @@ export class OrganizationInvitationService {
       await tx.organizationInvitation.update({
         where: { id: invitation.id },
         data: {
-          status: 'ACCEPTED',
+          status: "ACCEPTED",
           acceptedAt: new Date(),
         },
       });

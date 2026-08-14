@@ -1,5 +1,10 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
 
 @Injectable()
 export class PrismaService
@@ -11,21 +16,27 @@ export class PrismaService
   constructor() {
     super({
       datasources: { db: { url: process.env.DATABASE_URL } },
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
+      log:
+        process.env.NODE_ENV === "development" ? ["query", "error"] : ["error"],
     });
   }
 
   async onModuleInit() {
     try {
       await this.$connect();
-      this.logger.log('📦 Connected to PostgreSQL database via Prisma Client successfully.');
+      this.logger.log(
+        "📦 Connected to PostgreSQL database via Prisma Client successfully.",
+      );
     } catch (error) {
-      this.logger.error('❌ Failed to establish PostgreSQL connection via Prisma:', error);
+      this.logger.error(
+        "❌ Failed to establish PostgreSQL connection via Prisma:",
+        error,
+      );
     }
   }
 
   async onModuleDestroy() {
     await this.$disconnect();
-    this.logger.log('🛑 Disconnected Prisma PostgreSQL client.');
+    this.logger.log("🛑 Disconnected Prisma PostgreSQL client.");
   }
 }

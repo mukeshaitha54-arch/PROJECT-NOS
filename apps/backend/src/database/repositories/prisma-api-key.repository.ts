@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { IApiKeyRepository } from '../../common/repositories/tenant.repository.interface';
-import { ApiKeyDto, ApiKeyCreateRequestDto, ApiKeyScope } from '@nos/shared-types';
-import { ApiKey, Prisma } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import { IApiKeyRepository } from "../../common/repositories/tenant.repository.interface";
+import {
+  ApiKeyDto,
+  ApiKeyCreateRequestDto,
+  ApiKeyScope,
+} from "@nos/shared-types";
+import { ApiKey, Prisma } from "@prisma/client";
 
 @Injectable()
 export class PrismaApiKeyRepository implements IApiKeyRepository {
@@ -32,7 +36,7 @@ export class PrismaApiKeyRepository implements IApiKeyRepository {
     createdByUserId: string,
     data: ApiKeyCreateRequestDto,
     keyPrefix: string,
-    tokenHash: string
+    tokenHash: string,
   ): Promise<ApiKeyDto> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + (data.expiryDays || 90));
@@ -63,7 +67,7 @@ export class PrismaApiKeyRepository implements IApiKeyRepository {
 
   async listByOrganization(
     organizationId: string,
-    params?: { page?: number; limit?: number; search?: string }
+    params?: { page?: number; limit?: number; search?: string },
   ): Promise<{ items: ApiKeyDto[]; total: number }> {
     const page = params?.page && params.page > 0 ? params.page : 1;
     const limit = params?.limit && params.limit > 0 ? params.limit : 20;
@@ -71,7 +75,7 @@ export class PrismaApiKeyRepository implements IApiKeyRepository {
 
     const where: Prisma.ApiKeyWhereInput = { organizationId, isRevoked: false };
     if (params?.search) {
-      where.name = { contains: params.search, mode: 'insensitive' };
+      where.name = { contains: params.search, mode: "insensitive" };
     }
 
     const [total, rows] = await Promise.all([
@@ -80,12 +84,12 @@ export class PrismaApiKeyRepository implements IApiKeyRepository {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
     ]);
 
     return {
-      items: rows.map(r => this.mapEntity(r)),
+      items: rows.map((r) => this.mapEntity(r)),
       total,
     };
   }

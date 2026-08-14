@@ -1,6 +1,6 @@
-import { DeviceStatus } from '@nos/shared-types';
+import { DeviceStatus } from "@nos/shared-types";
 
-export const IDashboardRepository = Symbol('IDashboardRepository');
+export const IDashboardRepository = Symbol("IDashboardRepository");
 
 export interface DashboardOverviewCounts {
   total: number;
@@ -51,7 +51,7 @@ export interface TelemetryHistoryRaw {
 
 export interface IDashboardRepository {
   getOverviewCounts(organizationId: string): Promise<DashboardOverviewCounts>;
-  
+
   getDeviceRows(params: {
     organizationId: string;
     skip: number;
@@ -61,7 +61,10 @@ export interface IDashboardRepository {
     os?: string;
   }): Promise<{ devices: DeviceRowRaw[]; total: number }>;
 
-  getDeviceDetail(organizationId: string, deviceId: string): Promise<DeviceDetailRaw | null>;
+  getDeviceDetail(
+    organizationId: string,
+    deviceId: string,
+  ): Promise<DeviceDetailRaw | null>;
 
   getTelemetryHistory(
     organizationId: string,
