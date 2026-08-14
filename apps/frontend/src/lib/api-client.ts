@@ -116,7 +116,7 @@ rawApi.interceptors.response.use(
         if (typeof window !== "undefined") {
           localStorage.removeItem("nos_access_token");
           localStorage.removeItem("nos_refresh_token");
-          window.location.href = "/login";
+          window.location.href = "/auth/login";
         }
         return Promise.reject(refreshError);
       } finally {

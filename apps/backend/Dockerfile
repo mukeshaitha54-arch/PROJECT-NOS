@@ -49,4 +49,4 @@ ENV NODE_PATH=/app/node_modules
 
 EXPOSE 3001
 
-CMD ["node", "apps/backend/dist/main.js"]
+CMD ["sh", "-c", "if [ -f apps/backend/dist/main.js ]; then node apps/backend/dist/main.js; elif [ -f apps/backend/dist/src/main.js ]; then node apps/backend/dist/src/main.js; else node apps/backend/dist/apps/backend/src/main.js; fi"]

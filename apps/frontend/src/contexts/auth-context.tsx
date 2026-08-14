@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem("nos_access_token");
         localStorage.removeItem("nos_refresh_token");
         setUser(null);
-        window.location.href = "/login";
+        window.location.href = "/auth/login";
       }
     }
   };

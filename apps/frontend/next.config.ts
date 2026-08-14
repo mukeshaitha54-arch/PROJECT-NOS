@@ -4,6 +4,20 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@nos/shared-types"],
+  async redirects() {
+    return [
+      {
+        source: "/login",
+        destination: "/auth/login",
+        permanent: false,
+      },
+      {
+        source: "/register",
+        destination: "/auth/register",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

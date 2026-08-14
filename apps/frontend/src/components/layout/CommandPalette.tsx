@@ -70,7 +70,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         url = `/device/${result.id}`;
         break;
       case "USER":
-        url = `/members/${result.id}`;
+        url = "/members";
         break;
       case "ALERT":
         url = `/alerts`;
