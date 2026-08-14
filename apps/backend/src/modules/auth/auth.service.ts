@@ -201,9 +201,7 @@ export class AuthService {
     return this.generateTokens(cleanUser);
   }
 
-  async verifyEmail(
-    dto: VerifyEmailDto,
-  ): Promise<{
+  async verifyEmail(dto: VerifyEmailDto): Promise<{
     message: string;
     accessToken?: string;
     refreshToken?: string;
