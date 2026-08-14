@@ -42,6 +42,9 @@ jobs:
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
 
+      - name: Build Shared Types Package
+        run: pnpm --filter @nos/shared-types build
+
       - name: Verify Formatting
         run: pnpm run format:check
 
