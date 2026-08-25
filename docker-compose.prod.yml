@@ -6,13 +6,17 @@ services:
     container_name: nos-postgres
     mem_limit: 512m
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: nos_db
+      POSTGRES_USER: ${POSTGRES_USER:-nos_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-nos_admin} -d ${POSTGRES_DB:-nos_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,12 +53,12 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f http://127.0.0.1:3001/api/v1/health/live || exit 1",
+          "wget -qO- http://127.0.0.1:3001/api/v1/health/live || exit 1",
         ]
       interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s
 
   frontend:
     build:

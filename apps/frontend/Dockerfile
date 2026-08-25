@@ -32,7 +32,9 @@ COPY --from=builder /app/apps/frontend/.next/standalone ./
 
 # Copy static assets
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
-COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+# Create public folder if it doesn't exist (some builds don't need it)
+RUN mkdir -p ./apps/frontend/public
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public 2>/dev/null || true
 
 # Copy node_modules for runtime
 COPY --from=builder /app/node_modules ./node_modules
