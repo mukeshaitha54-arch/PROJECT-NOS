@@ -1,26 +1,18 @@
-# docker-compose.prod.yml — c7i-flex.large optimized (4GB RAM)
+version: "3.8"
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: nos-postgres
-    mem_limit: 512m # WAS: 256m
+    mem_limit: 512m
     environment:
-      POSTGRES_DB: nos_db
+      POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    command: >
-      postgres
-        -c shared_buffers=128MB      # WAS: 64MB
-        -c max_connections=20          # WAS: 10
-        -c work_mem=8MB
-        -c maintenance_work_mem=64MB
-        -c effective_cache_size=512MB
-        -c checkpoint_completion_target=0.9
-        -c wal_buffers=16MB
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d nos_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,13 +34,10 @@ services:
       context: .
       dockerfile: apps/backend/Dockerfile
     container_name: nos-backend
-    mem_limit: 1024m # WAS: 300m
+    mem_limit: 1024m
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-      - NODE_OPTIONS=--max-old-space-size=768 # WAS: 256
     env_file:
       - .env
     depends_on:
@@ -60,7 +49,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f http://localhost:3001/api/v1/health/live || exit 1",
+          "curl -f http://127.0.0.1:3001/api/v1/health/live || exit 1",
         ]
       interval: 15s
       timeout: 10s
@@ -72,10 +61,9 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
     container_name: nos-frontend
-    mem_limit: 1024m # WAS: 300m
+    mem_limit: 1024m
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=768
     depends_on:
       - backend
 
