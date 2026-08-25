@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fleetApi } from "@/fleet/services/fleet.api";
-import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useAuth } from "@/contexts/auth-context";
 import { GenerateKeyModal } from "./components/GenerateKeyModal";
 
 export default function RegistrationKeysPage() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const [keys, setKeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);

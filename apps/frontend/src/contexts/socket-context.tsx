@@ -13,6 +13,9 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType>({ socket: null });
 
+/**
+ * @deprecated Use RealtimeProvider from "@/realtime/providers/RealtimeProvider" instead.
+ */
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);

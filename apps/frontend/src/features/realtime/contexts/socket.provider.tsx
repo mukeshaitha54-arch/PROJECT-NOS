@@ -3,17 +3,22 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { SocketContext, SocketContextValue } from "./socket.context";
 import { realtimeClient, RealtimeStatus } from "../services/socket.service";
-import { useAuthStore } from "../../auth/stores/auth.store";
+import { useAuth } from "@/contexts/auth-context";
 import { SocketEvents, SocketEventEnvelope } from "@nos/shared-types";
 
 export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { accessToken, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuth();
   const [status, setStatus] = useState<RealtimeStatus>("OFFLINE");
   const [latencyMs, setLatencyMs] = useState<number>(0);
 
   useEffect(() => {
+    const accessToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("nos_access_token")
+        : null;
+
     if (!isAuthenticated || !accessToken) {
       realtimeClient.disconnect();
       setStatus("OFFLINE");
@@ -34,7 +39,7 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       unsubscribe();
     };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
   const joinRoom = useCallback((room: string, cb?: (res: any) => void) => {
     realtimeClient.joinRoom(room, cb);

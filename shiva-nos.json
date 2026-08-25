@@ -1,0 +1,12 @@
+{
+  "description": "NOS Neural OS monitoring platform",
+  "domain": "is-cool.dev",
+  "subdomain": "shiva-nos",
+  "owner": {
+    "repo": "https://github.com/mukeshaitha54/PROJECT-NOS",
+    "email": "mukesh@example.com"
+  },
+  "record": {
+    "A": ["<YOUR_AWS_ELASTIC_IP>"]
+  }
+}

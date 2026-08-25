@@ -36,6 +36,21 @@ const nextConfig: NextConfig = {
         destination: "/auth/register",
         permanent: false,
       },
+      {
+        source: "/device",
+        destination: "/devices",
+        permanent: true,
+      },
+      {
+        source: "/device/:id",
+        destination: "/devices/:id",
+        permanent: true,
+      },
+      {
+        source: "/device/:id/inventory",
+        destination: "/devices/:id/inventory",
+        permanent: true,
+      },
     ];
   },
 };

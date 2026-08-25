@@ -19,10 +19,10 @@ import {
   Globe,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function EnterpriseAdminConsolePage() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const isSuperAdmin = user?.role === "SUPER_ADMIN" || user?.role === "OWNER";
 
   return (

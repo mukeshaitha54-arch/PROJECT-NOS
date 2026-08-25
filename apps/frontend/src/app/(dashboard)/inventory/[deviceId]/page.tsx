@@ -97,7 +97,7 @@ export default function DeviceInventoryDetailPage({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div className="flex items-center gap-4">
             <Link
-              href={`/device/${deviceId}`}
+              href={`/devices/${deviceId}`}
               className="inline-flex items-center px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

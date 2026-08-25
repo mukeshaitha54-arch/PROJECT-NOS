@@ -5,27 +5,37 @@ services:
     container_name: nos-postgres
     mem_limit: 512m # WAS: 256m
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nos_db}
+      POSTGRES_DB: nos_db
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     command: >
       postgres
-        -c shared_buffers=128MB
-        -c max_connections=20
+        -c shared_buffers=128MB      # WAS: 64MB
+        -c max_connections=20          # WAS: 10
         -c work_mem=8MB
         -c maintenance_work_mem=64MB
         -c effective_cache_size=512MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=16MB
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-nos_db}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d nos_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nos-redis
+    mem_limit: 128m
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   backend:
     build:
@@ -37,11 +47,14 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
       - NODE_OPTIONS=--max-old-space-size=768 # WAS: 256
     env_file:
       - .env
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test:
@@ -80,3 +93,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { fleetApi, SearchResult } from "@/features/fleet/services/fleet.api";
-import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useAuth } from "@/contexts/auth-context";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -67,7 +67,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     let url = "";
     switch (result.type) {
       case "DEVICE":
-        url = `/device/${result.id}`;
+        url = `/devices/${result.id}`;
         break;
       case "USER":
         url = "/members";

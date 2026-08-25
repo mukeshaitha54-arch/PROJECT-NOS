@@ -8,4 +8,7 @@ module.exports = {
   collectCoverageFrom: ["**/*.(t|j)s"],
   coverageDirectory: "../coverage",
   testEnvironment: "node",
+  moduleNameMapper: {
+    "^uuid$": "<rootDir>/__mocks__/uuid.ts",
+  },
 };

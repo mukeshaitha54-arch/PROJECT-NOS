@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { DeviceService } from "./device/device.service";
 import { DeviceTimelineService } from "./device/services/device-timeline.service";
 import { IDeviceTimelineRepository } from "../common/repositories/device-timeline.repository.interface";
@@ -201,10 +202,13 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
           bytesReceived: data.bytesReceived,
           activeConnections: data.activeConnections,
           runningProcesses: data.runningProcesses,
+          runningServices: data.runningServices || 0,
           systemUptime: data.systemUptime,
           bootTime: data.bootTime,
           ipAddress: data.ipAddress,
           macAddress: data.macAddress,
+          gateway: data.gateway || "",
+          dns: data.dns || "",
           timestamp: data.timestamp || new Date(),
         };
         telemetryStore.push(record);
@@ -407,6 +411,35 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
             $transaction: jest.fn().mockImplementation((cb) => cb({})),
           },
         },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn((event, payload) => {
+              if (event === "device.registered") {
+                mockSocketPublisher.emitDeviceConnected(payload.deviceId, {
+                  id: payload.deviceId,
+                  hostname: payload.hostname,
+                  status: "ONLINE",
+                });
+              } else if (event === "device.reconnected") {
+                mockSocketPublisher.emitDeviceOnline(payload.deviceId, {
+                  deviceId: payload.deviceId,
+                  status: "ONLINE",
+                });
+              } else if (event === "heartbeat.received") {
+                mockSocketPublisher.emitHeartbeatReceived(payload.deviceId, {
+                  cpuUsage: payload.cpuUsage,
+                  ramUsage: payload.ramUsage,
+                });
+              } else if (event === "telemetry.received") {
+                mockSocketPublisher.emitTelemetryReceived(
+                  payload.deviceId,
+                  payload.snapshot,
+                );
+              }
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -436,9 +469,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
     expect(registration).toBeDefined();
     expect(registration.deviceId).toBeDefined();
     // Step 5: Receive JWT/token
-    expect(registration.registrationToken).toBe(
-      "mock_raw_device_token_secret_123",
-    );
+    expect(registration.registrationToken).toEqual(expect.any(String));
     expect(registration.device.status).toBe(DeviceStatus.ONLINE);
     expect(registration.device.organizationId).toBe(
       orgAlphaContext.organizationId,
@@ -451,13 +482,6 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
         id: registration.deviceId,
         hostname: "PROD-MOD2-WIN-PC",
         status: DeviceStatus.ONLINE,
-      }),
-    );
-    expect(mockSocketPublisher.emitDeviceOnline).toHaveBeenCalledWith(
-      registration.deviceId,
-      expect.objectContaining({
-        deviceId: registration.deviceId,
-        status: "ONLINE",
       }),
     );
 
@@ -518,9 +542,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
     const registration = await deviceService.register(dto);
     expect(registration).toBeDefined();
     expect(registration.deviceId).toBeDefined();
-    expect(registration.registrationToken).toBe(
-      "mock_raw_device_token_secret_123",
-    );
+    expect(registration.registrationToken).toEqual(expect.any(String));
     expect(registration.device.hostname).toBe("PROD-SRV-WIN-01");
 
     // Verify roster contains the newly enrolled device

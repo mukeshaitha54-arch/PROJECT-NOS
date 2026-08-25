@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { useAuthStore } from "../features/auth/stores/auth.store";
+import { useAuth } from "../contexts/auth-context";
 import {
   Shield,
   Lock,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">

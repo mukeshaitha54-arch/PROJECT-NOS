@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useAuth } from "@/contexts/auth-context";
 import { authApi } from "@/features/auth/services/auth.api";
 import {
   changePasswordSchema,
@@ -24,7 +24,7 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, clearSession } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -60,12 +60,9 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await authApi.logout();
-    } catch {
-      // Clean up local store regardless of server response
+      await logout();
     } finally {
-      clearSession();
-      router.push("/auth/login");
+      setIsLoggingOut(false);
     }
   };
 

@@ -383,7 +383,7 @@ export default function FleetOverviewPage() {
                     <div>
                       <div className="flex items-center gap-2.5">
                         <Link
-                          href={`/device/${device.id}`}
+                          href={`/devices/${device.id}`}
                           className="text-base font-bold text-white hover:text-blue-400 transition flex items-center gap-1.5"
                         >
                           {device.hostname || device.deviceName || device.id}
@@ -441,14 +441,14 @@ export default function FleetOverviewPage() {
 
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <Link
-                      href={`/device/${device.id}/inventory`}
+                      href={`/devices/${device.id}/inventory`}
                       className="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 hover:border-gray-600 text-xs font-semibold text-gray-300 hover:text-white transition flex items-center gap-1"
                     >
                       <Layers className="w-3.5 h-3.5" />
                       Inventory
                     </Link>
                     <Link
-                      href={`/device/${device.id}`}
+                      href={`/devices/${device.id}`}
                       className="px-3.5 py-1.5 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-semibold transition flex items-center gap-1"
                     >
                       Inspect Node

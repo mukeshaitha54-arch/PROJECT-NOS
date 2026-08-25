@@ -2,8 +2,6 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../contexts/auth-context";
-import { SocketProvider } from "../contexts/socket-context";
-import { RealtimeProvider as LegacyRealtimeProvider } from "../features/realtime/contexts/socket.provider";
 import { Toaster } from "sonner";
 import { useState } from "react";
 
@@ -24,18 +22,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SocketProvider>
-          <LegacyRealtimeProvider>
-            {children}
-            <Toaster
-              position="top-right"
-              visibleToasts={5}
-              theme="dark"
-              richColors
-              closeButton
-            />
-          </LegacyRealtimeProvider>
-        </SocketProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          visibleToasts={5}
+          theme="dark"
+          richColors
+          closeButton
+        />
       </AuthProvider>
     </QueryClientProvider>
   );

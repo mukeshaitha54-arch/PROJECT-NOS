@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { SocketProvider } from "@/contexts/socket-context";
+
 import { RealtimeProvider } from "@/realtime/providers/RealtimeProvider";
 import { AlertToast } from "@/features/alerts/components/AlertToast";
 import { RealtimeErrorBoundary } from "@/components/error/RealtimeErrorBoundary";
@@ -24,16 +24,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Main content area with real-time providers */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scrollbar-thin">
-          <SocketProvider>
-            <RealtimeProvider>
-              <RealtimeErrorBoundary>
-                <AlertToast />
-                <div className="max-w-7xl mx-auto w-full space-y-6 animate-in fade-in-50 duration-300">
-                  {children}
-                </div>
-              </RealtimeErrorBoundary>
-            </RealtimeProvider>
-          </SocketProvider>
+          <RealtimeProvider>
+            <RealtimeErrorBoundary>
+              <AlertToast />
+              <div className="max-w-7xl mx-auto w-full space-y-6 animate-in fade-in-50 duration-300">
+                {children}
+              </div>
+            </RealtimeErrorBoundary>
+          </RealtimeProvider>
         </main>
       </div>
     </div>

@@ -4,6 +4,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
+  organizationId?: string;
   createdAt: string;
   updatedAt: string;
 }
