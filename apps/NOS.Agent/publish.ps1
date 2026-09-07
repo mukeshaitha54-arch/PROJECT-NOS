@@ -108,5 +108,5 @@ Write-Host "  Size   : $SizeMB MB"                        -ForegroundColor White
 Write-Host ""
 Write-Host "  Served at:" -ForegroundColor Cyan
 Write-Host "    http://localhost:4000/downloads/NOS-Agent.exe" -ForegroundColor Yellow
-Write-Host "    http://13.127.187.47/downloads/NOS-Agent.exe"  -ForegroundColor Yellow
+Write-Host "    http://nos.is-local.org/downloads/NOS-Agent.exe"  -ForegroundColor Yellow
 Write-Host ""

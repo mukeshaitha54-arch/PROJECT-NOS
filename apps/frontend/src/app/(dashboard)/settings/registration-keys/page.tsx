@@ -53,7 +53,7 @@ export default function RegistrationKeysPage() {
       }
       return "http://localhost:4000/api/v1";
     }
-    return "http://13.127.187.47/api/v1";
+    return "http://nos.is-local.org/api/v1";
   };
 
   const fetchKeys = async () => {

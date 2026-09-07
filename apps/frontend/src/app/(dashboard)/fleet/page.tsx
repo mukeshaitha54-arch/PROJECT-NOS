@@ -508,7 +508,7 @@ function AddDeviceModal({
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1"
       );
     }
-    return "http://13.127.187.47/api/v1";
+    return "http://nos.is-local.org/api/v1";
   };
 
   const createKey = async () => {

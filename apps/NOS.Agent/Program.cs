@@ -266,7 +266,7 @@ namespace NOS.Agent
             Console.WriteLine("  --stop                  Stop the installed Windows Service");
             Console.WriteLine("  --help, -h              Display this help menu\n");
             Console.WriteLine("OPTIONS:");
-            Console.WriteLine("  --server-url, --url     Override backend control plane URL (default: http://13.127.187.47/api/v1)");
+            Console.WriteLine("  --server-url, --url     Override backend control plane URL (default: http://nos.is-local.org/api/v1)");
             Console.WriteLine("  --key, -k               Enrollment / Registration key from dashboard");
             Console.WriteLine("  --tenant-id <id>        Set organization/tenant ID (default: default-org)");
             Console.WriteLine("  --device-id <id>        Set pre-provisioned device UUID (optional)\n");
@@ -397,7 +397,7 @@ namespace NOS.Agent
             var deviceJsonPath = Path.Combine(nosDir, "device.json");
             var commonDeviceJsonPath = Path.Combine(commonDir, "device.json");
 
-            const string defaultServer = "http://13.127.187.47/api/v1";
+            const string defaultServer = "http://nos.is-local.org/api/v1";
 
             // Determine Server URL
             if (string.IsNullOrWhiteSpace(serverUrl))
