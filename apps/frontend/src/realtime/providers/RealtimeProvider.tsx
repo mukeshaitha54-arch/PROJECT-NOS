@@ -18,8 +18,34 @@ interface RealtimeContextValue {
 
 const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
+import { toast } from "sonner";
+
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const realtime = useRealtime();
+
+  React.useEffect(() => {
+    if (!realtime.lastEvent) return;
+
+    const { type, payload } = realtime.lastEvent;
+
+    switch (type) {
+      case "device.online":
+        toast.success(`Device ${payload.deviceId} is now ONLINE`);
+        break;
+      case "device.offline":
+        toast.error(`Device ${payload.deviceId} is OFFLINE`);
+        break;
+      case "alert.created":
+      case "alert:triggered":
+        toast.warning(
+          `New Alert on ${payload.deviceId}: ${payload.ruleId || payload.message || "Threshold breached"}`,
+        );
+        break;
+      case "device.registered":
+        toast.info(`New device registered: ${payload.deviceId}`);
+        break;
+    }
+  }, [realtime.lastEvent]);
 
   return (
     <RealtimeContext.Provider value={realtime}>

@@ -6,8 +6,9 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "NOS — Neural Operating System",
-  description: "AI-assisted Network Operations & Security Platform",
+  title: "NOS — Network Operations System",
+  description:
+    "Network Operations System — Real-time device monitoring, fleet management & telemetry platform",
 };
 
 export default function RootLayout({

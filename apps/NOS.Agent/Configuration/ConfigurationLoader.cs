@@ -55,33 +55,43 @@ namespace NOS.Agent.Configuration
         {
             try
             {
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                var deviceJsonPath = Path.Combine(appData, "NOS", "device.json");
-                if (File.Exists(deviceJsonPath))
+                var candidatePaths = new[]
                 {
-                    var json = File.ReadAllText(deviceJsonPath);
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "device.json"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "device.json"),
+                    Path.Combine(AppContext.BaseDirectory, "device.json")
+                };
 
-                    if (string.IsNullOrWhiteSpace(config.DeviceId) && root.TryGetProperty("DeviceId", out var devIdElem))
+                foreach (var deviceJsonPath in candidatePaths)
+                {
+                    if (File.Exists(deviceJsonPath))
                     {
-                        var devId = devIdElem.GetString();
-                        if (!string.IsNullOrWhiteSpace(devId)) config.DeviceId = devId;
-                    }
+                        var json = File.ReadAllText(deviceJsonPath);
+                        using var doc = JsonDocument.Parse(json);
+                        var root = doc.RootElement;
 
-                    if (root.TryGetProperty("ServerUrl", out var srvUrlElem))
-                    {
-                        var srvUrl = srvUrlElem.GetString();
-                        if (!string.IsNullOrWhiteSpace(srvUrl) && string.IsNullOrWhiteSpace(config.ServerUrl))
+                        if (string.IsNullOrWhiteSpace(config.DeviceId) && root.TryGetProperty("DeviceId", out var devIdElem))
                         {
-                            config.ServerUrl = srvUrl;
+                            var devId = devIdElem.GetString();
+                            if (!string.IsNullOrWhiteSpace(devId)) config.DeviceId = devId;
                         }
-                    }
 
-                    if (root.TryGetProperty("TenantId", out var tenantElem))
-                    {
-                        var tenant = tenantElem.GetString();
-                        if (!string.IsNullOrWhiteSpace(tenant)) config.TenantId = tenant;
+                        if (root.TryGetProperty("ServerUrl", out var srvUrlElem))
+                        {
+                            var srvUrl = srvUrlElem.GetString();
+                            if (!string.IsNullOrWhiteSpace(srvUrl) && string.IsNullOrWhiteSpace(config.ServerUrl))
+                            {
+                                config.ServerUrl = srvUrl;
+                            }
+                        }
+
+                        if (root.TryGetProperty("TenantId", out var tenantElem))
+                        {
+                            var tenant = tenantElem.GetString();
+                            if (!string.IsNullOrWhiteSpace(tenant)) config.TenantId = tenant;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(config.DeviceId)) break;
                     }
                 }
             }

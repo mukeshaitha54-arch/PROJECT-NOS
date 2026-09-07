@@ -31,10 +31,18 @@ export default function LoginPage() {
       await login({ email, password });
       router.push("/dashboard");
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message;
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message;
+      const code =
+        err?.response?.data?.error?.details?.code ||
+        err?.response?.data?.error?.code ||
+        err?.response?.data?.code;
+
       if (
         msg?.toLowerCase().includes("verified") ||
-        err?.response?.data?.code === "EMAIL_NOT_VERIFIED"
+        code === "EMAIL_NOT_VERIFIED"
       ) {
         router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
       } else {
@@ -60,7 +68,7 @@ export default function LoginPage() {
             Sign In to NOS
           </h2>
           <p className="text-xs text-gray-400">
-            Neural Operating System • Device Monitoring Dashboard
+            Network Operations System • Fleet Monitoring & Telemetry
           </p>
         </div>
 

@@ -15,7 +15,8 @@ export class SmtpMailService implements IMailService {
 
   constructor(private readonly configService: ConfigService) {
     const host = this.configService.get<string>("SMTP_HOST");
-    const port = this.configService.get<number>("SMTP_PORT", 587);
+    const rawPort = this.configService.get<string | number>("SMTP_PORT", 587);
+    const port = Number(rawPort) || 587;
     const user = this.configService.get<string>("SMTP_USER");
     const pass = this.configService.get<string>("SMTP_PASS");
     this.fromAddress = this.configService.get<string>(
@@ -29,12 +30,9 @@ export class SmtpMailService implements IMailService {
         port,
         secure: port === 465,
         auth: { user, pass },
-        pool: true,
-        maxConnections: 5,
-        maxMessages: 100,
-        connectionTimeout: 10000,
-        greetingTimeout: 5000,
-        socketTimeout: 15000,
+        tls: {
+          rejectUnauthorized: false,
+        },
       });
       // Mask credentials in logs
       const maskedUser = user.replace(/^(.{2})(.*)(@.*)$/, "$1***$3");
@@ -54,7 +52,7 @@ export class SmtpMailService implements IMailService {
   ): Promise<void> {
     if (!this.transporter) {
       this.logDevMail(mailOptions);
-      return;
+      throw new Error("SMTP credentials not configured.");
     }
 
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -73,7 +71,7 @@ export class SmtpMailService implements IMailService {
             `📧 Exhausted retries sending email to [${mailOptions.to}]. Falling back to Console Dev Mail.`,
           );
           this.logDevMail(mailOptions);
-          return;
+          throw error;
         }
         await new Promise((res) => setTimeout(res, 500 * attempt)); // Backoff
       }

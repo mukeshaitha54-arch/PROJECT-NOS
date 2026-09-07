@@ -7,8 +7,10 @@ import { ValidationPipe, VersioningType } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyCompress from "@fastify/compress";
+import fastifyStatic from "@fastify/static";
 import { IoAdapter } from "@nestjs/platform-socket.io";
 import * as crypto from "crypto";
+import * as path from "path";
 import { AppModule } from "./app.module";
 import { LoggerService } from "./common/logger/logger.service";
 
@@ -90,6 +92,18 @@ async function bootstrap() {
   await app.register(fastifyCompress as any, {
     encodings: ["gzip", "deflate"],
   });
+
+  // Serve static assets (NOS-Agent.exe download etc.) at /downloads/*
+  const assetsDir = path.join(process.cwd(), "assets");
+  try {
+    await app.register(fastifyStatic as any, {
+      root: assetsDir,
+      prefix: "/downloads/",
+      decorateReply: false,
+    });
+  } catch (_) {
+    // assets dir may not exist in CI — skip silently
+  }
 
   // Enable CORS & Global validation pipes
   app.enableCors({ origin: "*", credentials: true });

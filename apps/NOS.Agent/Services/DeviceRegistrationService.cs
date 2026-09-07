@@ -159,7 +159,12 @@ namespace NOS.Agent.Services
 
         private string BuildApiUrl(string endpoint)
         {
-            var serverUrl = _configuration["AgentConfiguration:ServerUrl"] ?? "http://localhost:3001";
+            // Use config ServerUrl, fall back to production EC2 (never localhost)
+            var serverUrl = _configuration["AgentConfiguration:ServerUrl"] ?? "http://13.127.187.47/api/v1";
+            // Strip trailing /api/v1 if present to avoid double-prefix
+            serverUrl = serverUrl.TrimEnd('/');
+            if (serverUrl.EndsWith("/api/v1", StringComparison.OrdinalIgnoreCase))
+                serverUrl = serverUrl[..^7];
             var baseUri = new Uri(serverUrl.EndsWith("/") ? serverUrl : serverUrl + "/");
             var fullUri = new Uri(baseUri, endpoint.TrimStart('/'));
             return fullUri.ToString();
@@ -169,15 +174,24 @@ namespace NOS.Agent.Services
         {
             try
             {
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                var deviceJsonPath = Path.Combine(appData, "NOS", "device.json");
-                if (File.Exists(deviceJsonPath))
+                var candidatePaths = new[]
                 {
-                    var json = File.ReadAllText(deviceJsonPath);
-                    using var doc = JsonDocument.Parse(json);
-                    if (doc.RootElement.TryGetProperty("DeviceId", out var devId))
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "device.json"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "device.json"),
+                    Path.Combine(AppContext.BaseDirectory, "device.json")
+                };
+
+                foreach (var deviceJsonPath in candidatePaths)
+                {
+                    if (File.Exists(deviceJsonPath))
                     {
-                        return devId.GetString();
+                        var json = File.ReadAllText(deviceJsonPath);
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("DeviceId", out var devId))
+                        {
+                            var id = devId.GetString();
+                            if (!string.IsNullOrWhiteSpace(id)) return id;
+                        }
                     }
                 }
             }
@@ -187,30 +201,36 @@ namespace NOS.Agent.Services
 
         private void SaveDeviceIdLocally(string deviceId, string serverUrl)
         {
+            var payload = new
+            {
+                DeviceId = deviceId,
+                ServerUrl = serverUrl,
+                Hostname = Environment.MachineName,
+                RegisteredAt = DateTime.UtcNow.ToString("o")
+            };
+            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+
+            // 1. Save in %LOCALAPPDATA%\NOS
             try
             {
                 var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 var nosDir = Path.Combine(appData, "NOS");
-                if (!Directory.Exists(nosDir))
-                {
-                    Directory.CreateDirectory(nosDir);
-                }
-
-                var deviceJsonPath = Path.Combine(nosDir, "device.json");
-                var payload = new
-                {
-                    DeviceId = deviceId,
-                    ServerUrl = serverUrl,
-                    Hostname = Environment.MachineName,
-                    RegisteredAt = DateTime.UtcNow.ToString("o")
-                };
-
-                File.WriteAllText(deviceJsonPath, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+                if (!Directory.Exists(nosDir)) Directory.CreateDirectory(nosDir);
+                File.WriteAllText(Path.Combine(nosDir, "device.json"), json);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to save device.json locally in %LOCALAPPDATA%\\NOS");
             }
+
+            // 2. Save in %ProgramData%\NOS (for Windows Service)
+            try
+            {
+                var commonDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+                if (!Directory.Exists(commonDir)) Directory.CreateDirectory(commonDir);
+                File.WriteAllText(Path.Combine(commonDir, "device.json"), json);
+            }
+            catch { }
         }
 
         private void UpdateAppsettings(string newDeviceId)

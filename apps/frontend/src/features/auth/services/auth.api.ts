@@ -40,11 +40,11 @@ export const authApi = {
 
   forgotPassword: async (
     data: ForgotPasswordFormValues,
-  ): Promise<{ message: string }> => {
-    const res = await apiClient.post<any, ApiResponse<{ message: string }>>(
-      "/auth/forgot-password",
-      data,
-    );
+  ): Promise<{ message: string; devOtp?: string }> => {
+    const res = await apiClient.post<
+      any,
+      ApiResponse<{ message: string; devOtp?: string }>
+    >("/auth/forgot-password", data);
     return res.data!;
   },
 

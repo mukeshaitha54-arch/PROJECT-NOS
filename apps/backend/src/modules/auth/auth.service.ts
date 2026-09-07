@@ -77,7 +77,8 @@ export class AuthService {
   async register(
     dto: RegisterDto,
   ): Promise<{ message: string; user: User; devOtp?: string }> {
-    const existing = await this.userRepo.findByEmail(dto.email);
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const existing = await this.userRepo.findByEmail(normalizedEmail);
     if (existing) {
       throw new ConflictException({
         code: ErrorCode.USER_ALREADY_EXISTS,
@@ -87,7 +88,7 @@ export class AuthService {
 
     const passwordHash = await this.hasher.hash(dto.password);
     const user = await this.userRepo.create({
-      email: dto.email,
+      email: normalizedEmail,
       passwordHash,
       firstName: dto.firstName,
       lastName: dto.lastName,
@@ -137,7 +138,8 @@ export class AuthService {
   async resendVerificationOtp(
     email: string,
   ): Promise<{ message: string; devOtp?: string }> {
-    const user = await this.userRepo.findByEmail(email);
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.userRepo.findByEmail(normalizedEmail);
     if (!user) {
       return {
         message: "If this email is registered, a new OTP has been sent.",
@@ -207,8 +209,9 @@ export class AuthService {
     refreshToken?: string;
     user?: any;
   }> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
     const latestOtp = await this.tokenRepo.findLatestOtp(
-      dto.email,
+      normalizedEmail,
       "EMAIL_VERIFY",
     );
     if (!latestOtp) {
@@ -233,7 +236,7 @@ export class AuthService {
     }
 
     await this.tokenRepo.markOtpAsUsed(latestOtp.id);
-    const user = await this.userRepo.findByEmail(dto.email);
+    const user = await this.userRepo.findByEmail(normalizedEmail);
     if (!user) {
       throw new NotFoundException("User account not found.");
     }
@@ -250,7 +253,7 @@ export class AuthService {
     cleanUser.isEmailVerified = true;
     const tokens = await this.generateTokens(cleanUser);
 
-    this.logger.log(`✅ Email verified successfully for: [${dto.email}]`);
+    this.logger.log(`✅ Email verified successfully for: [${normalizedEmail}]`);
     return {
       message: "Email verified successfully! Welcome to NOS Platform.",
       accessToken: tokens.accessToken,
@@ -309,8 +312,12 @@ export class AuthService {
     return { message: "Logged out successfully." };
   }
 
-  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
-    const user = await this.userRepo.findByEmail(dto.email);
+  async forgotPassword(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string; devOtp?: string }> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const user = await this.userRepo.findByEmail(normalizedEmail);
+    let devOtp: string | undefined = undefined;
     if (user) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpHash = await this.hasher.hash(otp);
@@ -323,18 +330,29 @@ export class AuthService {
         "PASSWORD_RESET",
         expiresAt,
       );
-      await this.mailService.sendPasswordResetOtp(user.email, otp);
-      this.logger.log(`📩 Password reset OTP generated for: [${user.email}]`);
+      try {
+        await this.mailService.sendPasswordResetOtp(user.email, otp);
+        this.logger.log(
+          `📩 Password reset OTP sent via SMTP to: [${user.email}]`,
+        );
+      } catch (mailErr: any) {
+        this.logger.warn(
+          `Password reset email delivery skipped: ${mailErr?.message || mailErr}`,
+        );
+        devOtp = otp;
+      }
     }
     return {
       message:
         "If an account matching this email exists, a password reset OTP has been sent.",
+      devOtp,
     };
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
     const latestOtp = await this.tokenRepo.findLatestOtp(
-      dto.email,
+      normalizedEmail,
       "PASSWORD_RESET",
     );
     if (!latestOtp) {
@@ -359,7 +377,7 @@ export class AuthService {
     }
 
     await this.tokenRepo.markOtpAsUsed(latestOtp.id);
-    const user = await this.userRepo.findByEmail(dto.email);
+    const user = await this.userRepo.findByEmail(normalizedEmail);
     if (!user) {
       throw new NotFoundException({
         code: ErrorCode.USER_NOT_FOUND,
@@ -368,7 +386,10 @@ export class AuthService {
     }
 
     const newPasswordHash = await this.hasher.hash(dto.newPassword);
-    await this.userRepo.update(user.id, { passwordHash: newPasswordHash });
+    await this.userRepo.update(user.id, {
+      passwordHash: newPasswordHash,
+      isEmailVerified: true,
+    });
     await this.tokenRepo.revokeAllUserRefreshTokens(user.id);
 
     this.logger.log(`🛡️ Password reset successful for user: [${user.email}]`);

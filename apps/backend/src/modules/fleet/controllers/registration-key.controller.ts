@@ -49,31 +49,37 @@ export class RegistrationKeyController {
       createdBy: user.id,
     });
 
-    await this.auditLogRepo.record({
-      organizationId: dto.organizationId,
-      correlationId: "N/A",
-      userId: user.id,
-      userEmail: user.email,
-      action: "REGISTRATION_KEY_GENERATED",
-      resourceType: "RegistrationKey",
-      resourceId: result.registrationKey.id,
-      reason: "Generated new agent registration key",
-      ipAddress: user.ipAddress || "unknown",
-      browser: user.browser || "unknown",
-      details: {
-        displayName: dto.displayName,
-        keyPrefix: result.registrationKey.keyPrefix,
-      },
-    });
+    try {
+      await this.auditLogRepo.record({
+        organizationId: result.registrationKey.organizationId,
+        correlationId: "N/A",
+        userId: user?.id || "system",
+        userEmail: user?.email || "unknown",
+        action: "REGISTRATION_KEY_GENERATED",
+        resourceType: "RegistrationKey",
+        resourceId: result.registrationKey.id,
+        reason: "Generated new agent registration key",
+        ipAddress: user?.ipAddress || "unknown",
+        browser: user?.browser || "unknown",
+        details: {
+          displayName: dto.displayName,
+          keyPrefix: result.registrationKey.keyPrefix,
+        },
+      });
+    } catch {}
 
-    const org = await this.orgRepo.findById(dto.organizationId);
-    if (org) {
-      await this.mailService.sendRegistrationKeyNotification(
-        user.email,
-        dto.displayName,
-        org.name,
+    try {
+      const org = await this.orgRepo.findById(
+        result.registrationKey.organizationId,
       );
-    }
+      if (org && user?.email) {
+        await this.mailService.sendRegistrationKeyNotification(
+          user.email,
+          dto.displayName,
+          org.name,
+        );
+      }
+    } catch {}
 
     return {
       plainKey: result.key,

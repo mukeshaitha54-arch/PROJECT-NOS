@@ -2,10 +2,15 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 const resolveBaseUrl = () => {
   if (typeof window !== "undefined") {
-    if (window.location.port === "3000") {
-      return "http://localhost:3001/api/v1";
+    if (
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1"
+    ) {
+      return `${window.location.origin}/api/v1`;
     }
-    return process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+    return (
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1"
+    );
   }
   return process.env.INTERNAL_BACKEND_URL
     ? `${process.env.INTERNAL_BACKEND_URL}/api/v1`
@@ -17,6 +22,14 @@ export const rawApi = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+// Ensure baseURL is always up-to-date on every request (avoids stale module-load value)
+rawApi.interceptors.request.use((config) => {
+  if (!config.baseURL || config.baseURL.includes(":3001")) {
+    config.baseURL = resolveBaseUrl();
+  }
+  return config;
 });
 
 let isRefreshing = false;

@@ -22,9 +22,13 @@ import {
   Sparkles,
   Terminal,
   Zap,
+  Copy,
+  Check,
+  Download,
 } from "lucide-react";
 import { deviceApi } from "@/features/device/services/device.api";
 import { Device, DeviceStatus } from "@nos/shared-types";
+import { safeCopyToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 
@@ -36,6 +40,11 @@ export default function FleetOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isClaimModalOpen, setIsClaimModalOpen] = useState<boolean>(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { isConnected, lastEvent } = useRealtimeContext();
 
@@ -47,24 +56,9 @@ export default function FleetOverviewPage() {
       setDevices(res.devices || []);
       setLastRefreshed(new Date());
     } catch (err: any) {
-      console.warn("Fleet fetch fallback:", err);
-      // Fallback sample fleet data if API is starting up
-      setDevices([
-        {
-          id: "node-shiva-01",
-          deviceName: "SHIVA-PRIMARY",
-          hostname: "SHIVA",
-          os: "Windows 11 Enterprise",
-          osVersion: "10.0.22631",
-          architecture: "X64",
-          agentVersion: "1.0.0",
-          status: DeviceStatus.ONLINE,
-          organizationId: "default-org",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          lastSeen: new Date().toISOString(),
-        } as unknown as Device,
-      ]);
+      console.error("Fleet fetch failed:", err);
+      setError("Failed to load devices. Please check your connection.");
+      setDevices([]);
     } finally {
       setLoading(false);
     }
@@ -338,7 +332,7 @@ export default function FleetOverviewPage() {
             </h2>
           </div>
           <span className="text-xs text-gray-500 font-mono">
-            Synced: {lastRefreshed.toLocaleTimeString()}
+            {isMounted ? `Synced: ${lastRefreshed.toLocaleTimeString()}` : ""}
           </span>
         </div>
 
@@ -462,77 +456,452 @@ export default function FleetOverviewPage() {
         )}
       </div>
 
-      {/* Onboard Agent Modal */}
+      {/* Add Device / Onboard Agent Modal */}
       {isClaimModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-                  <Terminal className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Onboard Monitoring Agent
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    Deploy the NOS Windows agent to a new fleet machine
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsClaimModalOpen(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
+        <AddDeviceModal
+          onClose={() => setIsClaimModalOpen(false)}
+          onRegistered={() => {
+            fetchDevices();
+            setIsClaimModalOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Add Device Modal Component ───────────────────────────────────────────────
+function AddDeviceModal({
+  onClose,
+  onRegistered,
+}: {
+  onClose: () => void;
+  onRegistered: () => void;
+}) {
+  const [step, setStep] = React.useState<"create" | "download">("create");
+  const [deployOption, setDeployOption] = React.useState<
+    "automated" | "manual"
+  >("automated");
+  const [keyName, setKeyName] = React.useState("Fleet Device Key");
+  const [creating, setCreating] = React.useState(false);
+  const [generatedKey, setGeneratedKey] = React.useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = React.useState(false);
+  const [copiedCmd, setCopiedCmd] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const getToken = () =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("nos_access_token") ||
+        localStorage.getItem("accessToken") ||
+        ""
+      : "";
+
+  const apiBase = () => {
+    if (typeof window !== "undefined") {
+      if (
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        return `${window.location.origin}/api/v1`;
+      }
+      return (
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1"
+      );
+    }
+    return "http://13.127.187.47/api/v1";
+  };
+
+  const createKey = async () => {
+    setCreating(true);
+    setError(null);
+    try {
+      let orgId = "org-mukesh-local";
+      try {
+        const meRes = await fetch(`${apiBase()}/auth/me`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          orgId =
+            meData?.data?.organizationId || meData?.organizationId || orgId;
+        }
+      } catch (err) {
+        // Fallback to default org
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 365);
+
+      const res = await fetch(`${apiBase()}/fleet/registration-keys`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          organizationId: orgId,
+          displayName: keyName,
+          maxUses: 0,
+          expiresAt: expiresAt.toISOString(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          errData?.error?.message || errData?.message || `Error ${res.status}`,
+        );
+      }
+
+      const data = await res.json();
+      const plain = data.plainKey || data?.data?.key || data?.data?.plainKey;
+      if (!plain) throw new Error("No key returned from server");
+
+      setGeneratedKey(plain);
+      setStep("download");
+    } catch (e: any) {
+      setError(e.message || "Failed to generate key");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyKey = async () => {
+    if (!generatedKey) return;
+    await safeCopyToClipboard(generatedKey);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
+  const copyCommand = async (cmd: string) => {
+    await safeCopyToClipboard(cmd);
+    setCopiedCmd(true);
+    setTimeout(() => setCopiedCmd(false), 2000);
+  };
+
+  const downloadInstaller = () => {
+    const url = `${apiBase()}/fleet/installer/windows?registrationKey=${encodeURIComponent(generatedKey || "")}&serverUrl=${encodeURIComponent(apiBase())}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "install-nos-agent.ps1";
+    a.click();
+  };
+
+  const downloadExe = () => {
+    const directUrl = `${apiBase().replace(/\/api\/v1$/, "")}/downloads/NOS-Agent.exe`;
+    const a = document.createElement("a");
+    a.href = directUrl;
+    a.download = "NOS-Agent.exe";
+    a.click();
+  };
+
+  const installerCommand = `powershell -ExecutionPolicy Bypass -File .\\install-nos-agent.ps1`;
+  const manualCommand = `.\\NOS-Agent.exe`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Terminal className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Add New Device</h3>
+              <p className="text-xs text-gray-400">
+                Step {step === "create" ? "1" : "2"} of 2 —{" "}
+                {step === "create"
+                  ? "Generate enrollment key"
+                  : "Deploy agent to target Windows PC"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        {step === "create" && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-300">
+              Create a <strong>Registration Key</strong> that the agent will use
+              to authenticate with this server on first run.
+            </p>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">
+                Key Label (for your reference)
+              </label>
+              <input
+                value={keyName}
+                onChange={(e) => setKeyName(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500"
+                placeholder="e.g., Target PC Key"
+              />
             </div>
 
-            <div className="space-y-3 text-xs">
-              <p className="text-gray-300 font-medium">
-                1. Run the following command in PowerShell as Administrator:
-              </p>
-              <div className="bg-gray-950 border border-gray-800 rounded-xl p-3.5 font-mono text-cyan-400 text-xs break-all select-all">
-                cd
-                &quot;C:\Users\mukes\OneDrive\Desktop\NOS\apps\NOS.Agent&quot;;
-                dotnet run
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-lg">
+                ⚠ {error}
               </div>
+            )}
 
-              <p className="text-gray-300 font-medium pt-2">
-                2. Zero-Trust Handshake & Auto-Discovery:
-              </p>
-              <ul className="space-y-1.5 text-gray-400 list-disc list-inside">
-                <li>
-                  Agent auto-generates machine UUID and registers with tenant
-                </li>
-                <li>Live heartbeats and thermal metrics stream every 30s</li>
-                <li>
-                  Discovered node will immediately appear in this Fleet Command
-                  Center
-                </li>
-              </ul>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
+            <div className="flex justify-end gap-2 pt-2">
               <button
-                onClick={() => setIsClaimModalOpen(false)}
+                onClick={onClose}
                 className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-300"
               >
-                Done
+                Cancel
               </button>
               <button
-                onClick={() => {
-                  fetchDevices();
-                  setIsClaimModalOpen(false);
-                }}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white"
+                onClick={createKey}
+                disabled={creating || !keyName.trim()}
+                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold text-white flex items-center gap-2"
               >
-                Check Registration
+                {creating && (
+                  <svg
+                    className="animate-spin w-3.5 h-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                )}
+                Generate Key & Continue
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {step === "download" && generatedKey && (
+          <div className="space-y-5">
+            {/* Key display banner */}
+            <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Your One-Time Registration Key
+                </span>
+                <span className="text-[11px] text-amber-400 font-medium">
+                  Save this key (valid for all PCs)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-cyan-300 font-mono text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 break-all select-all">
+                  {generatedKey}
+                </code>
+                <button
+                  onClick={copyKey}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-xs font-bold transition-all ${
+                    copiedKey
+                      ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                      : "bg-blue-600/20 border-blue-500/40 text-blue-300 hover:bg-blue-600/30"
+                  }`}
+                >
+                  {copiedKey ? (
+                    <>
+                      <Check className="w-4 h-4" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" /> Copy Key
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Deployment Method Tabs */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                Select Installation Method for Target PC:
+              </p>
+              <div className="grid grid-cols-2 gap-2 bg-gray-950 p-1 rounded-xl border border-gray-800">
+                <button
+                  onClick={() => setDeployOption("automated")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    deployOption === "automated"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Option 1: Automated Installer (Recommended)
+                </button>
+                <button
+                  onClick={() => setDeployOption("manual")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    deployOption === "manual"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  Option 2: Standalone Executable (.exe)
+                </button>
+              </div>
+            </div>
+
+            {/* OPTION 1 CONTENT */}
+            {deployOption === "automated" && (
+              <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-4 space-y-3.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-sm">
+                    Automated Service Deployment
+                  </span>
+                  <button
+                    onClick={downloadInstaller}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Installer (.ps1)
+                  </button>
+                </div>
+
+                <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
+                  <li>
+                    Move the downloaded{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                      install-nos-agent.ps1
+                    </code>{" "}
+                    to the target PC.
+                  </li>
+                  <li>
+                    Open <strong>PowerShell as Administrator</strong>.
+                  </li>
+                  <li>
+                    Run the following installation command:
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-cyan-300 px-3 py-2 rounded-lg break-all">
+                        {installerCommand}
+                      </code>
+                      <button
+                        onClick={() => copyCommand(installerCommand)}
+                        className={`px-2.5 py-2 rounded-lg border text-[11px] font-semibold transition ${
+                          copiedCmd
+                            ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                            : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                        }`}
+                      >
+                        {copiedCmd ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  </li>
+                </ol>
+
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] leading-relaxed">
+                  <strong>What this does:</strong> It automatically downloads
+                  the agent binary in the background, prompts you for the
+                  Registration Key, registers the device with the platform, and
+                  installs it as a background Windows Service that starts
+                  automatically on system boot.
+                </div>
+              </div>
+            )}
+
+            {/* OPTION 2 CONTENT */}
+            {deployOption === "manual" && (
+              <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-4 space-y-3.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-sm">
+                    Manual Standalone Executable
+                  </span>
+                  <button
+                    onClick={downloadExe}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download NOS-Agent.exe
+                  </button>
+                </div>
+
+                <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
+                  <li>
+                    Move{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                      NOS-Agent.exe
+                    </code>{" "}
+                    to any directory on the target PC.
+                  </li>
+                  <li>
+                    Double-click the EXE, or run it in PowerShell / Command
+                    Prompt:
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-cyan-300 px-3 py-2 rounded-lg">
+                        {manualCommand}
+                      </code>
+                      <button
+                        onClick={() => copyCommand(manualCommand)}
+                        className={`px-2.5 py-2 rounded-lg border text-[11px] font-semibold transition ${
+                          copiedCmd
+                            ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                            : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                        }`}
+                      >
+                        {copiedCmd ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  </li>
+                  <li>
+                    On its very first run, it presents an interactive CLI wizard
+                    asking for your <strong>Server URL</strong> (defaults to
+                    current server) and <strong>Registration Key</strong>.
+                  </li>
+                </ol>
+
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] leading-relaxed">
+                  <strong>What this does:</strong> Runs directly without
+                  installing system services. Once the key is entered, it
+                  validates credentials, stores device config locally in{" "}
+                  <code className="text-white font-mono">
+                    %LOCALAPPDATA%\NOS
+                  </code>
+                  , and immediately begins streaming live telemetry.
+                </div>
+              </div>
+            )}
+
+            {/* Live Connection Listener Footer */}
+            <div className="pt-2 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>Waiting for target PC to connect...</span>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => {
+                    onRegistered();
+                  }}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  Check for New Devices
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

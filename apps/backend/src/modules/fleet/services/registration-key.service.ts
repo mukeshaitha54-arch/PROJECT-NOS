@@ -39,9 +39,20 @@ export class RegistrationKeyService {
   async generateKey(
     dto: CreateRegistrationKeyDto,
   ): Promise<{ key: string; registrationKey: RegistrationKey }> {
-    const org = await this.orgRepo.findById(dto.organizationId);
+    let org = dto.organizationId
+      ? await this.orgRepo.findById(dto.organizationId)
+      : null;
     if (!org) {
-      throw new NotFoundException("Organization not found");
+      org = await this.orgRepo.findBySlug("default-org");
+      if (org) {
+        dto.organizationId = org.id;
+      } else {
+        org = await this.orgRepo.create({
+          name: "Default Organization",
+          slug: "default-org",
+        });
+        dto.organizationId = org.id;
+      }
     }
 
     // Generate plain key: NOS-ABCD-1234-...

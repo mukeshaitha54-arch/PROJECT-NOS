@@ -20,11 +20,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
+import { safeCopyToClipboard } from "@/lib/clipboard";
 
 interface ApiKeyItem {
   id: string;
   name: string;
   prefix: string;
+  fullKey?: string;
   createdAt: string;
   lastUsed: string;
 }
@@ -68,6 +70,8 @@ export default function SettingsPage() {
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [copiedModalKey, setCopiedModalKey] = useState(false);
 
   // Section 4: Danger Zone State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -93,18 +97,26 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!newKeyName.trim()) return;
 
+    // Generate full secret API token
+    const randomHex = Array.from({ length: 32 }, () =>
+      Math.floor(Math.random() * 16).toString(16),
+    ).join("");
+    const fullKey = `nos_live_${randomHex}`;
+    const prefix = `${fullKey.substring(0, 12)}...`;
+
     const newKey: ApiKeyItem = {
       id: `key-${Date.now()}`,
       name: newKeyName.trim(),
-      prefix: `nos_live_${Math.random().toString(36).substring(2, 6)}...`,
+      prefix,
+      fullKey,
       createdAt: new Date().toISOString().split("T")[0],
       lastUsed: "Never",
     };
 
     setApiKeys((prev) => [newKey, ...prev]);
+    setNewlyCreatedKey(fullKey);
+    setCopiedModalKey(false);
     toast.success(`Generated API key: "${newKeyName.trim()}"`);
-    setNewKeyName("");
-    setIsGenerateModalOpen(false);
   };
 
   const handleRevokeKey = (id: string) => {
@@ -112,10 +124,10 @@ export default function SettingsPage() {
     toast.info("API key revoked.");
   };
 
-  const handleCopyKey = (prefix: string, id: string) => {
-    navigator.clipboard.writeText(prefix);
+  const handleCopyKey = async (textToCopy: string, id: string) => {
+    await safeCopyToClipboard(textToCopy);
     setCopiedKeyId(id);
-    toast.success("Key token prefix copied to clipboard");
+    toast.success("Key copied to clipboard!");
     setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
@@ -310,7 +322,12 @@ export default function SettingsPage() {
           </CardTitle>
           <Button
             size="sm"
-            onClick={() => setIsGenerateModalOpen(true)}
+            onClick={() => {
+              setNewlyCreatedKey(null);
+              setNewKeyName("");
+              setCopiedModalKey(false);
+              setIsGenerateModalOpen(true);
+            }}
             className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
           >
             <Plus className="w-3.5 h-3.5 mr-1" /> Generate New Key
@@ -341,7 +358,7 @@ export default function SettingsPage() {
                   <td className="px-4 py-3 text-gray-500">{k.lastUsed}</td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <button
-                      onClick={() => handleCopyKey(k.prefix, k.id)}
+                      onClick={() => handleCopyKey(k.fullKey || k.prefix, k.id)}
                       className="text-gray-400 hover:text-white transition p-1"
                       title="Copy Key"
                     >
@@ -387,51 +404,117 @@ export default function SettingsPage() {
       {/* Generate API Key Modal */}
       {isGenerateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-              <h3 className="text-sm font-bold text-white">
-                Generate API Token
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Key className="w-4 h-4 text-purple-400" />
+                {newlyCreatedKey ? "API Key Generated" : "Generate API Token"}
               </h3>
               <button
-                onClick={() => setIsGenerateModalOpen(false)}
+                onClick={() => {
+                  setIsGenerateModalOpen(false);
+                  setNewlyCreatedKey(null);
+                }}
                 className="text-gray-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleGenerateKey} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-gray-400 mb-1 font-semibold">
-                  Key Description / Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. CI Telemetry Pipeline"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
+            {newlyCreatedKey ? (
+              <div className="space-y-4 text-xs">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-300 space-y-1">
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                    Copy your key now
+                  </p>
+                  <p className="text-[11px] text-amber-300/80">
+                    For security reasons, this key will never be shown again. If
+                    you lose it, you will need to generate a new one.
+                  </p>
+                </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsGenerateModalOpen(false)}
-                  className="border-gray-700 text-gray-300 text-xs"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-purple-600 hover:bg-purple-500 text-white text-xs"
-                >
-                  Create Key
-                </Button>
+                <div>
+                  <label className="block text-gray-400 mb-1.5 font-semibold">
+                    Generated API Key
+                  </label>
+                  <div className="flex items-center gap-2 bg-gray-950 border border-gray-800 rounded-lg p-2.5">
+                    <code className="flex-1 text-cyan-300 font-mono text-xs break-all select-all">
+                      {newlyCreatedKey}
+                    </code>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        await safeCopyToClipboard(newlyCreatedKey);
+                        setCopiedModalKey(true);
+                        toast.success("API key copied to clipboard!");
+                        setTimeout(() => setCopiedModalKey(false), 2000);
+                      }}
+                      className={`shrink-0 text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 transition-all ${
+                        copiedModalKey
+                          ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                          : "bg-purple-600 hover:bg-purple-500 text-white"
+                      }`}
+                    >
+                      {copiedModalKey ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" /> Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> Copy Key
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={() => {
+                      setIsGenerateModalOpen(false);
+                      setNewlyCreatedKey(null);
+                    }}
+                    className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold px-5"
+                  >
+                    Done
+                  </Button>
+                </div>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={handleGenerateKey} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-gray-400 mb-1 font-semibold">
+                    Key Description / Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. CI Telemetry Pipeline"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsGenerateModalOpen(false)}
+                    className="border-gray-700 text-gray-300 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs"
+                  >
+                    Create Key
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

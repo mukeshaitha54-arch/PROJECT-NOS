@@ -99,6 +99,26 @@ namespace NOS.Agent.Services
             }
             catch
             {
+                // Fallback to machine level storage
+            }
+
+            // 3. Fallback to Windows DPAPI Encrypted File in %ProgramData%\NOS\token.dat (accessible by LocalSystem Windows Service)
+            try
+            {
+                var commonTokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "token.dat");
+                if (File.Exists(commonTokenPath))
+                {
+                    var encryptedBytes = File.ReadAllBytes(commonTokenPath);
+                    var decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.LocalMachine);
+                    var token = Encoding.UTF8.GetString(decryptedBytes);
+                    if (!string.IsNullOrWhiteSpace(token))
+                    {
+                        return Task.FromResult<string?>(token);
+                    }
+                }
+            }
+            catch
+            {
                 // Return null if inaccessible
             }
 
@@ -152,6 +172,21 @@ namespace NOS.Agent.Services
                 var rawBytes = Encoding.UTF8.GetBytes(token);
                 var encryptedBytes = ProtectedData.Protect(rawBytes, null, DataProtectionScope.CurrentUser);
                 File.WriteAllBytes(tokenPath, encryptedBytes);
+            }
+            catch
+            {
+                // Fallback
+            }
+
+            // 3. Write DPAPI encrypted file in %ProgramData%\NOS\token.dat (LocalMachine scope for services)
+            try
+            {
+                var commonDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+                if (!Directory.Exists(commonDir)) Directory.CreateDirectory(commonDir);
+                var commonTokenPath = Path.Combine(commonDir, "token.dat");
+                var rawBytes = Encoding.UTF8.GetBytes(token);
+                var encryptedBytes = ProtectedData.Protect(rawBytes, null, DataProtectionScope.LocalMachine);
+                File.WriteAllBytes(commonTokenPath, encryptedBytes);
             }
             catch
             {

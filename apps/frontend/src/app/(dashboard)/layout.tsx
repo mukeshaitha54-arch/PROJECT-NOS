@@ -1,15 +1,34 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 import { RealtimeProvider } from "@/realtime/providers/RealtimeProvider";
 import { AlertToast } from "@/features/alerts/components/AlertToast";
 import { RealtimeErrorBoundary } from "@/components/error/RealtimeErrorBoundary";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/auth/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#070709] text-white">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#070709] text-white overflow-hidden">

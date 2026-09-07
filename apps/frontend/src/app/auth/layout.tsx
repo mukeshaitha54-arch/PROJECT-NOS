@@ -22,7 +22,7 @@ export default function AuthLayout({
             href="/"
             className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent"
           >
-            NOS Platform
+            NOS
           </Link>
           <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
             Open Source
@@ -35,20 +35,18 @@ export default function AuthLayout({
             Home Lab & Personal Network Monitoring
           </div>
           <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.15] text-white">
-            Secure Unified Network Operations.
+            Secure Unified
+            <br />
+            Network Operations.
           </h1>
           <p className="text-slate-400 text-base leading-relaxed">
-            Developer-grade monitoring, personal workspace governance, and
-            real-time device telemetry designed for home labs and developer
-            networks.
+            Network Operations System — real-time fleet monitoring, telemetry,
+            and endpoint management for home labs and developer networks.
           </p>
         </div>
 
         <div className="relative z-10 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-6">
-          <p>
-            © {new Date().getFullYear()} NOS Platform. Open-Source Personal
-            Edition.
-          </p>
+          <p>© {new Date().getFullYear()} NOS — Network Operations System.</p>
           <div className="flex space-x-6">
             <span className="hover:text-slate-400 transition-colors cursor-pointer">
               Activity Log
@@ -68,7 +66,7 @@ export default function AuthLayout({
               N
             </div>
             <span className="text-lg font-bold text-white tracking-tight">
-              NOS Platform
+              NOS
             </span>
           </div>
           {children}

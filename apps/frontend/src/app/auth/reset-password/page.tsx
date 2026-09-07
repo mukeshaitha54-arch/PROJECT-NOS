@@ -22,6 +22,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialEmail = searchParams.get("email") || "";
+  const devOtp = searchParams.get("devOtp") || "";
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -32,7 +33,7 @@ function ResetPasswordForm() {
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { email: initialEmail, otp: "", newPassword: "" },
+    defaultValues: { email: initialEmail, otp: devOtp, newPassword: "" },
   });
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
@@ -75,6 +76,20 @@ function ResetPasswordForm() {
         <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
           <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
           <span>{successMsg} Redirecting to login...</span>
+        </div>
+      )}
+
+      {devOtp && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1">
+          <p className="text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
+            🔧 Dev Mode — No SMTP configured
+          </p>
+          <p className="text-amber-300/80 text-[11px]">
+            Your OTP has been auto-filled below:
+          </p>
+          <p className="text-center font-mono text-2xl font-bold tracking-[0.4em] text-amber-300">
+            {devOtp}
+          </p>
         </div>
       )}
 

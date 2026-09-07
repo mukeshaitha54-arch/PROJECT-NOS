@@ -39,10 +39,12 @@ export default function ForgotPasswordPage() {
       const res = await authApi.forgotPassword(data);
       setSuccessMsg(res.message);
       setTimeout(() => {
-        router.push(
-          `/auth/reset-password?email=${encodeURIComponent(data.email)}`,
-        );
-      }, 2500);
+        const query = new URLSearchParams({
+          email: data.email,
+          ...(res.devOtp ? { devOtp: res.devOtp } : {}),
+        });
+        router.push(`/auth/reset-password?${query.toString()}`);
+      }, 2000);
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to process request.");
     }

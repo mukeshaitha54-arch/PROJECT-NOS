@@ -2,7 +2,12 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -33,6 +38,25 @@ namespace NOS.Agent
                     return 0;
                 }
 
+                if (flag is "register" or "r")
+                {
+                    string? regKey = null;
+                    string? regUrl = null;
+                    for (int i = 1; i < args.Length; i++)
+                    {
+                        var arg = args[i].ToLowerInvariant().TrimStart('-', '/');
+                        if ((arg == "key" || arg == "k") && i + 1 < args.Length)
+                        {
+                            regKey = args[++i];
+                        }
+                        else if ((arg == "url" || arg == "server") && i + 1 < args.Length)
+                        {
+                            regUrl = args[++i];
+                        }
+                    }
+                    return await ExecuteRegistrationAsync(regKey, regUrl);
+                }
+
                 if (flag is "install" or "i")
                 {
                     return InstallService();
@@ -58,6 +82,12 @@ namespace NOS.Agent
             if (Environment.UserInteractive)
             {
                 PrintBanner();
+            }
+
+            // 2a. First-Run Setup Wizard (only in interactive console mode)
+            if (Environment.UserInteractive)
+            {
+                await RunFirstTimeSetupAsync();
             }
 
             // 3. Ensure Local AppData Directory Exists
@@ -129,7 +159,13 @@ namespace NOS.Agent
                         config.AddJsonFile(defaultAppSettings, optional: true, reloadOnChange: true);
                     }
 
-                    // 2. LocalAppData overrides (%LOCALAPPDATA%\NOS\appsettings.json)
+                    // 2. LocalAppData and CommonApplicationData overrides
+                    var commonAppDataNos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "appsettings.json");
+                    if (File.Exists(commonAppDataNos))
+                    {
+                        config.AddJsonFile(commonAppDataNos, optional: true, reloadOnChange: true);
+                    }
+
                     var localAppDataNos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "appsettings.json");
                     if (File.Exists(localAppDataNos))
                     {
@@ -223,19 +259,21 @@ namespace NOS.Agent
             Console.WriteLine("  NOS.Agent.exe [command] [options]\n");
             Console.WriteLine("COMMANDS:");
             Console.WriteLine("  --console               Run interactively in foreground console mode (default)");
+            Console.WriteLine("  --register, -r          Register device with control plane (--key <key> [--url <url>])");
             Console.WriteLine("  --install               Register and configure as automated Windows Service");
             Console.WriteLine("  --uninstall             Stop and remove the Windows Service");
             Console.WriteLine("  --start                 Start the installed Windows Service");
             Console.WriteLine("  --stop                  Stop the installed Windows Service");
             Console.WriteLine("  --help, -h              Display this help menu\n");
             Console.WriteLine("OPTIONS:");
-            Console.WriteLine("  --server-url <url>      Override the backend control plane URL (default: http://localhost:3001)");
+            Console.WriteLine("  --server-url, --url     Override backend control plane URL (default: http://13.127.187.47/api/v1)");
+            Console.WriteLine("  --key, -k               Enrollment / Registration key from dashboard");
             Console.WriteLine("  --tenant-id <id>        Set organization/tenant ID (default: default-org)");
             Console.WriteLine("  --device-id <id>        Set pre-provisioned device UUID (optional)\n");
             Console.WriteLine("PERSISTENT STORAGE:");
-            Console.WriteLine("  Credentials & ID:       %LOCALAPPDATA%\\NOS\\device.json");
-            Console.WriteLine("  Encrypted DPAPI Token:  %LOCALAPPDATA%\\NOS\\token.dat");
-            Console.WriteLine("  Offline Outbox Queue:   %LOCALAPPDATA%\\NOS\\outbox.db\n");
+            Console.WriteLine("  Credentials & ID:       %ProgramData%\\NOS\\device.json and %LOCALAPPDATA%\\NOS\\device.json");
+            Console.WriteLine("  Encrypted DPAPI Token:  token.dat (protected via LocalMachine / CurrentUser DPAPI)");
+            Console.WriteLine("  Offline Outbox Queue:   outbox.db\n");
         }
 
         private static int InstallService()
@@ -315,6 +353,237 @@ namespace NOS.Agent
                 Console.WriteLine($"[ERROR] Failed executing {filename} {arguments}: {ex.Message}");
                 return 1;
             }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // FIRST-RUN INTERACTIVE SETUP WIZARD
+        // Fires when no token is stored (fresh install on any Windows PC)
+        // ═══════════════════════════════════════════════════════════════
+        private static async Task RunFirstTimeSetupAsync()
+        {
+            var nosDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS");
+            var commonDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+            var deviceJsonPath = Path.Combine(nosDir, "device.json");
+            var commonDeviceJsonPath = Path.Combine(commonDir, "device.json");
+
+            // If device.json exists and has content, agent was previously registered — skip wizard
+            if ((File.Exists(deviceJsonPath) && new FileInfo(deviceJsonPath).Length > 10) ||
+                (File.Exists(commonDeviceJsonPath) && new FileInfo(commonDeviceJsonPath).Length > 10))
+            {
+                return; // Already set up on this PC
+            }
+
+            // ── Wizard UI ──────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine();
+            Console.WriteLine(" ╔══════════════════════════════════════════════════════╗");
+            Console.WriteLine(" ║       NOS AGENT — FIRST RUN SETUP WIZARD            ║");
+            Console.WriteLine(" ╚══════════════════════════════════════════════════════╝");
+            Console.ResetColor();
+            Console.WriteLine();
+            Console.WriteLine(" This agent needs to connect to your NOS server.");
+            Console.WriteLine(" You will need a Registration Key from your admin dashboard.");
+            Console.WriteLine();
+
+            await ExecuteRegistrationAsync(null, null);
+        }
+
+        private static async Task<int> ExecuteRegistrationAsync(string? registrationKey, string? serverUrl)
+        {
+            var nosDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS");
+            var commonDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+            var configPath = Path.Combine(nosDir, "appsettings.json");
+            var commonConfigPath = Path.Combine(commonDir, "appsettings.json");
+            var deviceJsonPath = Path.Combine(nosDir, "device.json");
+            var commonDeviceJsonPath = Path.Combine(commonDir, "device.json");
+
+            const string defaultServer = "http://13.127.187.47/api/v1";
+
+            // Determine Server URL
+            if (string.IsNullOrWhiteSpace(serverUrl))
+            {
+                if (Environment.UserInteractive && !Console.IsInputRedirected)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write($" Server URL [{defaultServer}]: ");
+                    Console.ResetColor();
+                    var serverInput = Console.ReadLine()?.Trim();
+                    serverUrl = string.IsNullOrEmpty(serverInput) ? defaultServer : serverInput;
+                }
+                else
+                {
+                    serverUrl = defaultServer;
+                }
+            }
+            serverUrl = serverUrl.TrimEnd('/');
+
+            // Determine Registration Key
+            if (string.IsNullOrWhiteSpace(registrationKey))
+            {
+                if (Environment.UserInteractive && !Console.IsInputRedirected)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write(" Registration Key: ");
+                    Console.ResetColor();
+                    registrationKey = ReadPasswordLine();
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(registrationKey))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(" [!] No registration key provided. Aborting registration.");
+                Console.ResetColor();
+                return 1;
+            }
+
+            // ── Connect & Register ─────────────────────────────────────
+            Console.WriteLine();
+            Console.WriteLine($" Connecting to {serverUrl} and registering device...");
+
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+                var registerEndpoint = serverUrl.EndsWith("/api/v1", StringComparison.OrdinalIgnoreCase)
+                    ? $"{serverUrl}/device/register"
+                    : $"{serverUrl}/api/v1/device/register";
+
+                var payload = new
+                {
+                    uuid = Guid.NewGuid().ToString(),
+                    deviceName = Environment.MachineName,
+                    hostname = Environment.MachineName,
+                    os = GetOsDescription(),
+                    osVersion = Environment.OSVersion.Version.ToString(),
+                    architecture = RuntimeInformation.ProcessArchitecture.ToString(),
+                    agentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+                    registrationKey
+                };
+
+                using var resp = await http.PostAsJsonAsync(registerEndpoint, payload);
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var errBody = await resp.Content.ReadAsStringAsync();
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($" [✗] Registration failed ({(int)resp.StatusCode}): {errBody}");
+                    Console.ResetColor();
+                    return 1;
+                }
+
+                // Parse response
+                using var doc = await JsonDocument.ParseAsync(await resp.Content.ReadAsStreamAsync());
+                var root = doc.RootElement;
+                var data = root.TryGetProperty("data", out var d) ? d : root;
+
+                var deviceId = data.TryGetProperty("deviceId", out var did) ? did.GetString() : null;
+                var token = data.TryGetProperty("token", out var tok)
+                    ? tok.GetString()
+                    : data.TryGetProperty("registrationToken", out var rt) ? rt.GetString() : null;
+
+                if (string.IsNullOrEmpty(deviceId) || string.IsNullOrEmpty(token))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(" [✗] Server response missing deviceId or token.");
+                    Console.ResetColor();
+                    return 1;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($" [✓] Device registered successfully!");
+                Console.WriteLine($"     Device ID: {deviceId}");
+                Console.WriteLine($"     Server:    {serverUrl}");
+                Console.ResetColor();
+
+                // ── Ensure target directories exist ────────────────────
+                if (!Directory.Exists(nosDir)) Directory.CreateDirectory(nosDir);
+                try { if (!Directory.Exists(commonDir)) Directory.CreateDirectory(commonDir); } catch { }
+
+                // Save overriding appsettings to %LOCALAPPDATA%\NOS\ and %ProgramData%\NOS\
+                var configObj = new
+                {
+                    AgentConfiguration = new
+                    {
+                        ServerUrl = serverUrl,
+                        DeviceId = deviceId,
+                        TenantId = string.Empty,
+                        ApiKey = registrationKey,
+                    }
+                };
+                var configJson = JsonSerializer.Serialize(configObj, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(configPath, configJson);
+                try { File.WriteAllText(commonConfigPath, configJson); } catch { }
+
+                // Save device.json for future quick-start detection
+                var deviceInfo = new
+                {
+                    DeviceId = deviceId,
+                    ServerUrl = serverUrl,
+                    Hostname = Environment.MachineName,
+                    RegisteredAt = DateTime.UtcNow.ToString("o")
+                };
+                var deviceJson = JsonSerializer.Serialize(deviceInfo, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(deviceJsonPath, deviceJson);
+                try { File.WriteAllText(commonDeviceJsonPath, deviceJson); } catch { }
+
+                // Store token in Windows Credential Manager and encrypted file
+                CredentialManagerService.WriteToken(token, deviceId);
+
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(" [✓] Configuration and credentials saved securely.");
+                Console.ResetColor();
+                Console.WriteLine();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" [✗] Registration error: {ex.Message}");
+                Console.ResetColor();
+                return 1;
+            }
+        }
+
+        private static string GetOsDescription()
+        {
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    using var searcher = new System.Management.ManagementObjectSearcher("SELECT Caption FROM Win32_OperatingSystem");
+                    var os = searcher.Get().Cast<System.Management.ManagementObject>().FirstOrDefault();
+                    if (os != null) return os["Caption"]?.ToString() ?? "Windows";
+                }
+            }
+            catch { }
+            return RuntimeInformation.OSDescription;
+        }
+
+        private static string ReadPasswordLine()
+        {
+            if (Console.IsInputRedirected)
+            {
+                return Console.ReadLine()?.Trim() ?? string.Empty;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            while (true)
+            {
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Enter) break;
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (sb.Length > 0) { sb.Remove(sb.Length - 1, 1); Console.Write("\b \b"); }
+                }
+                else
+                {
+                    sb.Append(key.KeyChar);
+                    Console.Write('*');
+                }
+            }
+            Console.WriteLine();
+            return sb.ToString();
         }
     }
 }

@@ -1,0 +1,1 @@
+Invoke-RestMethod -Method POST -Uri "http://localhost:4000/api/v1/device/register" -ContentType "application/json" -Body '{"uuid":"016b6df1-0ebf-418a-a456-8f5bcc151321","deviceName":"MUKESH-PC","hostname":"MUKESH-PC","os":"Windows 11","osVersion":"10.0.22631","architecture":"X64","agentVersion":"1.0.0","registrationKey":"NOS-LOCA-LDEV-KEY0-2026"}' | ConvertTo-Json -Depth 5

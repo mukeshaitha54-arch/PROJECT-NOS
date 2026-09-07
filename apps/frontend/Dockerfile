@@ -34,7 +34,7 @@ COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 # Create public folder if it doesn't exist (some builds don't need it)
 RUN mkdir -p ./apps/frontend/public
-COPY --from=builder /app/apps/frontend/public ./apps/frontend/public 2>/dev/null || true
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 
 # Copy node_modules for runtime
 COPY --from=builder /app/node_modules ./node_modules
