@@ -31,8 +31,8 @@ export default function AlertsCenterPage() {
       title: "Device Heartbeat Lost (Timeout > 90s)",
       description:
         "No UDP/HTTP telemetry payload received from node within failure window.",
-      deviceName: "SHIVA-PRIMARY",
-      deviceId: "node-shiva-01",
+      deviceName: "Primary-Server",
+      deviceId: "node-primary-01",
       createdAt: new Date(Date.now() - 120000).toISOString(),
       status: "OPEN",
     },
@@ -42,8 +42,8 @@ export default function AlertsCenterPage() {
       title: "CPU Critical Spike (>90%)",
       description:
         "Host kernel reported continuous high computing saturation for >2 minutes.",
-      deviceName: "SHIVA-PRIMARY",
-      deviceId: "node-shiva-01",
+      deviceName: "Primary-Server",
+      deviceId: "node-primary-01",
       createdAt: new Date(Date.now() - 900000).toISOString(),
       status: "OPEN",
     },
@@ -64,8 +64,8 @@ export default function AlertsCenterPage() {
       title: "OTA Agent Self-Healing Daemon Executed",
       description:
         "Outbox dispatcher resumed queue transmission after transient network blip.",
-      deviceName: "SHIVA-PRIMARY",
-      deviceId: "node-shiva-01",
+      deviceName: "Primary-Server",
+      deviceId: "node-primary-01",
       createdAt: new Date(Date.now() - 86400000).toISOString(),
       status: "RESOLVED",
     },
@@ -125,7 +125,7 @@ export default function AlertsCenterPage() {
           title: payload.title || "Critical Telemetry Alert",
           description:
             payload.description || "Breach condition detected by rule engine.",
-          deviceName: payload.deviceName || "SHIVA",
+          deviceName: payload.deviceName || "Unknown Device",
           deviceId: payload.deviceId,
           createdAt: new Date().toISOString(),
           status: "OPEN",

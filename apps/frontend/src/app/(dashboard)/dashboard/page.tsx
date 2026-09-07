@@ -147,7 +147,8 @@ export default function DashboardPage() {
             id: a.id || `alt-${Math.random()}`,
             title: a.title || a.message || "System Diagnostic Notification",
             severity: a.severity || "INFO",
-            deviceName: a.deviceName || a.device?.deviceName || "SHIVA-PRIMARY",
+            deviceName:
+              a.deviceName || a.device?.deviceName || "Unknown Device",
             deviceId: a.deviceId || a.device?.id,
             createdAt: a.createdAt || new Date().toISOString(),
             status: a.status || "OPEN",
@@ -231,7 +232,7 @@ export default function DashboardPage() {
             id: payload.id || `alt-${Date.now()}`,
             title: payload.title || "Critical Telemetry Breach",
             severity: payload.severity || "CRITICAL",
-            deviceName: payload.deviceName || "SHIVA",
+            deviceName: payload.deviceName || "Unknown Device",
             deviceId: payload.deviceId,
             createdAt: new Date().toISOString(),
             status: "OPEN",
