@@ -181,7 +181,7 @@ export default function DashboardPage() {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
         fetchDashboardData();
-      }, 5000);
+      }, 500);
     };
 
     const unsubOnline = on("device.online", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Users,
   UserPlus,
@@ -13,10 +13,12 @@ import {
   CheckCircle,
   Mail,
   UserCheck,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
+import { apiClient } from "@/lib/api-client";
 
 interface Member {
   id: number;
@@ -28,32 +30,58 @@ interface Member {
 }
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "Global Admin",
-      status: "Active",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 2,
-      name: "Sarah Jenkins",
-      email: "sarah@example.com",
-      role: "Security Analyst",
-      status: "Active",
-      lastActive: "1 hr ago",
-    },
-    {
-      id: 3,
-      name: "Mike Smith",
-      email: "mike@example.com",
-      role: "Read Only",
-      status: "Deactivated",
-      lastActive: "2 days ago",
-    },
-  ]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const fetchMembers = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Try multiple possible endpoints for workspace members
+      const res = await apiClient
+        .get<any, any>("/tenant/members")
+        .catch(() =>
+          apiClient.get<any, any>("/users/workspace/members").catch(() => null),
+        );
+
+      if (res?.data || res) {
+        const payload = res.data || res;
+        const list = payload.members || payload.users || payload || [];
+        if (Array.isArray(list)) {
+          setMembers(
+            list.map((m: any, idx: number) => ({
+              id: m.id || idx,
+              name:
+                m.name ||
+                m.fullName ||
+                m.displayName ||
+                m.email?.split("@")[0] ||
+                "Unknown",
+              email: m.email || "",
+              role: m.role || m.roleLabel || "Member",
+              status:
+                m.status === "ACTIVE" ||
+                m.status === "Active" ||
+                m.isActive === true
+                  ? "Active"
+                  : "Deactivated",
+              lastActive:
+                m.lastActive || m.lastLoginAt
+                  ? new Date(m.lastActive || m.lastLoginAt).toLocaleString()
+                  : "Unknown",
+            })),
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("Members fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
@@ -122,12 +150,26 @@ export default function MembersPage() {
             Manage user access, roles, and permissions across your workspace.
           </p>
         </div>
-        <Button
-          onClick={() => setIsInviteModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-500"
-        >
-          <UserPlus className="w-4 h-4 mr-2" /> Invite Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchMembers}
+            disabled={loading}
+            className="border-gray-800 text-gray-300 text-xs"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
+          <Button
+            onClick={() => setIsInviteModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-500"
+          >
+            <UserPlus className="w-4 h-4 mr-2" /> Invite Member
+          </Button>
+        </div>
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
@@ -168,13 +210,25 @@ export default function MembersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {filteredMembers.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-10 text-center text-gray-500"
+                  >
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-400" />
+                    Loading members...
+                  </td>
+                </tr>
+              ) : filteredMembers.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
                     className="px-6 py-8 text-center text-gray-500"
                   >
-                    No members match your search criteria.
+                    {members.length === 0
+                      ? "No workspace members found. Invite someone to get started."
+                      : "No members match your search criteria."}
                   </td>
                 </tr>
               ) : (

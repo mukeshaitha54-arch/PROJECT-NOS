@@ -24,52 +24,7 @@ import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export default function AlertsCenterPage() {
-  const [alerts, setAlerts] = useState<AlertCardData[]>([
-    {
-      id: "alt-01",
-      severity: "CRITICAL",
-      title: "Device Heartbeat Lost (Timeout > 90s)",
-      description:
-        "No UDP/HTTP telemetry payload received from node within failure window.",
-      deviceName: "Primary-Server",
-      deviceId: "node-primary-01",
-      createdAt: new Date(Date.now() - 120000).toISOString(),
-      status: "OPEN",
-    },
-    {
-      id: "alt-02",
-      severity: "HIGH",
-      title: "CPU Critical Spike (>90%)",
-      description:
-        "Host kernel reported continuous high computing saturation for >2 minutes.",
-      deviceName: "Primary-Server",
-      deviceId: "node-primary-01",
-      createdAt: new Date(Date.now() - 900000).toISOString(),
-      status: "OPEN",
-    },
-    {
-      id: "alt-03",
-      severity: "WARNING",
-      title: "Low Disk Storage Threshold (<15%)",
-      description:
-        "System partition volume C:\\ is running near maximum capacity.",
-      deviceName: "BACKUP-NODE-02",
-      deviceId: "node-backup-02",
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      status: "ACKNOWLEDGED",
-    },
-    {
-      id: "alt-04",
-      severity: "INFO",
-      title: "OTA Agent Self-Healing Daemon Executed",
-      description:
-        "Outbox dispatcher resumed queue transmission after transient network blip.",
-      deviceName: "Primary-Server",
-      deviceId: "node-primary-01",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      status: "RESOLVED",
-    },
-  ]);
+  const [alerts, setAlerts] = useState<AlertCardData[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
@@ -86,7 +41,7 @@ export default function AlertsCenterPage() {
       if (res?.data || res) {
         const payload = res.data || res;
         const list = payload.alerts || payload || [];
-        if (Array.isArray(list) && list.length > 0) {
+        if (Array.isArray(list)) {
           setAlerts(
             list.map((a: any) => ({
               id: a.id || `alt-${Math.random()}`,
@@ -103,7 +58,7 @@ export default function AlertsCenterPage() {
         }
       }
     } catch (err) {
-      console.warn("Alerts fetch fallback initialized:", err);
+      console.warn("Alerts fetch error:", err);
     } finally {
       setLoading(false);
     }

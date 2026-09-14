@@ -94,7 +94,20 @@ async function bootstrap() {
   });
 
   // Serve static assets (NOS-Agent.exe download etc.) at /downloads/*
-  const assetsDir = path.join(process.cwd(), "assets");
+  // Try multiple paths to work in both Docker (WORKDIR=/app) and local dev
+  const possibleAssetsDirs = [
+    path.join(process.cwd(), "apps", "backend", "assets"), // Docker: /app/apps/backend/assets
+    path.join(process.cwd(), "assets"), // Local dev: ./assets
+  ];
+  const assetsDir =
+    possibleAssetsDirs.find((d) => {
+      try {
+        return require("fs").existsSync(d);
+      } catch {
+        return false;
+      }
+    }) || possibleAssetsDirs[0];
+
   try {
     await app.register(fastifyStatic as any, {
       root: assetsDir,

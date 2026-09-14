@@ -588,9 +588,10 @@ function AddDeviceModal({
   };
 
   const downloadExe = () => {
-    const directUrl = `${apiBase().replace(/\/api\/v1$/, "")}/downloads/NOS-Agent.exe`;
+    // Use the API endpoint which serves the EXE from backend assets
+    const exeUrl = `${apiBase()}/fleet/installer/agent`;
     const a = document.createElement("a");
-    a.href = directUrl;
+    a.href = exeUrl;
     a.download = "NOS-Agent.exe";
     a.click();
   };
@@ -781,7 +782,14 @@ function AddDeviceModal({
                     to the target PC.
                   </li>
                   <li>
-                    Open <strong>PowerShell as Administrator</strong>.
+                    Open <strong>PowerShell as Administrator</strong> and{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                      cd
+                    </code>{" "}
+                    to the folder where you saved the script. Example:{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                      cd $env:USERPROFILE\Downloads
+                    </code>
                   </li>
                   <li>
                     Run the following installation command:

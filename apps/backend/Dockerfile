@@ -36,9 +36,10 @@ COPY --from=builder /app/packages/shared-types ./packages/shared-types
 # Install production dependencies fresh
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy build artifacts and prisma schema
+# Copy build artifacts, prisma schema, and static assets (NOS-Agent.exe etc.)
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+COPY --from=builder /app/apps/backend/assets ./apps/backend/assets
 
 # Prisma client generation (runtime needs it; pin version to match project)
 RUN npx prisma@6.19.3 generate --schema=./apps/backend/prisma/schema.prisma

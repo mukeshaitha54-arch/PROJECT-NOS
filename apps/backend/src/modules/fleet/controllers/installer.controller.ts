@@ -231,9 +231,19 @@ Write-Host ""
    */
   @Get("agent")
   async downloadAgentExe(@Res({ passthrough: true }) res: Response) {
-    const exePath = path.join(process.cwd(), "assets", "NOS-Agent.exe");
+    // In Docker WORKDIR=/app, __dirname is /app/apps/backend/dist/modules/fleet/controllers
+    // assets are at /app/apps/backend/assets
+    // Resolve from __dirname going up to the backend dist root, then to assets
+    const tryPaths = [
+      path.join(__dirname, "..", "..", "..", "..", "assets", "NOS-Agent.exe"), // dist/src/modules/fleet/controllers -> dist -> src -> backend
+      path.join(__dirname, "..", "..", "..", "assets", "NOS-Agent.exe"), // dist/modules/fleet/controllers -> dist -> backend
+      path.join(process.cwd(), "apps", "backend", "assets", "NOS-Agent.exe"), // Docker WORKDIR /app
+      path.join(process.cwd(), "assets", "NOS-Agent.exe"), // Local dev
+    ];
 
-    if (!fs.existsSync(exePath)) {
+    const exePath = tryPaths.find((p) => fs.existsSync(p));
+
+    if (!exePath) {
       throw new NotFoundException(
         "NOS Agent executable not found. Please build the agent via apps/NOS.Agent/publish.ps1 to generate apps/backend/assets/NOS-Agent.exe",
       );
