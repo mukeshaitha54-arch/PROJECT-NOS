@@ -16,6 +16,8 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY . .
+# Ensure assets dir exists (NOS-Agent.exe may not be in git; mkdir guarantees COPY won't fail)
+RUN mkdir -p apps/backend/assets
 RUN pnpm --filter shared-types build
 RUN pnpm --filter backend build
 
