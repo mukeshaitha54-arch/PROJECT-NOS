@@ -43,6 +43,39 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   }
 
   async create(data: CreateDeviceInput): Promise<Device> {
+    let resolvedOrgId: string | undefined = undefined;
+    if (data.organizationId) {
+      const orgExists = await this.prisma.organization.findUnique({
+        where: { id: data.organizationId },
+      });
+      if (orgExists) {
+        resolvedOrgId = orgExists.id;
+      } else {
+        const firstOrg = await this.prisma.organization.findFirst();
+        if (firstOrg) {
+          resolvedOrgId = firstOrg.id;
+        } else {
+          try {
+            const defaultOrg = await this.prisma.organization.create({
+              data: {
+                id:
+                  data.organizationId === "default-org"
+                    ? "default-org"
+                    : undefined,
+                name: "Personal Workspace",
+                slug: "personal",
+                status: "ACTIVE",
+              },
+            });
+            resolvedOrgId = defaultOrg.id;
+          } catch {
+            const fallback = await this.prisma.organization.findFirst();
+            resolvedOrgId = fallback?.id;
+          }
+        }
+      }
+    }
+
     return this.prisma.device.create({
       data: {
         uuid: data.uuid,
@@ -53,7 +86,7 @@ export class PrismaDeviceRepository implements IDeviceRepository {
         architecture: data.architecture,
         agentVersion: data.agentVersion,
         status: data.status || DeviceStatus.ONLINE,
-        organizationId: data.organizationId,
+        organizationId: resolvedOrgId,
         tokenHash: data.tokenHash,
         lastSeen: data.lastSeen || new Date(),
       },
@@ -61,9 +94,18 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   }
 
   async update(id: string, data: UpdateDeviceInput): Promise<Device> {
+    let updateData = { ...data };
+    if (updateData.organizationId) {
+      const orgExists = await this.prisma.organization.findUnique({
+        where: { id: updateData.organizationId },
+      });
+      if (!orgExists) {
+        delete updateData.organizationId;
+      }
+    }
     return this.prisma.device.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
