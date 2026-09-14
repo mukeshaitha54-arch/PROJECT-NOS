@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Query, Res, NotFoundException } from "@nestjs/common";
+import { Controller, Get, Query, Res, NotFoundException } from "@nestjs/common";
 import { Response } from "express";
 import * as path from "path";
 import * as fs from "fs";
@@ -78,11 +78,13 @@ export class InstallerController {
       "",
       "# ---------- Save Configuration ----------------------------------------------",
       "$cfg = [ordered]@{",
-      "    ServerUrl = $ServerUrl",
-      "    ApiKey    = $RegKey",
-      "    DeviceId  = ''",
+      "    AgentConfiguration = [ordered]@{",
+      "        ServerUrl = $ServerUrl",
+      "        ApiKey    = $RegKey",
+      "        DeviceId  = ''",
+      "    }",
       "}",
-      "$cfgJson = $cfg | ConvertTo-Json -Depth 3",
+      "$cfgJson = $cfg | ConvertTo-Json -Depth 5",
       "Set-Content -Path (Join-Path $ConfigDir 'appsettings.json') -Value $cfgJson -Encoding UTF8",
       "try { Set-Content -Path (Join-Path $InstallDir 'appsettings.json') -Value $cfgJson -Encoding UTF8 } catch { }",
       "Write-Host '  [+] Configuration saved.' -ForegroundColor Green",
