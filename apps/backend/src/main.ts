@@ -45,6 +45,12 @@ async function bootstrap() {
 
   // Custom Fastify hook for Request ID correlation middleware (Native Pattern)
   adapter.getInstance().addHook("onRequest", (req, res, done) => {
+    // Automatically normalize double /api/v1/api/v1/ prefix sent by older C# agents
+    if (req.raw.url && req.raw.url.includes("/api/v1/api/v1/")) {
+      req.raw.url = req.raw.url.replace("/api/v1/api/v1/", "/api/v1/");
+      (req as any).url = req.raw.url;
+    }
+
     const headerId =
       req.headers["x-trace-id"] || req.headers["x-correlation-id"];
     const traceId = Array.isArray(headerId)
@@ -55,7 +61,7 @@ async function bootstrap() {
     res.header("x-trace-id", traceId);
 
     const method = req.method;
-    const path = req.originalUrl || req.url;
+    const path = req.raw.url || req.originalUrl || req.url;
     const ip = req.ip || req.socket?.remoteAddress;
     const userAgent = req.headers["user-agent"] || "";
 

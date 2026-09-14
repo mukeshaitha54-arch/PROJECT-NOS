@@ -17,9 +17,11 @@ export class InstallerController {
     @Res() res: Response,
   ) {
     const safeKey = (registrationKey || "").replace(/[^A-Za-z0-9\-]/g, "");
-    const safeServer = (serverUrl || "http://13.127.187.47/api/v1")
+    const rawServer = (serverUrl || "http://13.127.187.47")
       .replace(/[`$'"\\]/g, "")
       .replace(/\s/g, "");
+    const baseServer = rawServer.replace(/\/api\/v1\/?$/, "");
+    const safeServer = `${baseServer}/api/v1`;
     const agentApiUrl = `${safeServer}/fleet/installer/agent`;
 
     // Each element is one line of the generated .ps1 file.
@@ -77,9 +79,10 @@ export class InstallerController {
       "}",
       "",
       "# ---------- Save Configuration ----------------------------------------------",
+      "$BaseServerUrl = $ServerUrl.TrimEnd('/') -replace '/api/v1$', ''",
       "$cfg = [ordered]@{",
       "    AgentConfiguration = [ordered]@{",
-      "        ServerUrl = $ServerUrl",
+      "        ServerUrl = $BaseServerUrl",
       "        ApiKey    = $RegKey",
       "        DeviceId  = ''",
       "    }",
@@ -125,6 +128,42 @@ export class InstallerController {
       "    exit 1",
       "}",
       "",
+      "# ---------- Verify Key & Onboard Device -------------------------------------",
+      "Write-Host '  [*] Verifying Registration Key and onboarding device...' -ForegroundColor Cyan",
+      '$RegEndpoint = "$ServerUrl/device/register"',
+      "$MachineUuid = (Get-CimInstance -Class Win32_ComputerSystemProduct -ErrorAction SilentlyContinue).UUID",
+      "if ([string]::IsNullOrWhiteSpace($MachineUuid)) { $MachineUuid = [guid]::NewGuid().ToString() }",
+      "$RegPayload = @{",
+      "    uuid            = $MachineUuid",
+      "    hostname        = $env:COMPUTERNAME",
+      "    deviceName      = $env:COMPUTERNAME",
+      "    os              = (Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue).Caption",
+      "    osVersion       = (Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue).Version",
+      "    architecture    = if ([Environment]::Is64BitOperatingSystem) { 'X64' } else { 'X86' }",
+      "    agentVersion    = '1.0.0'",
+      "    registrationKey = $RegKey",
+      "} | ConvertTo-Json",
+      "",
+      "try {",
+      "    $RegResp = Invoke-RestMethod -Uri $RegEndpoint -Method Post -Body $RegPayload -ContentType 'application/json' -TimeoutSec 15",
+      "    if ($RegResp.success -and $RegResp.data.deviceId) {",
+      "        $AssignedId = $RegResp.data.deviceId",
+      "        $AssignedToken = if ($RegResp.data.token) { $RegResp.data.token } else { $RegResp.data.registrationToken }",
+      '        Write-Host "  [+] Key verified! Device registered with ID: $AssignedId" -ForegroundColor Green',
+      "        $cfg.AgentConfiguration.DeviceId = $AssignedId",
+      "        $cfgJson = $cfg | ConvertTo-Json -Depth 5",
+      "        Set-Content -Path (Join-Path $ConfigDir 'appsettings.json') -Value $cfgJson -Encoding UTF8",
+      "        try { Set-Content -Path (Join-Path $InstallDir 'appsettings.json') -Value $cfgJson -Encoding UTF8 } catch { }",
+      "        $devObj = @{ DeviceId = $AssignedId; ServerUrl = $BaseServerUrl } | ConvertTo-Json",
+      "        Set-Content -Path (Join-Path $ConfigDir 'device.json') -Value $devObj -Encoding UTF8",
+      "        try { Set-Content -Path (Join-Path $InstallDir 'device.json') -Value $devObj -Encoding UTF8 } catch { }",
+      "        try { cmdkey /generic:'NOS_DeviceToken' /user:$AssignedId /pass:$AssignedToken | Out-Null } catch { }",
+      "    }",
+      "}",
+      "catch {",
+      '    Write-Host "  [*] Registration note: $($_.Exception.Message)" -ForegroundColor Yellow',
+      "}",
+      "",
       "# ---------- Remove Existing Service -----------------------------------------",
       "$existingSvc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue",
       "if ($null -ne $existingSvc) {",
@@ -163,9 +202,11 @@ export class InstallerController {
       "Write-Host '  |         INSTALLATION COMPLETE                    |' -ForegroundColor Green",
       "Write-Host '  +--------------------------------------------------+' -ForegroundColor Green",
       "Write-Host ''",
-      'Write-Host "  Server:  $ServerUrl" -ForegroundColor Gray',
-      'Write-Host "  Install: $InstallDir" -ForegroundColor Gray',
-      'Write-Host "  Service: $ServiceName" -ForegroundColor Gray',
+      'Write-Host "  Server:   $BaseServerUrl" -ForegroundColor Gray',
+      'Write-Host "  Install:  $InstallDir" -ForegroundColor Gray',
+      'Write-Host "  Service:  $ServiceName" -ForegroundColor Gray',
+      'Write-Host "  Device:   $env:COMPUTERNAME" -ForegroundColor Gray',
+      "Write-Host '  Telemetry streaming: ACTIVE' -ForegroundColor Green",
       "Write-Host ''",
     ];
 

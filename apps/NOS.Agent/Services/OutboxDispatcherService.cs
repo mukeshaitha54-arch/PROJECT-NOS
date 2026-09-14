@@ -179,9 +179,14 @@ namespace NOS.Agent.Services
 
         private string BuildApiUrl(string endpoint)
         {
-            var baseUri = new Uri(_config.ServerUrl.EndsWith("/") 
-                ? _config.ServerUrl 
-                : _config.ServerUrl + "/");
+            var serverUrl = _config.ServerUrl ?? "http://localhost:3001";
+            serverUrl = serverUrl.TrimEnd('/');
+            if (serverUrl.EndsWith("/api/v1", StringComparison.OrdinalIgnoreCase))
+                serverUrl = serverUrl[..^7];
+
+            var baseUri = new Uri(serverUrl.EndsWith("/") 
+                ? serverUrl 
+                : serverUrl + "/");
             var fullUri = new Uri(baseUri, endpoint.TrimStart('/'));
             return fullUri.ToString();
         }
