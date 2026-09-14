@@ -1,25 +1,14 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Res,
-  BadRequestException,
-  UseGuards,
-  StreamableFile,
-  NotFoundException,
-} from "@nestjs/common";
+﻿import { Controller, Get, Query, Res, NotFoundException } from "@nestjs/common";
 import { Response } from "express";
 import * as path from "path";
 import * as fs from "fs";
-import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 
 @Controller("fleet/installer")
 export class InstallerController {
   /**
    * GET /api/v1/fleet/installer/windows
-   * Returns a PowerShell script that installs NOS Agent on any Windows PC.
-   * The script prompts for a registration key and server URL, then
-   * downloads + runs the self-contained NOS-Agent.exe.
+   * Returns a PowerShell 5.1-compatible script that installs NOS Agent on Windows.
+   * Uses string-array approach to avoid ALL backtick/template-literal escaping issues.
    */
   @Get("windows")
   async getWindowsInstaller(
@@ -27,186 +16,158 @@ export class InstallerController {
     @Query("serverUrl") serverUrl: string,
     @Res() res: Response,
   ) {
-    // Sanitize inputs to prevent script injection
     const safeKey = (registrationKey || "").replace(/[^A-Za-z0-9\-]/g, "");
     const safeServer = (serverUrl || "http://13.127.187.47/api/v1")
       .replace(/[`$'"\\]/g, "")
       .replace(/\s/g, "");
+    const agentApiUrl = `${safeServer}/fleet/installer/agent`;
 
-    const agentDownloadUrl = `${safeServer.replace(/\/api\/v1$/, "")}/downloads/NOS-Agent.exe`;
+    // Each element is one line of the generated .ps1 file.
+    // Plain strings = no escaping needed. Template literals only where TS values injected.
+    const lines: string[] = [
+      "# ===========================================================================",
+      "# NOS Agent - Windows Installer",
+      `# Generated: ${new Date().toISOString()}`,
+      `# Server:    ${safeServer}`,
+      "# ===========================================================================",
+      "",
+      "#Requires -RunAsAdministrator",
+      "",
+      "# ---------- Configuration ---------------------------------------------------",
+      `$ServerUrl      = '${safeServer}'`,
+      `$AgentApiUrl    = '${agentApiUrl}'`,
+      `$RegKey         = '${safeKey}'`,
+      "$ServiceName    = 'NOS-Agent'",
+      "$ServiceDisplay = 'Neural Operating System (NOS) Agent'",
+      "$ServiceDesc    = 'Endpoint telemetry and health monitoring daemon for NOS.'",
+      "$InstallDir     = Join-Path $env:ProgramFiles 'NOSAgent'",
+      "$ExePath        = Join-Path $InstallDir 'NOS-Agent.exe'",
+      "$ConfigDir      = Join-Path $env:LOCALAPPDATA 'NOS'",
+      "",
+      "# ---------- Banner ----------------------------------------------------------",
+      "Clear-Host",
+      "Write-Host ''",
+      "Write-Host '  +--------------------------------------------------+' -ForegroundColor Cyan",
+      "Write-Host '  |       NOS AGENT - WINDOWS INSTALLER              |' -ForegroundColor Cyan",
+      "Write-Host '  +--------------------------------------------------+' -ForegroundColor Cyan",
+      "Write-Host ''",
+      "",
+      "# ---------- Registration Key ------------------------------------------------",
+      "if ([string]::IsNullOrWhiteSpace($RegKey)) {",
+      "    Write-Host '  Enter your Registration Key from the NOS Dashboard:' -ForegroundColor Yellow",
+      "    $RegKey = Read-Host '  Registration Key'",
+      "}",
+      "",
+      "if ([string]::IsNullOrWhiteSpace($RegKey)) {",
+      "    Write-Host '  [!] No registration key provided. Aborting.' -ForegroundColor Red",
+      "    exit 1",
+      "}",
+      "",
+      "Write-Host ''",
+      "Write-Host '  [*] Installing NOS Agent...' -ForegroundColor Cyan",
+      "Write-Host ''",
+      "",
+      "# ---------- Create Directories ----------------------------------------------",
+      "if (-not (Test-Path $InstallDir)) {",
+      "    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null",
+      '    Write-Host "  [+] Created: $InstallDir" -ForegroundColor Green',
+      "}",
+      "if (-not (Test-Path $ConfigDir)) {",
+      "    New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null",
+      "}",
+      "",
+      "# ---------- Save Configuration ----------------------------------------------",
+      "$cfg = [ordered]@{",
+      "    ServerUrl = $ServerUrl",
+      "    ApiKey    = $RegKey",
+      "    DeviceId  = ''",
+      "}",
+      "$cfgJson = $cfg | ConvertTo-Json -Depth 3",
+      "Set-Content -Path (Join-Path $ConfigDir 'appsettings.json') -Value $cfgJson -Encoding UTF8",
+      "try { Set-Content -Path (Join-Path $InstallDir 'appsettings.json') -Value $cfgJson -Encoding UTF8 } catch { }",
+      "Write-Host '  [+] Configuration saved.' -ForegroundColor Green",
+      "",
+      "# ---------- Download Agent EXE ----------------------------------------------",
+      "Write-Host '  [*] Downloading NOS Agent...' -ForegroundColor Cyan",
+      "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12",
+      "",
+      "$downloaded = $false",
+      "try {",
+      "    Invoke-WebRequest -Uri $AgentApiUrl -OutFile $ExePath -TimeoutSec 180 -UseBasicParsing",
+      "    $downloaded = $true",
+      '    Write-Host "  [+] Downloaded to: $ExePath" -ForegroundColor Green',
+      "}",
+      "catch {",
+      '    Write-Host "  [!] Download failed: $($_.Exception.Message)" -ForegroundColor Yellow',
+      "}",
+      "",
+      "if (-not $downloaded) {",
+      "    $searchPaths = @(",
+      "        (Join-Path $env:USERPROFILE 'Desktop\\NOS-Agent.exe'),",
+      "        (Join-Path $env:USERPROFILE 'Downloads\\NOS-Agent.exe'),",
+      "        (Join-Path $PSScriptRoot 'NOS-Agent.exe')",
+      "    )",
+      "    foreach ($p in $searchPaths) {",
+      "        if (Test-Path $p) {",
+      "            Copy-Item -Path $p -Destination $ExePath -Force",
+      "            $downloaded = $true",
+      '            Write-Host "  [+] Found local copy: $p" -ForegroundColor Green',
+      "            break",
+      "        }",
+      "    }",
+      "}",
+      "",
+      "if (-not $downloaded) {",
+      "    Write-Host '  [!] Cannot obtain NOS-Agent.exe.' -ForegroundColor Red",
+      "    Write-Host '      Download from dashboard and place it next to this script, then re-run.' -ForegroundColor Red",
+      "    exit 1",
+      "}",
+      "",
+      "# ---------- Remove Existing Service -----------------------------------------",
+      "$existingSvc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue",
+      "if ($null -ne $existingSvc) {",
+      "    Write-Host '  [*] Removing existing service...' -ForegroundColor Cyan",
+      "    Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue",
+      "    Start-Sleep -Seconds 2",
+      "    sc.exe delete $ServiceName | Out-Null",
+      "    Start-Sleep -Seconds 1",
+      "    Write-Host '  [+] Existing service removed.' -ForegroundColor Green",
+      "}",
+      "",
+      "# ---------- Install Windows Service -----------------------------------------",
+      "Write-Host '  [*] Installing Windows Service...' -ForegroundColor Cyan",
+      "$binPath = ([char]34 + $ExePath + [char]34)",
+      "sc.exe create $ServiceName binPath= $binPath start= auto DisplayName= $ServiceDisplay | Out-Null",
+      "sc.exe description $ServiceName $ServiceDesc | Out-Null",
+      "sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/10000/restart/30000 | Out-Null",
+      "Write-Host '  [+] Service registered.' -ForegroundColor Green",
+      "",
+      "# ---------- Start Service ---------------------------------------------------",
+      "Write-Host '  [*] Starting NOS Agent service...' -ForegroundColor Cyan",
+      "Start-Service -Name $ServiceName -ErrorAction SilentlyContinue",
+      "Start-Sleep -Seconds 3",
+      "",
+      "$svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue",
+      "if ($null -ne $svc -and $svc.Status -eq 'Running') {",
+      "    Write-Host '  [+] NOS Agent service is RUNNING.' -ForegroundColor Green",
+      "}",
+      "else {",
+      "    Write-Host '  [!] Service did not start - check Event Viewer.' -ForegroundColor Yellow",
+      "}",
+      "",
+      "# ---------- Done ------------------------------------------------------------",
+      "Write-Host ''",
+      "Write-Host '  +--------------------------------------------------+' -ForegroundColor Green",
+      "Write-Host '  |         INSTALLATION COMPLETE                    |' -ForegroundColor Green",
+      "Write-Host '  +--------------------------------------------------+' -ForegroundColor Green",
+      "Write-Host ''",
+      'Write-Host "  Server:  $ServerUrl" -ForegroundColor Gray',
+      'Write-Host "  Install: $InstallDir" -ForegroundColor Gray',
+      'Write-Host "  Service: $ServiceName" -ForegroundColor Gray',
+      "Write-Host ''",
+    ];
 
-    const script = `
-# =============================================================================
-# NOS Agent — One-Click Windows Installer
-# Network Operations & Security Platform
-# =============================================================================
-# Generated: ${new Date().toISOString()}
-# Server:    ${safeServer}
-# =============================================================================
-
-#Requires -RunAsAdministrator
-$ErrorActionPreference = 'Stop'
-
-# ─── Configuration ────────────────────────────────────────────────────────────
-$ServerUrl       = "${safeServer}"
-$AgentExeUrl     = "${agentDownloadUrl}"
-$FallbackExeUrl  = "${safeServer}/fleet/installer/agent"
-$InstallDir      = "$env:ProgramFiles\\NOSAgent"
-$ServiceName     = "NOS-Agent"
-$ServiceDisplay  = "Neural Operating System (NOS) Agent"
-$ExePath         = Join-Path $InstallDir "NOS-Agent.exe"
-$LocalDataDir    = "$env:LOCALAPPDATA\\NOS"
-$ProgramDataDir  = "$env:ProgramData\\NOS"
-
-# ─── Banner ───────────────────────────────────────────────────────────────────
-Clear-Host
-Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "  ║         NOS AGENT — WINDOWS INSTALLER               ║" -ForegroundColor Cyan
-Write-Host "  ╚══════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-Write-Host ""
-
-# ─── Get Registration Key ─────────────────────────────────────────────────────
-$RegistrationKey = "${safeKey}"
-if ([string]::IsNullOrWhiteSpace($RegistrationKey)) {
-    Write-Host "  Please enter your Registration Key (from the NOS Dashboard):" -ForegroundColor Yellow
-    $RegistrationKey = Read-Host "  Registration Key"
-}
-
-if ([string]::IsNullOrWhiteSpace($RegistrationKey)) {
-    Write-Host "  [!] No registration key provided. Aborting." -ForegroundColor Red
-    exit 1
-}
-
-Write-Host ""
-Write-Host "  [→] Installing NOS Agent..." -ForegroundColor Cyan
-Write-Host ""
-
-# ─── Create Directories ───────────────────────────────────────────────────────
-if (-not (Test-Path $InstallDir)) {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-    Write-Host "  [✓] Created install directory: $InstallDir" -ForegroundColor Green
-}
-if (-not (Test-Path $LocalDataDir)) {
-    New-Item -ItemType Directory -Path $LocalDataDir -Force | Out-Null
-}
-if (-not (Test-Path $ProgramDataDir)) {
-    New-Item -ItemType Directory -Path $ProgramDataDir -Force | Out-Null
-}
-
-# ─── Save Configuration ───────────────────────────────────────────────────────
-$configObj = @{
-    AgentConfiguration = @{
-        ServerUrl = $ServerUrl
-        DeviceId  = ""
-        TenantId  = ""
-        ApiKey    = $RegistrationKey
-    }
-} | ConvertTo-Json -Depth 5
-
-Set-Content -Path (Join-Path $LocalDataDir "appsettings.json") -Value $configObj
-try { Set-Content -Path (Join-Path $ProgramDataDir "appsettings.json") -Value $configObj } catch {}
-try { Set-Content -Path (Join-Path $InstallDir "appsettings.json") -Value $configObj } catch {}
-Write-Host "  [✓] Configuration saved" -ForegroundColor Green
-
-# ─── Download Agent EXE ───────────────────────────────────────────────────────
-Write-Host "  [→] Downloading NOS Agent from server..." -ForegroundColor Cyan
-
-$downloadSuccess = $false
-try {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    try {
-        Invoke-WebRequest -Uri $AgentExeUrl -OutFile $ExePath -TimeoutSec 180 -UseBasicParsing
-        $downloadSuccess = $true
-    } catch {
-        Write-Host "  [!] Primary URL ($AgentExeUrl) failed, trying API endpoint..." -ForegroundColor Yellow
-        Invoke-WebRequest -Uri $FallbackExeUrl -OutFile $ExePath -TimeoutSec 180 -UseBasicParsing
-        $downloadSuccess = $true
-    }
-    Write-Host "  [✓] Agent downloaded to: $ExePath" -ForegroundColor Green
-} catch {
-    Write-Host "  [!] Auto-download failed: $($_.Exception.Message)" -ForegroundColor Yellow
-    Write-Host "  [→] Checking for local agent copy..." -ForegroundColor Cyan
-    
-    # Try to find agent in common local paths (for dev installs)
-    $localPaths = @(
-        "$env:USERPROFILE\\Desktop\\NOS-Agent.exe",
-        "$env:USERPROFILE\\Downloads\\NOS-Agent.exe",
-        "$PSScriptRoot\\NOS-Agent.exe"
-    )
-    foreach ($lp in $localPaths) {
-        if (Test-Path $lp) {
-            Copy-Item $lp $ExePath -Force
-            $downloadSuccess = $true
-            Write-Host "  [✓] Found local copy at: $lp" -ForegroundColor Green
-            break
-        }
-    }
-}
-
-if (-not $downloadSuccess) {
-    Write-Host ""
-    Write-Host "  [!] Could not obtain NOS-Agent.exe." -ForegroundColor Red
-    Write-Host "      Please download NOS-Agent.exe from your admin dashboard and" -ForegroundColor Red
-    Write-Host "      place it in the same folder as this script, then re-run." -ForegroundColor Red
-    exit 1
-}
-
-# ─── Stop & Remove Existing Service ──────────────────────────────────────────
-$existingSvc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-if ($existingSvc) {
-    Write-Host "  [→] Stopping existing service..." -ForegroundColor Cyan
-    Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
-    & sc.exe delete $ServiceName | Out-Null
-    Start-Sleep -Seconds 1
-    Write-Host "  [✓] Existing service removed" -ForegroundColor Green
-}
-
-# ─── Register as Windows Service ──────────────────────────────────────────────
-Write-Host "  [→] Registering Windows Service..." -ForegroundColor Cyan
-& sc.exe create $ServiceName binPath= \`"$ExePath\`" start= auto DisplayName= $ServiceDisplay | Out-Null
-& sc.exe description $ServiceName "Autonomous endpoint telemetry and health monitoring daemon for NOS platform." | Out-Null
-& sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/10000/restart/30000 | Out-Null
-
-# ─── Perform One-Time Device Registration ─────────────────────────────────────
-Write-Host ""
-Write-Host "  [→] Registering device with control plane..." -ForegroundColor Cyan
-
-& "$ExePath" --register --key "$RegistrationKey" --url "$ServerUrl"
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "  [!] Initial registration exited with code $LASTEXITCODE. The service will attempt auto-registration." -ForegroundColor Yellow
-} else {
-    Write-Host "  [✓] Device registration successful!" -ForegroundColor Green
-}
-
-# ─── Start Service ─────────────────────────────────────────────────────────────
-Write-Host "  [→] Starting NOS Agent service..." -ForegroundColor Cyan
-Start-Service -Name $ServiceName -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 3
-
-$svcStatus = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-if ($svcStatus -and $svcStatus.Status -eq 'Running') {
-    Write-Host "  [✓] NOS Agent service is RUNNING" -ForegroundColor Green
-} else {
-    Write-Host "  [!] Service not running — starting manually" -ForegroundColor Yellow
-    Start-Service -Name $ServiceName -ErrorAction SilentlyContinue
-}
-
-# ─── Done ──────────────────────────────────────────────────────────────────────
-Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "  ║           INSTALLATION COMPLETE ✓                   ║" -ForegroundColor Green
-Write-Host "  ╚══════════════════════════════════════════════════════╝" -ForegroundColor Green
-Write-Host ""
-Write-Host "  The NOS Agent is now running on this PC." -ForegroundColor Cyan
-Write-Host "  It will appear in your fleet dashboard within 60 seconds." -ForegroundColor Cyan
-Write-Host ""
-Write-Host "  Server:   $ServerUrl" -ForegroundColor Gray
-Write-Host "  Install:  $InstallDir" -ForegroundColor Gray
-Write-Host "  Service:  $ServiceName" -ForegroundColor Gray
-Write-Host ""
-`.trim();
+    const script = lines.join("\r\n");
 
     const setHeader = (name: string, value: string | number) => {
       if (typeof (res as any).header === "function") {
@@ -227,25 +188,21 @@ Write-Host ""
   /**
    * GET /api/v1/fleet/installer/agent
    * Streams the pre-built NOS-Agent.exe for download.
-   * Publicly accessible so target PCs can download the binary directly or via PowerShell.
    */
   @Get("agent")
   async downloadAgentExe(@Res({ passthrough: true }) res: Response) {
-    // In Docker WORKDIR=/app, __dirname is /app/apps/backend/dist/modules/fleet/controllers
-    // assets are at /app/apps/backend/assets
-    // Resolve from __dirname going up to the backend dist root, then to assets
     const tryPaths = [
-      path.join(__dirname, "..", "..", "..", "..", "assets", "NOS-Agent.exe"), // dist/src/modules/fleet/controllers -> dist -> src -> backend
-      path.join(__dirname, "..", "..", "..", "assets", "NOS-Agent.exe"), // dist/modules/fleet/controllers -> dist -> backend
-      path.join(process.cwd(), "apps", "backend", "assets", "NOS-Agent.exe"), // Docker WORKDIR /app
-      path.join(process.cwd(), "assets", "NOS-Agent.exe"), // Local dev
+      path.join(__dirname, "..", "..", "..", "..", "assets", "NOS-Agent.exe"),
+      path.join(__dirname, "..", "..", "..", "assets", "NOS-Agent.exe"),
+      path.join(process.cwd(), "apps", "backend", "assets", "NOS-Agent.exe"),
+      path.join(process.cwd(), "assets", "NOS-Agent.exe"),
     ];
 
     const exePath = tryPaths.find((p) => fs.existsSync(p));
 
     if (!exePath) {
       throw new NotFoundException(
-        "NOS Agent executable not found. Please build the agent via apps/NOS.Agent/publish.ps1 to generate apps/backend/assets/NOS-Agent.exe",
+        "NOS Agent executable not found. Build via apps/NOS.Agent/publish.ps1 to generate apps/backend/assets/NOS-Agent.exe",
       );
     }
 
@@ -267,6 +224,7 @@ Write-Host ""
     }
 
     const stream = fs.createReadStream(exePath);
+    const { StreamableFile } = await import("@nestjs/common");
     return new StreamableFile(stream);
   }
 }
