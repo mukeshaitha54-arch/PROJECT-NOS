@@ -23,7 +23,13 @@ ssh -i your-key.pem ubuntu@13.127.187.47
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install docker.io docker-compose -y
+sudo apt install docker.io -y
+# Install Docker Compose v2 (prevents KeyError: ContainerConfig)
+sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+mkdir -p ~/.docker/cli-plugins
+ln -sf /usr/local/bin/docker-compose ~/.docker/cli-plugins/docker-compose
 sudo usermod -aG docker ubuntu
 exit
 ```
