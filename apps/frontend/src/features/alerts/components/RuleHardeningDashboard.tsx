@@ -73,43 +73,46 @@ export function RuleHardeningDashboard({
   };
 
   // Load rule-specific telemetry when selectedRuleId changes or tab changes
-  const fetchRuleTelemetry = async (ruleId: string) => {
-    try {
-      setLoading(true);
-      if (activeTab === "SIMULATION_PREVIEW") {
-        const [simData, previewData] = await Promise.all([
-          alertApi.testRule(ruleId, "LAST_24H"),
-          alertApi.previewRule({
-            metric: "cpuUsage",
-            operator: ">",
-            threshold: 80,
-          } as any),
-        ]);
-        setSimulation(simData);
-        setPreview(previewData);
-      } else if (activeTab === "VALIDATION") {
-        const valData = await alertApi.validateRule(
-          { metric: "cpuUsage", threshold: 85, operator: ">" } as any,
-          ruleId,
-        );
-        setValidation(valData);
-      } else if (activeTab === "DIFF_ROLLBACK") {
-        const diffData = await alertApi.getRuleDiff(ruleId, 1, 2);
-        setDiff(diffData);
-      } else if (activeTab === "METRIC_STATS") {
-        const [metricsData, usageData] = await Promise.all([
-          alertApi.getRuleMetrics(ruleId),
-          alertApi.getRuleUsageStatistics(ruleId),
-        ]);
-        setMetrics(metricsData);
-        setUsage(usageData);
+  const fetchRuleTelemetry = useCallback(
+    async (ruleId: string) => {
+      try {
+        setLoading(true);
+        if (activeTab === "SIMULATION_PREVIEW") {
+          const [simData, previewData] = await Promise.all([
+            alertApi.testRule(ruleId, "LAST_24H"),
+            alertApi.previewRule({
+              metric: "cpuUsage",
+              operator: ">",
+              threshold: 80,
+            } as any),
+          ]);
+          setSimulation(simData);
+          setPreview(previewData);
+        } else if (activeTab === "VALIDATION") {
+          const valData = await alertApi.validateRule(
+            { metric: "cpuUsage", threshold: 85, operator: ">" } as any,
+            ruleId,
+          );
+          setValidation(valData);
+        } else if (activeTab === "DIFF_ROLLBACK") {
+          const diffData = await alertApi.getRuleDiff(ruleId, 1, 2);
+          setDiff(diffData);
+        } else if (activeTab === "METRIC_STATS") {
+          const [metricsData, usageData] = await Promise.all([
+            alertApi.getRuleMetrics(ruleId),
+            alertApi.getRuleUsageStatistics(ruleId),
+          ]);
+          setMetrics(metricsData);
+          setUsage(usageData);
+        }
+      } catch (err: any) {
+        setError(err?.message || "Failed to load rule insights");
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err?.message || "Failed to load rule insights");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [activeTab],
+  );
 
   useEffect(() => {
     fetchHealthAndQueues();
@@ -119,7 +122,7 @@ export function RuleHardeningDashboard({
     if (selectedRuleId && activeTab !== "HEALTH_QUEUES") {
       fetchRuleTelemetry(selectedRuleId);
     }
-  }, [selectedRuleId, activeTab]);
+  }, [selectedRuleId, activeTab, fetchRuleTelemetry]);
 
   const handlePurgeQueue = async (queueName: string) => {
     if (!isAdmin) return;
