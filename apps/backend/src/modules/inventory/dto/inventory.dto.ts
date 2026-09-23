@@ -178,9 +178,10 @@ export class NetworkAdapterPayloadDto implements NetworkAdapterDto {
 }
 
 export class InstalledSoftwarePayloadDto implements InstalledSoftwareDto {
-  @ApiProperty({ example: "Google Chrome" })
+  @ApiPropertyOptional({ example: "Google Chrome" })
+  @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
   @ApiPropertyOptional({ example: "Google LLC" })
   @IsOptional()
@@ -204,9 +205,10 @@ export class InstalledSoftwarePayloadDto implements InstalledSoftwareDto {
 }
 
 export class WindowsServicePayloadDto implements WindowsServiceDto {
-  @ApiProperty({ example: "Winmgmt" })
+  @ApiPropertyOptional({ example: "Winmgmt" })
+  @IsOptional()
   @IsString()
-  serviceName!: string;
+  serviceName?: string;
 
   @ApiPropertyOptional({ example: "Windows Management Instrumentation" })
   @IsOptional()
@@ -230,9 +232,10 @@ export class WindowsServicePayloadDto implements WindowsServiceDto {
 }
 
 export class StartupApplicationPayloadDto implements StartupApplicationDto {
-  @ApiProperty({ example: "OneDrive" })
+  @ApiPropertyOptional({ example: "OneDrive" })
+  @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
   @ApiPropertyOptional({
     example: "C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe /background",

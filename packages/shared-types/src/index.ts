@@ -492,7 +492,7 @@ export interface NetworkAdapterDto {
 
 export interface InstalledSoftwareDto {
   id?: string;
-  name: string;
+  name?: string;
   publisher?: string;
   version?: string;
   installDate?: string;
@@ -501,7 +501,7 @@ export interface InstalledSoftwareDto {
 
 export interface WindowsServiceDto {
   id?: string;
-  serviceName: string;
+  serviceName?: string;
   displayName?: string;
   status?: string; // e.g. Running, Stopped, Paused
   startType?: string; // e.g. Automatic, Manual, Disabled
@@ -510,7 +510,7 @@ export interface WindowsServiceDto {
 
 export interface StartupApplicationDto {
   id?: string;
-  name: string;
+  name?: string;
   command?: string;
   location?: string;
   user?: string;
