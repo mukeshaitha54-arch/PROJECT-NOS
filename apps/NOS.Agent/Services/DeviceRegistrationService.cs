@@ -123,6 +123,7 @@ namespace NOS.Agent.Services
         {
             string osCaption = "Windows 11";
             string osVersion = Environment.OSVersion.Version.ToString();
+            string machineUuid = string.Empty;
 
             try
             {
@@ -135,25 +136,39 @@ namespace NOS.Agent.Services
                         osCaption = osInfo["Caption"]?.ToString() ?? osCaption;
                         osVersion = osInfo["Version"]?.ToString() ?? osVersion;
                     }
+
+                    // Get stable hardware UUID — same across reboots/reinstalls
+                    using var uuidSearcher = new ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
+                    var uuidInfo = uuidSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
+                    machineUuid = uuidInfo?["UUID"]?.ToString() ?? string.Empty;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "WMI OS query skipped");
+                _logger.LogDebug(ex, "WMI OS/UUID query skipped");
             }
 
-            var orgId = _configuration["AgentConfiguration:TenantId"] ?? "default-org";
+            // Fallback: derive a stable UUID from machine name + OS if WMI unavailable
+            if (string.IsNullOrWhiteSpace(machineUuid))
+            {
+                var stableInput = $"{Environment.MachineName}-{Environment.OSVersion.Platform}";
+                using var sha = System.Security.Cryptography.SHA256.Create();
+                var hashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(stableInput));
+                machineUuid = new Guid(hashBytes.Take(16).ToArray()).ToString();
+            }
+
+            var apiKey = _configuration["AgentConfiguration:ApiKey"] ?? string.Empty;
 
             return new
             {
-                uuid = Guid.NewGuid().ToString(),
+                uuid = machineUuid,
                 deviceName = Environment.MachineName,
                 hostname = Environment.MachineName,
                 os = osCaption,
                 osVersion = osVersion,
                 architecture = RuntimeInformation.ProcessArchitecture.ToString(),
                 agentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-                organizationId = orgId
+                registrationKey = apiKey
             };
         }
 

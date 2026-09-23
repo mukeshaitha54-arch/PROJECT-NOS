@@ -9,7 +9,7 @@ import {
 
 @Injectable()
 export class PrismaDeviceRepository implements IDeviceRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): Promise<Device | null> {
     return this.prisma.device.findUnique({ where: { id } });
@@ -87,6 +87,8 @@ export class PrismaDeviceRepository implements IDeviceRepository {
         agentVersion: data.agentVersion,
         status: data.status || DeviceStatus.ONLINE,
         organizationId: resolvedOrgId,
+        // Sync tenantId so dashboard controllers that filter by tenantId work correctly
+        tenantId: resolvedOrgId,
         tokenHash: data.tokenHash,
         lastSeen: data.lastSeen || new Date(),
       },
@@ -101,6 +103,9 @@ export class PrismaDeviceRepository implements IDeviceRepository {
       });
       if (!orgExists) {
         delete updateData.organizationId;
+      } else {
+        // Keep tenantId in sync with organizationId
+        (updateData as any).tenantId = updateData.organizationId;
       }
     }
     return this.prisma.device.update({

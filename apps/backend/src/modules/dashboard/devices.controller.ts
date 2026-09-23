@@ -28,8 +28,19 @@ export class DevicesController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "List all devices with latest snapshot" })
   async getDevices(@CurrentTenant() tenant: TenantContext) {
+    const orgId = tenant.organizationId;
+
+    // Auto-fix legacy devices: sync tenantId for any device where organizationId matches but tenantId doesn't
+    await this.prisma.device.updateMany({
+      where: { organizationId: orgId, tenantId: { not: orgId } },
+      data: { tenantId: orgId },
+    });
+
+    // Query by tenantId OR organizationId to catch all devices for this org
     const devices = await this.prisma.device.findMany({
-      where: { tenantId: tenant.organizationId },
+      where: {
+        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+      },
       include: {
         telemetrySnapshots: {
           orderBy: { timestamp: "desc" },
@@ -48,8 +59,12 @@ export class DevicesController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Fleet statistics" })
   async getStats(@CurrentTenant() tenant: TenantContext) {
+    const orgId = tenant.organizationId;
+
     const devices = await this.prisma.device.findMany({
-      where: { tenantId: tenant.organizationId },
+      where: {
+        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+      },
       select: { status: true },
     });
 
@@ -63,7 +78,7 @@ export class DevicesController {
 
     const alerts = await this.prisma.alert.count({
       where: {
-        tenantId: tenant.organizationId,
+        tenantId: orgId,
         createdAt: {
           gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
@@ -83,8 +98,12 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: {
+        id,
+        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+      },
       include: {
         inventory: true,
       },
@@ -122,8 +141,9 @@ export class DevicesController {
     @Param("id") id: string,
     @Query("range") range: string = "1h",
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -170,8 +190,9 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -233,8 +254,9 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -256,8 +278,9 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -279,8 +302,9 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -303,8 +327,9 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, tenantId: tenant.organizationId },
+      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
     });
 
     if (!device) throw new NotFoundException("Device not found");
