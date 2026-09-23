@@ -141,7 +141,10 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         int runningServices = 0;
         try
         {
-            runningServices = ServiceController.GetServices().Length;
+            using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Service WHERE State='Running'"))
+            {
+                runningServices = searcher.Get().Count;
+            }
         }
         catch { }
 
