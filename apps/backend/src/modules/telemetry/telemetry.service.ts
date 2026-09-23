@@ -93,8 +93,8 @@ export class TelemetryService {
       bootTime: bootTimeDate,
       ipAddress: dto.ipAddress,
       macAddress: dto.macAddress,
-      gateway: dto.gateway ?? "0.0.0.0",
-      dns: dto.dns ?? "8.8.8.8",
+      gateway: dto.gateway || null,
+      dns: dto.dns || null,
       timestamp: timestampDate || new Date(),
     });
 

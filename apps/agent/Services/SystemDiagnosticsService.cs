@@ -195,8 +195,8 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
     private string GetLocalIPAddress(out string macAddress, out string gateway, out string dns)
     {
         macAddress = "00:00:00:00:00:00";
-        gateway = "0.0.0.0";
-        dns = "8.8.8.8";
+        gateway = "";
+        dns = "";
         string ipResult = "127.0.0.1";
 
         try

@@ -36,17 +36,19 @@ function formatBytesToGb(val: number | null | undefined): string {
 }
 
 function formatSpeed(bytesPerSec: number | null | undefined): string {
-  if (!bytesPerSec || isNaN(bytesPerSec) || bytesPerSec <= 0)
+  if (
+    bytesPerSec === null ||
+    bytesPerSec === undefined ||
+    isNaN(bytesPerSec) ||
+    bytesPerSec <= 0
+  )
     return "0.00 MB/s";
   if (bytesPerSec >= 1048576) {
-    return (bytesPerSec / (1024 * 1024)).toFixed(2) + " MB/s";
+    return (bytesPerSec / 1048576).toFixed(2) + " MB/s";
   } else if (bytesPerSec >= 1024) {
     return (bytesPerSec / 1024).toFixed(1) + " KB/s";
-  } else if (bytesPerSec < 100) {
-    // Already in MB/s
-    return bytesPerSec.toFixed(2) + " MB/s";
   }
-  return (bytesPerSec / (1024 * 1024)).toFixed(2) + " MB/s";
+  return bytesPerSec.toFixed(0) + " B/s";
 }
 
 function formatDataSize(bytes: number | null | undefined): string {
@@ -308,9 +310,14 @@ export default function DeviceDetailPage() {
     realtimeData?.runningServices ??
     device.latestSnapshot?.runningServices ??
     0;
+  const rawGateway =
+    realtimeData?.gateway ?? device.latestSnapshot?.gateway ?? null;
   const gateway =
-    realtimeData?.gateway ?? device.latestSnapshot?.gateway ?? "N/A";
-  const dns = realtimeData?.dns ?? device.latestSnapshot?.dns ?? "N/A";
+    rawGateway && rawGateway !== "0.0.0.0" && rawGateway !== ""
+      ? rawGateway
+      : "N/A";
+  const rawDns = realtimeData?.dns ?? device.latestSnapshot?.dns ?? null;
+  const dns = rawDns && rawDns !== "8.8.8.8" && rawDns !== "" ? rawDns : "N/A";
 
   const memTotal =
     realtimeData?.memoryTotal ?? device.latestSnapshot?.memoryTotal ?? 0;

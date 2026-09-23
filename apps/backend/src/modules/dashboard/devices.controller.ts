@@ -54,9 +54,27 @@ export class DevicesController {
       },
     });
 
+    // Serialize BigInt fields to Number to avoid JSON issues
+    const serialized = devices.map((device) => {
+      const snap = device.telemetrySnapshots[0] || null;
+      return {
+        ...device,
+        latestSnapshot: snap
+          ? {
+              ...snap,
+              bytesSent: snap.bytesSent ? Number(snap.bytesSent) : 0,
+              bytesReceived: snap.bytesReceived
+                ? Number(snap.bytesReceived)
+                : 0,
+            }
+          : null,
+        telemetrySnapshots: undefined,
+      };
+    });
+
     return {
       success: true,
-      data: devices,
+      data: serialized,
     };
   }
 
@@ -128,11 +146,21 @@ export class DevicesController {
       orderBy: { timestamp: "desc" },
     });
 
+    // Serialize BigInt fields to Number to avoid JSON issues
+    const serializeSnap = (snap: any) =>
+      snap
+        ? {
+            ...snap,
+            bytesSent: snap.bytesSent ? Number(snap.bytesSent) : 0,
+            bytesReceived: snap.bytesReceived ? Number(snap.bytesReceived) : 0,
+          }
+        : null;
+
     return {
       success: true,
       data: {
         ...device,
-        latestSnapshot,
+        latestSnapshot: serializeSnap(latestSnapshot),
         latestHeartbeat,
       },
     };

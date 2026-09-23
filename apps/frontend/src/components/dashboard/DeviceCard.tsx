@@ -4,14 +4,15 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { HeartbeatTimeline } from "./HeartbeatTimeline";
 import { TelemetrySparkline } from "./TelemetrySparkline";
-import {
-  Activity,
-  Cpu,
-  HardDrive,
-  MemoryStick,
-  Network,
-  Trash2,
-} from "lucide-react";
+import { Cpu, MemoryStick, Network, Trash2 } from "lucide-react";
+
+function fmtSpeed(bytesPerSec: number): string {
+  if (!bytesPerSec || bytesPerSec <= 0) return "0.00 MB/s";
+  if (bytesPerSec >= 1048576)
+    return (bytesPerSec / 1048576).toFixed(2) + " MB/s";
+  if (bytesPerSec >= 1024) return (bytesPerSec / 1024).toFixed(1) + " KB/s";
+  return bytesPerSec.toFixed(0) + " B/s";
+}
 
 interface DeviceCardProps {
   device: any;
@@ -44,7 +45,7 @@ export function DeviceCard({
     device.latestSnapshot?.networkUploadSpeed ??
     0;
 
-  // Mock heartbeats if not provided in list
+  // Heartbeats for timeline
   const heartbeats = device.heartbeats || [];
 
   // Sparkline — use latestSnapshot + realtime appended
@@ -132,7 +133,7 @@ export function DeviceCard({
                 <span>↓ Down</span>
               </div>
               <div className="text-sm font-semibold text-cyan-400">
-                {(netDownload / 1024 / 1024).toFixed(2)} MB/s
+                {fmtSpeed(netDownload)}
               </div>
             </div>
             <div className="space-y-0.5">
@@ -141,7 +142,7 @@ export function DeviceCard({
                 <span>↑ Up</span>
               </div>
               <div className="text-sm font-semibold text-purple-400">
-                {(netUpload / 1024 / 1024).toFixed(2)} MB/s
+                {fmtSpeed(netUpload)}
               </div>
             </div>
           </div>

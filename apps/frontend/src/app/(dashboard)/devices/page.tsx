@@ -21,16 +21,14 @@ export default function FleetDashboardPage() {
 
   async function fetchDevices() {
     try {
-      const res = await apiClient
-        .get<any, any>("/device/status")
-        .catch(() => null);
+      const res = await apiClient.get<any, any>("/devices").catch(() => null);
       if (res?.data) {
-        const payload = res.data.data || res.data;
-        setDevices(payload.devices || []);
+        const deviceList: any[] = res.data.data || res.data || [];
+        setDevices(deviceList);
         setStats({
-          total: payload.summary?.totalRegistered || 0,
-          online: payload.summary?.totalOnline || 0,
-          offline: payload.summary?.totalOffline || 0,
+          total: deviceList.length,
+          online: deviceList.filter((d) => d.status === "ONLINE").length,
+          offline: deviceList.filter((d) => d.status !== "ONLINE").length,
         });
       }
     } catch (err) {
