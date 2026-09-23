@@ -103,29 +103,36 @@ export default function DashboardPage() {
       // Fetch platform status
       const statusRes = await apiClient
         .get<any, any>("/device/status")
-        .catch(() => null);
+        .catch((err) => {
+          console.error("Device status error:", err);
+          return null;
+        });
 
       const alertRes = await apiClient
         .get<any, any>("/alerts?limit=10")
-        .catch(() => null);
+        .catch((err) => {
+          console.error("Alerts error:", err);
+          return null;
+        });
 
-      if (statusRes?.data || statusRes) {
-        const payload = statusRes.data || statusRes;
+      if (statusRes?.data) {
+        // Backend returns { success: true, data: { devices: [...], summary: {...} } }
+        const payload = statusRes.data.data || statusRes.data;
         const devices = payload.devices || [];
-        const total = devices.length || payload.statistics?.total || 0;
+        const total = devices.length || payload.summary?.totalRegistered || 0;
         const online =
           devices.filter((d: any) => d.status === "ONLINE").length ||
-          payload.statistics?.online ||
+          payload.summary?.totalOnline ||
           0;
         const offline =
           devices.filter((d: any) => d.status === "OFFLINE").length ||
-          payload.statistics?.offline ||
+          payload.summary?.totalOffline ||
           0;
         const warning =
           devices.filter(
             (d: any) => d.status === "WARNING" || d.status === "DEGRADED",
           ).length ||
-          payload.statistics?.degraded ||
+          payload.summary?.totalDegraded ||
           0;
         const maintenance =
           devices.filter((d: any) => d.status === "MAINTENANCE").length || 0;
@@ -203,11 +210,9 @@ export default function DashboardPage() {
     });
 
     const unsubTelemetry = on("telemetry.received", (payload) => {
-      if (payload?.metrics?.cpu?.usagePercent) {
-        const newCpu = Math.round(payload.metrics.cpu.usagePercent);
-        const newRam = Math.round(
-          payload.metrics.memory?.usagePercent || stats.ramAvg,
-        );
+      if (payload?.cpuUsage !== undefined) {
+        const newCpu = Math.round(payload.cpuUsage);
+        const newRam = Math.round(payload.memoryUsagePercent || stats.ramAvg);
         setStats((prev) => ({ ...prev, cpuAvg: newCpu, ramAvg: newRam }));
         setSparklineData((prev) => [
           ...prev.slice(1),

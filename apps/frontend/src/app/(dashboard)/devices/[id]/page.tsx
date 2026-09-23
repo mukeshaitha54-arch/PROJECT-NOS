@@ -13,7 +13,7 @@ import {
   Network,
 } from "lucide-react";
 import { TelemetrySparkline } from "@/components/dashboard/TelemetrySparkline";
-import { HeartbeatTimeline } from "@/components/dashboard/HeartbeatTimeline";
+import { apiClient } from "@/lib/api-client";
 
 export default function DeviceDetailPage() {
   const params = useParams();
@@ -36,35 +36,30 @@ export default function DeviceDetailPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const token = localStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
         const [devRes, telRes, procRes, svcRes, swRes, alertRes] =
           await Promise.all([
-            fetch(`${apiUrl}/api/v1/devices/${id}`, { headers }),
-            fetch(`${apiUrl}/api/v1/devices/${id}/telemetry?range=1h`, {
-              headers,
-            }),
-            fetch(`${apiUrl}/api/v1/devices/${id}/processes`, { headers }),
-            fetch(`${apiUrl}/api/v1/devices/${id}/services`, { headers }),
-            fetch(`${apiUrl}/api/v1/devices/${id}/software`, { headers }),
-            fetch(`${apiUrl}/api/v1/devices/${id}/alerts`, { headers }),
+            apiClient.get<any, any>(`/devices/${id}`).catch(() => null),
+            apiClient
+              .get<any, any>(`/devices/${id}/telemetry?range=1h`)
+              .catch(() => null),
+            apiClient
+              .get<any, any>(`/devices/${id}/processes`)
+              .catch(() => null),
+            apiClient
+              .get<any, any>(`/devices/${id}/services`)
+              .catch(() => null),
+            apiClient
+              .get<any, any>(`/devices/${id}/software`)
+              .catch(() => null),
+            apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
           ]);
 
-        const devJson = await devRes.json();
-        const telJson = await telRes.json();
-        const procJson = await procRes.json();
-        const svcJson = await svcRes.json();
-        const swJson = await swRes.json();
-        const alertJson = await alertRes.json();
-
-        setDevice(devJson.data || null);
-        setTelemetryHistory(telJson.data || []);
-        setProcesses(procJson.data || []);
-        setServices(svcJson.data || []);
-        setSoftware(swJson.data || []);
-        setAlerts(alertJson.data || []);
+        setDevice(devRes?.data?.data || devRes?.data || null);
+        setTelemetryHistory(telRes?.data?.data || telRes?.data || []);
+        setProcesses(procRes?.data?.data || procRes?.data || []);
+        setServices(svcRes?.data?.data || svcRes?.data || []);
+        setSoftware(swRes?.data?.data || swRes?.data || []);
+        setAlerts(alertRes?.data?.data || alertRes?.data || []);
       } catch (err) {
         console.error("Failed to load device details", err);
       } finally {
@@ -75,7 +70,7 @@ export default function DeviceDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    const cleanupTelemetry = on("telemetry:new", (payload: any) => {
+    const cleanupTelemetry = on("telemetry.received", (payload: any) => {
       if (payload.deviceId === id) {
         setRealtimeData(payload);
         setTelemetryHistory((prev) => [...prev, payload].slice(-60)); // Keep last 60 points in UI

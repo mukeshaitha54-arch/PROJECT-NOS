@@ -53,7 +53,8 @@ export default function FleetOverviewPage() {
       setLoading(true);
       setError(null);
       const res = await deviceApi.getStatus();
-      setDevices(res.devices || []);
+      const payload = (res as any).data || res;
+      setDevices(payload.devices || []);
       setLastRefreshed(new Date());
     } catch (err: any) {
       console.error("Fleet fetch failed:", err);
