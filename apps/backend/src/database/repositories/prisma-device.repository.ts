@@ -9,7 +9,7 @@ import {
 
 @Injectable()
 export class PrismaDeviceRepository implements IDeviceRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findById(id: string): Promise<Device | null> {
     return this.prisma.device.findUnique({ where: { id } });
