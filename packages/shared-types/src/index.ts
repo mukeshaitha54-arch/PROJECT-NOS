@@ -447,97 +447,97 @@ export interface DashboardHistoryQuery {
 
 export interface MemoryModuleDto {
   id?: string;
-  slot: string;
-  capacityBytes: number;
-  speedMHz: number;
-  manufacturer: string;
-  partNumber: string;
-  serialNumber: string;
+  slot?: string;
+  capacityBytes?: number;
+  speedMHz?: number;
+  manufacturer?: string;
+  partNumber?: string;
+  serialNumber?: string;
 }
 
 export interface DiskDriveDto {
   id?: string;
-  driveName: string;
-  model: string;
-  serialNumber: string;
-  mediaType: string; // e.g. NVMe, SSD, HDD
-  sizeBytes: number;
-  fileSystem: string;
-  isSystemDrive: boolean;
+  driveName?: string;
+  model?: string;
+  serialNumber?: string;
+  mediaType?: string; // e.g. NVMe, SSD, HDD
+  sizeBytes?: number;
+  fileSystem?: string;
+  isSystemDrive?: boolean;
 }
 
 export interface GpuDto {
   id?: string;
-  name: string;
-  manufacturer: string;
-  driverVersion: string;
-  vRamBytes: number;
-  resolution: string;
+  name?: string;
+  manufacturer?: string;
+  driverVersion?: string;
+  vRamBytes?: number;
+  resolution?: string;
 }
 
 export interface NetworkAdapterDto {
   id?: string;
-  name: string;
+  name?: string;
   description?: string;
-  macAddress: string;
-  ipv4: string;
-  ipv6: string;
-  gateway: string;
-  dns: string;
-  speedMbps: number;
-  isWireless: boolean;
-  isPhysical: boolean;
-  isOperational: boolean;
+  macAddress?: string;
+  ipv4?: string;
+  ipv6?: string;
+  gateway?: string;
+  dns?: string;
+  speedMbps?: number;
+  isWireless?: boolean;
+  isPhysical?: boolean;
+  isOperational?: boolean;
 }
 
 export interface InstalledSoftwareDto {
   id?: string;
   name: string;
-  publisher: string;
-  version: string;
-  installDate: string;
+  publisher?: string;
+  version?: string;
+  installDate?: string;
   installLocation?: string;
 }
 
 export interface WindowsServiceDto {
   id?: string;
   serviceName: string;
-  displayName: string;
-  status: string; // e.g. Running, Stopped, Paused
-  startType: string; // e.g. Automatic, Manual, Disabled
-  account: string;
+  displayName?: string;
+  status?: string; // e.g. Running, Stopped, Paused
+  startType?: string; // e.g. Automatic, Manual, Disabled
+  account?: string;
 }
 
 export interface StartupApplicationDto {
   id?: string;
   name: string;
-  command: string;
-  location: string;
-  user: string;
+  command?: string;
+  location?: string;
+  user?: string;
 }
 
 export interface SecurityInventoryDto {
   id?: string;
-  windowsDefenderEnabled: boolean;
-  firewallEnabled: boolean;
-  bitLockerEnabled: boolean;
+  windowsDefenderEnabled?: boolean;
+  firewallEnabled?: boolean;
+  bitLockerEnabled?: boolean;
   bitLockerDrive?: string;
-  secureBootEnabled: boolean;
-  tpmEnabled: boolean;
+  secureBootEnabled?: boolean;
+  tpmEnabled?: boolean;
   tpmVersion?: string;
 }
 
 export interface DeviceCapabilitiesDto {
   id?: string;
-  supportsGPU: boolean;
-  supportsBattery: boolean;
-  supportsTPM: boolean;
-  supportsVirtualization: boolean;
-  supportsDocker: boolean;
-  supportsWSL: boolean;
-  supportsWiFi: boolean;
-  supportsEthernet: boolean;
-  virtualMachineDetection: boolean;
+  supportsGPU?: boolean;
+  supportsBattery?: boolean;
+  supportsTPM?: boolean;
+  supportsVirtualization?: boolean;
+  supportsDocker?: boolean;
+  supportsWSL?: boolean;
+  supportsWiFi?: boolean;
+  supportsEthernet?: boolean;
+  virtualMachineDetection?: boolean;
   vmVendor?: string;
 }
 
@@ -588,34 +588,34 @@ export interface InventoryAuditLogDto {
 
 export interface SubmitInventoryPayload {
   deviceId?: string;
-  manufacturer: string;
-  model: string;
-  serialNumber: string;
-  motherboard: string;
-  biosVendor: string;
-  biosVersion: string;
+  manufacturer?: string;
+  model?: string;
+  serialNumber?: string;
+  motherboard?: string;
+  biosVendor?: string;
+  biosVersion?: string;
   biosReleaseDate?: string;
-  cpuModel: string;
-  cpuVendor: string;
-  physicalCores: number;
-  logicalCores: number;
-  hostname: string;
+  cpuModel?: string;
+  cpuVendor?: string;
+  physicalCores?: number;
+  logicalCores?: number;
+  hostname?: string;
   domain?: string;
   workgroup?: string;
-  osEdition: string;
-  osBuild: string;
-  architecture: string;
+  osEdition?: string;
+  osBuild?: string;
+  architecture?: string;
   agentVersion?: string;
   schemaVersion?: string;
-  memoryModules: MemoryModuleDto[];
-  diskDrives: DiskDriveDto[];
-  gpus: GpuDto[];
-  networkAdapters: NetworkAdapterDto[];
-  installedSoftware: InstalledSoftwareDto[];
-  windowsServices: WindowsServiceDto[];
-  startupApplications: StartupApplicationDto[];
-  security: SecurityInventoryDto;
-  capabilities: DeviceCapabilitiesDto;
+  memoryModules?: MemoryModuleDto[];
+  diskDrives?: DiskDriveDto[];
+  gpus?: GpuDto[];
+  networkAdapters?: NetworkAdapterDto[];
+  installedSoftware?: InstalledSoftwareDto[];
+  windowsServices?: WindowsServiceDto[];
+  startupApplications?: StartupApplicationDto[];
+  security?: SecurityInventoryDto;
+  capabilities?: DeviceCapabilitiesDto;
 }
 
 export interface InventoryHealthResponse {
