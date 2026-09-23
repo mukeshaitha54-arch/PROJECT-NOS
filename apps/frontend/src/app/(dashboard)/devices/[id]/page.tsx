@@ -36,7 +36,7 @@ export default function DeviceDetailPage() {
   const [realtimeData, setRealtimeData] = useState<any>(null);
 
   const [timeUntilUpdate, setTimeUntilUpdate] = useState<number>(30);
-  const [lastServerTime, setLastServerTime] = useState<number>(Date.now());
+  const [lastBeatAt, setLastBeatAt] = useState<number>(Date.now());
 
   useEffect(() => {
     async function fetchData() {
@@ -66,12 +66,8 @@ export default function DeviceDetailPage() {
         setSoftware(swRes?.data?.data || swRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
 
-        const initialTimestamp =
-          devRes?.data?.data?.latestSnapshot?.timestamp ||
-          devRes?.data?.latestSnapshot?.timestamp;
-        setLastServerTime(
-          initialTimestamp ? new Date(initialTimestamp).getTime() : Date.now(),
-        );
+        // Always start the countdown from NOW so it correctly counts down 30->0
+        setLastBeatAt(Date.now());
         setTimeUntilUpdate(30);
       } catch (err) {
         console.error("Failed to load device details", err);
@@ -86,12 +82,10 @@ export default function DeviceDetailPage() {
     const cleanupTelemetry = on("telemetry.received", (payload: any) => {
       if (payload.deviceId === id) {
         setRealtimeData(payload);
-        setTelemetryHistory((prev) => [...prev, payload].slice(-60)); // Keep last 60 points in UI
-        if (payload.timestamp) {
-          setLastServerTime(new Date(payload.timestamp).getTime());
-        } else {
-          setLastServerTime(Date.now());
-        }
+        setTelemetryHistory((prev) => [...prev, payload].slice(-60));
+        // When a real beat arrives, reset the countdown timer to 30
+        setLastBeatAt(Date.now());
+        setTimeUntilUpdate(30);
       }
     });
 
@@ -127,11 +121,11 @@ export default function DeviceDetailPage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - lastServerTime) / 1000);
+      const elapsed = Math.floor((Date.now() - lastBeatAt) / 1000);
       setTimeUntilUpdate(Math.max(0, 30 - elapsed));
     }, 1000);
     return () => clearInterval(timer);
-  }, [lastServerTime]);
+  }, [lastBeatAt]);
 
   if (loading) {
     return (

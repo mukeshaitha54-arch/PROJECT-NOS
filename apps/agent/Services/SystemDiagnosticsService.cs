@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -69,48 +70,32 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         
         string ip = GetLocalIPAddress(out string mac, out string gateway, out string dns);
 
-        // CPU & Memory from collector
+        // CPU
         double cpuUsage = _metricCollector.GetCpuUsage();
         var temps = _metricCollector.GetSystemTemperatures();
         double cpuTemp = temps.Count > 0 ? temps[0].Celsius : 0.0;
         
+        // CPU Frequency & Physical Cores via WMI
         double cpuFrequency = 0.0;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            try
-            {
-                using var searcher = new ManagementObjectSearcher("SELECT CurrentClockSpeed FROM Win32_Processor");
-                foreach (var obj in searcher.Get())
-                {
-                    if (obj["CurrentClockSpeed"] != null)
-                    {
-                        cpuFrequency = Convert.ToDouble(obj["CurrentClockSpeed"]);
-                        break;
-                    }
-                }
-            }
-            catch { }
-        }
-
         int logicalCores = Environment.ProcessorCount;
-        int physicalCores = logicalCores; // Fallback
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        int physicalCores = logicalCores;
+        try
         {
-            try
+            using var searcher = new ManagementObjectSearcher("SELECT CurrentClockSpeed, NumberOfCores, NumberOfLogicalProcessors FROM Win32_Processor");
+            foreach (ManagementObject obj in searcher.Get())
             {
-                using var searcher = new ManagementObjectSearcher("SELECT NumberOfCores FROM Win32_Processor");
-                foreach (var obj in searcher.Get())
-                {
-                    if (obj["NumberOfCores"] != null)
-                    {
-                        physicalCores = Convert.ToInt32(obj["NumberOfCores"]);
-                        break;
-                    }
-                }
+                if (obj["CurrentClockSpeed"] != null)
+                    cpuFrequency = Convert.ToDouble(obj["CurrentClockSpeed"]) / 1000.0; // MHz -> GHz
+                if (obj["NumberOfCores"] != null)
+                    physicalCores = Convert.ToInt32(obj["NumberOfCores"]);
+                if (obj["NumberOfLogicalProcessors"] != null)
+                    logicalCores = Convert.ToInt32(obj["NumberOfLogicalProcessors"]);
+                break;
             }
-            catch { }
         }
+        catch { }
 
+        // Memory — use WMI Win32_OperatingSystem for real physical RAM values
         var memMetrics = _metricCollector.GetMemoryMetrics();
 
         // Disk
@@ -130,6 +115,7 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         var diskThroughput = _metricCollector.GetDiskThroughput();
         var netThroughput = _metricCollector.GetNetworkThroughput();
 
+        // Active TCP connections
         int activeConnections = 0;
         try
         {
@@ -137,29 +123,35 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         }
         catch { }
 
+        // Running Processes (real count)
         int runningProcesses = 0;
-        int runningServices = 0;
         try
         {
-            using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Service WHERE State='Running'"))
-            {
-                runningServices = searcher.Get().Count;
-            }
+            runningProcesses = Process.GetProcesses().Length;
         }
         catch { }
 
+        // Running Services via WMI
+        int runningServices = 0;
+        try
+        {
+            using var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Service WHERE State='Running'");
+            runningServices = searcher.Get().Count;
+        }
+        catch { }
+
+        // Total bytes sent/received
         ulong bytesSent = 0;
         ulong bytesReceived = 0;
         try
         {
-            var ifaces = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (var item in ifaces)
+            foreach (var iface in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (item.OperationalStatus == OperationalStatus.Up && 
-                    item.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                    item.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                if (iface.OperationalStatus == OperationalStatus.Up &&
+                    iface.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                    iface.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
                 {
-                    var stats = item.GetIPv4Statistics();
+                    var stats = iface.GetIPv4Statistics();
                     bytesSent += (ulong)stats.BytesSent;
                     bytesReceived += (ulong)stats.BytesReceived;
                 }
@@ -171,7 +163,7 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
             DeviceId: deviceId,
             CpuUsage: cpuUsage,
             CpuTemperature: cpuTemp,
-            CpuFrequency: cpuFrequency,
+            CpuFrequency: Math.Round(cpuFrequency, 2),
             LogicalProcessors: logicalCores,
             PhysicalProcessors: physicalCores,
             MemoryUsed: memMetrics.UsedBytes,
@@ -205,50 +197,62 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         macAddress = "00:00:00:00:00:00";
         gateway = "0.0.0.0";
         dns = "8.8.8.8";
+        string ipResult = "127.0.0.1";
+
         try
         {
-            foreach (var item in NetworkInterface.GetAllNetworkInterfaces())
+            // Find the active adapter that has a gateway (i.e., the one actually connected to a network)
+            foreach (var iface in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (item.OperationalStatus == OperationalStatus.Up && 
-                    item.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                    item.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                if (iface.OperationalStatus != OperationalStatus.Up) continue;
+                if (iface.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                if (iface.NetworkInterfaceType == NetworkInterfaceType.Tunnel) continue;
+
+                var props = iface.GetIPProperties();
+
+                // Only pick interfaces that have a valid gateway — this is the real connected adapter
+                var gw = props.GatewayAddresses
+                    .Select(g => g.Address)
+                    .FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
+
+                if (gw == null) continue;
+                gateway = gw.ToString();
+
+                // MAC address
+                try
                 {
-                    try
-                    {
-                        var macBytes = item.GetPhysicalAddress().GetAddressBytes();
-                        if (macBytes != null && macBytes.Length > 0)
-                        {
-                            macAddress = string.Join(":", macBytes.Select(b => b.ToString("X2")));
-                        }
-                    }
-                    catch { }
-
-                    var props = item.GetIPProperties();
-                    
-                    try
-                    {
-                        var gw = props.GatewayAddresses.FirstOrDefault()?.Address;
-                        if (gw != null) gateway = gw.ToString();
-                        
-                        var d = props.DnsAddresses.FirstOrDefault();
-                        if (d != null) dns = d.ToString();
-                    }
-                    catch { }
-
-                    foreach (var ip in props.UnicastAddresses)
-                    {
-                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
-                        {
-                            return ip.Address.ToString();
-                        }
-                    }
+                    var macBytes = iface.GetPhysicalAddress().GetAddressBytes();
+                    if (macBytes != null && macBytes.Length == 6)
+                        macAddress = string.Join(":", macBytes.Select(b => b.ToString("X2")));
                 }
+                catch { }
+
+                // DNS
+                try
+                {
+                    var dnsAddr = props.DnsAddresses
+                        .FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
+                    if (dnsAddr != null) dns = dnsAddr.ToString();
+                }
+                catch { }
+
+                // IPv4 address
+                var unicast = props.UnicastAddresses
+                    .FirstOrDefault(u => u.Address.AddressFamily == AddressFamily.InterNetwork
+                                        && !IPAddress.IsLoopback(u.Address));
+                if (unicast != null)
+                {
+                    ipResult = unicast.Address.ToString();
+                }
+
+                break; // Stop at first valid connected adapter
             }
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Could not discover primary network adapter IPv4/MAC address.");
+            _logger.LogDebug(ex, "Network adapter discovery failed.");
         }
-        return "127.0.0.1";
+
+        return ipResult;
     }
 }

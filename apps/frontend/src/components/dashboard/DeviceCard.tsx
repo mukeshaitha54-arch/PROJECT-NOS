@@ -12,30 +12,53 @@ interface DeviceCardProps {
 }
 
 export function DeviceCard({ device, realtimeData }: DeviceCardProps) {
-  // Use realtime data if available, fallback to snapshot, fallback to 0
+  // Use realtime data if available, then latestSnapshot from API, then 0
   const cpuUsage =
-    realtimeData?.cpuUsage ?? device.telemetrySnapshots?.[0]?.cpuUsage ?? 0;
+    realtimeData?.cpuUsage ??
+    device.latestSnapshot?.cpuUsage ??
+    device.telemetrySnapshots?.[0]?.cpuUsage ??
+    0;
   const memoryUsage =
     realtimeData?.memoryUsagePercent ??
+    device.latestSnapshot?.memoryUsagePercent ??
     device.telemetrySnapshots?.[0]?.memoryUsagePercent ??
     0;
+  const netDownload =
+    realtimeData?.networkDownloadSpeed ??
+    device.latestSnapshot?.networkDownloadSpeed ??
+    0;
+  const netUpload =
+    realtimeData?.networkUploadSpeed ??
+    device.latestSnapshot?.networkUploadSpeed ??
+    0;
 
-  // Mock heartbeats if not provided in list (we will fetch this in device details, but in list we might not have it)
-  // Or just pass empty array if not available.
+  // Mock heartbeats if not provided in list
   const heartbeats = device.heartbeats || [];
 
-  // Realtime sparkline data
+  // Sparkline — use latestSnapshot + realtime appended
+  const snapshotHistory = device.latestSnapshot
+    ? [
+        {
+          timestamp: device.latestSnapshot.timestamp,
+          value: device.latestSnapshot.cpuUsage ?? 0,
+        },
+      ]
+    : [];
   const cpuHistory = [
-    ...(device.telemetrySnapshots || []).map((t: any) => ({
-      timestamp: t.timestamp,
-      value: t.cpuUsage,
-    })),
+    ...snapshotHistory,
     ...(realtimeData
-      ? [{ timestamp: realtimeData.timestamp, value: realtimeData.cpuUsage }]
+      ? [
+          {
+            timestamp: realtimeData.timestamp || new Date().toISOString(),
+            value: realtimeData.cpuUsage ?? 0,
+          },
+        ]
       : []),
-  ].slice(-20); // Keep last 20 points
+  ].slice(-20);
 
   const isOnline = device.status === "ONLINE";
+  const ipAddress =
+    realtimeData?.ipAddress ?? device.latestSnapshot?.ipAddress ?? "—";
 
   return (
     <Link href={`/devices/${device.id}`}>
@@ -46,43 +69,63 @@ export function DeviceCard({ device, realtimeData }: DeviceCardProps) {
               <CardTitle className="text-lg font-medium text-gray-100 flex items-center gap-2">
                 {device.hostname || "Unknown Device"}
               </CardTitle>
-              <div className="text-xs text-gray-500 mt-1">{device.id}</div>
+              <div className="text-xs text-gray-500 mt-0.5 font-mono">
+                {ipAddress}
+              </div>
             </div>
             <Badge variant={isOnline ? "online" : "offline"}>
               {device.status}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4 mt-2">
-            <div className="space-y-1">
+        <CardContent className="flex-1 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3 mt-1">
+            <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Cpu size={14} />
+                <Cpu size={12} />
                 <span>CPU</span>
               </div>
-              <div className="text-xl font-semibold">
+              <div className="text-xl font-bold text-gray-100">
                 {cpuUsage.toFixed(1)}%
               </div>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <MemoryStick size={14} />
+                <MemoryStick size={12} />
                 <span>RAM</span>
               </div>
-              <div className="text-xl font-semibold">
+              <div className="text-xl font-bold text-gray-100">
                 {memoryUsage.toFixed(1)}%
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <Network size={12} />
+                <span>↓ Down</span>
+              </div>
+              <div className="text-sm font-semibold text-cyan-400">
+                {(netDownload / 1024 / 1024).toFixed(2)} MB/s
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <Network size={12} />
+                <span>↑ Up</span>
+              </div>
+              <div className="text-sm font-semibold text-purple-400">
+                {(netUpload / 1024 / 1024).toFixed(2)} MB/s
               </div>
             </div>
           </div>
 
           <div className="mt-auto">
-            <div className="text-xs text-gray-400 mb-2">
+            <div className="text-xs text-gray-400 mb-1">
               CPU Activity (Live)
             </div>
             <TelemetrySparkline data={cpuHistory} height={40} />
           </div>
 
-          <div className="border-t border-gray-800 pt-3 mt-2">
+          <div className="border-t border-gray-800 pt-3">
             <div className="flex justify-between items-center text-xs mb-1">
               <span className="text-gray-400">Heartbeat History</span>
               <span className="text-gray-500">Last 50</span>

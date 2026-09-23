@@ -68,31 +68,43 @@ public class WindowsMetricCollector : IMetricCollector, IDisposable
     {
         try
         {
-            var gcMemoryInfo = GC.GetGCMemoryInfo();
-            double totalBytes = gcMemoryInfo.TotalAvailableMemoryBytes;
-            if (totalBytes <= 0)
+            double totalBytes = 0;
+            double freeBytes = 0;
+
+            // Use WMI Win32_OperatingSystem for accurate physical RAM values
+            using var searcher = new ManagementObjectSearcher("SELECT TotalVisibleMemorySize, FreePhysicalMemory FROM Win32_OperatingSystem");
+            foreach (ManagementObject obj in searcher.Get())
             {
-                totalBytes = 16UL * 1024 * 1024 * 1024;
+                // Values are in KB, convert to bytes
+                if (obj["TotalVisibleMemorySize"] != null)
+                    totalBytes = Convert.ToDouble(obj["TotalVisibleMemorySize"]) * 1024.0;
+                if (obj["FreePhysicalMemory"] != null)
+                    freeBytes = Convert.ToDouble(obj["FreePhysicalMemory"]) * 1024.0;
+                break;
             }
 
-            double availableBytes = 0;
-            if (_ramCounter != null)
-            {
-                availableBytes = _ramCounter.NextValue() * 1024 * 1024;
-            }
-            else
-            {
-                availableBytes = totalBytes * 0.4;
-            }
-
-            double usedBytes = Math.Max(0, totalBytes - availableBytes);
+            if (totalBytes <= 0) totalBytes = 16.0 * 1024 * 1024 * 1024; // 16 GB fallback
+            double usedBytes = Math.Max(0, totalBytes - freeBytes);
             double percentage = Math.Min(100.0, Math.Max(0.0, Math.Round((usedBytes / totalBytes) * 100.0, 1)));
 
             return new MemoryMetricsDto(percentage, totalBytes, usedBytes);
         }
         catch
         {
-            return new MemoryMetricsDto(0.0, 16UL * 1024 * 1024 * 1024, 0.0);
+            // Fallback to GC if WMI fails (non-Windows)
+            try
+            {
+                var gcInfo = GC.GetGCMemoryInfo();
+                double totalBytes = gcInfo.TotalAvailableMemoryBytes > 0 ? gcInfo.TotalAvailableMemoryBytes : 16.0 * 1024 * 1024 * 1024;
+                double avail = _ramCounter != null ? _ramCounter.NextValue() * 1024 * 1024 : totalBytes * 0.4;
+                double used = Math.Max(0, totalBytes - avail);
+                double pct = Math.Min(100.0, Math.Round((used / totalBytes) * 100.0, 1));
+                return new MemoryMetricsDto(pct, totalBytes, used);
+            }
+            catch
+            {
+                return new MemoryMetricsDto(0.0, 16.0 * 1024 * 1024 * 1024, 0.0);
+            }
         }
     }
 
