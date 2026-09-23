@@ -7,6 +7,7 @@ import {
   IUserRepositoryToken,
 } from "../../../common/repositories/user.repository.interface";
 import { User } from "@nos/shared-types";
+import { PrismaService } from "../../../database/prisma.service";
 
 export interface JwtPayload {
   sub: string;
@@ -19,6 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
   constructor(
     configService: ConfigService,
     @Inject(IUserRepositoryToken) private readonly userRepo: IUserRepository,
+    private readonly prisma: PrismaService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -30,12 +32,25 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<User> {
+  async validate(
+    payload: JwtPayload,
+  ): Promise<User & { organizationId?: string }> {
     const user = await this.userRepo.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException("Token credentials invalidated.");
     }
-    const { passwordHash, ...userWithoutPass } = user;
-    return userWithoutPass;
+    const { passwordHash, ...userWithoutPass } = user as any;
+
+    // Attach the user's primary organizationId so controllers can use it directly
+    // without requiring TenantContextGuard on every route
+    const membership = await this.prisma.organizationMember.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "asc" },
+      select: { organizationId: true },
+    });
+    return {
+      ...userWithoutPass,
+      organizationId: membership?.organizationId ?? "default-org",
+    };
   }
 }

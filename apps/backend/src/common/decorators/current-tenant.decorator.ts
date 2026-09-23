@@ -8,7 +8,7 @@ export const CurrentTenant = createParamDecorator(
       return request.tenantContext as TenantContext;
     }
     return {
-      organizationId: "default-org",
+      organizationId: request?.user?.organizationId || "default-org",
       correlationId: "fallback-corr-id",
       requestId: "fallback-req-id",
     };
