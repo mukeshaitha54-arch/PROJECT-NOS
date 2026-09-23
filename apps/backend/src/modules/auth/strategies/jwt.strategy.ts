@@ -45,7 +45,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     // without requiring TenantContextGuard on every route
     const membership = await this.prisma.organizationMember.findFirst({
       where: { userId: user.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { joinedAt: "asc" },
       select: { organizationId: true },
     });
     return {
