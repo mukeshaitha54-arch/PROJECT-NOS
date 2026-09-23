@@ -152,13 +152,28 @@ export default function DeviceInventoryDetailPage({
 
   const triggerRescan = useCallback(async () => {
     setRescanLoading(true);
-    await loadInventory();
-    setRescanLoading(false);
-  }, [loadInventory]);
+    try {
+      await apiClient.post(`/inventory/scan/${deviceId}`).catch(() => null);
+      await new Promise((r) => setTimeout(r, 1000));
+      await loadInventory();
+    } finally {
+      setRescanLoading(false);
+    }
+  }, [deviceId, loadInventory]);
 
   useEffect(() => {
     loadInventory();
   }, [loadInventory]);
+
+  // If inventory is not yet discovered, automatically poll every 5s so it displays as soon as agent finishes scan
+  useEffect(() => {
+    if (!inventory) {
+      const pollTimer = setInterval(() => {
+        loadInventory();
+      }, 5000);
+      return () => clearInterval(pollTimer);
+    }
+  }, [inventory, loadInventory]);
 
   // ─ Column definitions ────────────────────────────────────────────────────
 

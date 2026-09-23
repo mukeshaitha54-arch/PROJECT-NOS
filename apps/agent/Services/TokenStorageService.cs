@@ -72,6 +72,11 @@ public class TokenStorageService : ITokenStorageService
             File.Delete(_tokenFilePath);
             _logger.LogInformation("Deleted previously cached credentials at [{Path}].", _tokenFilePath);
         }
+        if (File.Exists(_uuidFilePath))
+        {
+            File.Delete(_uuidFilePath);
+            _logger.LogInformation("Deleted cached machine UUID at [{Path}] to allow fresh device registration.", _uuidFilePath);
+        }
         return Task.CompletedTask;
     }
 

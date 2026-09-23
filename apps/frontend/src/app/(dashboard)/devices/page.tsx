@@ -201,23 +201,12 @@ export default function FleetDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {devices.map((device) => (
-          <div key={device.id} className="relative group">
+          <div key={device.id}>
             <DeviceCard
               device={device}
               realtimeData={realtimeData[device.id]}
+              onDelete={(d) => setConfirmDelete(d)}
             />
-            {/* Delete button — shows on hover */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setConfirmDelete(device);
-              }}
-              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg bg-red-900/0 hover:bg-red-900/80 border border-transparent hover:border-red-700/60 text-transparent hover:text-red-300 flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
-              title="Delete device"
-            >
-              <Trash2 size={14} />
-            </button>
           </div>
         ))}
       </div>

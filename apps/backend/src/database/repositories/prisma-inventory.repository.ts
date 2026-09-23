@@ -169,6 +169,20 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
+  private async resolveDeviceId(idOrUuid: string): Promise<string> {
+    try {
+      const dev = await this.prisma.device.findFirst({
+        where: {
+          OR: [{ id: idOrUuid }, { uuid: idOrUuid }],
+        },
+        select: { id: true },
+      });
+      return dev ? dev.id : idOrUuid;
+    } catch {
+      return idOrUuid;
+    }
+  }
+
   async upsertInventory(
     deviceId: string,
     payload: SubmitInventoryPayload,
@@ -177,7 +191,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     inventory: DeviceInventoryDto;
     previousInventory: DeviceInventoryDto | null;
   }> {
-    const existing = await this.findCompleteInventory(deviceId);
+    const targetDeviceId = await this.resolveDeviceId(deviceId);
+    const existing = await this.findCompleteInventory(targetDeviceId);
 
     const version = existing ? existing.inventoryVersion + 1 : 1;
     const schemaVersion = payload.schemaVersion || "1.0.0";
@@ -214,49 +229,49 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       }
 
       const parent = await tx.deviceInventory.upsert({
-        where: { deviceId },
+        where: { deviceId: targetDeviceId },
         create: {
-          deviceId,
-          manufacturer: payload.manufacturer,
-          model: payload.model,
-          serialNumber: payload.serialNumber,
-          motherboard: payload.motherboard,
-          biosVendor: payload.biosVendor,
-          biosVersion: payload.biosVersion,
-          biosReleaseDate: payload.biosReleaseDate,
-          cpuModel: payload.cpuModel,
-          cpuVendor: payload.cpuVendor,
-          physicalCores: payload.physicalCores,
-          logicalCores: payload.logicalCores,
-          hostname: payload.hostname,
+          deviceId: targetDeviceId,
+          manufacturer: payload.manufacturer || "Unknown",
+          model: payload.model || "Unknown",
+          serialNumber: payload.serialNumber || "Unknown",
+          motherboard: payload.motherboard || "Unknown",
+          biosVendor: payload.biosVendor || "Unknown",
+          biosVersion: payload.biosVersion || "Unknown",
+          biosReleaseDate: payload.biosReleaseDate || null,
+          cpuModel: payload.cpuModel || "Unknown",
+          cpuVendor: payload.cpuVendor || "Unknown",
+          physicalCores: payload.physicalCores || 1,
+          logicalCores: payload.logicalCores || 1,
+          hostname: payload.hostname || "Unknown",
           domain: payload.domain || "WORKGROUP",
           workgroup: payload.workgroup || "WORKGROUP",
-          osEdition: payload.osEdition,
-          osBuild: payload.osBuild,
-          architecture: payload.architecture,
+          osEdition: payload.osEdition || "Windows",
+          osBuild: payload.osBuild || "Unknown",
+          architecture: payload.architecture || "x64",
           assetFingerprint,
           inventoryVersion: version,
           schemaVersion,
           lastScanAt: new Date(),
         },
         update: {
-          manufacturer: payload.manufacturer,
-          model: payload.model,
-          serialNumber: payload.serialNumber,
-          motherboard: payload.motherboard,
-          biosVendor: payload.biosVendor,
-          biosVersion: payload.biosVersion,
-          biosReleaseDate: payload.biosReleaseDate,
-          cpuModel: payload.cpuModel,
-          cpuVendor: payload.cpuVendor,
-          physicalCores: payload.physicalCores,
-          logicalCores: payload.logicalCores,
-          hostname: payload.hostname,
+          manufacturer: payload.manufacturer || "Unknown",
+          model: payload.model || "Unknown",
+          serialNumber: payload.serialNumber || "Unknown",
+          motherboard: payload.motherboard || "Unknown",
+          biosVendor: payload.biosVendor || "Unknown",
+          biosVersion: payload.biosVersion || "Unknown",
+          biosReleaseDate: payload.biosReleaseDate || null,
+          cpuModel: payload.cpuModel || "Unknown",
+          cpuVendor: payload.cpuVendor || "Unknown",
+          physicalCores: payload.physicalCores || 1,
+          logicalCores: payload.logicalCores || 1,
+          hostname: payload.hostname || "Unknown",
           domain: payload.domain || "WORKGROUP",
           workgroup: payload.workgroup || "WORKGROUP",
-          osEdition: payload.osEdition,
-          osBuild: payload.osBuild,
-          architecture: payload.architecture,
+          osEdition: payload.osEdition || "Windows",
+          osBuild: payload.osBuild || "Unknown",
+          architecture: payload.architecture || "x64",
           assetFingerprint,
           inventoryVersion: version,
           schemaVersion,
@@ -264,101 +279,104 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         },
       });
 
-      if (payload.memoryModules?.length > 0) {
+      if (payload.memoryModules && payload.memoryModules.length > 0) {
         await tx.memoryModule.createMany({
           data: payload.memoryModules.map((m) => ({
             deviceInventoryId: parent.id,
-            slot: m.slot,
-            capacityBytes: m.capacityBytes,
-            speedMHz: m.speedMHz,
-            manufacturer: m.manufacturer,
-            partNumber: m.partNumber,
-            serialNumber: m.serialNumber,
+            slot: m.slot || "DIMM",
+            capacityBytes: m.capacityBytes || 0,
+            speedMHz: m.speedMHz || 0,
+            manufacturer: m.manufacturer || "Unknown",
+            partNumber: m.partNumber || "Unknown",
+            serialNumber: m.serialNumber || "Unknown",
           })),
         });
       }
 
-      if (payload.diskDrives?.length > 0) {
+      if (payload.diskDrives && payload.diskDrives.length > 0) {
         await tx.diskDrive.createMany({
           data: payload.diskDrives.map((d) => ({
             deviceInventoryId: parent.id,
-            driveName: d.driveName,
-            model: d.model,
-            serialNumber: d.serialNumber,
-            mediaType: d.mediaType,
-            sizeBytes: d.sizeBytes,
-            fileSystem: d.fileSystem,
-            isSystemDrive: d.isSystemDrive,
+            driveName: d.driveName || "Drive",
+            model: d.model || "Unknown",
+            serialNumber: d.serialNumber || "Unknown",
+            mediaType: d.mediaType || "Fixed",
+            sizeBytes: d.sizeBytes || 0,
+            fileSystem: d.fileSystem || "NTFS",
+            isSystemDrive: d.isSystemDrive ?? false,
           })),
         });
       }
 
-      if (payload.gpus?.length > 0) {
+      if (payload.gpus && payload.gpus.length > 0) {
         await tx.gpu.createMany({
           data: payload.gpus.map((g) => ({
             deviceInventoryId: parent.id,
-            name: g.name,
-            manufacturer: g.manufacturer,
-            driverVersion: g.driverVersion,
-            vRamBytes: g.vRamBytes,
-            resolution: g.resolution,
+            name: g.name || "GPU Adapter",
+            manufacturer: g.manufacturer || "Unknown",
+            driverVersion: g.driverVersion || "Unknown",
+            vRamBytes: g.vRamBytes || 0,
+            resolution: g.resolution || "Unknown",
           })),
         });
       }
 
-      if (payload.networkAdapters?.length > 0) {
+      if (payload.networkAdapters && payload.networkAdapters.length > 0) {
         await tx.networkAdapter.createMany({
           data: payload.networkAdapters.map((n) => ({
             deviceInventoryId: parent.id,
-            name: n.name,
-            description: n.description,
-            macAddress: n.macAddress,
-            ipv4: n.ipv4,
-            ipv6: n.ipv6,
-            gateway: n.gateway,
-            dns: n.dns,
-            speedMbps: n.speedMbps,
-            isWireless: n.isWireless,
-            isPhysical: n.isPhysical,
-            isOperational: n.isOperational,
+            name: n.name || "Network Adapter",
+            description: n.description || "Network Adapter",
+            macAddress: n.macAddress || "00:00:00:00:00:00",
+            ipv4: n.ipv4 || null,
+            ipv6: n.ipv6 || null,
+            gateway: n.gateway || null,
+            dns: n.dns || null,
+            speedMbps: n.speedMbps || 0,
+            isWireless: n.isWireless ?? false,
+            isPhysical: n.isPhysical ?? true,
+            isOperational: n.isOperational ?? true,
           })),
         });
       }
 
-      if (payload.installedSoftware?.length > 0) {
+      if (payload.installedSoftware && payload.installedSoftware.length > 0) {
         await tx.installedSoftware.createMany({
           data: payload.installedSoftware.map((s) => ({
             deviceInventoryId: parent.id,
-            name: s.name,
-            publisher: s.publisher,
-            version: s.version,
-            installDate: s.installDate,
-            installLocation: s.installLocation,
+            name: s.name || "Unknown Application",
+            publisher: s.publisher || "Unknown",
+            version: s.version || "Unknown",
+            installDate: s.installDate || "Unknown",
+            installLocation: s.installLocation || null,
           })),
         });
       }
 
-      if (payload.windowsServices?.length > 0) {
+      if (payload.windowsServices && payload.windowsServices.length > 0) {
         await tx.windowsService.createMany({
           data: payload.windowsServices.map((ws) => ({
             deviceInventoryId: parent.id,
-            serviceName: ws.serviceName,
-            displayName: ws.displayName,
-            status: ws.status,
-            startType: ws.startType,
-            account: ws.account,
+            serviceName: ws.serviceName || "Service",
+            displayName: ws.displayName || ws.serviceName || "Unknown",
+            status: ws.status || "Stopped",
+            startType: ws.startType || "Manual",
+            account: ws.account || "LocalSystem",
           })),
         });
       }
 
-      if (payload.startupApplications?.length > 0) {
+      if (
+        payload.startupApplications &&
+        payload.startupApplications.length > 0
+      ) {
         await tx.startupApplication.createMany({
           data: payload.startupApplications.map((sa) => ({
             deviceInventoryId: parent.id,
-            name: sa.name,
-            command: sa.command,
-            location: sa.location,
-            user: sa.user,
+            name: sa.name || "Startup App",
+            command: sa.command || "",
+            location: sa.location || "Registry",
+            user: sa.user || "All Users",
           })),
         });
       }
@@ -367,13 +385,14 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         await tx.securityInventory.create({
           data: {
             deviceInventoryId: parent.id,
-            windowsDefenderEnabled: payload.security.windowsDefenderEnabled,
-            firewallEnabled: payload.security.firewallEnabled,
-            bitLockerEnabled: payload.security.bitLockerEnabled,
-            bitLockerDrive: payload.security.bitLockerDrive,
-            secureBootEnabled: payload.security.secureBootEnabled,
-            tpmEnabled: payload.security.tpmEnabled,
-            tpmVersion: payload.security.tpmVersion,
+            windowsDefenderEnabled:
+              payload.security.windowsDefenderEnabled ?? true,
+            firewallEnabled: payload.security.firewallEnabled ?? true,
+            bitLockerEnabled: payload.security.bitLockerEnabled ?? false,
+            bitLockerDrive: payload.security.bitLockerDrive || null,
+            secureBootEnabled: payload.security.secureBootEnabled ?? true,
+            tpmEnabled: payload.security.tpmEnabled ?? true,
+            tpmVersion: payload.security.tpmVersion || "2.0",
           },
         });
       }
@@ -382,23 +401,24 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         await tx.deviceCapabilities.create({
           data: {
             deviceInventoryId: parent.id,
-            supportsGPU: payload.capabilities.supportsGPU,
-            supportsBattery: payload.capabilities.supportsBattery,
-            supportsTPM: payload.capabilities.supportsTPM,
-            supportsVirtualization: payload.capabilities.supportsVirtualization,
-            supportsDocker: payload.capabilities.supportsDocker,
-            supportsWSL: payload.capabilities.supportsWSL,
-            supportsWiFi: payload.capabilities.supportsWiFi,
-            supportsEthernet: payload.capabilities.supportsEthernet,
+            supportsGPU: payload.capabilities.supportsGPU ?? false,
+            supportsBattery: payload.capabilities.supportsBattery ?? false,
+            supportsTPM: payload.capabilities.supportsTPM ?? true,
+            supportsVirtualization:
+              payload.capabilities.supportsVirtualization ?? true,
+            supportsDocker: payload.capabilities.supportsDocker ?? false,
+            supportsWSL: payload.capabilities.supportsWSL ?? false,
+            supportsWiFi: payload.capabilities.supportsWiFi ?? false,
+            supportsEthernet: payload.capabilities.supportsEthernet ?? true,
             virtualMachineDetection:
-              payload.capabilities.virtualMachineDetection,
-            vmVendor: payload.capabilities.vmVendor,
+              payload.capabilities.virtualMachineDetection ?? false,
+            vmVendor: payload.capabilities.vmVendor || null,
           },
         });
       }
 
       return tx.deviceInventory.findUnique({
-        where: { deviceId },
+        where: { deviceId: targetDeviceId },
         include: {
           memoryModules: true,
           diskDrives: true,
@@ -422,8 +442,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   async findCompleteInventory(
     deviceId: string,
   ): Promise<DeviceInventoryDto | null> {
+    const targetDeviceId = await this.resolveDeviceId(deviceId);
     const raw = await this.prisma.deviceInventory.findUnique({
-      where: { deviceId },
+      where: { deviceId: targetDeviceId },
       include: {
         memoryModules: true,
         diskDrives: true,
@@ -444,8 +465,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   async findHardwareInventory(
     deviceId: string,
   ): Promise<HardwareInventoryResponse | null> {
+    const targetDeviceId = await this.resolveDeviceId(deviceId);
     const raw = await this.prisma.deviceInventory.findUnique({
-      where: { deviceId },
+      where: { deviceId: targetDeviceId },
       select: {
         deviceId: true,
         manufacturer: true,
@@ -515,8 +537,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     page = 1,
     limit = 50,
   ): Promise<SoftwareInventoryResponse | null> {
+    const targetDeviceId = await this.resolveDeviceId(deviceId);
     const inv = await this.prisma.deviceInventory.findUnique({
-      where: { deviceId },
+      where: { deviceId: targetDeviceId },
       select: { id: true, deviceId: true },
     });
     if (!inv) return null;
@@ -614,8 +637,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   async findNetworkInventory(
     deviceId: string,
   ): Promise<NetworkInventoryResponse | null> {
+    const targetDeviceId = await this.resolveDeviceId(deviceId);
     const inv = await this.prisma.deviceInventory.findUnique({
-      where: { deviceId },
+      where: { deviceId: targetDeviceId },
       select: { deviceId: true, networkAdapters: true },
     });
     if (!inv) return null;
@@ -643,8 +667,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   async findSecurityInventory(
     deviceId: string,
   ): Promise<SecurityInventoryResponse | null> {
+    const targetDeviceId = await this.resolveDeviceId(deviceId);
     const inv = await this.prisma.deviceInventory.findUnique({
-      where: { deviceId },
+      where: { deviceId: targetDeviceId },
       select: { deviceId: true, security: true, capabilities: true },
     });
     if (!inv) return null;
@@ -685,8 +710,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     deviceId?: string,
   ): Promise<InventoryHealthResponse> {
     if (deviceId) {
+      const targetDeviceId = await this.resolveDeviceId(deviceId);
       const inv = await this.prisma.deviceInventory.findUnique({
-        where: { deviceId },
+        where: { deviceId: targetDeviceId },
         include: { device: { select: { agentVersion: true } } },
       });
       if (!inv) {

@@ -62,8 +62,26 @@ public class InventoryCollectorWorker : BackgroundService
 
         _logger.LogInformation("🔐 Device Onboarding credentials confirmed for node [{DeviceId}]. Initiating baseline inventory discovery scan...", credentials!.DeviceId);
 
-        // Execute initial baseline inventory scan on startup / registration
-        await TransmitInventoryAsync(client, credentials, stoppingToken);
+        // Execute initial baseline inventory scan on startup / registration with resilient retry
+        bool initialScanSuccess = false;
+        while (!initialScanSuccess && !stoppingToken.IsCancellationRequested)
+        {
+            initialScanSuccess = await TransmitInventoryAsync(client, credentials, stoppingToken);
+            if (!initialScanSuccess)
+            {
+                _logger.LogWarning("⏳ Initial baseline inventory scan did not complete. Retrying in 15 seconds...");
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
+
+                credentials = await _tokenStorageService.GetCredentialsAsync(stoppingToken) ?? credentials;
+            }
+        }
 
         var interval = TimeSpan.FromHours(_inventoryIntervalHours);
 
@@ -90,7 +108,7 @@ public class InventoryCollectorWorker : BackgroundService
         _logger.LogInformation("🛑 Inventory Collector Worker gracefully terminating.");
     }
 
-    private async Task TransmitInventoryAsync(HttpClient client, TokenCredentials credentials, CancellationToken stoppingToken)
+    private async Task<bool> TransmitInventoryAsync(HttpClient client, TokenCredentials credentials, CancellationToken stoppingToken)
     {
         try
         {
@@ -110,20 +128,24 @@ public class InventoryCollectorWorker : BackgroundService
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("✅ Phase 3 Device Inventory snapshot verified and persisted successfully by NOS Backend.");
+                return true;
             }
             else
             {
                 var errorMsg = await response.Content.ReadAsStringAsync(stoppingToken);
                 _logger.LogWarning("⚠️ Control plane rejected inventory payload. HTTP {StatusCode}: {Error}", (int)response.StatusCode, errorMsg);
+                return false;
             }
         }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning("🔌 Network connectivity anomaly during inventory transmission: {Message}", ex.Message);
+            return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Unexpected diagnostic fault during asset discovery evaluation.");
+            return false;
         }
     }
 }

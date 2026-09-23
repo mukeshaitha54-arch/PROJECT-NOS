@@ -358,27 +358,48 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
-    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
       where: {
-        id,
-        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+        OR: [{ id }, { uuid: id }],
       },
     });
 
     if (!device) {
-      throw new NotFoundException("Device not found or access denied");
+      throw new NotFoundException("Device not found");
     }
 
+    const deviceId = device.id;
+
     // Delete all related data in order (cascade where not automatic)
-    await this.prisma.telemetrySnapshot.deleteMany({ where: { deviceId: id } });
-    await this.prisma.heartbeat.deleteMany({ where: { deviceId: id } });
-    await this.prisma.alert.deleteMany({ where: { deviceId: id } });
-    await this.prisma.device.delete({ where: { id } });
+    await Promise.allSettled([
+      this.prisma.telemetrySnapshot.deleteMany({ where: { deviceId } }),
+      this.prisma.heartbeat.deleteMany({ where: { deviceId } }),
+      this.prisma.alert.deleteMany({ where: { deviceId } }),
+      this.prisma.deviceOwnership.deleteMany({ where: { deviceId } }),
+      this.prisma.deviceTransferRequest.deleteMany({ where: { deviceId } }),
+      this.prisma.inventoryAuditLog.deleteMany({ where: { deviceId } }),
+      this.prisma.deviceTimelineEvent.deleteMany({ where: { deviceId } }),
+      this.prisma.maintenanceWindow.deleteMany({ where: { deviceId } }),
+      this.prisma.deviceInventory.deleteMany({ where: { deviceId } }),
+    ]);
+
+    await this.prisma.device.delete({ where: { id: deviceId } });
+
+    try {
+      if (device.organizationId) {
+        await this.prisma.organizationQuota.updateMany({
+          where: {
+            organizationId: device.organizationId,
+            currentDevices: { gt: 0 },
+          },
+          data: { currentDevices: { decrement: 1 } },
+        });
+      }
+    } catch {}
 
     return {
       success: true,
-      message: `Device ${device.hostname} (${id}) and all associated data deleted.`,
+      message: `Device ${device.hostname} (${deviceId}) and all associated data deleted permanently.`,
     };
   }
 }

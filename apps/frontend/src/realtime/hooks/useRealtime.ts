@@ -49,10 +49,21 @@ export function useRealtime() {
 
     setConnectionState("connecting");
 
-    // Connect to backend Socket.IO
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("nos_access_token")
+        : null;
+
+    // Connect to backend Socket.IO with token authentication
     const socketInstance = io(SOCKET_URL, {
       path: "/socket.io",
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
+      auth: {
+        token: token ? `Bearer ${token}` : undefined,
+      },
+      query: {
+        token: token ? `Bearer ${token}` : undefined,
+      },
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,

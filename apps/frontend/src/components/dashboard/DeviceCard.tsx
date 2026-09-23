@@ -4,14 +4,26 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { HeartbeatTimeline } from "./HeartbeatTimeline";
 import { TelemetrySparkline } from "./TelemetrySparkline";
-import { Activity, Cpu, HardDrive, MemoryStick, Network } from "lucide-react";
+import {
+  Activity,
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Network,
+  Trash2,
+} from "lucide-react";
 
 interface DeviceCardProps {
   device: any;
   realtimeData?: any;
+  onDelete?: (device: any) => void;
 }
 
-export function DeviceCard({ device, realtimeData }: DeviceCardProps) {
+export function DeviceCard({
+  device,
+  realtimeData,
+  onDelete,
+}: DeviceCardProps) {
   // Use realtime data if available, then latestSnapshot from API, then 0
   const cpuUsage =
     realtimeData?.cpuUsage ??
@@ -73,9 +85,25 @@ export function DeviceCard({ device, realtimeData }: DeviceCardProps) {
                 {ipAddress}
               </div>
             </div>
-            <Badge variant={isOnline ? "online" : "offline"}>
-              {device.status}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant={isOnline ? "online" : "offline"}>
+                {device.status}
+              </Badge>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDelete(device);
+                  }}
+                  className="p-1 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  title="Delete Device Permanently"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col gap-3">
