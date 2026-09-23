@@ -305,12 +305,15 @@ export class DashboardService {
       bytesReceived: Number(record.bytesReceived || 0),
       activeConnections: Number(record.activeConnections || 0),
       runningProcesses: Number(record.runningProcesses || 0),
+      runningServices: Number(record.runningServices || 0),
       systemUptime: Number(record.systemUptime),
       bootTime:
         record.bootTime instanceof Date
           ? record.bootTime.toISOString()
           : String(record.bootTime),
       ipAddress: record.ipAddress,
+      gateway: record.gateway || "0.0.0.0",
+      dns: record.dns || "8.8.8.8",
       macAddress: record.macAddress || "00:00:00:00:00:00",
       timestamp:
         record.timestamp instanceof Date

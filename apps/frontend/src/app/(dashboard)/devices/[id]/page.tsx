@@ -21,7 +21,7 @@ export default function DeviceDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const { user } = useAuth();
-  const { on } = useRealtimeContext();
+  const { on, socket } = useRealtimeContext();
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -117,6 +117,15 @@ export default function DeviceDetailPage() {
   }, [id, on]);
 
   useEffect(() => {
+    if (socket) {
+      socket.emit("joinRoom", `device:${id}`);
+      return () => {
+        socket.emit("leaveRoom", `device:${id}`);
+      };
+    }
+  }, [id, socket]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       const elapsed = Math.floor((Date.now() - lastServerTime) / 1000);
       setTimeUntilUpdate(Math.max(0, 30 - elapsed));
@@ -184,6 +193,17 @@ export default function DeviceDetailPage() {
     realtimeData?.physicalProcessors ??
     device.latestSnapshot?.physicalProcessors ??
     0;
+  const runningProcesses =
+    realtimeData?.runningProcesses ??
+    device.latestSnapshot?.runningProcesses ??
+    0;
+  const runningServices =
+    realtimeData?.runningServices ??
+    device.latestSnapshot?.runningServices ??
+    0;
+  const gateway =
+    realtimeData?.gateway ?? device.latestSnapshot?.gateway ?? "N/A";
+  const dns = realtimeData?.dns ?? device.latestSnapshot?.dns ?? "N/A";
 
   const memTotal =
     realtimeData?.memoryTotal ?? device.latestSnapshot?.memoryTotal ?? 0;
@@ -257,13 +277,17 @@ export default function DeviceDetailPage() {
               {currentDisk.toFixed(1)}%
             </div>
           </div>
-          <div className="bg-black/40 border border-[#C8A96E]/20 rounded-lg px-4 py-2 text-center min-w-[120px] flex flex-col justify-center">
+          <div className="bg-black/40 border border-[#C8A96E]/20 rounded-lg px-4 py-2 text-center min-w-[140px] flex flex-col justify-center">
             <div className="text-xs text-[#C8A96E] uppercase font-semibold flex items-center justify-center gap-1">
               <Clock className="w-3.5 h-3.5" />
-              Next Update
+              Next Beat In
             </div>
-            <div className="text-xl font-mono font-bold text-gray-200">
+            <div className="text-2xl font-mono font-bold text-gray-200 my-1">
               {timeUntilUpdate}s
+            </div>
+            <div className="text-[10px] text-[#C8A96E]/80 flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C8A96E] animate-pulse"></span>
+              Telemetry Active
             </div>
           </div>
         </div>
@@ -448,8 +472,47 @@ export default function DeviceDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Boot Time</span>
-                  <span className="text-gray-200 font-mono text-xs">
+                  <span className="text-gray-500">Gateway</span>
+                  <span
+                    className="text-gray-200 font-mono text-xs truncate max-w-[120px]"
+                    title={gateway}
+                  >
+                    {gateway}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">DNS</span>
+                  <span
+                    className="text-gray-200 font-mono text-xs truncate max-w-[120px]"
+                    title={dns}
+                  >
+                    {dns}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2 lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col border-r border-gray-800 pr-4">
+                  <span className="text-xs text-gray-500 uppercase font-semibold">
+                    Running Processes
+                  </span>
+                  <span className="text-2xl font-mono text-cyan-400 font-bold">
+                    {runningProcesses}
+                  </span>
+                </div>
+                <div className="flex flex-col border-r border-gray-800 pr-4">
+                  <span className="text-xs text-gray-500 uppercase font-semibold">
+                    Running Services
+                  </span>
+                  <span className="text-2xl font-mono text-purple-400 font-bold">
+                    {runningServices}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500 uppercase font-semibold">
+                    Exact Boot Time
+                  </span>
+                  <span className="text-lg font-mono text-gray-200">
                     {bootTime ? new Date(bootTime).toLocaleString() : "N/A"}
                   </span>
                 </div>

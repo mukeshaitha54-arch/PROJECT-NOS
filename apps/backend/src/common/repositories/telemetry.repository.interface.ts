@@ -22,10 +22,13 @@ export interface TelemetryCreateInput {
   bytesReceived: number;
   activeConnections: number;
   runningProcesses: number;
+  runningServices: number;
   systemUptime: number;
   bootTime: Date;
   ipAddress: string;
   macAddress: string;
+  gateway: string;
+  dns: string;
   timestamp?: Date;
 }
 

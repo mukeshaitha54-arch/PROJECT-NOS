@@ -233,19 +233,23 @@ export class SubmitTelemetryDto {
 
   /* ─── Agent-sent optional fields — simplified validation ─── */
 
-  @ApiPropertyOptional({ description: "List of running Windows services" })
-  @IsOptional()
-  runningServices?: any;
-
   @ApiPropertyOptional({
-    description: "Default gateway info (IPv4, IPv6, MAC)",
+    description: "List of running Windows services or count",
   })
   @IsOptional()
-  gateway?: any;
+  runningServices?: number;
 
-  @ApiPropertyOptional({ description: "DNS configuration" })
+  @ApiPropertyOptional({
+    description: "Default gateway IPv4",
+  })
   @IsOptional()
-  dns?: any;
+  @IsString()
+  gateway?: string;
+
+  @ApiPropertyOptional({ description: "DNS configuration IPv4" })
+  @IsOptional()
+  @IsString()
+  dns?: string;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -314,9 +318,12 @@ export function toTelemetrySnapshotDto(
     bytesReceived: entity.bytesReceived,
     activeConnections: entity.activeConnections,
     runningProcesses: entity.runningProcesses,
+    runningServices: entity.runningServices,
     systemUptime: entity.systemUptime,
     bootTime: entity.bootTime.toISOString(),
     ipAddress: entity.ipAddress,
+    gateway: entity.gateway,
+    dns: entity.dns,
     macAddress: entity.macAddress,
     timestamp: entity.timestamp.toISOString(),
   };

@@ -88,10 +88,13 @@ export class TelemetryService {
       bytesReceived: dto.bytesReceived,
       activeConnections: dto.activeConnections,
       runningProcesses: dto.runningProcesses,
+      runningServices: dto.runningServices ?? 0,
       systemUptime: dto.systemUptime,
       bootTime: bootTimeDate,
       ipAddress: dto.ipAddress,
       macAddress: dto.macAddress,
+      gateway: dto.gateway ?? "0.0.0.0",
+      dns: dto.dns ?? "8.8.8.8",
       timestamp: timestampDate || new Date(),
     });
 
@@ -284,9 +287,12 @@ function mapAggregationToSnapshotContract(
     bytesReceived: 0,
     activeConnections: agg.sampleCount,
     runningProcesses: 0,
+    runningServices: 0,
     systemUptime: 0,
     bootTime: agg.periodStart.toISOString(),
     ipAddress: "aggregated",
+    gateway: "0.0.0.0",
+    dns: "8.8.8.8",
     macAddress: "aggregated",
     timestamp: agg.periodStart.toISOString(),
   };

@@ -69,7 +69,7 @@ export default function GlobalInventoryExplorerPage() {
       sortable: true,
       render: (row) => (
         <Link
-          href={`/inventory/${row.deviceId}`}
+          href={`/devices/${row.deviceId}`}
           className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5"
         >
           <Server className="w-3.5 h-3.5 text-slate-400" />

@@ -272,9 +272,9 @@ export interface TelemetrySnapshot {
   ipAddress: string;
   macAddress: string;
   timestamp: string; // ISO 8601 UTC string
-  runningServices?: string[] | null;
-  gateway?: string | null;
-  dns?: string[] | null;
+  runningServices: number;
+  gateway: string;
+  dns: string;
 }
 
 export interface SubmitTelemetryPayload {
@@ -304,9 +304,9 @@ export interface SubmitTelemetryPayload {
   ipAddress: string;
   macAddress: string;
   timestamp?: string;
-  runningServices?: string[];
+  runningServices?: number;
   gateway?: string;
-  dns?: string[];
+  dns?: string;
 }
 
 export interface SubmitTelemetryResponse {

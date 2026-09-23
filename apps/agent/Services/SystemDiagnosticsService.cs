@@ -45,7 +45,7 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
     public HeartbeatPayload GetHeartbeatMetrics(string? deviceId = null)
     {
         double uptime = Math.Round(TimeSpan.FromMilliseconds(Environment.TickCount64).TotalSeconds, 1);
-        string ip = GetLocalIPAddress(out _);
+        string ip = GetLocalIPAddress(out _, out _, out _);
         
         double cpuUsage = _metricCollector.GetCpuUsage();
         var memMetrics = _metricCollector.GetMemoryMetrics();
@@ -67,7 +67,7 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         double uptime = Math.Round(TimeSpan.FromMilliseconds(Environment.TickCount64).TotalSeconds, 1);
         DateTime bootTimeUtc = DateTime.UtcNow.AddMilliseconds(-Environment.TickCount64);
         
-        string ip = GetLocalIPAddress(out string mac);
+        string ip = GetLocalIPAddress(out string mac, out string gateway, out string dns);
 
         // CPU & Memory from collector
         double cpuUsage = _metricCollector.GetCpuUsage();
@@ -138,9 +138,29 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
         catch { }
 
         int runningProcesses = 0;
+        int runningServices = 0;
         try
         {
-            runningProcesses = Process.GetProcesses().Length;
+            runningServices = ServiceController.GetServices().Length;
+        }
+        catch { }
+
+        ulong bytesSent = 0;
+        ulong bytesReceived = 0;
+        try
+        {
+            var ifaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (var item in ifaces)
+            {
+                if (item.OperationalStatus == OperationalStatus.Up && 
+                    item.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                    item.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                {
+                    var stats = item.GetIPv4Statistics();
+                    bytesSent += (ulong)stats.BytesSent;
+                    bytesReceived += (ulong)stats.BytesReceived;
+                }
+            }
         }
         catch { }
 
@@ -162,21 +182,26 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
             DiskTotal: diskTotal,
             NetworkUploadSpeed: Math.Max(0, netThroughput.UploadBytesPerSec),
             NetworkDownloadSpeed: Math.Max(0, netThroughput.DownloadBytesPerSec),
-            BytesSent: 0,
-            BytesReceived: 0,
+            BytesSent: bytesSent,
+            BytesReceived: bytesReceived,
             ActiveConnections: activeConnections,
             RunningProcesses: runningProcesses,
+            RunningServices: runningServices,
             SystemUptime: uptime,
             BootTime: bootTimeUtc.ToString("O"),
             IpAddress: ip,
             MacAddress: mac,
+            Gateway: gateway,
+            Dns: dns,
             Timestamp: DateTime.UtcNow.ToString("O")
         );
     }
 
-    private string GetLocalIPAddress(out string macAddress)
+    private string GetLocalIPAddress(out string macAddress, out string gateway, out string dns)
     {
         macAddress = "00:00:00:00:00:00";
+        gateway = "0.0.0.0";
+        dns = "8.8.8.8";
         try
         {
             foreach (var item in NetworkInterface.GetAllNetworkInterfaces())
@@ -196,6 +221,17 @@ public class SystemDiagnosticsService : ISystemDiagnosticsService
                     catch { }
 
                     var props = item.GetIPProperties();
+                    
+                    try
+                    {
+                        var gw = props.GatewayAddresses.FirstOrDefault()?.Address;
+                        if (gw != null) gateway = gw.ToString();
+                        
+                        var d = props.DnsAddresses.FirstOrDefault();
+                        if (d != null) dns = d.ToString();
+                    }
+                    catch { }
+
                     foreach (var ip in props.UnicastAddresses)
                     {
                         if (ip.Address.AddressFamily == AddressFamily.InterNetwork)

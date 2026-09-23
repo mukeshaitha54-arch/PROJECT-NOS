@@ -48,9 +48,18 @@ export default function DeviceInventoryDetailPage({
         res.data?.data?.inventory || res.data?.inventory || res.data?.data,
       );
     } catch (err: any) {
-      setError(
-        err?.message || "Failed to retrieve asset inventory for this device.",
-      );
+      if (err?.response?.status === 404) {
+        setError(
+          "Inventory has not yet been discovered or ingested for this device. The agent will run the asset discovery cycle soon.",
+        );
+        setInventory(null);
+      } else {
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to retrieve asset inventory for this device.",
+        );
+      }
     } finally {
       setLoading(false);
     }

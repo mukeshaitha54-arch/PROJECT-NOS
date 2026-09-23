@@ -67,10 +67,13 @@ public record TelemetrySnapshotPayload(
     [property: JsonPropertyName("bytesReceived")] double BytesReceived,
     [property: JsonPropertyName("activeConnections")] int ActiveConnections,
     [property: JsonPropertyName("runningProcesses")] int RunningProcesses,
+    [property: JsonPropertyName("runningServices")] int RunningServices,
     [property: JsonPropertyName("systemUptime")] double SystemUptime,
     [property: JsonPropertyName("bootTime")] string BootTime,
     [property: JsonPropertyName("ipAddress")] string IpAddress,
     [property: JsonPropertyName("macAddress")] string MacAddress,
+    [property: JsonPropertyName("gateway")] string Gateway,
+    [property: JsonPropertyName("dns")] string Dns,
     [property: JsonPropertyName("timestamp")] string Timestamp
 );
 
