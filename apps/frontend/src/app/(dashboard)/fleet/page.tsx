@@ -436,7 +436,7 @@ export default function FleetOverviewPage() {
 
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <Link
-                      href={`/devices/${device.id}/inventory`}
+                      href={`/inventory/${device.id}`}
                       className="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 hover:border-gray-600 text-xs font-semibold text-gray-300 hover:text-white transition flex items-center gap-1"
                     >
                       <Layers className="w-3.5 h-3.5" />

@@ -172,12 +172,13 @@ export class DevicesController {
         gte.setHours(gte.getHours() - 1);
     }
 
-    const telemetry = await this.prisma.telemetryAggregation.findMany({
+    const telemetry = await this.prisma.telemetrySnapshot.findMany({
       where: {
         deviceId: id,
-        periodStart: { gte },
+        timestamp: { gte },
       },
-      orderBy: { periodStart: "asc" },
+      orderBy: { timestamp: "asc" },
+      take: 60,
     });
 
     return {

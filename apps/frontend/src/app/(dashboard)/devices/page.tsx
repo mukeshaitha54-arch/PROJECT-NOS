@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
+import { apiClient } from "@/lib/api-client";
 import { DeviceCard } from "@/components/dashboard/DeviceCard";
 import { Loader2 } from "lucide-react";
 
@@ -19,21 +20,19 @@ export default function FleetDashboardPage() {
   useEffect(() => {
     async function fetchDevices() {
       try {
-        const token = localStorage.getItem("accessToken");
-        const [devicesRes, statsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/devices`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/devices/stats`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+        const res = await apiClient
+          .get<any, any>("/device/status")
+          .catch(() => null);
 
-        const devicesJson = await devicesRes.json();
-        const statsJson = await statsRes.json();
-
-        setDevices(devicesJson.data || []);
-        setStats(statsJson.data || null);
+        if (res?.data) {
+          const payload = res.data.data || res.data;
+          setDevices(payload.devices || []);
+          setStats({
+            total: payload.summary?.totalRegistered || 0,
+            online: payload.summary?.totalOnline || 0,
+            offline: payload.summary?.totalOffline || 0,
+          });
+        }
       } catch (err) {
         console.error("Failed to load devices", err);
       } finally {
@@ -45,7 +44,7 @@ export default function FleetDashboardPage() {
 
   useEffect(() => {
     // Listen for realtime telemetry
-    const cleanupTelemetry = on("telemetry:new", (payload: any) => {
+    const cleanupTelemetry = on("telemetry.received", (payload: any) => {
       setRealtimeData((prev) => ({
         ...prev,
         [payload.deviceId]: payload,

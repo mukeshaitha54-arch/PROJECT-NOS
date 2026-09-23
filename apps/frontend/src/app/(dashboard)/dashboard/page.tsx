@@ -100,20 +100,17 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
-      // Fetch platform status
-      const statusRes = await apiClient
-        .get<any, any>("/device/status")
-        .catch((err) => {
+      // Fetch platform status and alerts in parallel
+      const [statusRes, alertRes] = await Promise.all([
+        apiClient.get<any, any>("/device/status").catch((err) => {
           console.error("Device status error:", err);
           return null;
-        });
-
-      const alertRes = await apiClient
-        .get<any, any>("/alerts?limit=10")
-        .catch((err) => {
+        }),
+        apiClient.get<any, any>("/alerts?limit=10").catch((err) => {
           console.error("Alerts error:", err);
           return null;
-        });
+        }),
+      ]);
 
       if (statusRes?.data) {
         // Backend returns { success: true, data: { devices: [...], summary: {...} } }
