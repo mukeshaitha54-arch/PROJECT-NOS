@@ -41,6 +41,7 @@ import {
   RefreshDto,
 } from "./dto/auth.dto";
 import * as crypto from "crypto";
+import { PrismaService } from "../../database/prisma.service";
 
 @Injectable()
 export class AuthService {
@@ -53,6 +54,7 @@ export class AuthService {
     @Inject(IMailServiceToken) private readonly mailService: IMailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
   private async generateTokens(user: User): Promise<TokenResponsePayload> {
@@ -94,6 +96,27 @@ export class AuthService {
       lastName: dto.lastName,
       role: UserRole.USER,
       isEmailVerified: false,
+    });
+
+    // Generate isolated workspace for new user to guarantee tenant data isolation
+    const orgId = crypto.randomUUID();
+    const orgSlug = `personal-${user.id}`;
+
+    await this.prisma.organization.create({
+      data: {
+        id: orgId,
+        name: `${dto.firstName}'s Workspace`,
+        slug: orgSlug,
+        status: "ACTIVE",
+      },
+    });
+
+    await this.prisma.organizationMember.create({
+      data: {
+        organizationId: orgId,
+        userId: user.id,
+        role: "OWNER",
+      },
     });
 
     // Generate 6-digit verification OTP
