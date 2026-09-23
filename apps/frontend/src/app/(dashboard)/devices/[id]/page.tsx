@@ -67,8 +67,8 @@ export default function DeviceDetailPage() {
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
 
         const initialTimestamp =
-          res.data?.data?.latestSnapshot?.timestamp ||
-          res.data?.latestSnapshot?.timestamp;
+          devRes?.data?.data?.latestSnapshot?.timestamp ||
+          devRes?.data?.latestSnapshot?.timestamp;
         setLastServerTime(
           initialTimestamp ? new Date(initialTimestamp).getTime() : Date.now(),
         );
