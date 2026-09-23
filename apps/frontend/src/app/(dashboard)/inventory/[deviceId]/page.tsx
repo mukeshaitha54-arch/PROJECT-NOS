@@ -168,45 +168,173 @@ export default function DeviceInventoryDetailPage({
         {/* Tab Content Panels */}
         <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-6 backdrop-blur-xl">
           {activeTab === "HARDWARE" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                  Processor (CPU)
-                </h4>
-                <p className="text-sm font-bold text-white">
-                  {inventory?.cpuModel || "N/A"}
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Cores: {inventory?.physicalCores || 0} Physical /{" "}
-                  {inventory?.logicalCores || 0} Logical
-                </p>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    Processor (CPU)
+                  </h4>
+                  <p className="text-sm font-bold text-white">
+                    {inventory?.cpuModel || "N/A"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Vendor: {inventory?.cpuVendor || "N/A"} | Cores:{" "}
+                    {inventory?.physicalCores || 0}P /{" "}
+                    {inventory?.logicalCores || 0}L
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    System Board & BIOS
+                  </h4>
+                  <p className="text-sm font-bold text-white">
+                    {inventory?.motherboard || "N/A"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    BIOS: {inventory?.biosVendor || "N/A"} v
+                    {inventory?.biosVersion || "N/A"} (
+                    {inventory?.biosReleaseDate || "Unknown"})
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    Operating System
+                  </h4>
+                  <p className="text-sm font-bold text-white">
+                    {inventory?.osEdition || "N/A"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Build: {inventory?.osBuild || "N/A"} (
+                    {inventory?.architecture || "N/A"})
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    Core System
+                  </h4>
+                  <p className="text-sm font-bold text-white">
+                    {inventory?.manufacturer || "N/A"}{" "}
+                    {inventory?.model || "N/A"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Serial: {inventory?.serialNumber || "N/A"}
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    Network Identity
+                  </h4>
+                  <p className="text-sm font-bold text-white">
+                    {inventory?.hostname || "N/A"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Domain: {inventory?.domain || "N/A"} | Workgroup:{" "}
+                    {inventory?.workgroup || "N/A"}
+                  </p>
+                </div>
               </div>
 
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                  System Board & BIOS
-                </h4>
-                <p className="text-sm font-bold text-white">
-                  {inventory?.motherboard || "N/A"}
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  BIOS: {inventory?.biosVendor || "N/A"} v
-                  {inventory?.biosVersion || "N/A"}
-                </p>
-              </div>
+              {/* Memory Modules */}
+              {inventory?.memoryModules &&
+                inventory.memoryModules.length > 0 && (
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                    <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">
+                      Memory Modules (RAM)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {inventory.memoryModules.map((mem: any, i: number) => (
+                        <div
+                          key={i}
+                          className="text-sm border-l-2 border-purple-500/50 pl-3"
+                        >
+                          <p className="font-bold text-white">
+                            {mem.manufacturer || "Unknown"} {mem.capacityGB}GB
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Speed: {mem.speedMHz} MHz | Form: {mem.formFactor} |
+                            Type: {mem.memoryType}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                  Operating System
-                </h4>
-                <p className="text-sm font-bold text-white">
-                  {inventory?.osEdition || "N/A"}
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Build: {inventory?.osBuild || "N/A"} (
-                  {inventory?.architecture || "N/A"})
-                </p>
-              </div>
+              {/* Disk Drives */}
+              {inventory?.diskDrives && inventory.diskDrives.length > 0 && (
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">
+                    Storage Drives
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {inventory.diskDrives.map((disk: any, i: number) => (
+                      <div
+                        key={i}
+                        className="text-sm border-l-2 border-emerald-500/50 pl-3"
+                      >
+                        <p className="font-bold text-white">
+                          {disk.model || "Unknown Drive"} ({disk.sizeGB}GB)
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Type: {disk.mediaType} | Interface:{" "}
+                          {disk.interfaceType} | SN: {disk.serialNumber}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* GPUs */}
+              {inventory?.gpus && inventory.gpus.length > 0 && (
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-3">
+                    Graphics (GPU)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {inventory.gpus.map((gpu: any, i: number) => (
+                      <div
+                        key={i}
+                        className="text-sm border-l-2 border-orange-500/50 pl-3"
+                      >
+                        <p className="font-bold text-white">
+                          {gpu.name || "Unknown GPU"}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Driver: {gpu.driverVersion} | VRAM: {gpu.vramMB}MB |
+                          Res: {gpu.resolution}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Network Adapters */}
+              {inventory?.networkAdapters &&
+                inventory.networkAdapters.length > 0 && (
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                    <h4 className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">
+                      Network Adapters
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {inventory.networkAdapters.map((net: any, i: number) => (
+                        <div
+                          key={i}
+                          className="text-sm border-l-2 border-blue-500/50 pl-3"
+                        >
+                          <p className="font-bold text-white">
+                            {net.name || "Unknown Adapter"}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            MAC: {net.macAddress} | Status: {net.status} | IP:{" "}
+                            {net.ipAddress}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
           )}
 
@@ -233,26 +361,92 @@ export default function DeviceInventoryDetailPage({
           )}
 
           {activeTab === "EXTENDED" && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-cyan-400">
-                Extended Collector JSON Blobs (Q1 Decision)
-              </h3>
-              <pre className="p-4 bg-slate-950 rounded-xl text-xs font-mono text-slate-300 border border-slate-800 overflow-x-auto">
-                {JSON.stringify(
-                  {
-                    eventLogs: inventory?.eventLogs ?? "N/A",
-                    windowsDefender: inventory?.windowsDefender ?? "N/A",
-                    usbDevices: inventory?.usbDevices ?? "N/A",
-                    scheduledTasks: inventory?.scheduledTasks ?? "N/A",
-                    gpuInfo: inventory?.gpuInfo ?? "N/A",
-                    smartData: inventory?.smartData ?? "N/A",
-                    tpm: inventory?.tpmExtended ?? "N/A",
-                    bitlocker: inventory?.bitlockerInfo ?? "N/A",
-                  },
-                  null,
-                  2,
-                )}
-              </pre>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Windows Defender */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                    Windows Defender
+                  </h4>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap">
+                    {inventory?.windowsDefender
+                      ? JSON.stringify(inventory.windowsDefender, null, 2)
+                      : "N/A"}
+                  </pre>
+                </div>
+
+                {/* TPM */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                    TPM (Trusted Platform Module)
+                  </h4>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap">
+                    {inventory?.tpmExtended
+                      ? JSON.stringify(inventory.tpmExtended, null, 2)
+                      : "N/A"}
+                  </pre>
+                </div>
+
+                {/* BitLocker */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                    BitLocker
+                  </h4>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap">
+                    {inventory?.bitlockerInfo
+                      ? JSON.stringify(inventory.bitlockerInfo, null, 2)
+                      : "N/A"}
+                  </pre>
+                </div>
+
+                {/* SMART Data */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                    S.M.A.R.T. Disk Health
+                  </h4>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap">
+                    {inventory?.smartData
+                      ? JSON.stringify(inventory.smartData, null, 2)
+                      : "N/A"}
+                  </pre>
+                </div>
+
+                {/* USB Devices */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                    Connected USB Devices
+                  </h4>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap">
+                    {inventory?.usbDevices
+                      ? JSON.stringify(inventory.usbDevices, null, 2)
+                      : "N/A"}
+                  </pre>
+                </div>
+
+                {/* Scheduled Tasks */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                    Scheduled Tasks
+                  </h4>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                    {inventory?.scheduledTasks
+                      ? JSON.stringify(inventory.scheduledTasks, null, 2)
+                      : "N/A"}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Event Logs */}
+              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-3 border-b border-slate-800 pb-2">
+                  Critical Event Logs
+                </h4>
+                <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                  {inventory?.eventLogs
+                    ? JSON.stringify(inventory.eventLogs, null, 2)
+                    : "N/A"}
+                </pre>
+              </div>
             </div>
           )}
         </div>

@@ -36,7 +36,7 @@ export default function DeviceDetailPage() {
   const [realtimeData, setRealtimeData] = useState<any>(null);
 
   const [timeUntilUpdate, setTimeUntilUpdate] = useState<number>(30);
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [lastServerTime, setLastServerTime] = useState<number>(Date.now());
 
   useEffect(() => {
     async function fetchData() {
@@ -65,7 +65,13 @@ export default function DeviceDetailPage() {
         setServices(svcRes?.data?.data || svcRes?.data || []);
         setSoftware(swRes?.data?.data || swRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
-        setLastUpdateTime(Date.now());
+
+        const initialTimestamp =
+          res.data?.data?.latestSnapshot?.timestamp ||
+          res.data?.latestSnapshot?.timestamp;
+        setLastServerTime(
+          initialTimestamp ? new Date(initialTimestamp).getTime() : Date.now(),
+        );
         setTimeUntilUpdate(30);
       } catch (err) {
         console.error("Failed to load device details", err);
@@ -81,8 +87,11 @@ export default function DeviceDetailPage() {
       if (payload.deviceId === id) {
         setRealtimeData(payload);
         setTelemetryHistory((prev) => [...prev, payload].slice(-60)); // Keep last 60 points in UI
-        setLastUpdateTime(Date.now());
-        setTimeUntilUpdate(30);
+        if (payload.timestamp) {
+          setLastServerTime(new Date(payload.timestamp).getTime());
+        } else {
+          setLastServerTime(Date.now());
+        }
       }
     });
 
@@ -109,11 +118,11 @@ export default function DeviceDetailPage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - lastUpdateTime) / 1000);
+      const elapsed = Math.floor((Date.now() - lastServerTime) / 1000);
       setTimeUntilUpdate(Math.max(0, 30 - elapsed));
     }, 1000);
     return () => clearInterval(timer);
-  }, [lastUpdateTime]);
+  }, [lastServerTime]);
 
   if (loading) {
     return (
@@ -152,6 +161,45 @@ export default function DeviceDetailPage() {
     realtimeData?.macAddress ?? device.latestSnapshot?.macAddress ?? "N/A";
   const uptime =
     realtimeData?.systemUptime ?? device.latestSnapshot?.systemUptime ?? 0;
+
+  const bootTime =
+    realtimeData?.bootTime ?? device.latestSnapshot?.bootTime ?? null;
+  const cpuTemp =
+    realtimeData?.cpuTemperature ?? device.latestSnapshot?.cpuTemperature ?? 0;
+  const cpuFreq =
+    realtimeData?.cpuFrequency ?? device.latestSnapshot?.cpuFrequency ?? 0;
+  const activeConnections =
+    realtimeData?.activeConnections ??
+    device.latestSnapshot?.activeConnections ??
+    0;
+  const bytesSent =
+    realtimeData?.bytesSent ?? device.latestSnapshot?.bytesSent ?? 0;
+  const bytesReceived =
+    realtimeData?.bytesReceived ?? device.latestSnapshot?.bytesReceived ?? 0;
+  const logicalProcessors =
+    realtimeData?.logicalProcessors ??
+    device.latestSnapshot?.logicalProcessors ??
+    0;
+  const physicalProcessors =
+    realtimeData?.physicalProcessors ??
+    device.latestSnapshot?.physicalProcessors ??
+    0;
+
+  const memTotal =
+    realtimeData?.memoryTotal ?? device.latestSnapshot?.memoryTotal ?? 0;
+  const memUsed =
+    realtimeData?.memoryUsed ?? device.latestSnapshot?.memoryUsed ?? 0;
+  const memFree =
+    realtimeData?.memoryFree ?? device.latestSnapshot?.memoryFree ?? 0;
+
+  const diskTotal =
+    realtimeData?.diskTotal ?? device.latestSnapshot?.diskTotal ?? 0;
+  const diskFree =
+    realtimeData?.diskFree ?? device.latestSnapshot?.diskFree ?? 0;
+  const diskRead =
+    realtimeData?.diskReadSpeed ?? device.latestSnapshot?.diskReadSpeed ?? 0;
+  const diskWrite =
+    realtimeData?.diskWriteSpeed ?? device.latestSnapshot?.diskWriteSpeed ?? 0;
 
   const sparklineData = telemetryHistory.map((t: any) => ({
     timestamp: t.periodStart || t.timestamp,
@@ -281,6 +329,129 @@ export default function DeviceDetailPage() {
                 </div>
                 <div className="text-sm text-gray-200 font-mono">
                   {(netUpload / 1024 / 1024).toFixed(2)} MB/s
+                </div>
+              </div>
+            </div>
+
+            {/* New Extended Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
+                <h4 className="text-xs text-blue-400 font-semibold uppercase border-b border-gray-800 pb-2">
+                  CPU Specs
+                </h4>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Temp</span>
+                  <span className="text-gray-200 font-mono">
+                    {cpuTemp.toFixed(1)}°C
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Frequency</span>
+                  <span className="text-gray-200 font-mono">
+                    {cpuFreq.toFixed(2)} GHz
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Logical Cores</span>
+                  <span className="text-gray-200 font-mono">
+                    {logicalProcessors}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Physical Cores</span>
+                  <span className="text-gray-200 font-mono">
+                    {physicalProcessors}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
+                <h4 className="text-xs text-purple-400 font-semibold uppercase border-b border-gray-800 pb-2">
+                  Memory
+                </h4>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total</span>
+                  <span className="text-gray-200 font-mono">
+                    {(memTotal / 1024).toFixed(1)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Used</span>
+                  <span className="text-gray-200 font-mono">
+                    {(memUsed / 1024).toFixed(1)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Free</span>
+                  <span className="text-gray-200 font-mono">
+                    {(memFree / 1024).toFixed(1)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Usage</span>
+                  <span className="text-gray-200 font-mono">
+                    {currentMem.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
+                <h4 className="text-xs text-emerald-400 font-semibold uppercase border-b border-gray-800 pb-2">
+                  Disk I/O
+                </h4>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total</span>
+                  <span className="text-gray-200 font-mono">
+                    {(diskTotal / 1024).toFixed(1)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Free</span>
+                  <span className="text-gray-200 font-mono">
+                    {(diskFree / 1024).toFixed(1)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Read</span>
+                  <span className="text-gray-200 font-mono">
+                    {(diskRead / 1024 / 1024).toFixed(1)} MB/s
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Write</span>
+                  <span className="text-gray-200 font-mono">
+                    {(diskWrite / 1024 / 1024).toFixed(1)} MB/s
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
+                <h4 className="text-xs text-orange-400 font-semibold uppercase border-b border-gray-800 pb-2">
+                  Network & System
+                </h4>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Active Conns</span>
+                  <span className="text-gray-200 font-mono">
+                    {activeConnections}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Sent</span>
+                  <span className="text-gray-200 font-mono">
+                    {(bytesSent / 1024 / 1024 / 1024).toFixed(2)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Received</span>
+                  <span className="text-gray-200 font-mono">
+                    {(bytesReceived / 1024 / 1024 / 1024).toFixed(2)} GB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Boot Time</span>
+                  <span className="text-gray-200 font-mono text-xs">
+                    {bootTime ? new Date(bootTime).toLocaleString() : "N/A"}
+                  </span>
                 </div>
               </div>
             </div>
