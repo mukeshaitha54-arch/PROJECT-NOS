@@ -517,7 +517,6 @@ export default function DeviceInventoryDetailPage({
               searchable={true}
               searchPlaceholder="Search installed software…"
               emptyTitle="No software records yet"
-              emptySubtitle="The agent will scan on next boot or on Re-Scan"
             />
           )}
 
@@ -530,7 +529,6 @@ export default function DeviceInventoryDetailPage({
               searchable={true}
               searchPlaceholder="Search Windows services…"
               emptyTitle="No service records yet"
-              emptySubtitle="Services are collected during the 24-hour inventory cycle"
             />
           )}
 
