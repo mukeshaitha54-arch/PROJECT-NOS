@@ -1,12 +1,14 @@
 import {
   Controller,
   Get,
+  Delete,
   Param,
   Query,
   HttpCode,
   HttpStatus,
   UseGuards,
   NotFoundException,
+  ForbiddenException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -347,6 +349,36 @@ export class DevicesController {
     return {
       success: true,
       data: heartbeats,
+    };
+  }
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Delete a device and all its data" })
+  async deleteDevice(
+    @CurrentTenant() tenant: TenantContext,
+    @Param("id") id: string,
+  ) {
+    const orgId = tenant.organizationId;
+    const device = await this.prisma.device.findFirst({
+      where: {
+        id,
+        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+      },
+    });
+
+    if (!device) {
+      throw new NotFoundException("Device not found or access denied");
+    }
+
+    // Delete all related data in order (cascade where not automatic)
+    await this.prisma.telemetrySnapshot.deleteMany({ where: { deviceId: id } });
+    await this.prisma.heartbeat.deleteMany({ where: { deviceId: id } });
+    await this.prisma.alert.deleteMany({ where: { deviceId: id } });
+    await this.prisma.device.delete({ where: { id } });
+
+    return {
+      success: true,
+      message: `Device ${device.hostname} (${id}) and all associated data deleted.`,
     };
   }
 }

@@ -96,9 +96,9 @@ export default function DashboardPage() {
     { time: "Now", cpu: 24, ram: 48 },
   ]);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (showLoader = false) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
 
       // Fetch platform status and alerts in parallel
       const [statusRes, alertRes] = await Promise.all([
@@ -174,7 +174,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(true); // Show loader only on initial mount
   }, [fetchDashboardData]);
 
   // Real-time Socket.IO subscriptions with 5s debounce
@@ -184,7 +184,7 @@ export default function DashboardPage() {
     const triggerDebouncedRefresh = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
-        fetchDashboardData();
+        fetchDashboardData(false); // Silent refresh — no spinner
       }, 500);
     };
 

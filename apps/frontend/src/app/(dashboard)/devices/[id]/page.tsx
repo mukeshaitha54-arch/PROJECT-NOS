@@ -390,19 +390,19 @@ export default function DeviceDetailPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Total</span>
                   <span className="text-gray-200 font-mono">
-                    {(memTotal / 1024).toFixed(1)} GB
+                    {(memTotal / 1073741824).toFixed(1)} GB
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Used</span>
                   <span className="text-gray-200 font-mono">
-                    {(memUsed / 1024).toFixed(1)} GB
+                    {(memUsed / 1073741824).toFixed(1)} GB
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Free</span>
                   <span className="text-gray-200 font-mono">
-                    {(memFree / 1024).toFixed(1)} GB
+                    {(memFree / 1073741824).toFixed(1)} GB
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -420,13 +420,13 @@ export default function DeviceDetailPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Total</span>
                   <span className="text-gray-200 font-mono">
-                    {(diskTotal / 1024).toFixed(1)} GB
+                    {(diskTotal / 1073741824).toFixed(1)} GB
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Free</span>
                   <span className="text-gray-200 font-mono">
-                    {(diskFree / 1024).toFixed(1)} GB
+                    {(diskFree / 1073741824).toFixed(1)} GB
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
