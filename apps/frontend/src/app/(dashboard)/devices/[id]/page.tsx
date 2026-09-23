@@ -11,6 +11,8 @@ import {
   HardDrive,
   MemoryStick,
   Network,
+  Clock,
+  Wifi,
 } from "lucide-react";
 import { TelemetrySparkline } from "@/components/dashboard/TelemetrySparkline";
 import { apiClient } from "@/lib/api-client";
@@ -32,6 +34,9 @@ export default function DeviceDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [realtimeData, setRealtimeData] = useState<any>(null);
+
+  const [timeUntilUpdate, setTimeUntilUpdate] = useState<number>(30);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
 
   useEffect(() => {
     async function fetchData() {
@@ -60,6 +65,8 @@ export default function DeviceDetailPage() {
         setServices(svcRes?.data?.data || svcRes?.data || []);
         setSoftware(swRes?.data?.data || swRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
+        setLastUpdateTime(Date.now());
+        setTimeUntilUpdate(30);
       } catch (err) {
         console.error("Failed to load device details", err);
       } finally {
@@ -74,6 +81,8 @@ export default function DeviceDetailPage() {
       if (payload.deviceId === id) {
         setRealtimeData(payload);
         setTelemetryHistory((prev) => [...prev, payload].slice(-60)); // Keep last 60 points in UI
+        setLastUpdateTime(Date.now());
+        setTimeUntilUpdate(30);
       }
     });
 
@@ -98,6 +107,14 @@ export default function DeviceDetailPage() {
     };
   }, [id, on]);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - lastUpdateTime) / 1000);
+      setTimeUntilUpdate(Math.max(0, 30 - elapsed));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lastUpdateTime]);
+
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center text-gray-500">
@@ -120,6 +137,21 @@ export default function DeviceDetailPage() {
     realtimeData?.diskUsagePercent ??
     device.latestSnapshot?.diskUsagePercent ??
     0;
+
+  const netUpload =
+    realtimeData?.networkUploadSpeed ??
+    device.latestSnapshot?.networkUploadSpeed ??
+    0;
+  const netDownload =
+    realtimeData?.networkDownloadSpeed ??
+    device.latestSnapshot?.networkDownloadSpeed ??
+    0;
+  const ipAddress =
+    realtimeData?.ipAddress ?? device.latestSnapshot?.ipAddress ?? "N/A";
+  const macAddress =
+    realtimeData?.macAddress ?? device.latestSnapshot?.macAddress ?? "N/A";
+  const uptime =
+    realtimeData?.systemUptime ?? device.latestSnapshot?.systemUptime ?? 0;
 
   const sparklineData = telemetryHistory.map((t: any) => ({
     timestamp: t.periodStart || t.timestamp,
@@ -177,6 +209,15 @@ export default function DeviceDetailPage() {
               {currentDisk.toFixed(1)}%
             </div>
           </div>
+          <div className="bg-black/40 border border-[#C8A96E]/20 rounded-lg px-4 py-2 text-center min-w-[120px] flex flex-col justify-center">
+            <div className="text-xs text-[#C8A96E] uppercase font-semibold flex items-center justify-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              Next Update
+            </div>
+            <div className="text-xl font-mono font-bold text-gray-200">
+              {timeUntilUpdate}s
+            </div>
+          </div>
         </div>
       </div>
 
@@ -200,28 +241,73 @@ export default function DeviceDetailPage() {
       {/* Tab Content */}
       <div className="py-4">
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-200 mb-4">
-                Live CPU History
-              </h3>
-              <TelemetrySparkline
-                data={sparklineData}
-                height={200}
-                dataKey="value"
-                color="#C8A96E"
-              />
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+                <div className="text-xs text-gray-500 mb-1 font-semibold uppercase">
+                  IP Address
+                </div>
+                <div className="text-sm text-gray-200 font-mono">
+                  {ipAddress}
+                </div>
+              </div>
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+                <div className="text-xs text-gray-500 mb-1 font-semibold uppercase">
+                  MAC Address
+                </div>
+                <div className="text-sm text-gray-200 font-mono">
+                  {macAddress}
+                </div>
+              </div>
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+                <div className="text-xs text-gray-500 mb-1 font-semibold uppercase">
+                  Uptime
+                </div>
+                <div className="text-sm text-gray-200 font-mono">
+                  {(uptime / 3600).toFixed(1)} hrs
+                </div>
+              </div>
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+                <div className="text-xs text-gray-500 mb-1 font-semibold uppercase flex items-center gap-1">
+                  <Wifi className="w-3 h-3" /> Download
+                </div>
+                <div className="text-sm text-gray-200 font-mono">
+                  {(netDownload / 1024 / 1024).toFixed(2)} MB/s
+                </div>
+              </div>
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+                <div className="text-xs text-gray-500 mb-1 font-semibold uppercase flex items-center gap-1">
+                  <Wifi className="w-3 h-3" /> Upload
+                </div>
+                <div className="text-sm text-gray-200 font-mono">
+                  {(netUpload / 1024 / 1024).toFixed(2)} MB/s
+                </div>
+              </div>
             </div>
-            <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-200 mb-4">
-                Live Memory History
-              </h3>
-              <TelemetrySparkline
-                data={sparklineData}
-                height={200}
-                dataKey="memory"
-                color="#3b82f6"
-              />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-200 mb-4">
+                  Live CPU History
+                </h3>
+                <TelemetrySparkline
+                  data={sparklineData}
+                  height={200}
+                  dataKey="value"
+                  color="#C8A96E"
+                />
+              </div>
+              <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-200 mb-4">
+                  Live Memory History
+                </h3>
+                <TelemetrySparkline
+                  data={sparklineData}
+                  height={200}
+                  dataKey="memory"
+                  color="#3b82f6"
+                />
+              </div>
             </div>
           </div>
         )}

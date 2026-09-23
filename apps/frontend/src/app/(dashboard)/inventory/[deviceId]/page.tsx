@@ -174,11 +174,11 @@ export default function DeviceInventoryDetailPage({
                   Processor (CPU)
                 </h4>
                 <p className="text-sm font-bold text-white">
-                  {inventory?.cpuModel || "Intel Core i7-12700K"}
+                  {inventory?.cpuModel || "N/A"}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Cores: {inventory?.physicalCores || 8} Physical /{" "}
-                  {inventory?.logicalCores || 16} Logical
+                  Cores: {inventory?.physicalCores || 0} Physical /{" "}
+                  {inventory?.logicalCores || 0} Logical
                 </p>
               </div>
 
@@ -187,11 +187,11 @@ export default function DeviceInventoryDetailPage({
                   System Board & BIOS
                 </h4>
                 <p className="text-sm font-bold text-white">
-                  {inventory?.motherboard || "ASUS ROG STRIX Z690"}
+                  {inventory?.motherboard || "N/A"}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  BIOS: {inventory?.biosVendor || "American Megatrends"} v
-                  {inventory?.biosVersion || "2.10"}
+                  BIOS: {inventory?.biosVendor || "N/A"} v
+                  {inventory?.biosVersion || "N/A"}
                 </p>
               </div>
 
@@ -200,11 +200,11 @@ export default function DeviceInventoryDetailPage({
                   Operating System
                 </h4>
                 <p className="text-sm font-bold text-white">
-                  {inventory?.osEdition || "Windows 11 Pro Enterprise"}
+                  {inventory?.osEdition || "N/A"}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Build: {inventory?.osBuild || "22631.3880"} (
-                  {inventory?.architecture || "x64"})
+                  Build: {inventory?.osBuild || "N/A"} (
+                  {inventory?.architecture || "N/A"})
                 </p>
               </div>
             </div>
@@ -240,34 +240,14 @@ export default function DeviceInventoryDetailPage({
               <pre className="p-4 bg-slate-950 rounded-xl text-xs font-mono text-slate-300 border border-slate-800 overflow-x-auto">
                 {JSON.stringify(
                   {
-                    eventLogs:
-                      inventory?.eventLogs ||
-                      "No critical Event Viewer events recorded.",
-                    windowsDefender: inventory?.windowsDefender || {
-                      threatStatus: "Clean",
-                      realTimeProtection: true,
-                    },
-                    usbDevices: inventory?.usbDevices || [
-                      "USB Storage Drive 3.0",
-                    ],
-                    scheduledTasks: inventory?.scheduledTasks || [
-                      "NOS_Agent_Update_Check",
-                    ],
-                    gpuInfo: inventory?.gpuInfo || {
-                      name: "NVIDIA RTX 4080",
-                      vram: "16 GB",
-                    },
-                    smartData: inventory?.smartData || {
-                      healthStatus: "PASSED",
-                      tempCelsius: 34,
-                    },
-                    tpm: inventory?.tpmExtended || {
-                      version: "2.0",
-                      status: "Enabled",
-                    },
-                    bitlocker: inventory?.bitlockerInfo || {
-                      driveC: "Encrypted (AES-256)",
-                    },
+                    eventLogs: inventory?.eventLogs ?? "N/A",
+                    windowsDefender: inventory?.windowsDefender ?? "N/A",
+                    usbDevices: inventory?.usbDevices ?? "N/A",
+                    scheduledTasks: inventory?.scheduledTasks ?? "N/A",
+                    gpuInfo: inventory?.gpuInfo ?? "N/A",
+                    smartData: inventory?.smartData ?? "N/A",
+                    tpm: inventory?.tpmExtended ?? "N/A",
+                    bitlocker: inventory?.bitlockerInfo ?? "N/A",
                   },
                   null,
                   2,
