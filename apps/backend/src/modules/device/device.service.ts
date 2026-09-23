@@ -285,27 +285,29 @@ export class DeviceService {
     const devices = await this.deviceRepository.findAll();
     const now = new Date().getTime();
 
+    // Single batch query — fetch latest heartbeat for ALL devices at once (no N+1)
+    const heartbeatMap =
+      devices.length > 0
+        ? await this.heartbeatRepository.findLatestForDevices(
+            devices.map((d) => d.id),
+          )
+        : new Map<string, any>();
+
     let totalOnline = 0;
     let totalOffline = 0;
     let totalDegraded = 0;
+    const staleDeviceIds: string[] = [];
 
     const deviceResults: (SharedDevice & {
       lastHeartbeat?: SharedHeartbeat | null;
-    })[] = [];
-
-    for (const d of devices) {
+    })[] = devices.map((d) => {
       let currentStatus = d.status;
       const lastSeenMs = d.lastSeen ? d.lastSeen.getTime() : 0;
       const isStale = now - lastSeenMs > this.STALE_HEARTBEAT_THRESHOLD_MS;
 
-      // Automatically evaluate stale heartbeats to maintain accurate operational status
       if (currentStatus === DeviceStatus.ONLINE && isStale) {
-        await this.deviceRepository.update(d.id, {
-          status: DeviceStatus.OFFLINE,
-        });
         currentStatus = DeviceStatus.OFFLINE;
-
-        // Emit domain event for offline transition — timeline and realtime handlers subscribe
+        staleDeviceIds.push(d.id);
         this.eventEmitter.emit(
           "device.offline",
           new DeviceOfflineEvent(
@@ -320,13 +322,21 @@ export class DeviceService {
       else if (currentStatus === DeviceStatus.DEGRADED) totalDegraded++;
       else totalOffline++;
 
-      const latestHeartbeat =
-        await this.heartbeatRepository.findLatestByDeviceId(d.id);
-      deviceResults.push({
+      const latestHeartbeat = heartbeatMap.get(d.id) || null;
+      return {
         ...this.sanitizeDevice({ ...d, status: currentStatus }),
         lastHeartbeat: latestHeartbeat
           ? this.sanitizeHeartbeat(latestHeartbeat)
           : null,
+      };
+    });
+
+    // Fire-and-forget: persist stale status updates without blocking the API response
+    if (staleDeviceIds.length > 0) {
+      staleDeviceIds.forEach((id) => {
+        this.deviceRepository
+          .update(id, { status: DeviceStatus.OFFLINE })
+          .catch(() => {});
       });
     }
 

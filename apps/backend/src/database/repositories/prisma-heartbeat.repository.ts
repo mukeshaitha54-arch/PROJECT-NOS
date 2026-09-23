@@ -30,6 +30,19 @@ export class PrismaHeartbeatRepository implements IHeartbeatRepository {
     });
   }
 
+  async findLatestForDevices(
+    deviceIds: string[],
+  ): Promise<Map<string, Heartbeat>> {
+    if (!deviceIds.length) return new Map();
+    // Use distinct to get one row per deviceId — most recent first
+    const heartbeats = await this.prisma.heartbeat.findMany({
+      where: { deviceId: { in: deviceIds } },
+      orderBy: { timestamp: "desc" },
+      distinct: ["deviceId"],
+    });
+    return new Map(heartbeats.map((h) => [h.deviceId, h]));
+  }
+
   async findRecentByDeviceId(
     deviceId: string,
     limit = 10,

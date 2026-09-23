@@ -30,17 +30,20 @@ export class DevicesController {
   async getDevices(@CurrentTenant() tenant: TenantContext) {
     const orgId = tenant.organizationId;
 
-    // Auto-fix legacy devices: sync tenantId for any device where organizationId matches but tenantId doesn't
-    await this.prisma.device.updateMany({
-      where: { organizationId: orgId, tenantId: { not: orgId } },
-      data: { tenantId: orgId },
-    });
+    // Fire-and-forget: sync tenantId for any legacy device that has organizationId but wrong tenantId
+    this.prisma.device
+      .updateMany({
+        where: { organizationId: orgId, tenantId: { not: orgId } },
+        data: { tenantId: orgId },
+      })
+      .catch(() => {});
 
     // Query by tenantId OR organizationId to catch all devices for this org
     const devices = await this.prisma.device.findMany({
       where: {
         OR: [{ tenantId: orgId }, { organizationId: orgId }],
       },
+      orderBy: { lastSeen: "desc" },
       include: {
         telemetrySnapshots: {
           orderBy: { timestamp: "desc" },
