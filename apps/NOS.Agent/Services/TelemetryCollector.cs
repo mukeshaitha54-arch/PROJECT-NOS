@@ -63,8 +63,6 @@ namespace NOS.Agent.Services
 
             if (stoppingToken.IsCancellationRequested) return;
 
-            int intervalSeconds = _configuration.TelemetryIntervalSeconds > 0 ? _configuration.TelemetryIntervalSeconds : 300;
-
             // Optional initial collection
             await CollectAndSendTelemetryAsync(stoppingToken);
 
@@ -72,6 +70,7 @@ namespace NOS.Agent.Services
             {
                 try
                 {
+                    int intervalSeconds = _configuration.TelemetryIntervalSeconds > 0 ? _configuration.TelemetryIntervalSeconds : 300;
                     await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), stoppingToken);
                     await CollectAndSendTelemetryAsync(stoppingToken);
                 }

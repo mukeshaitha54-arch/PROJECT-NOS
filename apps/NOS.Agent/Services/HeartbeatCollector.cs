@@ -8,22 +8,24 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NOS.Agent.Configuration;
 
 namespace NOS.Agent.Services
 {
     public class HeartbeatCollector : BackgroundService
     {
         private readonly IOutboxQueueService _outboxQueue;
-        private readonly IConfiguration _configuration;
+        private readonly AgentConfiguration _configuration;
         private readonly ILogger<HeartbeatCollector> _logger;
 
         public HeartbeatCollector(
             IOutboxQueueService outboxQueue,
-            IConfiguration configuration,
+            IOptions<AgentConfiguration> options,
             ILogger<HeartbeatCollector> logger)
         {
             _outboxQueue = outboxQueue;
-            _configuration = configuration;
+            _configuration = options.Value;
             _logger = logger;
         }
 
@@ -36,13 +38,13 @@ namespace NOS.Agent.Services
 
             if (stoppingToken.IsCancellationRequested) return;
 
-            int intervalSeconds = _configuration.GetValue<int>("AgentConfiguration:HeartbeatIntervalSeconds", 60);
             await SendHeartbeatAsync(stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
+                    int intervalSeconds = _configuration.HeartbeatIntervalSeconds > 0 ? _configuration.HeartbeatIntervalSeconds : 60;
                     await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), stoppingToken);
                     await SendHeartbeatAsync(stoppingToken);
                 }

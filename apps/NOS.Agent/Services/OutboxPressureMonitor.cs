@@ -85,6 +85,11 @@ namespace NOS.Agent.Services
             if (outboxCount > 1000 || dbSizeMb > 50)
             {
                 _logger.LogWarning("High pressure detected. DB Size: {Size}MB, Outbox: {Count}", dbSizeMb, outboxCount);
+                OutboxDispatcherService.IsHighPressure = true;
+            }
+            else
+            {
+                OutboxDispatcherService.IsHighPressure = false;
             }
 
             if (dbSizeMb > 100)

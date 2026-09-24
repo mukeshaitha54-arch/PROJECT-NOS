@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NOS.Agent.Configuration;
 using NOS.Agent.Data;
+using NOS.Agent.Models;
 using NOS.Agent.Services;
 
 namespace NOS.Agent
@@ -139,7 +140,41 @@ namespace NOS.Agent
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"[CRITICAL] Agent crashed: {ex.Message}");
                 Console.ResetColor();
-                return 1;
+
+                try
+                {
+                    // 1. Log to Windows Event Log
+                    if (OperatingSystem.IsWindows() && EventLog.SourceExists("NOS-Agent"))
+                    {
+                        using var eventLog = new EventLog("Application");
+                        eventLog.Source = "NOS-Agent";
+                        eventLog.WriteEntry($"Agent crashed: {ex}", EventLogEntryType.Error, 1003);
+                    }
+
+                    // 2. Write to SQLite CrashLogs
+                    // Re-build host/config just to get DB path if we couldn't get it from services, 
+                    // or parse it from LocalAppData
+                    var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "outbox.db");
+                    var optionsBuilder = new DbContextOptionsBuilder<OutboxDbContext>();
+                    optionsBuilder.UseSqlite($"Data Source={dbPath}");
+
+                    using var dbContext = new OutboxDbContext(optionsBuilder.Options);
+                    dbContext.CrashLogs.Add(new CrashLog
+                    {
+                        Timestamp = DateTime.UtcNow,
+                        ExceptionType = ex.GetType().Name,
+                        Message = ex.Message,
+                        StackTrace = ex.StackTrace ?? string.Empty
+                    });
+                    dbContext.SaveChanges();
+                }
+                catch
+                {
+                    // Ignore errors during crash logging
+                }
+
+                // Do NOT suppress the exception - rethrow it so the Service Manager knows it crashed
+                throw;
             }
         }
 
@@ -232,11 +267,10 @@ namespace NOS.Agent
                     services.AddHostedService<TelemetryCollector>();
                     services.AddHostedService<OutboxDispatcherService>();
 
-                    services.AddSingleton<IResourceMonitorService, ResourceMonitorService>();
-                    services.AddHostedService<ResourceMonitorService>();
+                    services.AddSingleton<IResourceMonitorService, AgentResourceMonitor>();
+                    services.AddHostedService(provider => (AgentResourceMonitor)provider.GetRequiredService<IResourceMonitorService>());
 
                     services.AddHostedService<OutboxPressureMonitor>();
-                    services.AddHostedService<AgentResourceMonitor>();
                 });
 
         private static void PrintBanner()

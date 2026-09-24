@@ -1,38 +1,30 @@
 const { PrismaClient } = require("@prisma/client");
-const crypto = require("crypto");
 const prisma = new PrismaClient();
+const crypto = require("crypto");
 
 async function main() {
-  const org = await prisma.organization.findFirst();
-  if (!org) {
-    console.log("No organization found. Please create one.");
-    return;
-  }
-
-  const plainKey = "NOS-TEST-1234-5678-ABCD";
-  const keyHash = crypto.createHash("sha256").update(plainKey).digest("hex");
-
-  const key = await prisma.registrationKey.create({
-    data: {
-      keyPrefix: "NOS-TEST-1234********",
-      keyHash: keyHash,
-      displayName: "E2E Test Key",
-      maxUses: 10,
-      currentUses: 0,
-      expiresAt: new Date(Date.now() + 86400000),
-      organizationId: org.id,
-      status: "ACTIVE",
-      createdBy: "test-user",
-      totalGenerated: 1,
-      failedAttempts: 0,
-      devicesCreated: 0,
-    },
+  const user = await prisma.user.findFirst();
+  const org = await prisma.organizationMember.findFirst({
+    where: { userId: user.id },
   });
 
-  console.log(`Created key ID: ${key.id}`);
-  console.log(`PLAIN KEY TO USE: ${plainKey}`);
+  const rawKey = "nos-reg-key-test-1234";
+  const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+
+  await prisma.registrationKey.create({
+    data: {
+      id: crypto.randomUUID(),
+      organizationId: org.organizationId,
+      displayName: "Test Key",
+      keyHash: keyHash,
+      keyPrefix: "nos-reg-****",
+      createdBy: user.id,
+      status: "ACTIVE",
+      currentUses: 0,
+      maxUses: 100,
+    },
+  });
+  console.log("Created valid key for raw string: nos-reg-key-test-1234");
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+main().finally(() => prisma.$disconnect());

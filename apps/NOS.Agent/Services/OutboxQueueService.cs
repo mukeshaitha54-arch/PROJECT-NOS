@@ -15,11 +15,13 @@ namespace NOS.Agent.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<OutboxQueueService> _logger;
+        private readonly IWindowsEventLogService _eventLogService;
 
-        public OutboxQueueService(IServiceProvider serviceProvider, ILogger<OutboxQueueService> logger)
+        public OutboxQueueService(IServiceProvider serviceProvider, ILogger<OutboxQueueService> logger, IWindowsEventLogService eventLogService)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _eventLogService = eventLogService;
         }
 
         public async Task EnqueueAsync(string messageType, object payload, int priority, CancellationToken cancellationToken = default)
@@ -52,7 +54,7 @@ namespace NOS.Agent.Services
 
         public async Task<List<OutboxMessage>> GetPendingMessagesAsync(int batchSize, CancellationToken cancellationToken = default)
         {
-            return await ExecuteWithRetryAsync(async () =>
+            var result = await ExecuteWithRetryAsync(async () =>
             {
                 using var scope = _serviceProvider.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
@@ -64,6 +66,7 @@ namespace NOS.Agent.Services
                     .Take(batchSize)
                     .ToListAsync(cancellationToken);
             });
+            return result ?? new List<OutboxMessage>();
         }
 
         public async Task MarkDeliveredAsync(int messageId, CancellationToken cancellationToken = default)
@@ -95,7 +98,9 @@ namespace NOS.Agent.Services
                 {
                     message.RetryCount++;
                     message.LastError = error;
-                    message.NextRetryAt = DateTime.UtcNow.AddSeconds(Math.Pow(2, message.RetryCount)); // Exponential backoff
+                    var backoffSeconds = Math.Pow(2, message.RetryCount) * 5;
+                    if (backoffSeconds > 300) backoffSeconds = 300; // Cap at 5 minutes
+                    message.NextRetryAt = DateTime.UtcNow.AddSeconds(backoffSeconds);
                     
                     if (message.RetryCount >= 10)
                     {
@@ -112,6 +117,7 @@ namespace NOS.Agent.Services
                         };
                         dbContext.DeadLetterMessages.Add(dlqMsg);
                         dbContext.OutboxMessages.Remove(message);
+                        _eventLogService.WriteEvent(1001, $"Message {message.Id} ({message.MessageType}) moved to Dead Letter Queue after 10 retries.", System.Diagnostics.EventLogEntryType.Warning);
                     }
                     await dbContext.SaveChangesAsync(cancellationToken);
                 }
@@ -170,7 +176,7 @@ namespace NOS.Agent.Services
             });
         }
 
-        private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
+        private async Task<T?> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
         {
             int maxRetries = 3;
             for (int i = 0; i < maxRetries; i++)
@@ -179,19 +185,22 @@ namespace NOS.Agent.Services
                 {
                     return await action();
                 }
-                catch (Microsoft.Data.Sqlite.SqliteException ex) when (i < maxRetries - 1)
+                catch (Exception ex) when (ex is Microsoft.Data.Sqlite.SqliteException || ex is DbUpdateException || ex.InnerException is Microsoft.Data.Sqlite.SqliteException)
                 {
-                    _logger.LogWarning(ex, "SQLite operation failed. Retrying in 100ms. Attempt {Attempt}", i + 1);
-                    await Task.Delay(100);
-                }
-                catch (DbUpdateException ex) when (i < maxRetries - 1)
-                {
-                    _logger.LogWarning(ex, "DbUpdateException failed. Retrying in 100ms. Attempt {Attempt}", i + 1);
-                    await Task.Delay(100);
+                    if (i < maxRetries - 1)
+                    {
+                        _logger.LogWarning(ex, "SQLite operation failed. Retrying in 100ms. Attempt {Attempt}", i + 1);
+                        await Task.Delay(100);
+                    }
+                    else
+                    {
+                        _eventLogService.WriteEvent(1002, $"SQLite operation failed after 3 attempts: {ex.Message}", System.Diagnostics.EventLogEntryType.Error);
+                        _logger.LogError(ex, "SQLite operation failed after 3 attempts.");
+                        return default!;
+                    }
                 }
             }
-            // Let it throw on the final attempt
-            return await action();
+            return default!;
         }
     }
 }

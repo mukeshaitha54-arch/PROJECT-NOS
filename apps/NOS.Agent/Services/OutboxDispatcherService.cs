@@ -12,6 +12,8 @@ namespace NOS.Agent.Services
 {
     public class OutboxDispatcherService : BackgroundService, IOutboxDispatcherService
     {
+        public static bool IsHighPressure { get; set; } = false;
+
         private readonly IOutboxQueueService _queueService;
         private readonly ICredentialManagerService _credentialManager;
         private readonly IWindowsEventLogService _eventLogService;
@@ -51,7 +53,7 @@ namespace NOS.Agent.Services
                     _eventLogService.WriteEvent(1001, $"Unhandled exception in OutboxDispatcherService: {ex.Message}\n{ex.StackTrace}", EventLogEntryType.Error);
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(IsHighPressure ? 5 : 30), stoppingToken);
             }
         }
 
