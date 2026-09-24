@@ -32,7 +32,9 @@ namespace NOS.Agent.Services
             _logger = logger;
             _eventLog = eventLog;
             _config = options.Value;
-            _dbPath = Path.Combine(AppContext.BaseDirectory, "outbox.db");
+            _dbPath = !string.IsNullOrWhiteSpace(_config.SqliteDbPath)
+                ? _config.SqliteDbPath
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "outbox.db");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
