@@ -124,8 +124,51 @@ async function bootstrap() {
     // assets dir may not exist in CI — skip silently
   }
 
-  // Enable CORS & Global validation pipes
-  app.enableCors({ origin: "*", credentials: true });
+  // Enable CORS with secure origin handling
+  const configuredOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  const defaultAllowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://nos.is-local.org",
+    "https://nos.is-local.org",
+    "http://13.127.187.47",
+    "http://13.127.187.47:3000",
+  ];
+
+  const allowedOrigins = [
+    ...new Set([...defaultAllowedOrigins, ...configuredOrigins]),
+  ];
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, native Windows agent)
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        process.env.NODE_ENV !== "production"
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Origin",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+      "Authorization",
+      "X-Device-Token",
+      "X-Idempotency-Key",
+    ],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

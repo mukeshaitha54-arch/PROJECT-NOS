@@ -1,5 +1,12 @@
-import { Controller, Get, Query, Res, NotFoundException } from "@nestjs/common";
-import { Response } from "express";
+import {
+  Controller,
+  Get,
+  Query,
+  Req,
+  Res,
+  NotFoundException,
+} from "@nestjs/common";
+import { Request, Response } from "express";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -14,10 +21,17 @@ export class InstallerController {
   async getWindowsInstaller(
     @Query("registrationKey") registrationKey: string,
     @Query("serverUrl") serverUrl: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     const safeKey = (registrationKey || "").replace(/[^A-Za-z0-9\-]/g, "");
-    const rawServer = (serverUrl || "http://13.127.187.47")
+    const host = req?.headers?.host ? `http://${req.headers.host}` : "";
+    const fallbackServer =
+      process.env.API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      host ||
+      "http://localhost:3001";
+    const rawServer = (serverUrl || fallbackServer)
       .replace(/[`$'"\\]/g, "")
       .replace(/\s/g, "");
     const baseServer = rawServer.replace(/\/api\/v1\/?$/, "");

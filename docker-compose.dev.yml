@@ -106,23 +106,6 @@ services:
     networks:
       - nos_dev_network
 
-  agent:
-    build:
-      context: .
-      dockerfile: apps/agent/Dockerfile
-    container_name: nos_monitoring_agent_dev
-    restart: unless-stopped
-    environment:
-      AgentConfig__NodeId: nos-container-agent-dev-001
-      AgentConfig__PollIntervalSeconds: 10
-      AgentConfig__ApiIngestionEndpoint: http://nos_backend_dev:3001/api/v1
-      AgentConfig__RegistrationKey: nos-reg-key-dev-1234
-      NOS_AGENT_SIMULATION_MODE: "true"
-    depends_on:
-      - backend
-    networks:
-      - nos_dev_network
-
 networks:
   nos_dev_network:
     driver: bridge
