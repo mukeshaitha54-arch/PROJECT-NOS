@@ -61,7 +61,7 @@ jobs:
 
   validate-dotnet:
     name: Build & Verify (.NET Monitoring Agent)
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -72,10 +72,10 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore Dependencies
-        run: dotnet restore apps/agent/NOS.Agent.csproj
+        run: dotnet restore apps/NOS.Agent/NOS.Agent.csproj
 
       - name: Build Monitoring Agent
-        run: dotnet build apps/agent/NOS.Agent.csproj --no-restore -c Release
+        run: dotnet build apps/NOS.Agent/NOS.Agent.csproj --no-restore -c Release
 
   docker-compose-check:
     name: Docker Compose Syntax Validation
