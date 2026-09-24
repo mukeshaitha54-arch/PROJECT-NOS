@@ -265,6 +265,7 @@ namespace NOS.Agent
                     services.AddHostedService<DeviceRegistrationService>();
                     services.AddHostedService<HeartbeatCollector>();
                     services.AddHostedService<TelemetryCollector>();
+                    services.AddHostedService<InventoryCollector>();
                     services.AddHostedService<OutboxDispatcherService>();
 
                     services.AddSingleton<IResourceMonitorService, AgentResourceMonitor>();

@@ -89,13 +89,13 @@ export class RegistrationKeyController {
     };
   }
 
-  @Get()
-  async getKeys(@Query("organizationId") orgId: string) {
+  @Get("organization/:orgId")
+  async getKeys(@Param("orgId") orgId: string) {
     const keys = await this.registrationKeyService.getKeysByOrganization(orgId);
     return keys; // Return the array directly or wrapped depending on what frontend expects. The user's code just says api.get(...)
   }
 
-  @Delete(":id")
+  @Post(":id/revoke")
   async revokeKey(@Param("id") id: string, @CurrentUser() user: any) {
     // In a real implementation we would fetch the key first to get the orgId for the audit log
     const revoked = await this.registrationKeyService.revokeKey(

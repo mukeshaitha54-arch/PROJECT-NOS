@@ -55,7 +55,7 @@ export function useRealtime() {
         : null;
 
     // Connect to backend Socket.IO with token authentication
-    const socketInstance = io(SOCKET_URL, {
+    const socketInstance = io(SOCKET_URL + "/realtime", {
       path: "/socket.io",
       transports: ["websocket", "polling"],
       auth: {
