@@ -71,11 +71,10 @@ export class InventoryAuditService {
     const prevDiskSerials = new Set(
       previous.diskDrives?.map((d) => d.serialNumber) || [],
     );
-    const nextDiskSerials = new Set(
-      nextPayload.diskDrives.map((d) => d.serialNumber),
-    );
+    const nextDiskDrives = nextPayload.diskDrives || [];
+    const nextDiskSerials = new Set(nextDiskDrives.map((d) => d.serialNumber));
 
-    for (const d of nextPayload.diskDrives) {
+    for (const d of nextDiskDrives) {
       if (!prevDiskSerials.has(d.serialNumber)) {
         await repository.createAuditLog(
           deviceId,
@@ -99,26 +98,25 @@ export class InventoryAuditService {
     const prevRamSerials = new Set(
       previous.memoryModules?.map((m) => m.serialNumber) || [],
     );
+    const nextMemoryModules = nextPayload.memoryModules || [];
     const nextRamSerials = new Set(
-      nextPayload.memoryModules.map((m) => m.serialNumber),
+      nextMemoryModules.map((m) => m.serialNumber),
     );
     if (prevRamSerials.size !== nextRamSerials.size) {
-      if (
-        nextPayload.memoryModules.length > (previous.memoryModules?.length || 0)
-      ) {
+      if (nextMemoryModules.length > (previous.memoryModules?.length || 0)) {
         await repository.createAuditLog(
           deviceId,
           "Hardware Added",
-          `Memory module capacity expanded to ${nextPayload.memoryModules.length} DIMM slots.`,
+          `Memory module capacity expanded to ${nextMemoryModules.length} DIMM slots.`,
         );
         diffCount++;
       } else if (
-        nextPayload.memoryModules.length < (previous.memoryModules?.length || 0)
+        nextMemoryModules.length < (previous.memoryModules?.length || 0)
       ) {
         await repository.createAuditLog(
           deviceId,
           "Hardware Removed",
-          `Memory module capacity decreased from ${previous.memoryModules?.length || 0} to ${nextPayload.memoryModules.length} DIMM slots.`,
+          `Memory module capacity decreased from ${previous.memoryModules?.length || 0} to ${nextMemoryModules.length} DIMM slots.`,
         );
         diffCount++;
       }
@@ -128,14 +126,15 @@ export class InventoryAuditService {
     const prevApps = new Set(
       previous.installedSoftware?.map((s) => s.name.toLowerCase()) || [],
     );
+    const nextInstalledSoftware = nextPayload.installedSoftware || [];
     const nextApps = new Set(
-      nextPayload.installedSoftware.map((s) => s.name.toLowerCase()),
+      nextInstalledSoftware.map((s) => s.name.toLowerCase()),
     );
 
     const newInstalled: string[] = [];
     const removed: string[] = [];
 
-    for (const app of nextPayload.installedSoftware) {
+    for (const app of nextInstalledSoftware) {
       if (!prevApps.has(app.name.toLowerCase())) {
         newInstalled.push(`${app.name} (${app.version})`);
       }
@@ -175,10 +174,9 @@ export class InventoryAuditService {
         ?.map((n) => n.ipv4)
         .filter((ip) => ip !== "0.0.0.0") || [],
     );
+    const nextNetworkAdapters = nextPayload.networkAdapters || [];
     const nextIps = new Set(
-      nextPayload.networkAdapters
-        .map((n) => n.ipv4)
-        .filter((ip) => ip !== "0.0.0.0"),
+      nextNetworkAdapters.map((n) => n.ipv4).filter((ip) => ip !== "0.0.0.0"),
     );
     let networkChanged = false;
     if (prevIps.size !== nextIps.size) {
