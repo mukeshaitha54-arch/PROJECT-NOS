@@ -192,6 +192,25 @@ export class SocketPublisherService implements ISocketPublisher {
     await this.broadcast(event as any, rooms, payload, correlationId);
   }
 
+  async emitDeviceTelemetryStatus(
+    deviceId: string,
+    organizationId: string,
+    telemetryPaused: boolean,
+    correlationId?: string,
+  ): Promise<void> {
+    const rooms = [
+      SocketRooms.DASHBOARD,
+      getDeviceRoom(deviceId),
+      `org_${organizationId}`,
+    ];
+    await this.broadcast(
+      SocketEvents.TELEMETRY_STATUS,
+      rooms,
+      { deviceId, telemetryPaused },
+      correlationId,
+    );
+  }
+
   async emitTenantEvent(
     organizationId: string,
     event: string,

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Delete,
   Param,
   Query,
@@ -15,17 +16,22 @@ import {
   ApiOperation,
   ApiResponse as SwaggerApiResponse,
 } from "@nestjs/swagger";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CurrentTenant } from "../../common/decorators/current-tenant.decorator";
 import { TenantContext } from "@nos/shared-types";
 import { PrismaService } from "../../database/prisma.service";
 import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
+import { DeviceTelemetryStatusEvent } from "../../common/events/domain-events";
 
 @ApiTags("Frontend Dashboard Devices API")
 @Controller("devices")
 @UseGuards(JwtAuthGuard)
 export class DevicesController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -467,6 +473,92 @@ export class DevicesController {
     return {
       success: true,
       message: `Device ${device.hostname} (${deviceId}) and all associated data deleted permanently.`,
+    };
+  }
+
+  @Post(":id/telemetry/pause")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Pause telemetry collection for a device" })
+  async pauseTelemetry(
+    @CurrentTenant() tenant: TenantContext,
+    @Param("id") id: string,
+  ) {
+    const orgId = tenant.organizationId;
+    const device = await this.prisma.device.findFirst({
+      where: {
+        OR: [{ id }, { uuid: id }],
+        AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }],
+      },
+    });
+
+    if (!device) {
+      throw new NotFoundException("Device not found or access denied");
+    }
+
+    const updated = await this.prisma.device.update({
+      where: { id: device.id },
+      data: { telemetryPaused: true },
+    });
+
+    this.eventEmitter.emit(
+      "device.telemetry.status",
+      new DeviceTelemetryStatusEvent(
+        device.organizationId || orgId,
+        device.id,
+        true,
+      ),
+    );
+
+    return {
+      success: true,
+      data: {
+        id: updated.id,
+        telemetryPaused: true,
+        message: "Telemetry collection has been paused.",
+      },
+    };
+  }
+
+  @Post(":id/telemetry/resume")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Resume telemetry collection for a device" })
+  async resumeTelemetry(
+    @CurrentTenant() tenant: TenantContext,
+    @Param("id") id: string,
+  ) {
+    const orgId = tenant.organizationId;
+    const device = await this.prisma.device.findFirst({
+      where: {
+        OR: [{ id }, { uuid: id }],
+        AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }],
+      },
+    });
+
+    if (!device) {
+      throw new NotFoundException("Device not found or access denied");
+    }
+
+    const updated = await this.prisma.device.update({
+      where: { id: device.id },
+      data: { telemetryPaused: false },
+    });
+
+    this.eventEmitter.emit(
+      "device.telemetry.status",
+      new DeviceTelemetryStatusEvent(
+        device.organizationId || orgId,
+        device.id,
+        false,
+      ),
+    );
+
+    return {
+      success: true,
+      data: {
+        id: updated.id,
+        telemetryPaused: false,
+        message: "Telemetry collection has been resumed.",
+      },
     };
   }
 }

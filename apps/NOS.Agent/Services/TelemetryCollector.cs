@@ -77,6 +77,12 @@ namespace NOS.Agent.Services
 
         private async Task CollectAndSendTelemetryAsync(CancellationToken stoppingToken)
         {
+            if (AgentRuntimeState.IsTelemetryPaused)
+            {
+                _logger.LogInformation("Telemetry collection is PAUSED by server command. Skipping cycle.");
+                return;
+            }
+
             if (_safeMode.IsActive)
             {
                 _logger.LogInformation("Skipping telemetry cycle due to Safe Mode being active.");

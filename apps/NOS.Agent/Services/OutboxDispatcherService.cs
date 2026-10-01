@@ -2,9 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NOS.Agent.Configuration;
 
@@ -114,6 +116,31 @@ namespace NOS.Agent.Services
                         _logger.LogInformation(
                             "Dispatched {MessageType} to {Url} | Status: {Status}",
                             message.MessageType, url, (int)response.StatusCode);
+
+                        if (message.MessageType == "heartbeat")
+                        {
+                            try
+                            {
+                                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                                using var doc = JsonDocument.Parse(responseBody);
+                                if (doc.RootElement.TryGetProperty("telemetryPaused", out var pausedProp))
+                                {
+                                    bool isPaused = pausedProp.GetBoolean();
+                                    if (AgentRuntimeState.IsTelemetryPaused != isPaused)
+                                    {
+                                        AgentRuntimeState.IsTelemetryPaused = isPaused;
+                                        _logger.LogInformation(
+                                            "Telemetry operational status updated via heartbeat: IsTelemetryPaused = {IsPaused}",
+                                            isPaused);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogDebug(ex, "Failed to parse heartbeat response body for telemetry control flags.");
+                            }
+                        }
+
                         await _queueService.MarkDeliveredAsync(message.Id, cancellationToken);
                         ResetCircuitBreaker();
                     }

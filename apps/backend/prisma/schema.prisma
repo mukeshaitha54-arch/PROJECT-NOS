@@ -108,6 +108,7 @@ model Device {
   architecture       String
   agentVersion       String
   status             DeviceStatus          @default(OFFLINE)
+  telemetryPaused    Boolean               @default(false)
   claimStatus        DeviceClaimStatus     @default(UNASSIGNED)
   lastSeen           DateTime?
   registeredAt       DateTime              @default(now())

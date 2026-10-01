@@ -41,6 +41,7 @@ import {
   DeviceRetiredEvent,
   DeviceClaimedEvent,
   DeviceBulkStatusEvent,
+  DeviceTelemetryStatusEvent,
 } from "../../common/events/domain-events";
 import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
 
@@ -292,6 +293,7 @@ export class DeviceService {
       status: updatedDevice.status as unknown as any,
       lastSeen: (updatedDevice.lastSeen || new Date()).toISOString(),
       heartbeatId: heartbeat.id,
+      telemetryPaused: (updatedDevice as any).telemetryPaused ?? false,
     };
   }
 
@@ -527,6 +529,41 @@ export class DeviceService {
     return this.timelineService.getPaginatedTimeline({ deviceId, page, limit });
   }
 
+  async setTelemetryPause(
+    deviceId: string,
+    organizationId: string,
+    paused: boolean,
+  ): Promise<SharedDevice> {
+    const device = await this.deviceRepository.findById(deviceId);
+    if (
+      !device ||
+      (device.organizationId && device.organizationId !== organizationId)
+    ) {
+      throw new NotFoundException(
+        `Device [${deviceId}] not found or access denied.`,
+      );
+    }
+
+    const updated = await this.deviceRepository.update(deviceId, {
+      telemetryPaused: paused,
+    } as any);
+
+    this.logger.log(
+      `Telemetry ${paused ? "PAUSED" : "RESUMED"} for device [${device.hostname}] (${deviceId})`,
+    );
+
+    this.eventEmitter.emit(
+      "device.telemetry.status",
+      new DeviceTelemetryStatusEvent(
+        device.organizationId || "default-org",
+        deviceId,
+        paused,
+      ),
+    );
+
+    return this.sanitizeDevice(updated);
+  }
+
   private sanitizeDevice(device: Device): SharedDevice {
     return {
       id: device.id,
@@ -538,6 +575,7 @@ export class DeviceService {
       architecture: device.architecture,
       agentVersion: device.agentVersion,
       status: device.status as unknown as any,
+      telemetryPaused: (device as any).telemetryPaused ?? false,
       lastSeen: device.lastSeen ? device.lastSeen.toISOString() : null,
       registeredAt: device.registeredAt.toISOString(),
       organizationId: device.organizationId,

@@ -45,6 +45,12 @@ export interface ISocketPublisher {
     payload: any,
     correlationId?: string,
   ): Promise<void>;
+  emitDeviceTelemetryStatus(
+    deviceId: string,
+    organizationId: string,
+    telemetryPaused: boolean,
+    correlationId?: string,
+  ): Promise<void>;
   emitTenantEvent(
     organizationId: string,
     event: string,

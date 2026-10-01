@@ -19,9 +19,12 @@ import {
   Layers,
   ArrowLeft,
   AlertTriangle,
+  Pause,
+  Play,
 } from "lucide-react";
 import { TelemetrySparkline } from "@/components/dashboard/TelemetrySparkline";
 import { apiClient } from "@/lib/api-client";
+import { toast } from "sonner";
 
 // ── Smart Formatters ──────────────────────────────────────────────────────────
 
@@ -93,6 +96,10 @@ export default function DeviceDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Telemetry Pause & Resume state
+  const [isTelemetryPaused, setIsTelemetryPaused] = useState<boolean>(false);
+  const [isTogglingPause, setIsTogglingPause] = useState<boolean>(false);
+
   const fetchData = useCallback(
     async (showLoader = false) => {
       if (showLoader) setLoading(true);
@@ -106,7 +113,10 @@ export default function DeviceDetailPage() {
         ]);
 
         const dev = devRes?.data?.data || devRes?.data || null;
-        if (dev) setDevice(dev);
+        if (dev) {
+          setDevice(dev);
+          setIsTelemetryPaused(!!dev.telemetryPaused);
+        }
         setTelemetryHistory(telRes?.data?.data || telRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
 
@@ -254,11 +264,29 @@ export default function DeviceDetailPage() {
       }
     });
 
+    const cleanupTelemetryStatus = on(
+      "device.telemetry.status",
+      (payload: any) => {
+        const data = payload?.payload || payload;
+        if (
+          data.deviceId === id ||
+          data.deviceId === device?.id ||
+          data.deviceId === device?.uuid
+        ) {
+          setIsTelemetryPaused(!!data.telemetryPaused);
+          setDevice((prev: any) =>
+            prev ? { ...prev, telemetryPaused: !!data.telemetryPaused } : prev,
+          );
+        }
+      },
+    );
+
     return () => {
       cleanupTelemetry();
       cleanupHeartbeat();
       cleanupStatus();
       cleanupStatusOffline();
+      cleanupTelemetryStatus();
     };
   }, [id, device?.id, device?.uuid, on]);
 
@@ -280,6 +308,8 @@ export default function DeviceDetailPage() {
 
   // Autonomous self-resetting 30s timer with automatic polling fallback
   useEffect(() => {
+    if (isTelemetryPaused) return;
+
     const timer = setInterval(() => {
       setTimeUntilUpdate((prev) => {
         if (prev <= 1) {
@@ -292,7 +322,36 @@ export default function DeviceDetailPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [fetchData]);
+  }, [fetchData, isTelemetryPaused]);
+
+  // Handle Telemetry Pause / Resume Toggle
+  async function handleToggleTelemetryPause() {
+    setIsTogglingPause(true);
+    try {
+      const endpoint = isTelemetryPaused
+        ? `/devices/${id}/telemetry/resume`
+        : `/devices/${id}/telemetry/pause`;
+      await apiClient.post(endpoint);
+      const next = !isTelemetryPaused;
+      setIsTelemetryPaused(next);
+      setDevice((prev: any) =>
+        prev ? { ...prev, telemetryPaused: next } : prev,
+      );
+      toast.success(
+        next
+          ? "Telemetry collection paused for this device."
+          : "Telemetry collection resumed for this device.",
+      );
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to update telemetry state.",
+      );
+    } finally {
+      setIsTogglingPause(false);
+    }
+  }
 
   // Handle Permanent Deletion
   async function handleDeleteDevice() {
@@ -560,6 +619,12 @@ export default function DeviceDetailPage() {
               >
                 {device.status}
               </span>
+              {isTelemetryPaused && (
+                <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                  <Pause size={10} className="fill-amber-400" />
+                  TELEMETRY PAUSED
+                </span>
+              )}
             </h1>
           </div>
           <p className="text-gray-400 mt-1 font-mono text-xs pl-8">
@@ -570,6 +635,39 @@ export default function DeviceDetailPage() {
 
         {/* Action Controls & Live Stats */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Pause / Resume Button */}
+          <button
+            onClick={handleToggleTelemetryPause}
+            disabled={isTogglingPause}
+            className={`px-3.5 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 ${
+              isTelemetryPaused
+                ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/50 hover:border-emerald-400"
+                : "bg-amber-950/40 border-amber-500/40 text-amber-400 hover:bg-amber-900/50 hover:border-amber-400"
+            }`}
+            title={
+              isTelemetryPaused
+                ? "Resume telemetry metrics collection"
+                : "Temporarily pause telemetry metrics collection"
+            }
+          >
+            {isTogglingPause ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Updating...
+              </>
+            ) : isTelemetryPaused ? (
+              <>
+                <Play size={14} />
+                Resume Telemetry
+              </>
+            ) : (
+              <>
+                <Pause size={14} />
+                Pause Telemetry
+              </>
+            )}
+          </button>
+
           {/* Action Buttons */}
           <Link
             href={`/inventory/${device.id}`}
@@ -615,17 +713,39 @@ export default function DeviceDetailPage() {
           </div>
 
           {/* Self-Resetting 30s Countdown Timer */}
-          <div className="bg-black/40 border border-[#C8A96E]/30 rounded-lg px-4 py-1.5 text-center min-w-[125px] flex flex-col justify-center">
-            <div className="text-[10px] text-[#C8A96E] uppercase font-semibold flex items-center justify-center gap-1">
+          <div
+            className={`bg-black/40 border ${
+              isTelemetryPaused ? "border-amber-500/40" : "border-[#C8A96E]/30"
+            } rounded-lg px-4 py-1.5 text-center min-w-[125px] flex flex-col justify-center`}
+          >
+            <div
+              className={`text-[10px] ${
+                isTelemetryPaused ? "text-amber-400" : "text-[#C8A96E]"
+              } uppercase font-semibold flex items-center justify-center gap-1`}
+            >
               <Clock className="w-3 h-3" />
-              Next Beat
+              {isTelemetryPaused ? "Telemetry" : "Next Beat"}
             </div>
-            <div className="text-xl font-mono font-bold text-gray-100 my-0.5">
-              {timeUntilUpdate}s
+            <div
+              className={`text-xl font-mono font-bold ${
+                isTelemetryPaused ? "text-amber-400" : "text-gray-100"
+              } my-0.5`}
+            >
+              {isTelemetryPaused ? "PAUSED" : `${timeUntilUpdate}s`}
             </div>
-            <div className="text-[9px] text-[#C8A96E]/80 flex items-center justify-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C8A96E] animate-pulse"></span>
-              Auto-Streaming
+            <div
+              className={`text-[9px] ${
+                isTelemetryPaused ? "text-amber-400/80" : "text-[#C8A96E]/80"
+              } flex items-center justify-center gap-1`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isTelemetryPaused
+                    ? "bg-amber-400"
+                    : "bg-[#C8A96E] animate-pulse"
+                }`}
+              ></span>
+              {isTelemetryPaused ? "Collection Suspended" : "Auto-Streaming"}
             </div>
           </div>
         </div>

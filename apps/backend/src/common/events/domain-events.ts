@@ -194,6 +194,19 @@ export class InventoryUpdatedEvent extends BaseDomainEvent {
   }
 }
 
+export class DeviceTelemetryStatusEvent extends BaseDomainEvent {
+  readonly eventType = "device.telemetry.status" as const;
+
+  constructor(
+    organizationId: string,
+    deviceId: string,
+    public readonly telemetryPaused: boolean,
+    correlationId?: string,
+  ) {
+    super(organizationId, deviceId, correlationId);
+  }
+}
+
 // ── Event Type Union (for typed handler registration) ─────────────────────────
 
 export type DomainEvent =
@@ -205,6 +218,7 @@ export type DomainEvent =
   | DeviceRetiredEvent
   | DeviceClaimedEvent
   | DeviceBulkStatusEvent
+  | DeviceTelemetryStatusEvent
   | TelemetryReceivedEvent
   | InventoryUpdatedEvent;
 
@@ -220,6 +234,7 @@ export const DomainEventNames = {
   DEVICE_RETIRED: "device.retired",
   DEVICE_CLAIMED: "device.claimed",
   DEVICE_BULK_STATUS: "device.bulk_status",
+  DEVICE_TELEMETRY_STATUS: "device.telemetry.status",
   TELEMETRY_RECEIVED: "telemetry.received",
   INVENTORY_UPDATED: "inventory.updated",
 } as const;

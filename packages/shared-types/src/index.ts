@@ -167,6 +167,7 @@ export interface Device {
   architecture: string;
   agentVersion: string;
   status: DeviceStatus;
+  telemetryPaused?: boolean;
   lastSeen: string | null;
   registeredAt: string;
   organizationId?: string | null;
@@ -223,6 +224,7 @@ export interface HeartbeatResponse {
   status: DeviceStatus;
   lastSeen: string;
   heartbeatId: string;
+  telemetryPaused?: boolean;
 }
 
 export interface DeviceStatusResponse {
@@ -689,6 +691,7 @@ export enum SocketEvents {
   INVENTORY_UPDATED = "inventory.updated",
   DASHBOARD_UPDATED = "dashboard.updated",
   SYSTEM_STATUS_CHANGED = "system.status.changed",
+  TELEMETRY_STATUS = "device.telemetry.status",
   // Phase 5: Alert & Notification Events
   ALERT_CREATED = "alert.created",
   ALERT_UPDATED = "alert.updated",

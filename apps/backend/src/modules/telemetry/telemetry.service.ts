@@ -51,6 +51,44 @@ export class TelemetryService {
       );
     }
 
+    if ((authenticatedDevice as any).telemetryPaused) {
+      this.logger.debug(
+        `Telemetry ingestion skipped for Device [${authenticatedDevice.hostname}] (${authenticatedDevice.id}): Telemetry is PAUSED.`,
+      );
+      return {
+        id: "paused",
+        deviceId: targetDeviceId,
+        cpuUsage: dto.cpuUsage,
+        cpuTemperature: dto.cpuTemperature ?? 0,
+        cpuFrequency: dto.cpuFrequency ?? 0,
+        logicalProcessors: dto.logicalProcessors ?? 0,
+        physicalProcessors: dto.physicalProcessors ?? 0,
+        memoryUsed: dto.memoryUsed,
+        memoryFree: dto.memoryFree,
+        memoryTotal: dto.memoryTotal,
+        memoryUsagePercent: dto.memoryUsagePercent,
+        diskReadSpeed: dto.diskReadSpeed ?? 0,
+        diskWriteSpeed: dto.diskWriteSpeed ?? 0,
+        diskUsagePercent: dto.diskUsagePercent,
+        diskFree: dto.diskFree,
+        diskTotal: dto.diskTotal,
+        networkUploadSpeed: dto.networkUploadSpeed ?? 0,
+        networkDownloadSpeed: dto.networkDownloadSpeed ?? 0,
+        bytesSent: dto.bytesSent ?? 0,
+        bytesReceived: dto.bytesReceived ?? 0,
+        activeConnections: dto.activeConnections ?? 0,
+        runningProcesses: dto.runningProcesses ?? 0,
+        runningServices: dto.runningServices ?? 0,
+        systemUptime: dto.systemUptime,
+        bootTime: new Date().toISOString(),
+        ipAddress: dto.ipAddress,
+        macAddress: dto.macAddress,
+        gateway: dto.gateway ?? "",
+        dns: dto.dns ?? "",
+        timestamp: new Date().toISOString(),
+      } as any;
+    }
+
     let bootTimeDate: Date;
     try {
       bootTimeDate = new Date(dto.bootTime);

@@ -23,6 +23,7 @@ import {
   DeviceOfflineEvent,
   DeviceMaintenanceEvent,
   DeviceRetiredEvent,
+  DeviceTelemetryStatusEvent,
   TelemetryReceivedEvent,
   InventoryUpdatedEvent,
 } from "../../../common/events/domain-events";
@@ -215,6 +216,24 @@ export class RealtimeHandler {
           updatedFields: ["hardware", "software", "network", "security"],
           timestamp: event.timestamp,
         },
+        event.correlationId,
+      );
+    } catch (err: any) {
+      this.logger.error(
+        `Realtime broadcast failed for ${event.eventType}: ${err.message}`,
+      );
+    }
+  }
+
+  @OnEvent(DomainEventNames.DEVICE_TELEMETRY_STATUS)
+  async onDeviceTelemetryStatus(
+    event: DeviceTelemetryStatusEvent,
+  ): Promise<void> {
+    try {
+      await this.socketPublisher.emitDeviceTelemetryStatus(
+        event.deviceId,
+        event.organizationId,
+        event.telemetryPaused,
         event.correlationId,
       );
     } catch (err: any) {
