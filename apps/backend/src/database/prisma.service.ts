@@ -27,18 +27,6 @@ export class PrismaService
       this.logger.log(
         "📦 Connected to PostgreSQL database via Prisma Client successfully.",
       );
-
-      // Safe, non-destructive schema guard: ensure devices.telemetryPaused exists
-      try {
-        await this.$executeRawUnsafe(
-          `ALTER TABLE devices ADD COLUMN IF NOT EXISTS "telemetryPaused" BOOLEAN NOT NULL DEFAULT false;`,
-        );
-        this.logger.log(
-          "✅ Verified devices.telemetryPaused column exists in PostgreSQL.",
-        );
-      } catch (colErr: any) {
-        this.logger.warn(`Column check warning: ${colErr.message}`);
-      }
     } catch (error) {
       this.logger.error(
         "❌ Failed to establish PostgreSQL connection via Prisma:",

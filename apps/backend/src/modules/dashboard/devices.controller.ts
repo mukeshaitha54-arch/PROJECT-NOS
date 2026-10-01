@@ -22,6 +22,7 @@ import { CurrentTenant } from "../../common/decorators/current-tenant.decorator"
 import { TenantContext } from "@nos/shared-types";
 import { PrismaService } from "../../database/prisma.service";
 import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
+import { deviceTelemetryPausedStore } from "../../common/stores/device-telemetry-paused.store";
 import { DeviceTelemetryStatusEvent } from "../../common/events/domain-events";
 
 @ApiTags("Frontend Dashboard Devices API")
@@ -71,6 +72,10 @@ export class DevicesController {
       const hb = (device as any).heartbeats?.[0] || null;
       return {
         ...device,
+        telemetryPaused:
+          deviceTelemetryPausedStore.get(device.id) ??
+          deviceTelemetryPausedStore.get(device.uuid) ??
+          false,
         latestSnapshot: snap
           ? {
               ...snap,
@@ -175,6 +180,10 @@ export class DevicesController {
       success: true,
       data: {
         ...device,
+        telemetryPaused:
+          deviceTelemetryPausedStore.get(device.id) ??
+          deviceTelemetryPausedStore.get(device.uuid) ??
+          false,
         latestSnapshot: serializeSnap(latestSnapshot),
         latestHeartbeat,
         lastHeartbeat: latestHeartbeat,
@@ -495,10 +504,10 @@ export class DevicesController {
       throw new NotFoundException("Device not found or access denied");
     }
 
-    const updated = await this.prisma.device.update({
-      where: { id: device.id },
-      data: { telemetryPaused: true },
-    });
+    deviceTelemetryPausedStore.set(device.id, true);
+    if (device.uuid) {
+      deviceTelemetryPausedStore.set(device.uuid, true);
+    }
 
     this.eventEmitter.emit(
       "device.telemetry.status",
@@ -512,7 +521,7 @@ export class DevicesController {
     return {
       success: true,
       data: {
-        id: updated.id,
+        id: device.id,
         telemetryPaused: true,
         message: "Telemetry collection has been paused.",
       },
@@ -538,10 +547,10 @@ export class DevicesController {
       throw new NotFoundException("Device not found or access denied");
     }
 
-    const updated = await this.prisma.device.update({
-      where: { id: device.id },
-      data: { telemetryPaused: false },
-    });
+    deviceTelemetryPausedStore.set(device.id, false);
+    if (device.uuid) {
+      deviceTelemetryPausedStore.set(device.uuid, false);
+    }
 
     this.eventEmitter.emit(
       "device.telemetry.status",
@@ -555,7 +564,7 @@ export class DevicesController {
     return {
       success: true,
       data: {
-        id: updated.id,
+        id: device.id,
         telemetryPaused: false,
         message: "Telemetry collection has been resumed.",
       },

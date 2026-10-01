@@ -26,6 +26,7 @@ import {
 } from "@nos/shared-types";
 import { TelemetryReceivedEvent } from "../../common/events/domain-events";
 import { PrismaService } from "../../database/prisma.service";
+import { deviceTelemetryPausedStore } from "../../common/stores/device-telemetry-paused.store";
 
 @Injectable()
 export class TelemetryService {
@@ -51,7 +52,12 @@ export class TelemetryService {
       );
     }
 
-    if ((authenticatedDevice as any).telemetryPaused) {
+    const isPaused =
+      deviceTelemetryPausedStore.get(authenticatedDevice.id) ??
+      deviceTelemetryPausedStore.get(authenticatedDevice.uuid) ??
+      false;
+
+    if (isPaused) {
       this.logger.debug(
         `Telemetry ingestion skipped for Device [${authenticatedDevice.hostname}] (${authenticatedDevice.id}): Telemetry is PAUSED.`,
       );

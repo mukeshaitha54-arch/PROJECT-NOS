@@ -44,6 +44,7 @@ import {
   DeviceTelemetryStatusEvent,
 } from "../../common/events/domain-events";
 import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
+import { deviceTelemetryPausedStore } from "../../common/stores/device-telemetry-paused.store";
 
 @Injectable()
 export class DeviceService {
@@ -293,7 +294,10 @@ export class DeviceService {
       status: updatedDevice.status as unknown as any,
       lastSeen: (updatedDevice.lastSeen || new Date()).toISOString(),
       heartbeatId: heartbeat.id,
-      telemetryPaused: (updatedDevice as any).telemetryPaused ?? false,
+      telemetryPaused:
+        deviceTelemetryPausedStore.get(updatedDevice.id) ??
+        deviceTelemetryPausedStore.get(updatedDevice.uuid) ??
+        false,
     };
   }
 
@@ -544,9 +548,10 @@ export class DeviceService {
       );
     }
 
-    const updated = await this.deviceRepository.update(deviceId, {
-      telemetryPaused: paused,
-    } as any);
+    deviceTelemetryPausedStore.set(deviceId, paused);
+    if (device.uuid) {
+      deviceTelemetryPausedStore.set(device.uuid, paused);
+    }
 
     this.logger.log(
       `Telemetry ${paused ? "PAUSED" : "RESUMED"} for device [${device.hostname}] (${deviceId})`,
@@ -561,7 +566,7 @@ export class DeviceService {
       ),
     );
 
-    return this.sanitizeDevice(updated);
+    return this.sanitizeDevice(device);
   }
 
   private sanitizeDevice(device: Device): SharedDevice {
@@ -575,7 +580,10 @@ export class DeviceService {
       architecture: device.architecture,
       agentVersion: device.agentVersion,
       status: device.status as unknown as any,
-      telemetryPaused: (device as any).telemetryPaused ?? false,
+      telemetryPaused:
+        deviceTelemetryPausedStore.get(device.id) ??
+        deviceTelemetryPausedStore.get(device.uuid) ??
+        false,
       lastSeen: device.lastSeen ? device.lastSeen.toISOString() : null,
       registeredAt: device.registeredAt.toISOString(),
       organizationId: device.organizationId,

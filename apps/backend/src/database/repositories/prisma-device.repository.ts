@@ -11,42 +11,16 @@ import {
 export class PrismaDeviceRepository implements IDeviceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async ensureColumnAndRetry<T>(fn: () => Promise<T>): Promise<T> {
-    try {
-      return await fn();
-    } catch (err: any) {
-      if (
-        err?.message &&
-        (err.message.includes("telemetryPaused") ||
-          err.message.includes("does not exist"))
-      ) {
-        try {
-          await this.prisma.$executeRawUnsafe(
-            `ALTER TABLE devices ADD COLUMN IF NOT EXISTS "telemetryPaused" BOOLEAN NOT NULL DEFAULT false;`,
-          );
-          return await fn();
-        } catch {}
-      }
-      throw err;
-    }
-  }
-
   async findById(id: string): Promise<Device | null> {
-    return this.ensureColumnAndRetry(() =>
-      this.prisma.device.findUnique({ where: { id } }),
-    );
+    return this.prisma.device.findUnique({ where: { id } });
   }
 
   async findByUuid(uuid: string): Promise<Device | null> {
-    return this.ensureColumnAndRetry(() =>
-      this.prisma.device.findUnique({ where: { uuid } }),
-    );
+    return this.prisma.device.findUnique({ where: { uuid } });
   }
 
   async findByTokenHash(tokenHash: string): Promise<Device | null> {
-    return this.ensureColumnAndRetry(() =>
-      this.prisma.device.findUnique({ where: { tokenHash } }),
-    );
+    return this.prisma.device.findUnique({ where: { tokenHash } });
   }
 
   async findAll(organizationId?: string): Promise<Device[]> {
@@ -54,12 +28,10 @@ export class PrismaDeviceRepository implements IDeviceRepository {
       organizationId && organizationId !== "default-org"
         ? { organizationId }
         : {};
-    return this.ensureColumnAndRetry(() =>
-      this.prisma.device.findMany({
-        where,
-        orderBy: { lastSeen: "desc" },
-      }),
-    );
+    return this.prisma.device.findMany({
+      where,
+      orderBy: { lastSeen: "desc" },
+    });
   }
 
   async countByOrganization(organizationId?: string): Promise<number> {
@@ -104,25 +76,23 @@ export class PrismaDeviceRepository implements IDeviceRepository {
       }
     }
 
-    return this.ensureColumnAndRetry(() =>
-      this.prisma.device.create({
-        data: {
-          uuid: data.uuid,
-          hostname: data.hostname,
-          deviceName: data.deviceName,
-          os: data.os,
-          osVersion: data.osVersion,
-          architecture: data.architecture,
-          agentVersion: data.agentVersion,
-          status: data.status || DeviceStatus.ONLINE,
-          organizationId: resolvedOrgId,
-          // Sync tenantId so dashboard controllers that filter by tenantId work correctly
-          tenantId: resolvedOrgId,
-          tokenHash: data.tokenHash,
-          lastSeen: data.lastSeen || new Date(),
-        },
-      }),
-    );
+    return this.prisma.device.create({
+      data: {
+        uuid: data.uuid,
+        hostname: data.hostname,
+        deviceName: data.deviceName,
+        os: data.os,
+        osVersion: data.osVersion,
+        architecture: data.architecture,
+        agentVersion: data.agentVersion,
+        status: data.status || DeviceStatus.ONLINE,
+        organizationId: resolvedOrgId,
+        // Sync tenantId so dashboard controllers that filter by tenantId work correctly
+        tenantId: resolvedOrgId,
+        tokenHash: data.tokenHash,
+        lastSeen: data.lastSeen || new Date(),
+      },
+    });
   }
 
   async update(id: string, data: UpdateDeviceInput): Promise<Device> {
@@ -138,12 +108,10 @@ export class PrismaDeviceRepository implements IDeviceRepository {
         (updateData as any).tenantId = updateData.organizationId;
       }
     }
-    return this.ensureColumnAndRetry(() =>
-      this.prisma.device.update({
-        where: { id },
-        data: updateData,
-      }),
-    );
+    return this.prisma.device.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async delete(id: string): Promise<boolean> {
