@@ -262,100 +262,88 @@ export default function DeviceDetailPage() {
     );
   }
 
+  const latestSnapshot =
+    telemetryHistory.length > 0
+      ? telemetryHistory.reduce((latest, current) => {
+          const tLatest = new Date(latest.timestamp || 0).getTime();
+          const tCurrent = new Date(current.timestamp || 0).getTime();
+          return tCurrent > tLatest ? current : latest;
+        })
+      : null;
+
   const currentCpu =
     realtimeData?.cpuUsage ??
-    device.latestSnapshot?.cpuUsage ??
+    latestSnapshot?.cpuUsage ??
     device.lastHeartbeat?.cpuUsage ??
     device.latestHeartbeat?.cpuUsage ??
     0;
   const currentMem =
     realtimeData?.memoryUsagePercent ??
-    device.latestSnapshot?.memoryUsagePercent ??
+    latestSnapshot?.memoryUsagePercent ??
     device.lastHeartbeat?.ramUsage ??
     device.latestHeartbeat?.ramUsage ??
     0;
   const currentDisk =
-    realtimeData?.diskUsagePercent ??
-    device.latestSnapshot?.diskUsagePercent ??
-    0;
+    realtimeData?.diskUsagePercent ?? latestSnapshot?.diskUsagePercent ?? 0;
 
   const netUpload =
-    realtimeData?.networkUploadSpeed ??
-    device.latestSnapshot?.networkUploadSpeed ??
-    0;
+    realtimeData?.networkUploadSpeed ?? latestSnapshot?.networkUploadSpeed ?? 0;
   const netDownload =
     realtimeData?.networkDownloadSpeed ??
-    device.latestSnapshot?.networkDownloadSpeed ??
+    latestSnapshot?.networkDownloadSpeed ??
     0;
   const ipAddress =
     realtimeData?.ipAddress ??
-    device.latestSnapshot?.ipAddress ??
+    latestSnapshot?.ipAddress ??
     device.lastHeartbeat?.ipAddress ??
     device.latestHeartbeat?.ipAddress ??
     "N/A";
   const macAddress =
-    realtimeData?.macAddress ?? device.latestSnapshot?.macAddress ?? "N/A";
+    realtimeData?.macAddress ?? latestSnapshot?.macAddress ?? "N/A";
   const uptime =
     realtimeData?.systemUptime ??
-    device.latestSnapshot?.systemUptime ??
+    latestSnapshot?.systemUptime ??
     device.lastHeartbeat?.uptime ??
     device.latestHeartbeat?.uptime ??
     0;
 
-  const bootTime =
-    realtimeData?.bootTime ?? device.latestSnapshot?.bootTime ?? null;
+  const bootTime = realtimeData?.bootTime ?? latestSnapshot?.bootTime ?? null;
   const cpuTemp =
-    realtimeData?.cpuTemperature ?? device.latestSnapshot?.cpuTemperature ?? 0;
+    realtimeData?.cpuTemperature ?? latestSnapshot?.cpuTemperature ?? 0;
   const cpuFreq =
-    realtimeData?.cpuFrequency ?? device.latestSnapshot?.cpuFrequency ?? 0;
+    realtimeData?.cpuFrequency ?? latestSnapshot?.cpuFrequency ?? 0;
   const activeConnections =
-    realtimeData?.activeConnections ??
-    device.latestSnapshot?.activeConnections ??
-    0;
-  const bytesSent =
-    realtimeData?.bytesSent ?? device.latestSnapshot?.bytesSent ?? 0;
+    realtimeData?.activeConnections ?? latestSnapshot?.activeConnections ?? 0;
+  const bytesSent = realtimeData?.bytesSent ?? latestSnapshot?.bytesSent ?? 0;
   const bytesReceived =
-    realtimeData?.bytesReceived ?? device.latestSnapshot?.bytesReceived ?? 0;
+    realtimeData?.bytesReceived ?? latestSnapshot?.bytesReceived ?? 0;
   const logicalProcessors =
-    realtimeData?.logicalProcessors ??
-    device.latestSnapshot?.logicalProcessors ??
-    0;
+    realtimeData?.logicalProcessors ?? latestSnapshot?.logicalProcessors ?? 0;
   const physicalProcessors =
-    realtimeData?.physicalProcessors ??
-    device.latestSnapshot?.physicalProcessors ??
-    0;
+    realtimeData?.physicalProcessors ?? latestSnapshot?.physicalProcessors ?? 0;
   const runningProcesses =
-    realtimeData?.runningProcesses ??
-    device.latestSnapshot?.runningProcesses ??
-    0;
+    realtimeData?.runningProcesses ?? latestSnapshot?.runningProcesses ?? 0;
   const runningServices =
-    realtimeData?.runningServices ??
-    device.latestSnapshot?.runningServices ??
-    0;
-  const rawGateway =
-    realtimeData?.gateway ?? device.latestSnapshot?.gateway ?? null;
+    realtimeData?.runningServices ?? latestSnapshot?.runningServices ?? 0;
+  const rawGateway = realtimeData?.gateway ?? latestSnapshot?.gateway ?? null;
   const gateway =
     rawGateway && rawGateway !== "0.0.0.0" && rawGateway !== ""
       ? rawGateway
       : "N/A";
-  const rawDns = realtimeData?.dns ?? device.latestSnapshot?.dns ?? null;
+  const rawDns = realtimeData?.dns ?? latestSnapshot?.dns ?? null;
   const dns = rawDns && rawDns !== "8.8.8.8" && rawDns !== "" ? rawDns : "N/A";
 
   const memTotal =
-    realtimeData?.memoryTotal ?? device.latestSnapshot?.memoryTotal ?? 0;
-  const memUsed =
-    realtimeData?.memoryUsed ?? device.latestSnapshot?.memoryUsed ?? 0;
-  const memFree =
-    realtimeData?.memoryFree ?? device.latestSnapshot?.memoryFree ?? 0;
+    realtimeData?.memoryTotal ?? latestSnapshot?.memoryTotal ?? 0;
+  const memUsed = realtimeData?.memoryUsed ?? latestSnapshot?.memoryUsed ?? 0;
+  const memFree = realtimeData?.memoryFree ?? latestSnapshot?.memoryFree ?? 0;
 
-  const diskTotal =
-    realtimeData?.diskTotal ?? device.latestSnapshot?.diskTotal ?? 0;
-  const diskFree =
-    realtimeData?.diskFree ?? device.latestSnapshot?.diskFree ?? 0;
+  const diskTotal = realtimeData?.diskTotal ?? latestSnapshot?.diskTotal ?? 0;
+  const diskFree = realtimeData?.diskFree ?? latestSnapshot?.diskFree ?? 0;
   const diskRead =
-    realtimeData?.diskReadSpeed ?? device.latestSnapshot?.diskReadSpeed ?? 0;
+    realtimeData?.diskReadSpeed ?? latestSnapshot?.diskReadSpeed ?? 0;
   const diskWrite =
-    realtimeData?.diskWriteSpeed ?? device.latestSnapshot?.diskWriteSpeed ?? 0;
+    realtimeData?.diskWriteSpeed ?? latestSnapshot?.diskWriteSpeed ?? 0;
 
   const sparklineData =
     telemetryHistory.length > 0

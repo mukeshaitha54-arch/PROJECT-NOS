@@ -77,11 +77,8 @@ export function useRealtime() {
       setConnectionState("connected");
       setError(null);
       // Emit device:subscribe with organizationId
-      const orgId =
-        (user as any)?.organizationId ||
-        (user as any)?.tenantId ||
-        "default-org";
-      socketInstance.emit("device:subscribe", orgId);
+      // Join the global dashboard room to receive events for all devices
+      socketInstance.emit("joinRoom", "dashboard");
     });
 
     socketInstance.on("disconnect", (reason) => {
