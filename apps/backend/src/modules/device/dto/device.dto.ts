@@ -221,4 +221,10 @@ export class HeartbeatDto implements HeartbeatPayload {
   @IsNumber()
   @Min(0)
   networkDownloadSpeed?: number;
+
+  @ApiPropertyOptional({
+    description: "Snapshot of active top OS processes",
+  })
+  @IsOptional()
+  processes?: any[];
 }

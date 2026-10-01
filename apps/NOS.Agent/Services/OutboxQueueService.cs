@@ -34,10 +34,12 @@ namespace NOS.Agent.Services
                 var message = new OutboxMessage
                 {
                     MessageType = messageType,
-                    Payload = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions 
-                    { 
-                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase 
-                    }),
+                    Payload = payload is string jsonString
+                        ? jsonString
+                        : System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions 
+                        { 
+                            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase 
+                        }),
                     Priority = priority,
                     CreatedAt = DateTime.UtcNow,
                     NextRetryAt = DateTime.UtcNow,

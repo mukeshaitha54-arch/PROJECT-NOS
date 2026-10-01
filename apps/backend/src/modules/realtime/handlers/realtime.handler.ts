@@ -102,6 +102,25 @@ export class RealtimeHandler {
           ipAddress: event.ipAddress,
           timestamp: event.timestamp,
           status: "ONLINE",
+          ...(event.runningProcesses !== undefined && {
+            runningProcesses: event.runningProcesses,
+          }),
+          ...(event.activeConnections !== undefined && {
+            activeConnections: event.activeConnections,
+          }),
+          ...(event.diskReadSpeed !== undefined && {
+            diskReadSpeed: event.diskReadSpeed,
+          }),
+          ...(event.diskWriteSpeed !== undefined && {
+            diskWriteSpeed: event.diskWriteSpeed,
+          }),
+          ...(event.networkUploadSpeed !== undefined && {
+            networkUploadSpeed: event.networkUploadSpeed,
+          }),
+          ...(event.networkDownloadSpeed !== undefined && {
+            networkDownloadSpeed: event.networkDownloadSpeed,
+          }),
+          ...(event.processes !== undefined && { processes: event.processes }),
         },
         event.correlationId,
       );

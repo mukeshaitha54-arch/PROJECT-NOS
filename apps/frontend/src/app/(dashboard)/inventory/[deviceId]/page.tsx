@@ -120,7 +120,7 @@ export default function DeviceInventoryDetailPage({
 
   const [activeTab, setActiveTab] = useState<TabType>("HARDWARE");
   const [inventory, setInventory] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [rescanLoading, setRescanLoading] = useState(false);
 
@@ -344,7 +344,7 @@ export default function DeviceInventoryDetailPage({
           )}
 
           {/* ── HARDWARE TAB ── */}
-          {activeTab === "HARDWARE" && !loading && (
+          {activeTab === "HARDWARE" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* CPU */}
@@ -548,7 +548,7 @@ export default function DeviceInventoryDetailPage({
           )}
 
           {/* ── NETWORK TAB ── */}
-          {activeTab === "NETWORK" && !loading && (
+          {activeTab === "NETWORK" && (
             <div className="space-y-4">
               {inventory?.networkAdapters &&
               inventory.networkAdapters.length > 0 ? (
@@ -613,7 +613,7 @@ export default function DeviceInventoryDetailPage({
           )}
 
           {/* ── SECURITY TAB ── */}
-          {activeTab === "SECURITY" && !loading && (
+          {activeTab === "SECURITY" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Defender */}
               <Card title="Windows Defender / Antivirus" color="green">
@@ -696,7 +696,7 @@ export default function DeviceInventoryDetailPage({
           )}
 
           {/* ── EXTENDED TAB ── */}
-          {activeTab === "EXTENDED" && !loading && (
+          {activeTab === "EXTENDED" && (
             <div className="space-y-6">
               {/* Startup Apps */}
               {inventory?.startupApplications &&

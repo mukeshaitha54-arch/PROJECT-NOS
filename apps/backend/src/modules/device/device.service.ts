@@ -42,6 +42,7 @@ import {
   DeviceClaimedEvent,
   DeviceBulkStatusEvent,
 } from "../../common/events/domain-events";
+import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
 
 @Injectable()
 export class DeviceService {
@@ -237,6 +238,17 @@ export class DeviceService {
       timestamp: timestampDate,
     });
 
+    if (
+      dto.processes &&
+      Array.isArray(dto.processes) &&
+      dto.processes.length > 0
+    ) {
+      deviceLiveProcessesStore.set(device.id, dto.processes);
+      if (device.uuid) {
+        deviceLiveProcessesStore.set(device.uuid, dto.processes);
+      }
+    }
+
     await this.heartbeatPresence.processHeartbeat(
       device.id,
       dto.ipAddress,
@@ -250,6 +262,7 @@ export class DeviceService {
       dto.diskWriteSpeed,
       dto.networkUploadSpeed,
       dto.networkDownloadSpeed,
+      dto.processes,
     );
 
     // Emit domain event — timeline and realtime handlers subscribe independently
@@ -263,6 +276,14 @@ export class DeviceService {
         dto.ramUsage,
         dto.uptime,
         wasOffline,
+        undefined, // correlationId
+        dto.runningProcesses,
+        dto.activeConnections,
+        dto.diskReadSpeed,
+        dto.diskWriteSpeed,
+        dto.networkUploadSpeed,
+        dto.networkDownloadSpeed,
+        dto.processes,
       ),
     );
 

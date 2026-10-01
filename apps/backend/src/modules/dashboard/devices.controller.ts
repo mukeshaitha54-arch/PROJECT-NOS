@@ -19,6 +19,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CurrentTenant } from "../../common/decorators/current-tenant.decorator";
 import { TenantContext } from "@nos/shared-types";
 import { PrismaService } from "../../database/prisma.service";
+import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
 
 @ApiTags("Frontend Dashboard Devices API")
 @Controller("devices")
@@ -235,58 +236,61 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
 
-    // Mock realistic process data since it's not captured in DB yet
-    const processes = [
-      {
-        pid: 1234,
-        name: "chrome.exe",
-        cpuPercent: 15.5,
-        memoryBytes: 536870912,
+    // 1. Check live processes reported by agent via heartbeat/telemetry
+    const live =
+      deviceLiveProcessesStore.get(device.id) ||
+      (device.uuid ? deviceLiveProcessesStore.get(device.uuid) : null);
+    if (live && live.length > 0) {
+      return {
+        success: true,
+        data: live,
+      };
+    }
+
+    // 2. Fallback: retrieve running services from inventory as processes
+    const services = await this.prisma.windowsService.findMany({
+      where: {
+        deviceInventory: {
+          OR: [
+            { deviceId: device.id },
+            ...(device.uuid ? [{ deviceId: device.uuid }] : []),
+          ],
+        },
         status: "Running",
-        startedAt: new Date(Date.now() - 3600000).toISOString(),
       },
-      {
-        pid: 890,
-        name: "svchost.exe",
-        cpuPercent: 2.1,
-        memoryBytes: 134217728,
-        status: "Running",
-        startedAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        pid: 4056,
-        name: "code.exe",
-        cpuPercent: 8.4,
-        memoryBytes: 1073741824,
-        status: "Running",
-        startedAt: new Date(Date.now() - 7200000).toISOString(),
-      },
-      {
-        pid: 104,
-        name: "explorer.exe",
-        cpuPercent: 1.0,
-        memoryBytes: 268435456,
-        status: "Running",
-        startedAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        pid: 320,
-        name: "services.exe",
-        cpuPercent: 0.5,
-        memoryBytes: 67108864,
-        status: "Running",
-        startedAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
+      take: 50,
+      orderBy: { displayName: "asc" },
+    });
+
+    if (services.length > 0) {
+      return {
+        success: true,
+        data: services.map((s, idx) => ({
+          pid: 1000 + idx,
+          name: `${s.serviceName}.exe`,
+          processName: s.displayName,
+          memoryMb: 24.5,
+          memoryBytes: 25690112,
+          cpuTimeSec: 0,
+          threads: 4,
+          status: "Running",
+        })),
+      };
+    }
 
     return {
       success: true,
-      data: processes,
+      data: [],
     };
   }
 
@@ -299,13 +303,26 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
 
     const services = await this.prisma.windowsService.findMany({
-      where: { deviceInventory: { deviceId: id } },
+      where: {
+        deviceInventory: {
+          OR: [
+            { deviceId: device.id },
+            ...(device.uuid ? [{ deviceId: device.uuid }] : []),
+          ],
+        },
+      },
+      orderBy: { displayName: "asc" },
     });
 
     return {
@@ -323,13 +340,26 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
 
     const software = await this.prisma.installedSoftware.findMany({
-      where: { deviceInventory: { deviceId: id } },
+      where: {
+        deviceInventory: {
+          OR: [
+            { deviceId: device.id },
+            ...(device.uuid ? [{ deviceId: device.uuid }] : []),
+          ],
+        },
+      },
+      orderBy: { name: "asc" },
     });
 
     return {

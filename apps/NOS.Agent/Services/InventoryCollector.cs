@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Management;
+using System.Net.NetworkInformation;
 using System.ServiceProcess;
 using System.Text.Json;
 using System.Threading;
@@ -35,11 +36,8 @@ namespace NOS.Agent.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Wait until device is registered
             while (string.IsNullOrEmpty(DeviceRegistrationService.CurrentToken) && !stoppingToken.IsCancellationRequested)
-            {
                 await Task.Delay(1000, stoppingToken);
-            }
 
             if (stoppingToken.IsCancellationRequested) return;
 
@@ -54,27 +52,23 @@ namespace NOS.Agent.Services
                     await CollectAndSendInventoryAsync(stoppingToken);
                 }
                 catch (TaskCanceledException) { }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Unhandled exception in InventoryCollector loop.");
-                }
+                catch (Exception ex) { _logger.LogError(ex, "Unhandled exception in InventoryCollector loop."); }
             }
         }
 
         private async Task CollectAndSendInventoryAsync(CancellationToken stoppingToken)
         {
-            if (_safeMode.IsActive)
-            {
-                _logger.LogInformation("Skipping inventory cycle due to Safe Mode being active.");
-                return;
-            }
+            if (_safeMode.IsActive) return;
 
             try
             {
+                var sw = GetInstalledSoftware();
+                var svc = GetWindowsServices();
+                var startup = GetStartupApplications();
+
                 var payload = new
                 {
                     deviceId = DeviceRegistrationService.CurrentDeviceId ?? _configuration.DeviceId,
-                    // Hardware info
                     manufacturer = GetWmiValue("Win32_ComputerSystem", "Manufacturer", "Unknown"),
                     model = GetWmiValue("Win32_ComputerSystem", "Model", "Unknown"),
                     serialNumber = GetWmiValue("Win32_BIOS", "SerialNumber", "Unknown"),
@@ -84,28 +78,30 @@ namespace NOS.Agent.Services
                     biosReleaseDate = GetWmiValue("Win32_BIOS", "ReleaseDate", ""),
                     cpuModel = GetWmiValue("Win32_Processor", "Name", "Unknown"),
                     cpuVendor = GetWmiValue("Win32_Processor", "Manufacturer", "Unknown"),
-                    physicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfCores", "1"), out var pc) ? pc : 1,
-                    logicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfLogicalProcessors", "1"), out var lc) ? lc : 1,
+                    physicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfCores", "1"), out var pcores) ? pcores : 1,
+                    logicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfLogicalProcessors", "1"), out var lcores) ? lcores : 1,
                     hostname = Environment.MachineName,
                     domain = GetWmiValue("Win32_ComputerSystem", "Domain", "WORKGROUP"),
                     workgroup = GetWmiValue("Win32_ComputerSystem", "Workgroup", "WORKGROUP"),
                     osEdition = GetWmiValue("Win32_OperatingSystem", "Caption", "Unknown"),
                     osBuild = GetWmiValue("Win32_OperatingSystem", "BuildNumber", "Unknown"),
                     architecture = GetWmiValue("Win32_OperatingSystem", "OSArchitecture", "x64"),
-                    // Dynamic sections
-                    installedSoftware = GetInstalledSoftware(),
-                    runningServices = GetRunningServices(),
-                    startupPrograms = GetStartupPrograms(),
-                    runningProcesses = GetRunningProcessList(),
+                    agentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+                    schemaVersion = "1.0.0",
+                    // Arrays — field names MATCH backend SubmitInventoryRequestDto exactly
+                    memoryModules = GetMemoryModules(),
+                    diskDrives = GetDiskDrives(),
+                    networkAdapters = GetNetworkAdapters(),
+                    installedSoftware = sw,
+                    windowsServices = svc,          // backend DTO field name
+                    startupApplications = startup,  // backend DTO field name
+                    security = GetSecurityInfo(),
                 };
 
-                string json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-                await _outboxQueue.EnqueueAsync("inventory", json, 2, stoppingToken);
-                _logger.LogInformation("Inventory snapshot queued successfully (software: {sw}, services: {svc}, processes: {procs}).",
-                    payload.installedSoftware.Count,
-                    payload.runningServices.Count,
-                    payload.runningProcesses.Count);
+                await _outboxQueue.EnqueueAsync("inventory", payload, 2, stoppingToken);
+                _logger.LogInformation(
+                    "Inventory queued. Software: {sw}, Services: {svc}, Startup: {st}, MemModules: {mm}, Disks: {dk}",
+                    sw.Count, svc.Count, startup.Count, payload.memoryModules.Count, payload.diskDrives.Count);
             }
             catch (Exception ex)
             {
@@ -113,51 +109,153 @@ namespace NOS.Agent.Services
             }
         }
 
-        /// <summary>
-        /// Returns list of installed programs from both registry hives and Win32_Product WMI.
-        /// Uses registry for speed (Win32_Product is very slow).
-        /// </summary>
+        // ─── RAM Modules ──────────────────────────────────────────────────────
+        private List<object> GetMemoryModules()
+        {
+            var modules = new List<object>();
+            if (!OperatingSystem.IsWindows()) return modules;
+            try
+            {
+                using var s = new ManagementObjectSearcher(
+                    "SELECT DeviceLocator, Capacity, Speed, Manufacturer, PartNumber, SerialNumber FROM Win32_PhysicalMemory");
+                foreach (ManagementObject obj in s.Get())
+                {
+                    modules.Add(new
+                    {
+                        slot = obj["DeviceLocator"]?.ToString() ?? "",
+                        capacityBytes = obj["Capacity"] != null ? Convert.ToInt64(obj["Capacity"]) : 0L,
+                        speedMHz = obj["Speed"] != null ? Convert.ToInt32(obj["Speed"]) : 0,
+                        manufacturer = obj["Manufacturer"]?.ToString() ?? "",
+                        partNumber = obj["PartNumber"]?.ToString()?.Trim() ?? "",
+                        serialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
+                    });
+                }
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect memory modules."); }
+            return modules;
+        }
+
+        // ─── Disk Drives ─────────────────────────────────────────────────────
+        private List<object> GetDiskDrives()
+        {
+            var disks = new List<object>();
+            if (!OperatingSystem.IsWindows()) return disks;
+            try
+            {
+                // Map logical disk sizes
+                var logicalSizes = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+                using var logSearcher = new ManagementObjectSearcher(
+                    "SELECT DeviceID, Size, FileSystem FROM Win32_LogicalDisk WHERE DriveType=3");
+                foreach (ManagementObject ld in logSearcher.Get())
+                {
+                    var drive = ld["DeviceID"]?.ToString() ?? "";
+                    logicalSizes[drive] = ld["Size"] != null ? Convert.ToInt64(ld["Size"]) : 0L;
+                }
+
+                using var s = new ManagementObjectSearcher(
+                    "SELECT Caption, Model, SerialNumber, MediaType, Size FROM Win32_DiskDrive");
+                int idx = 0;
+                foreach (ManagementObject obj in s.Get())
+                {
+                    // Assign drive letter from logical disk map by index
+                    string driveLetter = idx == 0 ? "C:" : $"Disk{idx}";
+                    string mediaType = obj["MediaType"]?.ToString() ?? "Unknown";
+                    string interfaceType = "SATA";
+                    if (mediaType.Contains("SSD", StringComparison.OrdinalIgnoreCase) ||
+                        (obj["Model"]?.ToString() ?? "").Contains("NVMe", StringComparison.OrdinalIgnoreCase))
+                        interfaceType = "NVMe";
+                    else if (mediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase))
+                        interfaceType = "USB";
+
+                    disks.Add(new
+                    {
+                        driveName = driveLetter,
+                        model = obj["Model"]?.ToString() ?? "",
+                        serialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
+                        mediaType = interfaceType,
+                        sizeBytes = obj["Size"] != null ? Convert.ToInt64(obj["Size"]) : 0L,
+                        fileSystem = "NTFS",
+                        isSystemDrive = idx == 0,
+                    });
+                    idx++;
+                }
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect disk drives."); }
+            return disks;
+        }
+
+        // ─── Network Adapters ────────────────────────────────────────────────
+        private List<object> GetNetworkAdapters()
+        {
+            var adapters = new List<object>();
+            if (!OperatingSystem.IsWindows()) return adapters;
+            try
+            {
+                using var s = new ManagementObjectSearcher(
+                    "SELECT Description, MACAddress, IPAddress, DefaultIPGateway, DNSServerSearchOrder, Speed FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled=True");
+                foreach (ManagementObject obj in s.Get())
+                {
+                    string[] ips = obj["IPAddress"] as string[] ?? Array.Empty<string>();
+                    string[] gateways = obj["DefaultIPGateway"] as string[] ?? Array.Empty<string>();
+                    string[] dns = obj["DNSServerSearchOrder"] as string[] ?? Array.Empty<string>();
+
+                    string ipv4 = ips.FirstOrDefault(ip => !ip.Contains(':')) ?? "";
+                    string ipv6 = ips.FirstOrDefault(ip => ip.Contains(':')) ?? "";
+                    long speed = obj["Speed"] != null ? Convert.ToInt64(obj["Speed"]) : 0;
+
+                    adapters.Add(new
+                    {
+                        name = obj["Description"]?.ToString() ?? "",
+                        description = obj["Description"]?.ToString() ?? "",
+                        macAddress = obj["MACAddress"]?.ToString() ?? "",
+                        ipv4 = ipv4,
+                        ipv6 = ipv6,
+                        gateway = gateways.Length > 0 ? gateways[0] : "",
+                        dns = dns.Length > 0 ? string.Join(", ", dns) : "",
+                        speedMbps = speed > 0 ? (int)(speed / 1_000_000) : 0,
+                        isWireless = false,
+                        isPhysical = true,
+                        isOperational = true,
+                    });
+                }
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect network adapters."); }
+            return adapters;
+        }
+
+        // ─── Installed Software (from registry — fast) ───────────────────────
         private List<object> GetInstalledSoftware()
         {
             var software = new List<object>();
             if (!OperatingSystem.IsWindows()) return software;
-
             try
             {
-                // Faster: read from Uninstall registry keys instead of Win32_Product
                 var regPaths = new[]
                 {
                     @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
                     @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
                 };
-
                 foreach (var regPath in regPaths)
                 {
                     try
                     {
                         using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(regPath);
                         if (key == null) continue;
-
                         foreach (var subKeyName in key.GetSubKeyNames())
                         {
                             try
                             {
                                 using var subKey = key.OpenSubKey(subKeyName);
                                 if (subKey == null) continue;
-
                                 var displayName = subKey.GetValue("DisplayName") as string;
                                 if (string.IsNullOrWhiteSpace(displayName)) continue;
-
-                                var version = subKey.GetValue("DisplayVersion") as string ?? "";
-                                var publisher = subKey.GetValue("Publisher") as string ?? "";
-                                var installDate = subKey.GetValue("InstallDate") as string ?? "";
-
                                 software.Add(new
                                 {
                                     name = displayName.Trim(),
-                                    version = version.Trim(),
-                                    publisher = publisher.Trim(),
-                                    installedDate = installDate,
+                                    version = (subKey.GetValue("DisplayVersion") as string ?? "").Trim(),
+                                    publisher = (subKey.GetValue("Publisher") as string ?? "").Trim(),
+                                    installDate = subKey.GetValue("InstallDate") as string ?? "",
+                                    installLocation = subKey.GetValue("InstallLocation") as string ?? "",
                                 });
                             }
                             catch { }
@@ -165,8 +263,7 @@ namespace NOS.Agent.Services
                     }
                     catch { }
                 }
-
-                // Also check current user hive
+                // Also user hive
                 try
                 {
                     using var userKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
@@ -185,7 +282,8 @@ namespace NOS.Agent.Services
                                     name = displayName.Trim(),
                                     version = (subKey.GetValue("DisplayVersion") as string ?? "").Trim(),
                                     publisher = (subKey.GetValue("Publisher") as string ?? "").Trim(),
-                                    installedDate = subKey.GetValue("InstallDate") as string ?? "",
+                                    installDate = subKey.GetValue("InstallDate") as string ?? "",
+                                    installLocation = subKey.GetValue("InstallLocation") as string ?? "",
                                 });
                             }
                             catch { }
@@ -194,29 +292,21 @@ namespace NOS.Agent.Services
                 }
                 catch { }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to enumerate installed software from registry.");
-            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to enumerate installed software from registry."); }
 
-            // Deduplicate by name
+            // Deduplicate by name, sort alphabetically
             return software
-                .Cast<dynamic>()
-                .GroupBy(s => (string)s.name)
+                .GroupBy(s => ((dynamic)s).name as string, StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First())
-                .Cast<object>()
-                .OrderBy(s => ((dynamic)s).name)
+                .OrderBy(s => ((dynamic)s).name as string)
                 .ToList();
         }
 
-        /// <summary>
-        /// Returns all Windows services with name, display name, status, and start type.
-        /// </summary>
-        private List<object> GetRunningServices()
+        // ─── Windows Services (field names match WindowsServicePayloadDto) ───
+        private List<object> GetWindowsServices()
         {
             var services = new List<object>();
             if (!OperatingSystem.IsWindows()) return services;
-
             try
             {
                 foreach (var svc in ServiceController.GetServices())
@@ -226,127 +316,112 @@ namespace NOS.Agent.Services
                         string startType = "Unknown";
                         try
                         {
-                            using var wmiSearcher = new ManagementObjectSearcher(
+                            using var wmi = new ManagementObjectSearcher(
                                 $"SELECT StartMode FROM Win32_Service WHERE Name='{svc.ServiceName.Replace("'", "''")}'");
-                            var wmiSvc = wmiSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
+                            var wmiSvc = wmi.Get().Cast<ManagementObject>().FirstOrDefault();
                             startType = wmiSvc?["StartMode"]?.ToString() ?? "Unknown";
                         }
                         catch { }
 
+                        // Field names match WindowsServicePayloadDto
                         services.Add(new
                         {
-                            name = svc.ServiceName,
-                            displayName = svc.DisplayName,
-                            status = svc.Status.ToString(),
-                            startType = startType,
+                            serviceName = svc.ServiceName,   // matches DTO
+                            displayName = svc.DisplayName,   // matches DTO
+                            status = svc.Status.ToString(),  // matches DTO
+                            startType = startType,           // matches DTO
+                            account = "LocalSystem",         // matches DTO
                         });
                     }
                     catch { }
-                    finally
-                    {
-                        try { svc.Dispose(); } catch { }
-                    }
+                    finally { try { svc.Dispose(); } catch { } }
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to enumerate Windows services.");
-            }
-
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to enumerate Windows services."); }
             return services;
         }
 
-        /// <summary>
-        /// Returns startup programs from WMI Win32_StartupCommand.
-        /// </summary>
-        private List<object> GetStartupPrograms()
+        // ─── Startup Apps (field names match StartupApplicationPayloadDto) ───
+        private List<object> GetStartupApplications()
         {
-            var startupItems = new List<object>();
-            if (!OperatingSystem.IsWindows()) return startupItems;
-
+            var items = new List<object>();
+            if (!OperatingSystem.IsWindows()) return items;
             try
             {
-                using var searcher = new ManagementObjectSearcher("SELECT Name, Command, Location, User FROM Win32_StartupCommand");
-                foreach (ManagementObject item in searcher.Get())
+                using var s = new ManagementObjectSearcher(
+                    "SELECT Name, Command, Location, User FROM Win32_StartupCommand");
+                foreach (ManagementObject obj in s.Get())
                 {
-                    startupItems.Add(new
+                    // Field names match StartupApplicationPayloadDto
+                    items.Add(new
                     {
-                        name = item["Name"]?.ToString() ?? "Unknown",
-                        command = item["Command"]?.ToString() ?? "",
-                        location = item["Location"]?.ToString() ?? "",
-                        user = item["User"]?.ToString() ?? "",
+                        name = obj["Name"]?.ToString() ?? "Unknown",
+                        command = obj["Command"]?.ToString() ?? "",
+                        location = obj["Location"]?.ToString() ?? "",
+                        user = obj["User"]?.ToString() ?? "",
                     });
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to enumerate startup programs.");
-            }
-
-            return startupItems;
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to enumerate startup programs."); }
+            return items;
         }
 
-        /// <summary>
-        /// Returns the live running process list (name, PID, CPU time, memory).
-        /// Capped at 200 processes to avoid payload bloat.
-        /// </summary>
-        private List<object> GetRunningProcessList()
+        // ─── Security Info ────────────────────────────────────────────────────
+        private object GetSecurityInfo()
         {
-            var processList = new List<object>();
+            bool defender = false, firewall = false, secureBoot = false, tpm = false;
+            string tpmVersion = "Unknown";
             try
             {
-                var procs = Process.GetProcesses()
-                    .OrderByDescending(p =>
-                    {
-                        try { return p.WorkingSet64; } catch { return 0L; }
-                    })
-                    .Take(200);
-
-                foreach (var proc in procs)
+                using var wmiSec = new ManagementObjectSearcher(
+                    @"root\SecurityCenter2", "SELECT displayName FROM AntiVirusProduct");
+                defender = wmiSec.Get().Count > 0;
+            }
+            catch { }
+            try
+            {
+                using var fwSearcher = new ManagementObjectSearcher(
+                    @"root\StandardCimv2",
+                    "SELECT Enabled FROM MSFT_NetFirewallProfile WHERE Profile='Domain' OR Profile='Private' OR Profile='Public'");
+                firewall = fwSearcher.Get().Cast<ManagementObject>().Any(o =>
+                    o["Enabled"] != null && Convert.ToBoolean(o["Enabled"]));
+            }
+            catch { }
+            try
+            {
+                using var tpmSearcher = new ManagementObjectSearcher(
+                    @"root\CIMv2\Security\MicrosoftTpm", "SELECT IsEnabled_InitialValue, SpecVersion FROM Win32_Tpm");
+                var tpmObj = tpmSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
+                if (tpmObj != null)
                 {
-                    try
-                    {
-                        processList.Add(new
-                        {
-                            pid = proc.Id,
-                            name = proc.ProcessName,
-                            memoryMb = Math.Round(proc.WorkingSet64 / (1024.0 * 1024.0), 1),
-                            cpuTimeSec = Math.Round(proc.TotalProcessorTime.TotalSeconds, 1),
-                            threads = proc.Threads.Count,
-                            status = "Running",
-                        });
-                    }
-                    catch { }
-                    finally
-                    {
-                        try { proc.Dispose(); } catch { }
-                    }
+                    tpm = tpmObj["IsEnabled_InitialValue"] != null && Convert.ToBoolean(tpmObj["IsEnabled_InitialValue"]);
+                    tpmVersion = tpmObj["SpecVersion"]?.ToString()?.Split(',').FirstOrDefault()?.Trim() ?? "2.0";
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to enumerate running processes.");
-            }
+            catch { }
 
-            return processList;
+            return new
+            {
+                windowsDefenderEnabled = defender,
+                firewallEnabled = firewall,
+                bitLockerEnabled = false,
+                secureBootEnabled = secureBoot,
+                tpmEnabled = tpm,
+                tpmVersion = tpmVersion,
+            };
         }
 
         private string GetWmiValue(string wmiClass, string property, string defaultValue)
         {
             if (!OperatingSystem.IsWindows()) return defaultValue;
-
             try
             {
-                using var searcher = new ManagementObjectSearcher($"SELECT {property} FROM {wmiClass}");
-                var result = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
+                using var s = new ManagementObjectSearcher($"SELECT {property} FROM {wmiClass}");
+                var result = s.Get().Cast<ManagementObject>().FirstOrDefault();
                 if (result != null && result[property] != null)
                     return result[property]?.ToString()?.Trim() ?? defaultValue;
             }
-            catch
-            {
-                // Ignore WMI errors
-            }
-
+            catch { }
             return defaultValue;
         }
     }

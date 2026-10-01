@@ -35,20 +35,27 @@ function formatBytesToGb(val: number | null | undefined): string {
   return (val / (1024 * 1024 * 1024)).toFixed(1);
 }
 
-function formatSpeed(bytesPerSec: number | null | undefined): string {
-  if (
-    bytesPerSec === null ||
-    bytesPerSec === undefined ||
-    isNaN(bytesPerSec) ||
-    bytesPerSec <= 0
-  )
+function formatMbsSpeed(mbsVal: number | null | undefined): string {
+  // Values come in as MB/s already from agent
+  if (mbsVal === null || mbsVal === undefined || isNaN(mbsVal) || mbsVal <= 0)
     return "0.00 MB/s";
-  if (bytesPerSec >= 1048576) {
-    return (bytesPerSec / 1048576).toFixed(2) + " MB/s";
-  } else if (bytesPerSec >= 1024) {
-    return (bytesPerSec / 1024).toFixed(1) + " KB/s";
-  }
-  return bytesPerSec.toFixed(0) + " B/s";
+  if (mbsVal >= 1000) return (mbsVal / 1024).toFixed(2) + " GB/s";
+  if (mbsVal >= 1) return mbsVal.toFixed(2) + " MB/s";
+  return (mbsVal * 1024).toFixed(1) + " KB/s";
+}
+
+function formatMbps(mbpsVal: number | null | undefined): string {
+  // Values come in as Mbps already from agent
+  if (
+    mbpsVal === null ||
+    mbpsVal === undefined ||
+    isNaN(mbpsVal) ||
+    mbpsVal <= 0
+  )
+    return "0.00 Mbps";
+  if (mbpsVal >= 1000) return (mbpsVal / 1000).toFixed(2) + " Gbps";
+  if (mbpsVal >= 1) return mbpsVal.toFixed(2) + " Mbps";
+  return (mbpsVal * 1000).toFixed(1) + " Kbps";
 }
 
 function formatDataSize(bytes: number | null | undefined): string {
@@ -76,7 +83,7 @@ export default function DeviceDetailPage() {
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // FIXED: don't block initial render
   const [realtimeData, setRealtimeData] = useState<any>(null);
 
   // Self-resetting 30s countdown timer
@@ -90,46 +97,84 @@ export default function DeviceDetailPage() {
     async (showLoader = false) => {
       if (showLoader) setLoading(true);
       try {
-        const [devRes, telRes, procRes, svcRes, swRes, alertRes] =
-          await Promise.all([
-            apiClient.get<any, any>(`/devices/${id}`).catch(() => null),
-            apiClient
-              .get<any, any>(`/devices/${id}/telemetry?range=1h`)
-              .catch(() => null),
-            apiClient
-              .get<any, any>(`/devices/${id}/processes`)
-              .catch(() => null),
-            apiClient
-              .get<any, any>(`/devices/${id}/services`)
-              .catch(() => null),
-            apiClient
-              .get<any, any>(`/devices/${id}/software`)
-              .catch(() => null),
-            apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
-          ]);
+        const [devRes, telRes, alertRes] = await Promise.all([
+          apiClient.get<any, any>(`/devices/${id}`).catch(() => null),
+          apiClient
+            .get<any, any>(`/devices/${id}/telemetry?range=1h`)
+            .catch(() => null),
+          apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
+        ]);
 
         const dev = devRes?.data?.data || devRes?.data || null;
-        if (dev) {
-          setDevice(dev);
-        }
+        if (dev) setDevice(dev);
         setTelemetryHistory(telRes?.data?.data || telRes?.data || []);
-        setProcesses(procRes?.data?.data || procRes?.data || []);
-        setServices(svcRes?.data?.data || svcRes?.data || []);
-        setSoftware(swRes?.data?.data || swRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
+
+        // Fetch inventory & process data from backend routes
+        const deviceDbId = dev?.id || id;
+        const [swRes, svcRes, procRes] = await Promise.all([
+          apiClient
+            .get<any, any>(`/devices/${id}/software`)
+            .catch(() =>
+              apiClient
+                .get<any, any>(`/inventory/software/${deviceDbId}`)
+                .catch(() => null),
+            ),
+          apiClient
+            .get<any, any>(`/devices/${id}/services`)
+            .catch(() =>
+              apiClient
+                .get<any, any>(`/inventory/software/${deviceDbId}`)
+                .catch(() => null),
+            ),
+          apiClient.get<any, any>(`/devices/${id}/processes`).catch(() => null),
+        ]);
+
+        const swData = swRes?.data?.data || swRes?.data || null;
+        if (swData) {
+          const swList = Array.isArray(swData)
+            ? swData
+            : swData.installedSoftware || swData.software || [];
+          if (swList.length > 0) setSoftware(swList);
+        }
+
+        const svcData = svcRes?.data?.data || svcRes?.data || null;
+        if (svcData) {
+          const svcList = Array.isArray(svcData)
+            ? svcData
+            : svcData.windowsServices || svcData.services || [];
+          if (svcList.length > 0) setServices(svcList);
+        }
+
+        const procData = procRes?.data?.data || procRes?.data || null;
+        if (procData && Array.isArray(procData) && procData.length > 0) {
+          setProcesses(procData);
+        }
       } catch (err) {
         console.error("Failed to load device details", err);
       } finally {
-        if (showLoader) setLoading(false);
+        setLoading(false);
       }
     },
     [id],
   );
 
-  // Initial load
+  // Initial load — no spinner
   useEffect(() => {
-    fetchData(true);
+    fetchData(false);
   }, [fetchData]);
+
+  // Also re-fetch inventory when switching to those tabs
+  useEffect(() => {
+    if (
+      activeTab === "processes" ||
+      activeTab === "services" ||
+      activeTab === "software"
+    ) {
+      fetchData(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Realtime Socket listener
   useEffect(() => {
@@ -141,6 +186,13 @@ export default function DeviceDetailPage() {
       ) {
         setRealtimeData(payload);
         setTelemetryHistory((prev) => [...prev, payload].slice(-60));
+        if (
+          payload.processes &&
+          Array.isArray(payload.processes) &&
+          payload.processes.length > 0
+        ) {
+          setProcesses(payload.processes);
+        }
         // Reset countdown timer immediately on fresh telemetry
         setTimeUntilUpdate(30);
       }
@@ -169,6 +221,13 @@ export default function DeviceDetailPage() {
           networkDownloadSpeed:
             payload.networkDownloadSpeed ?? prev?.networkDownloadSpeed,
         }));
+        if (
+          payload.processes &&
+          Array.isArray(payload.processes) &&
+          payload.processes.length > 0
+        ) {
+          setProcesses(payload.processes);
+        }
         setTimeUntilUpdate(30);
       }
     });
@@ -624,7 +683,7 @@ export default function DeviceDetailPage() {
                   <Wifi className="w-3 h-3 text-cyan-400" /> Download Speed
                 </div>
                 <div className="text-sm text-gray-200 font-mono">
-                  {formatSpeed(netDownload)}
+                  {formatMbps(netDownload)}
                 </div>
               </div>
               <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
@@ -632,7 +691,7 @@ export default function DeviceDetailPage() {
                   <Wifi className="w-3 h-3 text-purple-400" /> Upload Speed
                 </div>
                 <div className="text-sm text-gray-200 font-mono">
-                  {formatSpeed(netUpload)}
+                  {formatMbps(netUpload)}
                 </div>
               </div>
             </div>
@@ -733,13 +792,13 @@ export default function DeviceDetailPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Read Speed</span>
                   <span className="text-gray-200 font-mono">
-                    {formatSpeed(diskRead)}
+                    {formatMbsSpeed(diskRead)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Write Speed</span>
                   <span className="text-gray-200 font-mono">
-                    {formatSpeed(diskWrite)}
+                    {formatMbsSpeed(diskWrite)}
                   </span>
                 </div>
               </div>
@@ -756,15 +815,15 @@ export default function DeviceDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Bytes Sent</span>
-                  <span className="text-gray-200 font-mono">
-                    {formatDataSize(bytesSent)}
+                  <span className="text-gray-500">Upload Speed</span>
+                  <span className="text-cyan-400 font-mono">
+                    {formatMbps(netUpload)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Bytes Recv</span>
-                  <span className="text-gray-200 font-mono">
-                    {formatDataSize(bytesReceived)}
+                  <span className="text-gray-500">Download Speed</span>
+                  <span className="text-emerald-400 font-mono">
+                    {formatMbps(netDownload)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -897,10 +956,10 @@ export default function DeviceDetailPage() {
                             {(t.diskUsagePercent || 0).toFixed(1)}%
                           </td>
                           <td className="px-4 py-3 font-mono text-cyan-400">
-                            {formatSpeed(t.networkDownloadSpeed)}
+                            {formatMbps(t.networkDownloadSpeed)}
                           </td>
                           <td className="px-4 py-3 font-mono text-purple-400">
-                            {formatSpeed(t.networkUploadSpeed)}
+                            {formatMbps(t.networkUploadSpeed)}
                           </td>
                           <td className="px-4 py-3 font-mono text-gray-300">
                             {t.runningProcesses || "—"}
@@ -919,35 +978,59 @@ export default function DeviceDetailPage() {
 
         {activeTab === "processes" && (
           <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
-            <table className="w-full text-sm text-left text-gray-400">
-              <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
-                <tr>
-                  <th className="px-6 py-3">PID</th>
-                  <th className="px-6 py-3">Name</th>
-                  <th className="px-6 py-3">CPU %</th>
-                  <th className="px-6 py-3">Memory (MB)</th>
-                  <th className="px-6 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {processes.map((proc, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-gray-800 hover:bg-gray-800/50"
-                  >
-                    <td className="px-6 py-4 font-mono">{proc.pid}</td>
-                    <td className="px-6 py-4 font-medium text-gray-300">
-                      {proc.name}
-                    </td>
-                    <td className="px-6 py-4">{proc.cpuPercent}%</td>
-                    <td className="px-6 py-4">
-                      {(proc.memoryBytes / 1024 / 1024).toFixed(1)}
-                    </td>
-                    <td className="px-6 py-4">{proc.status}</td>
+            {processes.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 text-sm">
+                No process data yet. Inventory collects this on first scan.
+                <br />
+                <span className="text-xs text-gray-600">
+                  Live count: {runningProcesses} processes running
+                </span>
+              </div>
+            ) : (
+              <table className="w-full text-sm text-left text-gray-400">
+                <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+                  <tr>
+                    <th className="px-6 py-3">PID</th>
+                    <th className="px-6 py-3">Name</th>
+                    <th className="px-6 py-3">Memory (MB)</th>
+                    <th className="px-6 py-3">CPU Time (s)</th>
+                    <th className="px-6 py-3">Threads</th>
+                    <th className="px-6 py-3">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {processes.map((proc: any, idx: number) => (
+                    <tr
+                      key={proc.pid || idx}
+                      className="border-b border-gray-800 hover:bg-gray-800/50"
+                    >
+                      <td className="px-6 py-3 font-mono text-xs">
+                        {proc.pid}
+                      </td>
+                      <td className="px-6 py-3 font-medium text-gray-300">
+                        {proc.name || proc.processName}
+                      </td>
+                      <td className="px-6 py-3 font-mono">
+                        {(
+                          proc.memoryMb ?? (proc.memoryBytes ?? 0) / 1024 / 1024
+                        ).toFixed(1)}
+                      </td>
+                      <td className="px-6 py-3 font-mono">
+                        {(proc.cpuTimeSec ?? 0).toFixed(1)}
+                      </td>
+                      <td className="px-6 py-3 font-mono">
+                        {proc.threads ?? "—"}
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400">
+                          {proc.status || "Running"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 

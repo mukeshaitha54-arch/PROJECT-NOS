@@ -38,7 +38,7 @@ export default function GlobalInventoryExplorerPage() {
     "SOFTWARE" | "SERVICES" | "SECURITY" | "CHANGES"
   >("SOFTWARE");
   const [items, setItems] = useState<GlobalSoftwareRow[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
   const [filterOs, setFilterOs] = useState<string>("ALL");
 

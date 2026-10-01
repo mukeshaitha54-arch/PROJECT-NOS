@@ -299,7 +299,7 @@ export default function DashboardPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchDashboardData(true)}
+            onClick={() => fetchDashboardData()}
             disabled={loading}
             className="border-gray-800 hover:border-gray-700 text-xs text-gray-300"
           >

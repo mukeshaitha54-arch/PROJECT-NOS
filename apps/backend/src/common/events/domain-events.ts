@@ -77,6 +77,13 @@ export class HeartbeatReceivedEvent extends BaseDomainEvent {
     public readonly uptime: number,
     public readonly wasOffline: boolean,
     correlationId?: string,
+    public readonly runningProcesses?: number,
+    public readonly activeConnections?: number,
+    public readonly diskReadSpeed?: number,
+    public readonly diskWriteSpeed?: number,
+    public readonly networkUploadSpeed?: number,
+    public readonly networkDownloadSpeed?: number,
+    public readonly processes?: any[],
   ) {
     super(organizationId, deviceId, correlationId);
   }

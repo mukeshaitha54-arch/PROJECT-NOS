@@ -301,9 +301,37 @@ namespace NOS.Agent.Services
                 }
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect IP address."); }
 
-                // Running process count (live, dynamic)
-                try { runningProcesses = Process.GetProcesses().Length; }
+                // Running process count & live process list (live, dynamic)
+                var processList = new List<object>();
+                try
+                {
+                    var allProcs = Process.GetProcesses();
+                    runningProcesses = allProcs.Length;
+                    foreach (var p in allProcs)
+                    {
+                        try
+                        {
+                            long mem = p.WorkingSet64;
+                            processList.Add(new
+                            {
+                                pid = p.Id,
+                                name = p.ProcessName + ".exe",
+                                processName = p.ProcessName,
+                                memoryBytes = mem,
+                                memoryMb = Math.Round((double)mem / (1024.0 * 1024.0), 1),
+                                threads = p.Threads.Count,
+                                status = "Running"
+                            });
+                        }
+                        catch { }
+                    }
+                }
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to get process count."); }
+
+                var topProcesses = processList
+                    .OrderByDescending(p => ((dynamic)p).memoryBytes)
+                    .Take(50)
+                    .ToList();
 
                 // Active TCP connections
                 try
@@ -334,6 +362,7 @@ namespace NOS.Agent.Services
                     DiskWriteSpeed = diskWrite,
                     NetworkUploadSpeed = netUp,
                     NetworkDownloadSpeed = netDown,
+                    Processes = topProcesses,
                 };
             }
             catch (Exception ex)
@@ -359,6 +388,7 @@ namespace NOS.Agent.Services
             public double DiskWriteSpeed { get; set; } = 0.0;  // MB/s
             public double NetworkUploadSpeed { get; set; } = 0.0;   // Mbps
             public double NetworkDownloadSpeed { get; set; } = 0.0; // Mbps
+            public List<object> Processes { get; set; } = new();
         }
     }
 }

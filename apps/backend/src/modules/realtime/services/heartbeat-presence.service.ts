@@ -52,6 +52,7 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
     diskWriteSpeed?: number,
     networkUploadSpeed?: number,
     networkDownloadSpeed?: number,
+    processes?: any[],
   ): Promise<void> {
     const now = Date.now();
     const wasOnline = this.presenceService.isDeviceOnline(deviceId);
@@ -85,6 +86,7 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
       ...(diskWriteSpeed !== undefined && { diskWriteSpeed }),
       ...(networkUploadSpeed !== undefined && { networkUploadSpeed }),
       ...(networkDownloadSpeed !== undefined && { networkDownloadSpeed }),
+      ...(processes !== undefined && { processes }),
     };
 
     await this.socketPublisher.emitHeartbeatReceived(

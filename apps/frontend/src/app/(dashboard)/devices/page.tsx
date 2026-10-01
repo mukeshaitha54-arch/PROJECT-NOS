@@ -12,7 +12,7 @@ export default function FleetDashboardPage() {
   const { on, lastEvent } = useRealtimeContext();
   const [devices, setDevices] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
 
@@ -100,7 +100,7 @@ export default function FleetDashboardPage() {
     }
   }
 
-  if (loading) {
+  if (loading && devices.length === 0) {
     return (
       <div className="flex h-[50vh] items-center justify-center text-gray-500">
         <Loader2 className="animate-spin w-8 h-8" />
