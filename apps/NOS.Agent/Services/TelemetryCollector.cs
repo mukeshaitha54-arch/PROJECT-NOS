@@ -83,14 +83,6 @@ namespace NOS.Agent.Services
                 return;
             }
 
-            if (_resourceMonitor.IsSurvivalMode)
-            {
-                var msg = "Skipping telemetry cycle due to agent emergency survival mode.";
-                _logger.LogWarning(msg);
-                _eventLog.WriteEvent(2001, msg, EventLogEntryType.Warning);
-                return;
-            }
-
             try
             {
                 var payload = CollectTelemetryData();

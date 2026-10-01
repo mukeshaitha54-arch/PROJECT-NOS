@@ -302,7 +302,8 @@ namespace NOS.Agent.Services
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect IP address."); }
 
                 // Running process count & live process list (live, dynamic)
-                var processList = new List<object>();
+                // Running process count & live process list (live, dynamic)
+                var processList = new List<LiveProcessDto>();
                 try
                 {
                     var allProcs = Process.GetProcesses();
@@ -312,15 +313,21 @@ namespace NOS.Agent.Services
                         try
                         {
                             long mem = p.WorkingSet64;
-                            processList.Add(new
+                            double cpuTime = 0.0;
+                            try { cpuTime = Math.Round(p.TotalProcessorTime.TotalSeconds, 1); } catch { }
+                            int threadCount = 1;
+                            try { threadCount = p.Threads.Count; } catch { }
+
+                            processList.Add(new LiveProcessDto
                             {
-                                pid = p.Id,
-                                name = p.ProcessName + ".exe",
-                                processName = p.ProcessName,
-                                memoryBytes = mem,
-                                memoryMb = Math.Round((double)mem / (1024.0 * 1024.0), 1),
-                                threads = p.Threads.Count,
-                                status = "Running"
+                                Pid = p.Id,
+                                Name = p.ProcessName + ".exe",
+                                ProcessName = p.ProcessName,
+                                MemoryBytes = mem,
+                                MemoryMb = Math.Round((double)mem / (1024.0 * 1024.0), 1),
+                                CpuTimeSec = cpuTime,
+                                Threads = threadCount,
+                                Status = "Running"
                             });
                         }
                         catch { }
@@ -329,7 +336,7 @@ namespace NOS.Agent.Services
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to get process count."); }
 
                 var topProcesses = processList
-                    .OrderByDescending(p => ((dynamic)p).memoryBytes)
+                    .OrderByDescending(p => p.MemoryBytes)
                     .Take(50)
                     .ToList();
 
@@ -372,23 +379,77 @@ namespace NOS.Agent.Services
             }
         }
 
+        public class LiveProcessDto
+        {
+            [System.Text.Json.Serialization.JsonPropertyName("pid")]
+            public int Pid { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("name")]
+            public string Name { get; set; } = string.Empty;
+
+            [System.Text.Json.Serialization.JsonPropertyName("processName")]
+            public string ProcessName { get; set; } = string.Empty;
+
+            [System.Text.Json.Serialization.JsonPropertyName("memoryBytes")]
+            public long MemoryBytes { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("memoryMb")]
+            public double MemoryMb { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("cpuTimeSec")]
+            public double CpuTimeSec { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("threads")]
+            public int Threads { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("status")]
+            public string Status { get; set; } = "Running";
+        }
+
         private class HeartbeatPayload
         {
+            [System.Text.Json.Serialization.JsonPropertyName("deviceId")]
             public string? DeviceId { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("status")]
             public string Status { get; set; } = "ONLINE";
+
+            [System.Text.Json.Serialization.JsonPropertyName("timestamp")]
             public string Timestamp { get; set; } = string.Empty;
+
+            [System.Text.Json.Serialization.JsonPropertyName("cpuUsage")]
             public double CpuUsage { get; set; } = 0.0;
+
+            [System.Text.Json.Serialization.JsonPropertyName("ramUsage")]
             public double RamUsage { get; set; } = 0.0;
+
+            [System.Text.Json.Serialization.JsonPropertyName("uptime")]
             public double Uptime { get; set; } = 0.0;
+
+            [System.Text.Json.Serialization.JsonPropertyName("ipAddress")]
             public string IpAddress { get; set; } = "0.0.0.0";
+
             // === New dynamic metrics (30s update cycle) ===
+            [System.Text.Json.Serialization.JsonPropertyName("runningProcesses")]
             public int RunningProcesses { get; set; } = 0;
+
+            [System.Text.Json.Serialization.JsonPropertyName("activeConnections")]
             public int ActiveConnections { get; set; } = 0;
+
+            [System.Text.Json.Serialization.JsonPropertyName("diskReadSpeed")]
             public double DiskReadSpeed { get; set; } = 0.0;   // MB/s
+
+            [System.Text.Json.Serialization.JsonPropertyName("diskWriteSpeed")]
             public double DiskWriteSpeed { get; set; } = 0.0;  // MB/s
+
+            [System.Text.Json.Serialization.JsonPropertyName("networkUploadSpeed")]
             public double NetworkUploadSpeed { get; set; } = 0.0;   // Mbps
+
+            [System.Text.Json.Serialization.JsonPropertyName("networkDownloadSpeed")]
             public double NetworkDownloadSpeed { get; set; } = 0.0; // Mbps
-            public List<object> Processes { get; set; } = new();
+
+            [System.Text.Json.Serialization.JsonPropertyName("processes")]
+            public List<LiveProcessDto> Processes { get; set; } = new();
         }
     }
 }

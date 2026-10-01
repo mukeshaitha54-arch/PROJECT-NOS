@@ -67,8 +67,8 @@ namespace NOS.Agent.Services
             
             // Calculate RAM
             double ramMb = process.WorkingSet64 / (1024.0 * 1024.0);
-            double maxRam = _config.ResourceGuardrails?.MaxRamMB ?? 128;
-            double emergencyRam = _config.ResourceGuardrails?.EmergencyRamMB ?? 200;
+            double maxRam = _config.ResourceGuardrails?.MaxRamMB ?? 512;
+            double emergencyRam = _config.ResourceGuardrails?.EmergencyRamMB ?? 1024;
 
             if (ramMb > emergencyRam)
             {

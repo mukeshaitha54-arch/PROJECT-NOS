@@ -1005,25 +1005,32 @@ export default function DeviceDetailPage() {
                       className="border-b border-gray-800 hover:bg-gray-800/50"
                     >
                       <td className="px-6 py-3 font-mono text-xs">
-                        {proc.pid}
+                        {proc.pid ?? proc.Pid ?? "—"}
                       </td>
                       <td className="px-6 py-3 font-medium text-gray-300">
-                        {proc.name || proc.processName}
+                        {proc.name ??
+                          proc.Name ??
+                          proc.processName ??
+                          proc.ProcessName ??
+                          "Unknown"}
                       </td>
                       <td className="px-6 py-3 font-mono">
                         {(
-                          proc.memoryMb ?? (proc.memoryBytes ?? 0) / 1024 / 1024
+                          proc.memoryMb ??
+                          proc.MemoryMb ??
+                          (proc.memoryBytes ?? proc.MemoryBytes ?? 0) /
+                            (1024 * 1024)
                         ).toFixed(1)}
                       </td>
                       <td className="px-6 py-3 font-mono">
-                        {(proc.cpuTimeSec ?? 0).toFixed(1)}
+                        {(proc.cpuTimeSec ?? proc.CpuTimeSec ?? 0).toFixed(1)}
                       </td>
                       <td className="px-6 py-3 font-mono">
-                        {proc.threads ?? "—"}
+                        {proc.threads ?? proc.Threads ?? "—"}
                       </td>
                       <td className="px-6 py-3">
                         <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400">
-                          {proc.status || "Running"}
+                          {proc.status ?? proc.Status ?? "Running"}
                         </span>
                       </td>
                     </tr>

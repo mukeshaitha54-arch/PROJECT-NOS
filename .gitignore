@@ -10,6 +10,7 @@ obj/
 
 # Allow tracked agent executable
 !apps/backend/assets/NOS-Agent.exe
+apps/NOS.Agent/publish-output/
 
 # Framework builds
 .next/

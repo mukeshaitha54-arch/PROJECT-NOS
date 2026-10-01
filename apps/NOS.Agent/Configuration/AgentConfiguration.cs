@@ -18,10 +18,10 @@ namespace NOS.Agent.Configuration
         public string ApiKey { get; set; } = string.Empty;
 
         [Range(10, 3600)]
-        public int HeartbeatIntervalSeconds { get; set; } = 60;
+        public int HeartbeatIntervalSeconds { get; set; } = 30;
 
-        [Range(30, 86400)]
-        public int TelemetryIntervalSeconds { get; set; } = 300;
+        [Range(10, 86400)]
+        public int TelemetryIntervalSeconds { get; set; } = 30;
 
         [Range(60, 86400)]
         public int InventoryIntervalSeconds { get; set; } = 3600;
@@ -30,10 +30,10 @@ namespace NOS.Agent.Configuration
         public int SecurityScanIntervalSeconds { get; set; } = 900;
 
         [Range(1, 100)]
-        public int MaxCpuPercent { get; set; } = 15;
+        public int MaxCpuPercent { get; set; } = 25;
 
         [Range(32, 2048)]
-        public int MaxRamMb { get; set; } = 256;
+        public int MaxRamMb { get; set; } = 512;
 
         [Range(1, 10)]
         public int MaxConcurrentCollections { get; set; } = 2;
@@ -51,11 +51,11 @@ namespace NOS.Agent.Configuration
 
         public class ResourceGuardrailsConfig
         {
-            public double MaxCpuPercent { get; set; } = 3.0;
-            public double MaxRamMB { get; set; } = 128;
-            public double EmergencyRamMB { get; set; } = 200;
-            public int ThrottleTelemetryIntervalSec { get; set; } = 600;
-            public int ThrottleHeartbeatIntervalSec { get; set; } = 120;
+            public double MaxCpuPercent { get; set; } = 15.0;
+            public double MaxRamMB { get; set; } = 512;
+            public double EmergencyRamMB { get; set; } = 1024;
+            public int ThrottleTelemetryIntervalSec { get; set; } = 60;
+            public int ThrottleHeartbeatIntervalSec { get; set; } = 60;
         }
 
         public void Validate()
