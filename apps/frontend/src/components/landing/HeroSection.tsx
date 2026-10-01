@@ -111,19 +111,20 @@ function LiveMetricBadge({
   );
 }
 
+const HERO_WORDS = [
+  "FLEET.",
+  "TELEMETRY.",
+  "RESILIENCE.",
+  "INTELLIGENCE.",
+  "HURDLE.",
+];
+
 export function HeroSection() {
-  const words = [
-    "FLEET.",
-    "TELEMETRY.",
-    "RESILIENCE.",
-    "INTELLIGENCE.",
-    "HURDLE.",
-  ];
   const [wordIdx, setWordIdx] = useState(0);
 
   useEffect(() => {
     const t = setInterval(
-      () => setWordIdx((i) => (i + 1) % words.length),
+      () => setWordIdx((i) => (i + 1) % HERO_WORDS.length),
       2800,
     );
     return () => clearInterval(t);
@@ -177,7 +178,7 @@ export function HeroSection() {
               transition={{ duration: 0.5 }}
               className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 inline-block"
             >
-              {words[wordIdx]}
+              {HERO_WORDS[wordIdx]}
             </motion.span>
           </motion.h1>
         </div>

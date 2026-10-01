@@ -130,7 +130,7 @@ export function ArchitecturalPillars() {
             </h2>
             <p className="text-slate-400 text-lg max-w-xl mx-auto">
               Side-by-side against traditional RMM tools — the gap is not
-              incremental. It's architectural.
+              incremental. It&apos;s architectural.
             </p>
           </motion.div>
 
