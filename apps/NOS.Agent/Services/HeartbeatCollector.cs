@@ -108,11 +108,25 @@ namespace NOS.Agent.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to read CPU usage. Falling back to 0.");
-                return 0.0;
+                _logger.LogWarning(ex, "WMI CPU usage failed. Attempting PerformanceCounter fallback.");
             }
 
-            if (samples.Count == 0) return 0.0;
+            if (samples.Count == 0)
+            {
+                try
+                {
+                    using var pc = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
+                    pc.NextValue();
+                    Thread.Sleep(300);
+                    return Math.Clamp(Math.Round((double)pc.NextValue(), 2), 0.0, 100.0);
+                }
+                catch (Exception ex2)
+                {
+                    _logger.LogWarning(ex2, "PerformanceCounter fallback also failed. Returning 0.0.");
+                    return 0.0;
+                }
+            }
+
 
             // Remove min/max outliers if we have 3 or more samples
             if (samples.Count >= 3)
@@ -161,7 +175,24 @@ namespace NOS.Agent.Services
                         }
                     }
                 }
-                catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect RAM/uptime."); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect RAM/uptime from WMI."); }
+
+                if (ramUsage == 0.0)
+                {
+                    try
+                    {
+                        var gcInfo = GC.GetGCMemoryInfo();
+                        double totalBytes = gcInfo.TotalAvailableMemoryBytes;
+                        using var pcMem = new System.Diagnostics.PerformanceCounter("Memory", "Available Bytes");
+                        double availableBytes = (double)pcMem.NextValue();
+                        if (totalBytes > 0)
+                            ramUsage = Math.Clamp(Math.Round(((totalBytes - availableBytes) / totalBytes) * 100.0, 2), 0.0, 100.0);
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        _logger.LogWarning(fallbackEx, "PerformanceCounter memory fallback failed.");
+                    }
+                }
 
                 try
                 {

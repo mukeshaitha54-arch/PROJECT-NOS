@@ -159,8 +159,18 @@ namespace NOS.Agent.Services
                 }
 
                 if (samples.Count >= 3) { samples.Remove(samples.Min()); samples.Remove(samples.Max()); }
-                // BUG 2 FIX: Round to 2dp
-                dto.CpuUsage = samples.Count > 0 ? Math.Clamp(Math.Round(samples.Average(), 2), 0.0, 100.0) : 0.0;
+                
+                if (samples.Count > 0)
+                {
+                    dto.CpuUsage = Math.Clamp(Math.Round(samples.Average(), 2), 0.0, 100.0);
+                }
+                else
+                {
+                    using var pc = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
+                    pc.NextValue();
+                    Thread.Sleep(300);
+                    dto.CpuUsage = Math.Clamp(Math.Round((double)pc.NextValue(), 2), 0.0, 100.0);
+                }
             }
             catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
             {
@@ -245,6 +255,29 @@ namespace NOS.Agent.Services
                 _logger.LogWarning(ex, "WMI error reading memory data: {ErrorCode}.", ex.ErrorCode);
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect memory WMI data."); }
+
+            if (dto.MemoryTotal == 0.0)
+            {
+                try
+                {
+                    var gcInfo = GC.GetGCMemoryInfo();
+                    double totalBytes = gcInfo.TotalAvailableMemoryBytes;
+                    using var pcMem = new System.Diagnostics.PerformanceCounter("Memory", "Available Bytes");
+                    double availableBytes = (double)pcMem.NextValue();
+                    
+                    if (totalBytes > 0)
+                    {
+                        dto.MemoryTotal = Math.Round(totalBytes / (1024.0 * 1024.0 * 1024.0), 2); // To GB
+                        dto.MemoryFree = Math.Round(availableBytes / (1024.0 * 1024.0 * 1024.0), 2); // To GB
+                        dto.MemoryUsed = dto.MemoryTotal - dto.MemoryFree;
+                        dto.MemoryUsagePercent = Math.Clamp(Math.Round(((totalBytes - availableBytes) / totalBytes) * 100.0, 2), 0.0, 100.0);
+                    }
+                }
+                catch (Exception fallbackEx)
+                {
+                    _logger.LogWarning(fallbackEx, "PerformanceCounter memory fallback failed.");
+                }
+            }
         }
 
         private void CollectDiskData(SubmitTelemetryDto dto)
