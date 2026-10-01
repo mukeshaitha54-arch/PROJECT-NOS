@@ -278,6 +278,9 @@ export class DeviceService {
       lastHeartbeat: latestHeartbeat
         ? this.sanitizeHeartbeat(latestHeartbeat)
         : null,
+      latestHeartbeat: latestHeartbeat
+        ? this.sanitizeHeartbeat(latestHeartbeat)
+        : null,
     };
   }
 
@@ -328,6 +331,9 @@ export class DeviceService {
         lastHeartbeat: latestHeartbeat
           ? this.sanitizeHeartbeat(latestHeartbeat)
           : null,
+        latestHeartbeat: latestHeartbeat
+          ? this.sanitizeHeartbeat(latestHeartbeat)
+          : null,
       };
     });
 
@@ -367,6 +373,9 @@ export class DeviceService {
     return {
       ...this.sanitizeDevice(device),
       lastHeartbeat: latestHeartbeat
+        ? this.sanitizeHeartbeat(latestHeartbeat)
+        : null,
+      latestHeartbeat: latestHeartbeat
         ? this.sanitizeHeartbeat(latestHeartbeat)
         : null,
     };

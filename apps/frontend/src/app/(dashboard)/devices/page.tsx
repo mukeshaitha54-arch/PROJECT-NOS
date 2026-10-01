@@ -50,6 +50,18 @@ export default function FleetDashboardPage() {
       }));
     });
 
+    const cleanupHeartbeat = on("heartbeat.received", (payload: any) => {
+      setRealtimeData((prev) => ({
+        ...prev,
+        [payload.deviceId]: {
+          ...prev[payload.deviceId],
+          cpuUsage: payload.cpuUsage,
+          memoryUsagePercent: payload.ramUsage,
+          ipAddress: payload.ipAddress,
+        },
+      }));
+    });
+
     const cleanupOnline = on("device.online", (payload: any) => {
       setDevices((prev) =>
         prev.map((d) =>
@@ -68,6 +80,7 @@ export default function FleetDashboardPage() {
 
     return () => {
       cleanupTelemetry();
+      cleanupHeartbeat();
       cleanupOnline();
       cleanupOffline();
     };

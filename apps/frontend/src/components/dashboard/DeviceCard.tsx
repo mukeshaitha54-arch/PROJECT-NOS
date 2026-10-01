@@ -25,15 +25,20 @@ export function DeviceCard({
   realtimeData,
   onDelete,
 }: DeviceCardProps) {
-  // Use realtime data if available, then latestSnapshot from API, then 0
   const cpuUsage =
     realtimeData?.cpuUsage ??
     device.latestSnapshot?.cpuUsage ??
+    device.lastHeartbeat?.cpuUsage ??
+    device.latestHeartbeat?.cpuUsage ??
+    device.heartbeats?.[0]?.cpuUsage ??
     device.telemetrySnapshots?.[0]?.cpuUsage ??
     0;
   const memoryUsage =
     realtimeData?.memoryUsagePercent ??
     device.latestSnapshot?.memoryUsagePercent ??
+    device.lastHeartbeat?.ramUsage ??
+    device.latestHeartbeat?.ramUsage ??
+    device.heartbeats?.[0]?.ramUsage ??
     device.telemetrySnapshots?.[0]?.memoryUsagePercent ??
     0;
   const netDownload =
@@ -69,9 +74,13 @@ export function DeviceCard({
       : []),
   ].slice(-20);
 
-  const isOnline = device.status === "ONLINE";
   const ipAddress =
-    realtimeData?.ipAddress ?? device.latestSnapshot?.ipAddress ?? "—";
+    realtimeData?.ipAddress ??
+    device.latestSnapshot?.ipAddress ??
+    device.lastHeartbeat?.ipAddress ??
+    device.latestHeartbeat?.ipAddress ??
+    device.heartbeats?.[0]?.ipAddress ??
+    "—";
 
   return (
     <Link href={`/devices/${device.id}`}>

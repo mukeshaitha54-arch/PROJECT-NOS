@@ -139,8 +139,10 @@ namespace NOS.Agent.Services
                 if (cpu != null)
                 {
                     dto.CpuFrequency = cpu["CurrentClockSpeed"] != null ? Convert.ToDouble(cpu["CurrentClockSpeed"]) / 1000.0 : 0.0;
-                    dto.LogicalProcessors = cpu["NumberOfLogicalProcessors"] != null ? Convert.ToInt32(cpu["NumberOfLogicalProcessors"]) : 0;
-                    dto.PhysicalProcessors = cpu["NumberOfCores"] != null ? Convert.ToInt32(cpu["NumberOfCores"]) : 0;
+                    int logical = cpu["NumberOfLogicalProcessors"] != null ? Convert.ToInt32(cpu["NumberOfLogicalProcessors"]) : 0;
+                    int physical = cpu["NumberOfCores"] != null ? Convert.ToInt32(cpu["NumberOfCores"]) : 0;
+                    dto.LogicalProcessors = logical > 0 ? logical : Math.Max(1, Environment.ProcessorCount);
+                    dto.PhysicalProcessors = physical > 0 ? physical : Math.Max(1, Environment.ProcessorCount / 2);
                 }
 
                 // BUG 1+4 FIX: Average 3 samples over 300ms using Win32_PerfFormattedData_PerfOS_Processor
@@ -431,8 +433,8 @@ namespace NOS.Agent.Services
         public double CpuUsage { get; set; } = 0.0;
         public double CpuTemperature { get; set; } = 0.0;
         public double CpuFrequency { get; set; } = 0.0;
-        public int LogicalProcessors { get; set; } = 0;
-        public int PhysicalProcessors { get; set; } = 0;
+        public int LogicalProcessors { get; set; } = Math.Max(1, Environment.ProcessorCount);
+        public int PhysicalProcessors { get; set; } = Math.Max(1, Environment.ProcessorCount / 2);
 
         public double MemoryUsed { get; set; } = 0.0;
         public double MemoryFree { get; set; } = 0.0;

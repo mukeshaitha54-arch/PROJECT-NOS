@@ -51,12 +51,17 @@ export class DevicesController {
           orderBy: { timestamp: "desc" },
           take: 1,
         },
+        heartbeats: {
+          orderBy: { timestamp: "desc" },
+          take: 1,
+        },
       },
     });
 
     // Serialize BigInt fields to Number to avoid JSON issues
     const serialized = devices.map((device) => {
       const snap = device.telemetrySnapshots[0] || null;
+      const hb = (device as any).heartbeats?.[0] || null;
       return {
         ...device,
         latestSnapshot: snap
@@ -68,6 +73,9 @@ export class DevicesController {
                 : 0,
             }
           : null,
+        latestHeartbeat: hb,
+        lastHeartbeat: hb,
+        heartbeats: hb ? [hb] : [],
         telemetrySnapshots: undefined,
       };
     });
@@ -162,6 +170,7 @@ export class DevicesController {
         ...device,
         latestSnapshot: serializeSnap(latestSnapshot),
         latestHeartbeat,
+        lastHeartbeat: latestHeartbeat,
       },
     };
   }

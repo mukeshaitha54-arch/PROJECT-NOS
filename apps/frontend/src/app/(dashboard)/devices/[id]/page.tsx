@@ -146,6 +146,23 @@ export default function DeviceDetailPage() {
       }
     });
 
+    // Also update live CPU/RAM from heartbeats (arrive every 60s, before telemetry)
+    const cleanupHeartbeat = on("heartbeat.received", (payload: any) => {
+      if (
+        payload.deviceId === id ||
+        payload.deviceId === device?.id ||
+        payload.deviceId === device?.uuid
+      ) {
+        setRealtimeData((prev: any) => ({
+          ...prev,
+          cpuUsage: payload.cpuUsage,
+          memoryUsagePercent: payload.ramUsage,
+          ipAddress: payload.ipAddress,
+        }));
+        setTimeUntilUpdate(30);
+      }
+    });
+
     const cleanupStatus = on("device.online", (payload: any) => {
       if (
         payload.deviceId === id ||
@@ -170,6 +187,7 @@ export default function DeviceDetailPage() {
 
     return () => {
       cleanupTelemetry();
+      cleanupHeartbeat();
       cleanupStatus();
       cleanupStatusOffline();
     };
@@ -247,11 +265,13 @@ export default function DeviceDetailPage() {
   const currentCpu =
     realtimeData?.cpuUsage ??
     device.latestSnapshot?.cpuUsage ??
+    device.lastHeartbeat?.cpuUsage ??
     device.latestHeartbeat?.cpuUsage ??
     0;
   const currentMem =
     realtimeData?.memoryUsagePercent ??
     device.latestSnapshot?.memoryUsagePercent ??
+    device.lastHeartbeat?.ramUsage ??
     device.latestHeartbeat?.ramUsage ??
     0;
   const currentDisk =
@@ -270,6 +290,7 @@ export default function DeviceDetailPage() {
   const ipAddress =
     realtimeData?.ipAddress ??
     device.latestSnapshot?.ipAddress ??
+    device.lastHeartbeat?.ipAddress ??
     device.latestHeartbeat?.ipAddress ??
     "N/A";
   const macAddress =
@@ -277,6 +298,7 @@ export default function DeviceDetailPage() {
   const uptime =
     realtimeData?.systemUptime ??
     device.latestSnapshot?.systemUptime ??
+    device.lastHeartbeat?.uptime ??
     device.latestHeartbeat?.uptime ??
     0;
 
@@ -335,11 +357,30 @@ export default function DeviceDetailPage() {
   const diskWrite =
     realtimeData?.diskWriteSpeed ?? device.latestSnapshot?.diskWriteSpeed ?? 0;
 
-  const sparklineData = telemetryHistory.map((t: any) => ({
-    timestamp: t.periodStart || t.timestamp,
-    value: t.cpuAvg || t.cpuUsage || 0,
-    memory: t.memoryAvg || t.memoryUsagePercent || 0,
-  }));
+  const sparklineData =
+    telemetryHistory.length > 0
+      ? telemetryHistory.map((t: any) => ({
+          timestamp: t.periodStart || t.timestamp,
+          value: t.cpuAvg || t.cpuUsage || 0,
+          memory: t.memoryAvg || t.memoryUsagePercent || 0,
+        }))
+      : device.lastHeartbeat || device.latestHeartbeat || realtimeData
+        ? [
+            {
+              timestamp:
+                (device.lastHeartbeat || device.latestHeartbeat)?.timestamp ||
+                new Date().toISOString(),
+              value:
+                (device.lastHeartbeat || device.latestHeartbeat)?.cpuUsage ??
+                realtimeData?.cpuUsage ??
+                0,
+              memory:
+                (device.lastHeartbeat || device.latestHeartbeat)?.ramUsage ??
+                realtimeData?.memoryUsagePercent ??
+                0,
+            },
+          ]
+        : [];
 
   const tabs = [
     { id: "overview", label: "Overview" },
