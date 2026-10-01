@@ -206,6 +206,8 @@ namespace NOS.Agent.Services
 
                 return new HeartbeatPayload
                 {
+                    DeviceId = DeviceRegistrationService.CurrentDeviceId,
+                    Status = "ONLINE",
                     Timestamp = DateTime.UtcNow.ToString("O"),
                     CpuUsage = cpuUsage,
                     RamUsage = ramUsage,
@@ -222,6 +224,8 @@ namespace NOS.Agent.Services
 
         private class HeartbeatPayload
         {
+            public string? DeviceId { get; set; }
+            public string Status { get; set; } = "ONLINE";
             public string Timestamp { get; set; } = string.Empty;
             public double CpuUsage { get; set; } = 0.0;
             public double RamUsage { get; set; } = 0.0;

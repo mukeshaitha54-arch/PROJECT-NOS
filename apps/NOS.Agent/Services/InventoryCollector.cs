@@ -72,7 +72,7 @@ namespace NOS.Agent.Services
             {
                 var payload = new
                 {
-                    deviceId = _configuration.DeviceId,
+                    deviceId = DeviceRegistrationService.CurrentDeviceId ?? _configuration.DeviceId,
                     manufacturer = GetWmiValue("Win32_ComputerSystem", "Manufacturer", "Unknown"),
                     model = GetWmiValue("Win32_ComputerSystem", "Model", "Unknown"),
                     serialNumber = GetWmiValue("Win32_BIOS", "SerialNumber", "Unknown"),

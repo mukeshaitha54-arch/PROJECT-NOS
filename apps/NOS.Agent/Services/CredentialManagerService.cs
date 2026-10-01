@@ -13,6 +13,9 @@ namespace NOS.Agent.Services
         private static extern bool CredRead(string targetName, uint type, int reservedFlag, out IntPtr credentialPtr);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool CredDelete(string targetName, uint type, int reservedFlag);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern bool CredWrite([In] ref CREDENTIAL userCredential, [In] uint flags);
 
         [DllImport("advapi32.dll", SetLastError = true)]
@@ -52,7 +55,27 @@ namespace NOS.Agent.Services
 
         public Task<string?> GetDeviceTokenAsync()
         {
-            // 1. Try Windows Credential Manager
+            // 1. Try Windows DPAPI Encrypted File in %LOCALAPPDATA%\NOS\token.dat (highest priority for user process)
+            try
+            {
+                var tokenPath = GetEncryptedTokenPath();
+                if (File.Exists(tokenPath))
+                {
+                    var encryptedBytes = File.ReadAllBytes(tokenPath);
+                    var decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
+                    var token = Encoding.UTF8.GetString(decryptedBytes);
+                    if (!string.IsNullOrWhiteSpace(token))
+                    {
+                        return Task.FromResult<string?>(token);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback to Credential Manager
+            }
+
+            // 2. Fallback to Windows Credential Manager
             try
             {
                 if (CredRead(CredentialTarget, CRED_TYPE_GENERIC, 0, out IntPtr credPtr))
@@ -74,26 +97,6 @@ namespace NOS.Agent.Services
                     finally
                     {
                         CredFree(credPtr);
-                    }
-                }
-            }
-            catch
-            {
-                // Fallback to encrypted file storage
-            }
-
-            // 2. Fallback to Windows DPAPI Encrypted File in %LOCALAPPDATA%\NOS\token.dat
-            try
-            {
-                var tokenPath = GetEncryptedTokenPath();
-                if (File.Exists(tokenPath))
-                {
-                    var encryptedBytes = File.ReadAllBytes(tokenPath);
-                    var decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
-                    var token = Encoding.UTF8.GetString(decryptedBytes);
-                    if (!string.IsNullOrWhiteSpace(token))
-                    {
-                        return Task.FromResult<string?>(token);
                     }
                 }
             }
@@ -129,6 +132,35 @@ namespace NOS.Agent.Services
         {
             WriteToken(token);
             return Task.CompletedTask;
+        }
+
+        public Task ClearDeviceTokenAsync()
+        {
+            ClearToken();
+            return Task.CompletedTask;
+        }
+
+        public static void ClearToken()
+        {
+            try
+            {
+                CredDelete(CredentialTarget, CRED_TYPE_GENERIC, 0);
+            }
+            catch { }
+
+            try
+            {
+                var tokenPath = GetEncryptedTokenPath();
+                if (File.Exists(tokenPath)) File.Delete(tokenPath);
+            }
+            catch { }
+
+            try
+            {
+                var commonTokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "token.dat");
+                if (File.Exists(commonTokenPath)) File.Delete(commonTokenPath);
+            }
+            catch { }
         }
 
         public static void WriteToken(string token, string? username = "NOS_Device")

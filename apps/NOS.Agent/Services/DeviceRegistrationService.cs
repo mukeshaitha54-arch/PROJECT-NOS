@@ -25,6 +25,13 @@ namespace NOS.Agent.Services
 
         public static string? CurrentToken { get; private set; }
         public static string? CurrentDeviceId { get; private set; }
+        private static readonly SemaphoreSlim _reRegistrationSignal = new(0, 1);
+
+        public static void RequestReRegistration()
+        {
+            CurrentToken = null;
+            try { _reRegistrationSignal.Release(); } catch { }
+        }
 
         public DeviceRegistrationService(
             IHttpClientFactory httpClientFactory,
@@ -40,23 +47,42 @@ namespace NOS.Agent.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var configuredDeviceId = _configuration["AgentConfiguration:DeviceId"];
-            var savedDeviceId = LoadSavedDeviceId();
-            var effectiveDeviceId = !string.IsNullOrWhiteSpace(configuredDeviceId) ? configuredDeviceId : savedDeviceId;
-
-            var existingToken = await _credentialManager.GetDeviceTokenAsync();
-            var needsRegistration = string.IsNullOrWhiteSpace(effectiveDeviceId) || string.IsNullOrWhiteSpace(existingToken);
-
-            if (!needsRegistration && !string.IsNullOrEmpty(existingToken))
+            while (!stoppingToken.IsCancellationRequested)
             {
-                CurrentToken = existingToken;
-                CurrentDeviceId = effectiveDeviceId;
-                _logger.LogInformation("Agent initialized with existing DeviceId: {DeviceId}", effectiveDeviceId);
-                return;
-            }
+                var configuredDeviceId = _configuration["AgentConfiguration:DeviceId"];
+                var savedDeviceId = LoadSavedDeviceId();
+                var effectiveDeviceId = !string.IsNullOrWhiteSpace(configuredDeviceId) ? configuredDeviceId : savedDeviceId;
 
+                var existingToken = await _credentialManager.GetDeviceTokenAsync();
+                var needsRegistration = string.IsNullOrWhiteSpace(effectiveDeviceId) || string.IsNullOrWhiteSpace(existingToken) || string.IsNullOrWhiteSpace(CurrentToken);
+
+                if (!needsRegistration && !string.IsNullOrEmpty(existingToken))
+                {
+                    CurrentToken = existingToken;
+                    CurrentDeviceId = effectiveDeviceId;
+                    _logger.LogInformation("Agent initialized with existing DeviceId: {DeviceId}", effectiveDeviceId);
+                }
+                else
+                {
+                    await PerformRegistrationAsync(stoppingToken);
+                }
+
+                try
+                {
+                    await _reRegistrationSignal.WaitAsync(stoppingToken);
+                    _logger.LogWarning("Re-registration signal received. Refreshing agent credentials.");
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }
+
+        private async Task PerformRegistrationAsync(CancellationToken stoppingToken)
+        {
             int retryCount = 0;
-            while (!stoppingToken.IsCancellationRequested && needsRegistration)
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
@@ -92,7 +118,6 @@ namespace NOS.Agent.Services
                             UpdateAppsettings(deviceId);
 
                             _logger.LogInformation("Successfully registered device. Assigned DeviceId: {DeviceId}", deviceId);
-                            needsRegistration = false;
                             break;
                         }
                         else
@@ -191,8 +216,8 @@ namespace NOS.Agent.Services
             {
                 var candidatePaths = new[]
                 {
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "device.json"),
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "device.json"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "device.json"),
                     Path.Combine(AppContext.BaseDirectory, "device.json")
                 };
 

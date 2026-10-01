@@ -129,6 +129,9 @@ namespace NOS.Agent.Services
                             response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                         {
                             _eventLogService.WriteEvent(1000, $"Authentication failure for message {message.Id} (Status {response.StatusCode})", EventLogEntryType.Error);
+                            _logger.LogWarning("Authentication failure detected (HTTP 401/403). Clearing invalid credentials and requesting re-registration.");
+                            await _credentialManager.ClearDeviceTokenAsync();
+                            DeviceRegistrationService.RequestReRegistration();
                         }
                         
                         var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";

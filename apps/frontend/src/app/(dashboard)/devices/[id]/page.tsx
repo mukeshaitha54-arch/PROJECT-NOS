@@ -269,22 +269,27 @@ export default function DeviceDetailPage() {
           const tCurrent = new Date(current.timestamp || 0).getTime();
           return tCurrent > tLatest ? current : latest;
         })
-      : null;
+      : device?.latestSnapshot || null;
 
   const currentCpu =
     realtimeData?.cpuUsage ??
     latestSnapshot?.cpuUsage ??
+    device?.latestSnapshot?.cpuUsage ??
     device.lastHeartbeat?.cpuUsage ??
     device.latestHeartbeat?.cpuUsage ??
     0;
   const currentMem =
     realtimeData?.memoryUsagePercent ??
     latestSnapshot?.memoryUsagePercent ??
+    device?.latestSnapshot?.memoryUsagePercent ??
     device.lastHeartbeat?.ramUsage ??
     device.latestHeartbeat?.ramUsage ??
     0;
   const currentDisk =
-    realtimeData?.diskUsagePercent ?? latestSnapshot?.diskUsagePercent ?? 0;
+    realtimeData?.diskUsagePercent ??
+    latestSnapshot?.diskUsagePercent ??
+    device?.latestSnapshot?.diskUsagePercent ??
+    0;
 
   const netUpload =
     realtimeData?.networkUploadSpeed ?? latestSnapshot?.networkUploadSpeed ?? 0;

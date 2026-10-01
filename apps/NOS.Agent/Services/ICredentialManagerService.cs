@@ -6,5 +6,6 @@ namespace NOS.Agent.Services
     {
         Task<string?> GetDeviceTokenAsync();
         Task SetDeviceTokenAsync(string token);
+        Task ClearDeviceTokenAsync();
     }
 }
