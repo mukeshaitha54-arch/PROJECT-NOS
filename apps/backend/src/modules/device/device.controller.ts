@@ -10,6 +10,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  Optional,
 } from "@nestjs/common";
 import { Request } from "express";
 import { SkipThrottle } from "@nestjs/throttler";
@@ -28,6 +29,7 @@ import { DeviceAuthGuard } from "./guards/device-auth.guard";
 import { CurrentDevice } from "./decorators/current-device.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { OptionalJwtAuthGuard } from "../../common/guards/optional-jwt-auth.guard";
 import { AlertRuleEngineService } from "../alerts/alert-rule-engine.service";
 
 @SkipThrottle({ auth: true })
@@ -140,17 +142,21 @@ export class DeviceController {
   }
 
   @Get("status")
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: "Retrieve real-time platform device status and heartbeat roster",
     description:
-      "Returns complete inventory of registered agents, online/offline counts, and diagnostic metrics for operators and management tools.",
+      "Returns devices scoped to the authenticated user's organization. Unauthenticated requests return all devices (legacy).",
   })
   @ApiResponse({
     status: 200,
     description: "Platform heartbeat status retrieved successfully.",
   })
-  async getStatus() {
-    const data = await this.deviceService.getPlatformStatus();
+  async getStatus(@CurrentUser() user?: any) {
+    // Scope to user's organization for data isolation
+    const organizationId =
+      user?.organizationId || user?.organization?.id || undefined;
+    const data = await this.deviceService.getPlatformStatus(organizationId);
     return {
       success: true,
       data,
@@ -199,6 +205,7 @@ export class DeviceController {
   }
 
   @Get(":id")
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary:
       "Retrieve specific registered machine profile by primary DB ID or UUID",
@@ -210,8 +217,10 @@ export class DeviceController {
     description: "Device profile and heartbeat retrieved successfully.",
   })
   @ApiResponse({ status: 404, description: "Device not found in registry." })
-  async getDeviceById(@Param("id") id: string) {
-    const data = await this.deviceService.getDeviceById(id);
+  async getDeviceById(@Param("id") id: string, @CurrentUser() user?: any) {
+    const organizationId =
+      user?.organizationId || user?.organization?.id || undefined;
+    const data = await this.deviceService.getDeviceById(id, organizationId);
     return {
       success: true,
       data,

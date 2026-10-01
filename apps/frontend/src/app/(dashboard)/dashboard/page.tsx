@@ -81,9 +81,10 @@ export default function DashboardPage() {
   });
 
   const [alerts, setAlerts] = useState<RecentAlert[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false); // FIXED: never block initial render
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Recharts fleet sparklines telemetry history
   const [sparklineData, setSparklineData] = useState([
@@ -96,11 +97,10 @@ export default function DashboardPage() {
     { time: "Now", cpu: 24, ram: 48 },
   ]);
 
-  const fetchDashboardData = useCallback(async (showLoader = false) => {
+  const fetchDashboardData = useCallback(async () => {
+    // FIXED: never block UI — always silently refresh in background
     try {
-      if (showLoader) setLoading(true);
-
-      // Fetch platform status and alerts in parallel
+      setLoading(true);
       const [statusRes, alertRes] = await Promise.all([
         apiClient.get<any, any>("/device/status").catch((err) => {
           console.error("Device status error:", err);
@@ -113,7 +113,6 @@ export default function DashboardPage() {
       ]);
 
       if (statusRes?.data) {
-        // Backend returns { success: true, data: { devices: [...], summary: {...} } }
         const payload = statusRes.data.data || statusRes.data;
         const devices = payload.devices || [];
         const total = devices.length || payload.summary?.totalRegistered || 0;
@@ -173,8 +172,19 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // FIXED: initial load fires immediately — no spinner block
   useEffect(() => {
-    fetchDashboardData(true); // Show loader only on initial mount
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // FIXED: 30-second auto-refresh polling fallback (works even without WebSocket)
+  useEffect(() => {
+    pollTimerRef.current = setInterval(() => {
+      fetchDashboardData();
+    }, 30000);
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
   }, [fetchDashboardData]);
 
   // Real-time Socket.IO subscriptions with 5s debounce
@@ -184,7 +194,7 @@ export default function DashboardPage() {
     const triggerDebouncedRefresh = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
-        fetchDashboardData(false); // Silent refresh — no spinner
+        fetchDashboardData(); // Silent refresh — no spinner
       }, 500);
     };
 

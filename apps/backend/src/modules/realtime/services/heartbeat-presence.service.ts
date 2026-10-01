@@ -45,6 +45,13 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
     ramUsage: number,
     uptime: number,
     correlationId?: string,
+    // Extended dynamic metrics
+    runningProcesses?: number,
+    activeConnections?: number,
+    diskReadSpeed?: number,
+    diskWriteSpeed?: number,
+    networkUploadSpeed?: number,
+    networkDownloadSpeed?: number,
   ): Promise<void> {
     const now = Date.now();
     const wasOnline = this.presenceService.isDeviceOnline(deviceId);
@@ -52,7 +59,6 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
     this.lastHeartbeatTimes.set(deviceId, now);
     this.presenceService.updateDeviceOnline(deviceId, ipAddress, new Date(now));
 
-    // SPL Feature 18: Offline Detection / State Transition Recovery
     if (!wasOnline) {
       this.logger.log(
         `Device [${deviceId}] re-established heartbeat. Transitioning to ONLINE.`,
@@ -64,7 +70,7 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
       );
     }
 
-    const heartbeatEvent: RealtimeHeartbeatEvent = {
+    const heartbeatEvent: RealtimeHeartbeatEvent & Record<string, any> = {
       deviceId,
       cpuUsage,
       ramUsage,
@@ -72,6 +78,13 @@ export class HeartbeatPresenceService implements OnModuleDestroy {
       ipAddress,
       timestamp: new Date(now).toISOString(),
       status: "ONLINE",
+      // Extended metrics — included when available
+      ...(runningProcesses !== undefined && { runningProcesses }),
+      ...(activeConnections !== undefined && { activeConnections }),
+      ...(diskReadSpeed !== undefined && { diskReadSpeed }),
+      ...(diskWriteSpeed !== undefined && { diskWriteSpeed }),
+      ...(networkUploadSpeed !== undefined && { networkUploadSpeed }),
+      ...(networkDownloadSpeed !== undefined && { networkDownloadSpeed }),
     };
 
     await this.socketPublisher.emitHeartbeatReceived(

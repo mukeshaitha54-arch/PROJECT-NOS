@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Management;
+using System.Net.NetworkInformation;
+using System.ServiceProcess;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -44,7 +46,7 @@ namespace NOS.Agent.Services
             {
                 try
                 {
-                    int intervalSeconds = _configuration.HeartbeatIntervalSeconds > 0 ? _configuration.HeartbeatIntervalSeconds : 60;
+                    int intervalSeconds = _configuration.HeartbeatIntervalSeconds > 0 ? _configuration.HeartbeatIntervalSeconds : 30;
                     await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), stoppingToken);
                     await SendHeartbeatAsync(stoppingToken);
                 }
@@ -68,11 +70,15 @@ namespace NOS.Agent.Services
                 }
 
                 await _outboxQueue.EnqueueAsync("heartbeat", payload, 1, stoppingToken);
-                // BUG 2 FIX: Round to 2 decimal places in log
                 _logger.LogInformation(
-                    "Enqueued heartbeat. CPU: {CpuUsage}%, RAM: {RamUsage}%",
+                    "Enqueued heartbeat. CPU: {CpuUsage}%, RAM: {RamUsage}%, Procs: {Procs}, DiskR: {DR:F2} MB/s, DiskW: {DW:F2} MB/s, NetUp: {NU:F2} Mbps, NetDn: {ND:F2} Mbps",
                     Math.Round(payload.CpuUsage, 2),
-                    Math.Round(payload.RamUsage, 2));
+                    Math.Round(payload.RamUsage, 2),
+                    payload.RunningProcesses,
+                    payload.DiskReadSpeed,
+                    payload.DiskWriteSpeed,
+                    payload.NetworkUploadSpeed,
+                    payload.NetworkDownloadSpeed);
             }
             catch (Exception ex)
             {
@@ -81,8 +87,7 @@ namespace NOS.Agent.Services
         }
 
         /// <summary>
-        /// BUG 1 + 4 FIX: Average 3 samples over 300ms using Win32_PerfFormattedData_PerfOS_Processor,
-        /// remove min/max outliers, round to 2 decimal places, and clamp to 0-100.
+        /// Average 3 CPU samples over 300ms, remove outliers, clamp to 0-100.
         /// </summary>
         private double GetCpuUsageAveraged()
         {
@@ -93,17 +98,15 @@ namespace NOS.Agent.Services
                 {
                     using var searcher = new ManagementObjectSearcher(
                         "SELECT PercentProcessorTime FROM Win32_PerfFormattedData_PerfOS_Processor WHERE Name='_Total'");
-                    
+
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         var cpu = obj["PercentProcessorTime"];
                         if (cpu != null)
-                        {
                             samples.Add(Convert.ToDouble(cpu));
-                        }
                     }
 
-                    if (i < 2) Thread.Sleep(150); // 150ms between samples
+                    if (i < 2) Thread.Sleep(100);
                 }
             }
             catch (Exception ex)
@@ -115,7 +118,7 @@ namespace NOS.Agent.Services
             {
                 try
                 {
-                    using var pc = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
+                    using var pc = new PerformanceCounter("Processor", "% Processor Time", "_Total");
                     pc.NextValue();
                     Thread.Sleep(300);
                     return Math.Clamp(Math.Round((double)pc.NextValue(), 2), 0.0, 100.0);
@@ -127,16 +130,106 @@ namespace NOS.Agent.Services
                 }
             }
 
-
-            // Remove min/max outliers if we have 3 or more samples
             if (samples.Count >= 3)
             {
                 samples.Remove(samples.Min());
                 samples.Remove(samples.Max());
             }
 
-            double avg = samples.Average();
-            return Math.Clamp(Math.Round(avg, 2), 0.0, 100.0);
+            return Math.Clamp(Math.Round(samples.Average(), 2), 0.0, 100.0);
+        }
+
+        /// <summary>
+        /// Read disk read/write bytes/sec via PerformanceCounter with a 500ms sample for accuracy.
+        /// Returns values in MB/s.
+        /// </summary>
+        private (double readMbs, double writeMbs) GetDiskSpeeds()
+        {
+            try
+            {
+                using var readCounter = new PerformanceCounter("PhysicalDisk", "Disk Read Bytes/sec", "_Total", true);
+                using var writeCounter = new PerformanceCounter("PhysicalDisk", "Disk Write Bytes/sec", "_Total", true);
+
+                readCounter.NextValue();
+                writeCounter.NextValue();
+                Thread.Sleep(500); // 500ms for accurate sample
+
+                double readMbs = Math.Round(readCounter.NextValue() / (1024.0 * 1024.0), 3);
+                double writeMbs = Math.Round(writeCounter.NextValue() / (1024.0 * 1024.0), 3);
+                return (readMbs, writeMbs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect disk speed counters.");
+                return (0.0, 0.0);
+            }
+        }
+
+        /// <summary>
+        /// Get network upload/download speed in Mbps (megabits per second).
+        /// Uses PerformanceCounterCategory to reliably find the active NIC instance.
+        /// </summary>
+        private (double uploadMbps, double downloadMbps) GetNetworkSpeeds()
+        {
+            try
+            {
+                // Find the best active NIC
+                var activeNic = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(ni => ni.OperationalStatus == OperationalStatus.Up
+                              && ni.NetworkInterfaceType != NetworkInterfaceType.Loopback
+                              && ni.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                    .OrderByDescending(ni => ni.Speed)
+                    .FirstOrDefault();
+
+                if (activeNic == null) return (0.0, 0.0);
+
+                // Enumerate actual PerformanceCounter instance names to find our NIC
+                var cat = new PerformanceCounterCategory("Network Interface");
+                string[] instances = cat.GetInstanceNames();
+
+                // Fuzzy match: normalize both sides (strip special chars) and find best match
+                string nicDescNorm = NormalizeNicName(activeNic.Description);
+                string? instanceName = instances.FirstOrDefault(inst =>
+                    NormalizeNicName(inst).Equals(nicDescNorm, StringComparison.OrdinalIgnoreCase));
+
+                // Fallback: pick first non-loopback instance
+                if (string.IsNullOrEmpty(instanceName))
+                {
+                    instanceName = instances.FirstOrDefault(inst =>
+                        !inst.Contains("Loopback", StringComparison.OrdinalIgnoreCase) &&
+                        !inst.Contains("WFP", StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (string.IsNullOrEmpty(instanceName)) return (0.0, 0.0);
+
+                using var sentCounter = new PerformanceCounter("Network Interface", "Bytes Sent/sec", instanceName, true);
+                using var recvCounter = new PerformanceCounter("Network Interface", "Bytes Received/sec", instanceName, true);
+
+                sentCounter.NextValue();
+                recvCounter.NextValue();
+                Thread.Sleep(500); // 500ms sample
+
+                double bytesSent = sentCounter.NextValue();
+                double bytesRecv = recvCounter.NextValue();
+
+                // Convert bytes/sec to Mbps (megabits = *8 / 1,000,000)
+                double uploadMbps = Math.Round((bytesSent * 8.0) / 1_000_000.0, 3);
+                double downloadMbps = Math.Round((bytesRecv * 8.0) / 1_000_000.0, 3);
+
+                return (uploadMbps, downloadMbps);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect network speed counters.");
+                return (0.0, 0.0);
+            }
+        }
+
+        private static string NormalizeNicName(string name)
+        {
+            return System.Text.RegularExpressions.Regex
+                .Replace(name, @"[^a-zA-Z0-9]", "")
+                .ToLowerInvariant();
         }
 
         private HeartbeatPayload? CollectHeartbeatData()
@@ -145,13 +238,16 @@ namespace NOS.Agent.Services
             double ramUsage = 0.0;
             double uptime = 0.0;
             string ipAddress = "Unknown";
+            int runningProcesses = 0;
+            int activeConnections = 0;
 
             try
             {
-                // BUG 1 + 4 FIX: Use averaged multi-sample CPU read
+                // CPU (averaged 3 samples)
                 try { cpuUsage = GetCpuUsageAveraged(); }
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect CPU usage."); }
 
+                // RAM + uptime from WMI
                 try
                 {
                     using var searcher = new ManagementObjectSearcher(
@@ -164,7 +260,6 @@ namespace NOS.Agent.Services
                             double totalRam = Convert.ToDouble(os["TotalVisibleMemorySize"]);
                             double freeRam = Convert.ToDouble(os["FreePhysicalMemory"]);
                             if (totalRam > 0)
-                                // BUG 2 FIX: Round RAM to 2 decimal places
                                 ramUsage = Math.Round(((totalRam - freeRam) / totalRam) * 100.0, 2);
                         }
                         if (os["LastBootUpTime"] != null)
@@ -177,13 +272,14 @@ namespace NOS.Agent.Services
                 }
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect RAM/uptime from WMI."); }
 
+                // RAM fallback
                 if (ramUsage == 0.0)
                 {
                     try
                     {
                         var gcInfo = GC.GetGCMemoryInfo();
                         double totalBytes = gcInfo.TotalAvailableMemoryBytes;
-                        using var pcMem = new System.Diagnostics.PerformanceCounter("Memory", "Available Bytes");
+                        using var pcMem = new PerformanceCounter("Memory", "Available Bytes");
                         double availableBytes = (double)pcMem.NextValue();
                         if (totalBytes > 0)
                             ramUsage = Math.Clamp(Math.Round(((totalBytes - availableBytes) / totalBytes) * 100.0, 2), 0.0, 100.0);
@@ -194,6 +290,7 @@ namespace NOS.Agent.Services
                     }
                 }
 
+                // IP address
                 try
                 {
                     using var searcher = new ManagementObjectSearcher(
@@ -204,6 +301,24 @@ namespace NOS.Agent.Services
                 }
                 catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect IP address."); }
 
+                // Running process count (live, dynamic)
+                try { runningProcesses = Process.GetProcesses().Length; }
+                catch (Exception ex) { _logger.LogWarning(ex, "Failed to get process count."); }
+
+                // Active TCP connections
+                try
+                {
+                    var globalProps = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+                    activeConnections = globalProps.GetActiveTcpConnections().Length;
+                }
+                catch (Exception ex) { _logger.LogWarning(ex, "Failed to get TCP connections."); }
+
+                // Disk speeds (MB/s)
+                var (diskRead, diskWrite) = GetDiskSpeeds();
+
+                // Network speeds (Mbps)
+                var (netUp, netDown) = GetNetworkSpeeds();
+
                 return new HeartbeatPayload
                 {
                     DeviceId = DeviceRegistrationService.CurrentDeviceId,
@@ -213,6 +328,12 @@ namespace NOS.Agent.Services
                     RamUsage = ramUsage,
                     Uptime = uptime,
                     IpAddress = string.IsNullOrEmpty(ipAddress) ? "0.0.0.0" : ipAddress,
+                    RunningProcesses = runningProcesses,
+                    ActiveConnections = activeConnections,
+                    DiskReadSpeed = diskRead,
+                    DiskWriteSpeed = diskWrite,
+                    NetworkUploadSpeed = netUp,
+                    NetworkDownloadSpeed = netDown,
                 };
             }
             catch (Exception ex)
@@ -231,6 +352,13 @@ namespace NOS.Agent.Services
             public double RamUsage { get; set; } = 0.0;
             public double Uptime { get; set; } = 0.0;
             public string IpAddress { get; set; } = "0.0.0.0";
+            // === New dynamic metrics (30s update cycle) ===
+            public int RunningProcesses { get; set; } = 0;
+            public int ActiveConnections { get; set; } = 0;
+            public double DiskReadSpeed { get; set; } = 0.0;   // MB/s
+            public double DiskWriteSpeed { get; set; } = 0.0;  // MB/s
+            public double NetworkUploadSpeed { get; set; } = 0.0;   // Mbps
+            public double NetworkDownloadSpeed { get; set; } = 0.0; // Mbps
         }
     }
 }

@@ -569,6 +569,48 @@ namespace NOS.Agent
                 Console.WriteLine(" [✓] Configuration and credentials saved securely.");
                 Console.ResetColor();
                 Console.WriteLine();
+
+                // Auto-install as Windows Service so agent persists after terminal closes
+                if (OperatingSystem.IsWindows() && Environment.UserInteractive)
+                {
+                    try
+                    {
+                        // Check if service already exists
+                        bool serviceExists = false;
+                        try
+                        {
+                            using var existingService = new System.ServiceProcess.ServiceController(ServiceName);
+                            _ = existingService.Status; // throws if not found
+                            serviceExists = true;
+                        }
+                        catch { }
+
+                        if (!serviceExists)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine(" [→] Installing NOS Agent as Windows Service for background persistence...");
+                            Console.ResetColor();
+                            InstallService();
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            Console.WriteLine(" [✓] Windows Service already installed. Restarting to apply new credentials...");
+                            Console.ResetColor();
+                            RunProcess("sc.exe", $"stop \"{ServiceName}\"");
+                            System.Threading.Thread.Sleep(2000);
+                            RunProcess("sc.exe", $"start \"{ServiceName}\"");
+                        }
+                    }
+                    catch (Exception svcEx)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($" [!] Could not auto-install Windows Service (requires Administrator): {svcEx.Message}");
+                        Console.WriteLine($"     Run: NOS.Agent.exe --install  to install manually as Administrator.");
+                        Console.ResetColor();
+                    }
+                }
+
                 return 0;
             }
             catch (Exception ex)

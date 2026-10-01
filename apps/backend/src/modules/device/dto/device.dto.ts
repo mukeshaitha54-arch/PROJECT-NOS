@@ -165,4 +165,60 @@ export class HeartbeatDto implements HeartbeatPayload {
   @IsOptional()
   @IsString()
   status?: string;
+
+  // === Extended dynamic metrics (added in v1.1) ===
+
+  @ApiPropertyOptional({
+    example: 214,
+    description: "Number of running OS processes",
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  runningProcesses?: number;
+
+  @ApiPropertyOptional({
+    example: 48,
+    description: "Number of active TCP connections",
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  activeConnections?: number;
+
+  @ApiPropertyOptional({
+    example: 12.5,
+    description: "Disk read speed in MB/s",
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  diskReadSpeed?: number;
+
+  @ApiPropertyOptional({
+    example: 3.2,
+    description: "Disk write speed in MB/s",
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  diskWriteSpeed?: number;
+
+  @ApiPropertyOptional({
+    example: 1.4,
+    description: "Network upload speed in Mbps",
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  networkUploadSpeed?: number;
+
+  @ApiPropertyOptional({
+    example: 8.7,
+    description: "Network download speed in Mbps",
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  networkDownloadSpeed?: number;
 }

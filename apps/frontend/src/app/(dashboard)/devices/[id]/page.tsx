@@ -146,7 +146,7 @@ export default function DeviceDetailPage() {
       }
     });
 
-    // Also update live CPU/RAM from heartbeats (arrive every 60s, before telemetry)
+    // Also update live CPU/RAM and extended metrics from heartbeats (arrive every 30s)
     const cleanupHeartbeat = on("heartbeat.received", (payload: any) => {
       if (
         payload.deviceId === id ||
@@ -155,9 +155,19 @@ export default function DeviceDetailPage() {
       ) {
         setRealtimeData((prev: any) => ({
           ...prev,
-          cpuUsage: payload.cpuUsage,
-          memoryUsagePercent: payload.ramUsage,
-          ipAddress: payload.ipAddress,
+          cpuUsage: payload.cpuUsage ?? prev?.cpuUsage,
+          memoryUsagePercent: payload.ramUsage ?? prev?.memoryUsagePercent,
+          ipAddress: payload.ipAddress ?? prev?.ipAddress,
+          // Extended metrics now broadcast with every heartbeat
+          runningProcesses: payload.runningProcesses ?? prev?.runningProcesses,
+          activeConnections:
+            payload.activeConnections ?? prev?.activeConnections,
+          diskReadSpeed: payload.diskReadSpeed ?? prev?.diskReadSpeed,
+          diskWriteSpeed: payload.diskWriteSpeed ?? prev?.diskWriteSpeed,
+          networkUploadSpeed:
+            payload.networkUploadSpeed ?? prev?.networkUploadSpeed,
+          networkDownloadSpeed:
+            payload.networkDownloadSpeed ?? prev?.networkDownloadSpeed,
         }));
         setTimeUntilUpdate(30);
       }

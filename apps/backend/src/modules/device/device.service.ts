@@ -243,6 +243,13 @@ export class DeviceService {
       dto.cpuUsage,
       dto.ramUsage,
       dto.uptime,
+      undefined, // correlationId
+      dto.runningProcesses,
+      dto.activeConnections,
+      dto.diskReadSpeed,
+      dto.diskWriteSpeed,
+      dto.networkUploadSpeed,
+      dto.networkDownloadSpeed,
     );
 
     // Emit domain event — timeline and realtime handlers subscribe independently
@@ -287,8 +294,11 @@ export class DeviceService {
     };
   }
 
-  async getPlatformStatus(): Promise<DeviceStatusResponse> {
-    const devices = await this.deviceRepository.findAll();
+  async getPlatformStatus(
+    organizationId?: string,
+  ): Promise<DeviceStatusResponse> {
+    // FIX: Filter devices by organizationId for data isolation
+    const devices = await this.deviceRepository.findAll(organizationId);
     const now = new Date().getTime();
 
     // Single batch query — fetch latest heartbeat for ALL devices at once (no N+1)
@@ -361,7 +371,10 @@ export class DeviceService {
     };
   }
 
-  async getDeviceById(id: string): Promise<
+  async getDeviceById(
+    id: string,
+    organizationId?: string,
+  ): Promise<
     SharedDevice & {
       lastHeartbeat?: SharedHeartbeat | null;
       latestHeartbeat?: SharedHeartbeat | null;
@@ -369,6 +382,16 @@ export class DeviceService {
   > {
     const device = await this.deviceRepository.findById(id);
     if (!device) {
+      throw new NotFoundException(
+        `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
+      );
+    }
+    // FIX: Enforce org isolation — if caller provides organizationId, validate ownership
+    if (
+      organizationId &&
+      device.organizationId &&
+      device.organizationId !== organizationId
+    ) {
       throw new NotFoundException(
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
       );
