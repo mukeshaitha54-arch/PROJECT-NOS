@@ -267,9 +267,12 @@ export class DeviceService {
     };
   }
 
-  async getDeviceProfile(
-    device: Device,
-  ): Promise<SharedDevice & { lastHeartbeat?: SharedHeartbeat | null }> {
+  async getDeviceProfile(device: Device): Promise<
+    SharedDevice & {
+      lastHeartbeat?: SharedHeartbeat | null;
+      latestHeartbeat?: SharedHeartbeat | null;
+    }
+  > {
     const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(
       device.id,
     );
@@ -358,9 +361,12 @@ export class DeviceService {
     };
   }
 
-  async getDeviceById(
-    id: string,
-  ): Promise<SharedDevice & { lastHeartbeat?: SharedHeartbeat | null }> {
+  async getDeviceById(id: string): Promise<
+    SharedDevice & {
+      lastHeartbeat?: SharedHeartbeat | null;
+      latestHeartbeat?: SharedHeartbeat | null;
+    }
+  > {
     const device = await this.deviceRepository.findById(id);
     if (!device) {
       throw new NotFoundException(
