@@ -82,6 +82,8 @@ export function DeviceCard({
     device.heartbeats?.[0]?.ipAddress ??
     "—";
 
+  const isOnline = device.status === "ONLINE";
+
   return (
     <Link href={`/devices/${device.id}`}>
       <Card className="hover:border-[#C8A96E]/50 transition-colors cursor-pointer bg-black/40 border-gray-800 h-full flex flex-col">
