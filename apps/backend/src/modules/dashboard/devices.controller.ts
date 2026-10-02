@@ -265,48 +265,46 @@ export class DevicesController {
     const live =
       deviceLiveProcessesStore.get(device.id) ||
       (device.uuid ? deviceLiveProcessesStore.get(device.uuid) : null);
-    const validLive = live?.filter(
-      (p: any) =>
-        p &&
-        (p.pid !== undefined || p.Pid !== undefined) &&
-        (p.name || p.Name || p.processName || p.ProcessName),
-    );
-    if (validLive && validLive.length > 0) {
-      return {
-        success: true,
-        data: validLive,
-      };
-    }
 
-    // 2. Fallback: retrieve running services from inventory as processes
-    const services = await this.prisma.windowsService.findMany({
-      where: {
-        deviceInventory: {
-          OR: [
-            { deviceId: device.id },
-            ...(device.uuid ? [{ deviceId: device.uuid }] : []),
-          ],
-        },
-        status: "Running",
-      },
-      take: 50,
-      orderBy: { displayName: "asc" },
-    });
+    if (live && Array.isArray(live) && live.length > 0) {
+      const validLive = live
+        .filter(
+          (p: any) =>
+            p &&
+            (p.pid !== undefined ||
+              p.Pid !== undefined ||
+              p.processId !== undefined) &&
+            (p.name || p.Name || p.processName || p.ProcessName),
+        )
+        .map((p: any) => ({
+          pid: Number(p.pid ?? p.Pid ?? p.processId),
+          name: String(
+            p.name ?? p.Name ?? p.processName ?? p.ProcessName ?? "process",
+          ),
+          processName: String(
+            p.processName ?? p.ProcessName ?? p.name ?? p.Name ?? "process",
+          ),
+          memoryBytes: Number(p.memoryBytes ?? p.MemoryBytes ?? 0),
+          memoryMb: Number(
+            p.memoryMb ??
+              p.MemoryMb ??
+              (p.memoryBytes || p.MemoryBytes
+                ? Math.round(
+                    ((p.memoryBytes ?? p.MemoryBytes) / (1024 * 1024)) * 10,
+                  ) / 10
+                : 0),
+          ),
+          cpuTimeSec: Number(p.cpuTimeSec ?? p.CpuTimeSec ?? 0),
+          threads: Number(p.threads ?? p.Threads ?? 1),
+          status: String(p.status ?? p.Status ?? "Running"),
+        }));
 
-    if (services.length > 0) {
-      return {
-        success: true,
-        data: services.map((s, idx) => ({
-          pid: 1000 + idx,
-          name: `${s.serviceName}.exe`,
-          processName: s.displayName,
-          memoryMb: 24.5,
-          memoryBytes: 25690112,
-          cpuTimeSec: 0,
-          threads: 4,
-          status: "Running",
-        })),
-      };
+      if (validLive.length > 0) {
+        return {
+          success: true,
+          data: validLive,
+        };
+      }
     }
 
     return {

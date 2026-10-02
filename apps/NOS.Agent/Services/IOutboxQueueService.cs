@@ -14,5 +14,6 @@ namespace NOS.Agent.Services
         Task<int> GetPendingCountAsync(CancellationToken cancellationToken = default);
         Task PurgeOldMessagesAsync(int maxAgeDays, CancellationToken cancellationToken = default);
         Task PurgeDeadLettersAsync(CancellationToken cancellationToken = default);
+        Task PurgeStaleEphemeralMessagesAsync(CancellationToken cancellationToken = default);
     }
 }

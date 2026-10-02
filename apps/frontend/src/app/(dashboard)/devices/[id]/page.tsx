@@ -194,8 +194,10 @@ export default function DeviceDetailPage() {
         payload.deviceId === device?.id ||
         payload.deviceId === device?.uuid
       ) {
-        setRealtimeData(payload);
-        setTelemetryHistory((prev) => [...prev, payload].slice(-60));
+        if (!isTelemetryPaused) {
+          setRealtimeData(payload);
+          setTelemetryHistory((prev) => [...prev, payload].slice(-60));
+        }
         if (
           payload.processes &&
           Array.isArray(payload.processes) &&
@@ -337,6 +339,10 @@ export default function DeviceDetailPage() {
       setDevice((prev: any) =>
         prev ? { ...prev, telemetryPaused: next } : prev,
       );
+      if (!next) {
+        // Resuming: show only freshly collected info ("there is no old concept")
+        setTelemetryHistory([]);
+      }
       toast.success(
         next
           ? "Telemetry collection paused for this device."

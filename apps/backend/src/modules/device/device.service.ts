@@ -245,16 +245,42 @@ export class DeviceService {
       Array.isArray(dto.processes) &&
       dto.processes.length > 0
     ) {
-      const validProcs = dto.processes.filter(
-        (p: any) =>
-          p &&
-          (p.pid !== undefined || p.Pid !== undefined) &&
-          (p.name || p.Name || p.processName || p.ProcessName),
-      );
-      if (validProcs.length > 0) {
-        deviceLiveProcessesStore.set(device.id, validProcs);
+      const cleanProcs = dto.processes
+        .filter(
+          (p: any) =>
+            p &&
+            (p.pid !== undefined ||
+              p.Pid !== undefined ||
+              p.processId !== undefined) &&
+            (p.name || p.Name || p.processName || p.ProcessName),
+        )
+        .map((p: any) => ({
+          pid: Number(p.pid ?? p.Pid ?? p.processId),
+          name: String(
+            p.name ?? p.Name ?? p.processName ?? p.ProcessName ?? "process",
+          ),
+          processName: String(
+            p.processName ?? p.ProcessName ?? p.name ?? p.Name ?? "process",
+          ),
+          memoryBytes: Number(p.memoryBytes ?? p.MemoryBytes ?? 0),
+          memoryMb: Number(
+            p.memoryMb ??
+              p.MemoryMb ??
+              (p.memoryBytes || p.MemoryBytes
+                ? Math.round(
+                    ((p.memoryBytes ?? p.MemoryBytes) / (1024 * 1024)) * 10,
+                  ) / 10
+                : 0),
+          ),
+          cpuTimeSec: Number(p.cpuTimeSec ?? p.CpuTimeSec ?? 0),
+          threads: Number(p.threads ?? p.Threads ?? 1),
+          status: String(p.status ?? p.Status ?? "Running"),
+        }));
+
+      if (cleanProcs.length > 0) {
+        deviceLiveProcessesStore.set(device.id, cleanProcs);
         if (device.uuid) {
-          deviceLiveProcessesStore.set(device.uuid, validProcs);
+          deviceLiveProcessesStore.set(device.uuid, cleanProcs);
         }
       }
     }

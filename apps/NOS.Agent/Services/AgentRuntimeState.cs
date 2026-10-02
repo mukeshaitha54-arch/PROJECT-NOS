@@ -6,7 +6,7 @@ namespace NOS.Agent.Services
     /// </summary>
     public static class AgentRuntimeState
     {
-        private static volatile bool _isTelemetryPaused = false;
+        private static volatile bool _isTelemetryPaused = true;
 
         public static bool IsTelemetryPaused
         {

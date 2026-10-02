@@ -44,10 +44,26 @@ namespace NOS.Agent.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            try
+            {
+                // Freshness policy on startup: purge any stale telemetry or heartbeats accumulated during prior downtime/pause
+                await _queueService.PurgeStaleEphemeralMessagesAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to purge stale ephemeral messages on startup.");
+            }
+
+            while (string.IsNullOrEmpty(DeviceRegistrationService.CurrentToken) && !stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(500, stoppingToken);
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
+                    await _queueService.PurgeStaleEphemeralMessagesAsync(stoppingToken);
                     await DispatchPendingMessagesAsync(stoppingToken);
                 }
                 catch (Exception ex)
@@ -76,15 +92,14 @@ namespace NOS.Agent.Services
             var messages = await _queueService.GetPendingMessagesAsync(batchSize, cancellationToken);
             if (messages.Count == 0) return;
 
-            var token = await _credentialManager.GetDeviceTokenAsync();
-            // Fallback to in-memory token if credential manager read fails
+            var token = DeviceRegistrationService.CurrentToken;
             if (string.IsNullOrEmpty(token))
             {
-                token = DeviceRegistrationService.CurrentToken;
+                token = await _credentialManager.GetDeviceTokenAsync();
             }
             if (string.IsNullOrEmpty(token))
             {
-                _eventLogService.WriteEvent(1000, "Authentication failure: No device token available", EventLogEntryType.Error);
+                _logger.LogWarning("No device token available yet. Waiting for endpoint registration.");
                 return;
             }
 
@@ -93,6 +108,31 @@ namespace NOS.Agent.Services
                 if (cancellationToken.IsCancellationRequested) break;
                 if (DateTime.UtcNow < _circuitBreakerUntil) break;
 
+                // 1. If telemetry is paused, discard any pending telemetry message immediately (do not send to server)
+                if (message.MessageType == "telemetry" && AgentRuntimeState.IsTelemetryPaused)
+                {
+                    _logger.LogInformation("Discarding telemetry message {Id} because telemetry is currently paused.", message.Id);
+                    await _queueService.MarkDeliveredAsync(message.Id, cancellationToken);
+                    continue;
+                }
+
+                // 2. Telemetry freshness rule ("there is no old concept"):
+                // Real-time telemetry older than 3 minutes must be dropped, not replayed
+                if (message.MessageType == "telemetry" && message.CreatedAt < DateTime.UtcNow.AddMinutes(-3))
+                {
+                    _logger.LogInformation("Discarding stale telemetry message {Id} from {CreatedAt} (freshness policy: real-time metrics only).", message.Id, message.CreatedAt);
+                    await _queueService.MarkDeliveredAsync(message.Id, cancellationToken);
+                    continue;
+                }
+
+                // 3. Heartbeat freshness rule: discard heartbeats older than 5 minutes
+                if (message.MessageType == "heartbeat" && message.CreatedAt < DateTime.UtcNow.AddMinutes(-5))
+                {
+                    _logger.LogInformation("Discarding stale heartbeat message {Id} from {CreatedAt}.", message.Id, message.CreatedAt);
+                    await _queueService.MarkDeliveredAsync(message.Id, cancellationToken);
+                    continue;
+                }
+
                 string endpoint = GetEndpointForType(message.MessageType);
                 string url = BuildApiUrl(endpoint);
 
@@ -100,11 +140,18 @@ namespace NOS.Agent.Services
                 var httpClient = _httpClientFactory.CreateClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(30);
 
+                var activeToken = DeviceRegistrationService.CurrentToken ?? token;
+                if (string.IsNullOrEmpty(activeToken))
+                {
+                    _logger.LogWarning("Message dispatch aborted: active token is empty.");
+                    break;
+                }
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(message.Payload, Encoding.UTF8, "application/json")
                 };
-                request.Headers.Add("X-Device-Token", token);
+                request.Headers.Add("X-Device-Token", activeToken);
                 request.Headers.Add("X-Idempotency-Key", message.Id.ToString());
 
                 try
@@ -159,10 +206,14 @@ namespace NOS.Agent.Services
                             _logger.LogWarning("Authentication failure detected (HTTP 401/403). Clearing invalid credentials and requesting re-registration.");
                             await _credentialManager.ClearDeviceTokenAsync();
                             DeviceRegistrationService.RequestReRegistration();
+                            var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";
+                            await _queueService.MarkFailedAsync(message.Id, error, cancellationToken);
+                            ResetCircuitBreaker();
+                            break; // Stop remaining batch to avoid cascading failures while re-registering
                         }
                         
-                        var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";
-                        await _queueService.MarkFailedAsync(message.Id, error, cancellationToken);
+                        var generalError = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";
+                        await _queueService.MarkFailedAsync(message.Id, generalError, cancellationToken);
                         ResetCircuitBreaker();
                     }
                     else // 5xx

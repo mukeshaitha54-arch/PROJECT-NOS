@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
+  IsArray,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -7,7 +8,9 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from "class-validator";
+import { Type } from "class-transformer";
 import {
   DeviceStatus,
   RegisterDevicePayload,
@@ -88,6 +91,48 @@ export class RegisterDeviceDto implements RegisterDevicePayload {
   @IsOptional()
   @IsString()
   organizationId?: string;
+}
+
+export class HeartbeatProcessDto {
+  @ApiPropertyOptional({ example: 1234 })
+  @IsOptional()
+  @IsNumber()
+  pid?: number;
+
+  @ApiPropertyOptional({ example: "chrome.exe" })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ example: "chrome" })
+  @IsOptional()
+  @IsString()
+  processName?: string;
+
+  @ApiPropertyOptional({ example: 104857600 })
+  @IsOptional()
+  @IsNumber()
+  memoryBytes?: number;
+
+  @ApiPropertyOptional({ example: 100.5 })
+  @IsOptional()
+  @IsNumber()
+  memoryMb?: number;
+
+  @ApiPropertyOptional({ example: 15.2 })
+  @IsOptional()
+  @IsNumber()
+  cpuTimeSec?: number;
+
+  @ApiPropertyOptional({ example: 12 })
+  @IsOptional()
+  @IsNumber()
+  threads?: number;
+
+  @ApiPropertyOptional({ example: "Running" })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }
 
 export class HeartbeatDto implements HeartbeatPayload {
@@ -224,7 +269,11 @@ export class HeartbeatDto implements HeartbeatPayload {
 
   @ApiPropertyOptional({
     description: "Snapshot of active top OS processes",
+    type: [HeartbeatProcessDto],
   })
   @IsOptional()
-  processes?: any[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HeartbeatProcessDto)
+  processes?: HeartbeatProcessDto[];
 }

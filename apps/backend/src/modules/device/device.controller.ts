@@ -32,7 +32,8 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../../common/guards/optional-jwt-auth.guard";
 import { AlertRuleEngineService } from "../alerts/alert-rule-engine.service";
 
-@SkipThrottle({ auth: true })
+@SkipThrottle()
+@SkipThrottle({ default: true, auth: true, telemetry: true })
 @ApiTags("Device Onboarding & Heartbeat (Phase 2A)")
 @Controller("device")
 export class DeviceController {

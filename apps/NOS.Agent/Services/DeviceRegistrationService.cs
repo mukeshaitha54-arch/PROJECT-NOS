@@ -47,14 +47,15 @@ namespace NOS.Agent.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            bool forceRegistration = false;
             while (!stoppingToken.IsCancellationRequested)
             {
                 var configuredDeviceId = _configuration["AgentConfiguration:DeviceId"];
                 var savedDeviceId = LoadSavedDeviceId();
                 var effectiveDeviceId = !string.IsNullOrWhiteSpace(configuredDeviceId) ? configuredDeviceId : savedDeviceId;
 
-                var existingToken = await _credentialManager.GetDeviceTokenAsync();
-                var needsRegistration = string.IsNullOrWhiteSpace(effectiveDeviceId) || string.IsNullOrWhiteSpace(existingToken) || string.IsNullOrWhiteSpace(CurrentToken);
+                var existingToken = forceRegistration ? null : await _credentialManager.GetDeviceTokenAsync();
+                var needsRegistration = forceRegistration || string.IsNullOrWhiteSpace(effectiveDeviceId) || string.IsNullOrWhiteSpace(existingToken);
 
                 if (!needsRegistration && !string.IsNullOrEmpty(existingToken))
                 {
@@ -67,10 +68,13 @@ namespace NOS.Agent.Services
                     await PerformRegistrationAsync(stoppingToken);
                 }
 
+                forceRegistration = false;
+
                 try
                 {
                     await _reRegistrationSignal.WaitAsync(stoppingToken);
                     _logger.LogWarning("Re-registration signal received. Refreshing agent credentials.");
+                    forceRegistration = true;
                 }
                 catch (OperationCanceledException)
                 {
@@ -182,7 +186,9 @@ namespace NOS.Agent.Services
                 machineUuid = new Guid(hashBytes.Take(16).ToArray()).ToString();
             }
 
-            var apiKey = _configuration["AgentConfiguration:ApiKey"] ?? string.Empty;
+            var apiKey = _configuration["AgentConfiguration:RegistrationKey"] 
+                      ?? _configuration["AgentConfiguration:ApiKey"] 
+                      ?? string.Empty;
 
             return new
             {

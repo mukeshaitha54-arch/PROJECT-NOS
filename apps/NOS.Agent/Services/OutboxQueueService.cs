@@ -178,6 +178,28 @@ namespace NOS.Agent.Services
             });
         }
 
+        public async Task PurgeStaleEphemeralMessagesAsync(CancellationToken cancellationToken = default)
+        {
+            await ExecuteWithRetryAsync(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<OutboxDbContext>();
+                
+                var cutoff = DateTime.UtcNow.AddMinutes(-2);
+                var staleMessages = await dbContext.OutboxMessages
+                    .Where(m => (m.MessageType == "telemetry" || m.MessageType == "heartbeat") && m.CreatedAt < cutoff)
+                    .ToListAsync(cancellationToken);
+                
+                if (staleMessages.Count > 0)
+                {
+                    dbContext.OutboxMessages.RemoveRange(staleMessages);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation("Purged {Count} stale telemetry/heartbeat backlog messages (freshness policy: real-time metrics only)", staleMessages.Count);
+                }
+                return true;
+            });
+        }
+
         private async Task<T?> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
         {
             int maxRetries = 3;
