@@ -23,26 +23,44 @@ import { toast } from "sonner";
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const realtime = useRealtime();
 
+  const seenOnlineRef = React.useRef<Set<string>>(new Set());
+
   React.useEffect(() => {
     if (!realtime.lastEvent) return;
 
     const { type, payload } = realtime.lastEvent;
+    const deviceId = payload?.deviceId;
 
     switch (type) {
       case "device.online":
-        toast.success(`Device ${payload.deviceId} is now ONLINE`);
+        if (deviceId && !seenOnlineRef.current.has(deviceId)) {
+          seenOnlineRef.current.add(deviceId);
+          toast.success(`Device ${deviceId} is now ONLINE`, {
+            id: `device-online-${deviceId}`,
+          });
+        }
         break;
       case "device.offline":
-        toast.error(`Device ${payload.deviceId} is OFFLINE`);
+        if (deviceId) {
+          seenOnlineRef.current.delete(deviceId);
+          toast.error(`Device ${deviceId} is OFFLINE`, {
+            id: `device-offline-${deviceId}`,
+          });
+        }
         break;
       case "alert.created":
       case "alert:triggered":
         toast.warning(
           `New Alert on ${payload.deviceId}: ${payload.ruleId || payload.message || "Threshold breached"}`,
+          {
+            id: `alert-${payload.alertId || payload.ruleId || payload.deviceId}`,
+          },
         );
         break;
       case "device.registered":
-        toast.info(`New device registered: ${payload.deviceId}`);
+        toast.info(`New device registered: ${payload.deviceId}`, {
+          id: `device-reg-${payload.deviceId}`,
+        });
         break;
     }
   }, [realtime.lastEvent]);

@@ -192,7 +192,7 @@ export class DeviceService {
           dto.agentVersion,
         ),
       );
-    } else {
+    } else if (existing.status !== DeviceStatus.ONLINE) {
       this.eventEmitter.emit(
         "device.reconnected",
         new DeviceReconnectedEvent(
