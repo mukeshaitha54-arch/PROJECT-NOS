@@ -138,6 +138,8 @@ export default function DeviceInventoryDetailPage({
           "Inventory has not yet been discovered for this device. The agent will run the asset discovery cycle on next startup.",
         );
         setInventory(null);
+      } else if (err?.response?.status === 429) {
+        setError("Rate limit reached. Waiting before retrying...");
       } else {
         setError(
           err?.response?.data?.message ||
@@ -165,12 +167,12 @@ export default function DeviceInventoryDetailPage({
     loadInventory();
   }, [loadInventory]);
 
-  // If inventory is not yet discovered, automatically poll every 5s so it displays as soon as agent finishes scan
+  // If inventory is not yet discovered, automatically poll every 15s so it displays as soon as agent finishes scan
   useEffect(() => {
     if (!inventory) {
       const pollTimer = setInterval(() => {
         loadInventory();
-      }, 5000);
+      }, 15000);
       return () => clearInterval(pollTimer);
     }
   }, [inventory, loadInventory]);

@@ -34,7 +34,11 @@ import {
   InventoryHealthResponse,
 } from "@nos/shared-types";
 
+import { SkipThrottle } from "@nestjs/throttler";
+
 @ApiTags("Inventory - Asset & Discovery Engine")
+@SkipThrottle()
+@SkipThrottle({ default: true, auth: true, telemetry: true })
 @Controller("inventory")
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}

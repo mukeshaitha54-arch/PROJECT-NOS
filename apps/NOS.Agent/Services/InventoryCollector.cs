@@ -65,43 +65,46 @@ namespace NOS.Agent.Services
                 var sw = GetInstalledSoftware();
                 var svc = GetWindowsServices();
                 var startup = GetStartupApplications();
+                var mem = GetMemoryModules();
+                var disks = GetDiskDrives();
+                var net = GetNetworkAdapters();
+                var sec = GetSecurityInfo();
 
-                var payload = new
+                var payload = new FullInventoryPayloadDto
                 {
-                    deviceId = DeviceRegistrationService.CurrentDeviceId ?? _configuration.DeviceId,
-                    manufacturer = GetWmiValue("Win32_ComputerSystem", "Manufacturer", "Unknown"),
-                    model = GetWmiValue("Win32_ComputerSystem", "Model", "Unknown"),
-                    serialNumber = GetWmiValue("Win32_BIOS", "SerialNumber", "Unknown"),
-                    motherboard = GetWmiValue("Win32_BaseBoard", "Product", "Unknown"),
-                    biosVendor = GetWmiValue("Win32_BIOS", "Manufacturer", "Unknown"),
-                    biosVersion = GetWmiValue("Win32_BIOS", "SMBIOSBIOSVersion", "Unknown"),
-                    biosReleaseDate = GetWmiValue("Win32_BIOS", "ReleaseDate", ""),
-                    cpuModel = GetWmiValue("Win32_Processor", "Name", "Unknown"),
-                    cpuVendor = GetWmiValue("Win32_Processor", "Manufacturer", "Unknown"),
-                    physicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfCores", "1"), out var pcores) ? pcores : 1,
-                    logicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfLogicalProcessors", "1"), out var lcores) ? lcores : 1,
-                    hostname = Environment.MachineName,
-                    domain = GetWmiValue("Win32_ComputerSystem", "Domain", "WORKGROUP"),
-                    workgroup = GetWmiValue("Win32_ComputerSystem", "Workgroup", "WORKGROUP"),
-                    osEdition = GetWmiValue("Win32_OperatingSystem", "Caption", "Unknown"),
-                    osBuild = GetWmiValue("Win32_OperatingSystem", "BuildNumber", "Unknown"),
-                    architecture = GetWmiValue("Win32_OperatingSystem", "OSArchitecture", "x64"),
-                    agentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-                    schemaVersion = "1.0.0",
-                    // Arrays — field names MATCH backend SubmitInventoryRequestDto exactly
-                    memoryModules = GetMemoryModules(),
-                    diskDrives = GetDiskDrives(),
-                    networkAdapters = GetNetworkAdapters(),
-                    installedSoftware = sw,
-                    windowsServices = svc,          // backend DTO field name
-                    startupApplications = startup,  // backend DTO field name
-                    security = GetSecurityInfo(),
+                    DeviceId = DeviceRegistrationService.CurrentDeviceId ?? _configuration.DeviceId,
+                    Manufacturer = GetWmiValue("Win32_ComputerSystem", "Manufacturer", "Unknown"),
+                    Model = GetWmiValue("Win32_ComputerSystem", "Model", "Unknown"),
+                    SerialNumber = GetWmiValue("Win32_BIOS", "SerialNumber", "Unknown"),
+                    Motherboard = GetWmiValue("Win32_BaseBoard", "Product", "Unknown"),
+                    BiosVendor = GetWmiValue("Win32_BIOS", "Manufacturer", "Unknown"),
+                    BiosVersion = GetWmiValue("Win32_BIOS", "SMBIOSBIOSVersion", "Unknown"),
+                    BiosReleaseDate = GetWmiValue("Win32_BIOS", "ReleaseDate", ""),
+                    CpuModel = GetWmiValue("Win32_Processor", "Name", "Unknown"),
+                    CpuVendor = GetWmiValue("Win32_Processor", "Manufacturer", "Unknown"),
+                    PhysicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfCores", "1"), out var pcores) ? pcores : 1,
+                    LogicalCores = int.TryParse(GetWmiValue("Win32_Processor", "NumberOfLogicalProcessors", "1"), out var lcores) ? lcores : 1,
+                    Hostname = Environment.MachineName,
+                    Domain = GetWmiValue("Win32_ComputerSystem", "Domain", "WORKGROUP"),
+                    Workgroup = GetWmiValue("Win32_ComputerSystem", "Workgroup", "WORKGROUP"),
+                    OsEdition = GetWmiValue("Win32_OperatingSystem", "Caption", "Unknown"),
+                    OsBuild = GetWmiValue("Win32_OperatingSystem", "BuildNumber", "Unknown"),
+                    Architecture = GetWmiValue("Win32_OperatingSystem", "OSArchitecture", "x64"),
+                    AgentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+                    SchemaVersion = "1.0.0",
+                    MemoryModules = mem,
+                    DiskDrives = disks,
+                    NetworkAdapters = net,
+                    InstalledSoftware = sw,
+                    WindowsServices = svc,
+                    StartupApplications = startup,
+                    Security = sec,
                 };
 
                 await _outboxQueue.EnqueueAsync("inventory", payload, 2, stoppingToken);
                 _logger.LogInformation(
                     "Inventory queued. Software: {sw}, Services: {svc}, Startup: {st}, MemModules: {mm}, Disks: {dk}",
-                    sw.Count, svc.Count, startup.Count, payload.memoryModules.Count, payload.diskDrives.Count);
+                    sw.Count, svc.Count, startup.Count, mem.Count, disks.Count);
             }
             catch (Exception ex)
             {
@@ -110,9 +113,9 @@ namespace NOS.Agent.Services
         }
 
         // ─── RAM Modules ──────────────────────────────────────────────────────
-        private List<object> GetMemoryModules()
+        private List<MemoryModuleInventoryDto> GetMemoryModules()
         {
-            var modules = new List<object>();
+            var modules = new List<MemoryModuleInventoryDto>();
             if (!OperatingSystem.IsWindows()) return modules;
             try
             {
@@ -120,14 +123,14 @@ namespace NOS.Agent.Services
                     "SELECT DeviceLocator, Capacity, Speed, Manufacturer, PartNumber, SerialNumber FROM Win32_PhysicalMemory");
                 foreach (ManagementObject obj in s.Get())
                 {
-                    modules.Add(new
+                    modules.Add(new MemoryModuleInventoryDto
                     {
-                        slot = obj["DeviceLocator"]?.ToString() ?? "",
-                        capacityBytes = obj["Capacity"] != null ? Convert.ToInt64(obj["Capacity"]) : 0L,
-                        speedMHz = obj["Speed"] != null ? Convert.ToInt32(obj["Speed"]) : 0,
-                        manufacturer = obj["Manufacturer"]?.ToString() ?? "",
-                        partNumber = obj["PartNumber"]?.ToString()?.Trim() ?? "",
-                        serialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
+                        Slot = obj["DeviceLocator"]?.ToString() ?? "",
+                        CapacityBytes = obj["Capacity"] != null ? Convert.ToInt64(obj["Capacity"]) : 0L,
+                        SpeedMHz = obj["Speed"] != null ? Convert.ToInt32(obj["Speed"]) : 0,
+                        Manufacturer = obj["Manufacturer"]?.ToString() ?? "",
+                        PartNumber = obj["PartNumber"]?.ToString()?.Trim() ?? "",
+                        SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
                     });
                 }
             }
@@ -136,9 +139,9 @@ namespace NOS.Agent.Services
         }
 
         // ─── Disk Drives ─────────────────────────────────────────────────────
-        private List<object> GetDiskDrives()
+        private List<DiskDriveInventoryDto> GetDiskDrives()
         {
-            var disks = new List<object>();
+            var disks = new List<DiskDriveInventoryDto>();
             if (!OperatingSystem.IsWindows()) return disks;
             try
             {
@@ -167,15 +170,15 @@ namespace NOS.Agent.Services
                     else if (mediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase))
                         interfaceType = "USB";
 
-                    disks.Add(new
+                    disks.Add(new DiskDriveInventoryDto
                     {
-                        driveName = driveLetter,
-                        model = obj["Model"]?.ToString() ?? "",
-                        serialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
-                        mediaType = interfaceType,
-                        sizeBytes = obj["Size"] != null ? Convert.ToInt64(obj["Size"]) : 0L,
-                        fileSystem = "NTFS",
-                        isSystemDrive = idx == 0,
+                        DriveName = driveLetter,
+                        Model = obj["Model"]?.ToString() ?? "",
+                        SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
+                        MediaType = interfaceType,
+                        SizeBytes = obj["Size"] != null ? Convert.ToInt64(obj["Size"]) : 0L,
+                        FileSystem = "NTFS",
+                        IsSystemDrive = idx == 0,
                     });
                     idx++;
                 }
@@ -319,9 +322,9 @@ namespace NOS.Agent.Services
         }
 
         // ─── Installed Software (from registry — fast) ───────────────────────
-        private List<object> GetInstalledSoftware()
+        private List<InstalledSoftwareInventoryDto> GetInstalledSoftware()
         {
-            var software = new List<object>();
+            var software = new List<InstalledSoftwareInventoryDto>();
             if (!OperatingSystem.IsWindows()) return software;
             try
             {
@@ -344,13 +347,13 @@ namespace NOS.Agent.Services
                                 if (subKey == null) continue;
                                 var displayName = subKey.GetValue("DisplayName") as string;
                                 if (string.IsNullOrWhiteSpace(displayName)) continue;
-                                software.Add(new
+                                software.Add(new InstalledSoftwareInventoryDto
                                 {
-                                    name = displayName.Trim(),
-                                    version = (subKey.GetValue("DisplayVersion") as string ?? "").Trim(),
-                                    publisher = (subKey.GetValue("Publisher") as string ?? "").Trim(),
-                                    installDate = subKey.GetValue("InstallDate") as string ?? "",
-                                    installLocation = subKey.GetValue("InstallLocation") as string ?? "",
+                                    Name = displayName.Trim(),
+                                    Version = (subKey.GetValue("DisplayVersion") as string ?? "").Trim(),
+                                    Publisher = (subKey.GetValue("Publisher") as string ?? "").Trim(),
+                                    InstallDate = subKey.GetValue("InstallDate") as string ?? "",
+                                    InstallLocation = subKey.GetValue("InstallLocation") as string ?? "",
                                 });
                             }
                             catch { }
@@ -372,13 +375,13 @@ namespace NOS.Agent.Services
                                 if (subKey == null) continue;
                                 var displayName = subKey.GetValue("DisplayName") as string;
                                 if (string.IsNullOrWhiteSpace(displayName)) continue;
-                                software.Add(new
+                                software.Add(new InstalledSoftwareInventoryDto
                                 {
-                                    name = displayName.Trim(),
-                                    version = (subKey.GetValue("DisplayVersion") as string ?? "").Trim(),
-                                    publisher = (subKey.GetValue("Publisher") as string ?? "").Trim(),
-                                    installDate = subKey.GetValue("InstallDate") as string ?? "",
-                                    installLocation = subKey.GetValue("InstallLocation") as string ?? "",
+                                    Name = displayName.Trim(),
+                                    Version = (subKey.GetValue("DisplayVersion") as string ?? "").Trim(),
+                                    Publisher = (subKey.GetValue("Publisher") as string ?? "").Trim(),
+                                    InstallDate = subKey.GetValue("InstallDate") as string ?? "",
+                                    InstallLocation = subKey.GetValue("InstallLocation") as string ?? "",
                                 });
                             }
                             catch { }
@@ -391,16 +394,16 @@ namespace NOS.Agent.Services
 
             // Deduplicate by name, sort alphabetically
             return software
-                .GroupBy(s => ((dynamic)s).name as string, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First())
-                .OrderBy(s => ((dynamic)s).name as string)
+                .OrderBy(s => s.Name)
                 .ToList();
         }
 
         // ─── Windows Services (field names match WindowsServicePayloadDto) ───
-        private List<object> GetWindowsServices()
+        private List<WindowsServiceInventoryDto> GetWindowsServices()
         {
-            var services = new List<object>();
+            var services = new List<WindowsServiceInventoryDto>();
             if (!OperatingSystem.IsWindows()) return services;
             try
             {
@@ -418,14 +421,13 @@ namespace NOS.Agent.Services
                         }
                         catch { }
 
-                        // Field names match WindowsServicePayloadDto
-                        services.Add(new
+                        services.Add(new WindowsServiceInventoryDto
                         {
-                            serviceName = svc.ServiceName,   // matches DTO
-                            displayName = svc.DisplayName,   // matches DTO
-                            status = svc.Status.ToString(),  // matches DTO
-                            startType = startType,           // matches DTO
-                            account = "LocalSystem",         // matches DTO
+                            ServiceName = svc.ServiceName,
+                            DisplayName = svc.DisplayName,
+                            Status = svc.Status.ToString(),
+                            StartType = startType,
+                            Account = "LocalSystem",
                         });
                     }
                     catch { }
@@ -437,9 +439,9 @@ namespace NOS.Agent.Services
         }
 
         // ─── Startup Apps (field names match StartupApplicationPayloadDto) ───
-        private List<object> GetStartupApplications()
+        private List<StartupApplicationInventoryDto> GetStartupApplications()
         {
-            var items = new List<object>();
+            var items = new List<StartupApplicationInventoryDto>();
             if (!OperatingSystem.IsWindows()) return items;
             try
             {
@@ -447,13 +449,12 @@ namespace NOS.Agent.Services
                     "SELECT Name, Command, Location, User FROM Win32_StartupCommand");
                 foreach (ManagementObject obj in s.Get())
                 {
-                    // Field names match StartupApplicationPayloadDto
-                    items.Add(new
+                    items.Add(new StartupApplicationInventoryDto
                     {
-                        name = obj["Name"]?.ToString() ?? "Unknown",
-                        command = obj["Command"]?.ToString() ?? "",
-                        location = obj["Location"]?.ToString() ?? "",
-                        user = obj["User"]?.ToString() ?? "",
+                        Name = obj["Name"]?.ToString() ?? "Unknown",
+                        Command = obj["Command"]?.ToString() ?? "",
+                        Location = obj["Location"]?.ToString() ?? "",
+                        User = obj["User"]?.ToString() ?? "",
                     });
                 }
             }
@@ -462,7 +463,7 @@ namespace NOS.Agent.Services
         }
 
         // ─── Security Info ────────────────────────────────────────────────────
-        private object GetSecurityInfo()
+        private SecurityInventoryDto GetSecurityInfo()
         {
             bool defender = false, firewall = false, secureBoot = false, tpm = false;
             string tpmVersion = "Unknown";
@@ -495,14 +496,14 @@ namespace NOS.Agent.Services
             }
             catch { }
 
-            return new
+            return new SecurityInventoryDto
             {
-                windowsDefenderEnabled = defender,
-                firewallEnabled = firewall,
-                bitLockerEnabled = false,
-                secureBootEnabled = secureBoot,
-                tpmEnabled = tpm,
-                tpmVersion = tpmVersion,
+                WindowsDefenderEnabled = defender,
+                FirewallEnabled = firewall,
+                BitLockerEnabled = false,
+                SecureBootEnabled = secureBoot,
+                TpmEnabled = tpm,
+                TpmVersion = tpmVersion,
             };
         }
 
@@ -519,6 +520,207 @@ namespace NOS.Agent.Services
             catch { }
             return defaultValue;
         }
+    }
+
+    public class MemoryModuleInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("slot")]
+        public string Slot { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("capacityBytes")]
+        public long CapacityBytes { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("speedMHz")]
+        public int SpeedMHz { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("manufacturer")]
+        public string Manufacturer { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("partNumber")]
+        public string PartNumber { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("serialNumber")]
+        public string SerialNumber { get; set; } = string.Empty;
+    }
+
+    public class DiskDriveInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("driveName")]
+        public string DriveName { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("model")]
+        public string Model { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("serialNumber")]
+        public string SerialNumber { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("mediaType")]
+        public string MediaType { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sizeBytes")]
+        public long SizeBytes { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("fileSystem")]
+        public string FileSystem { get; set; } = "NTFS";
+
+        [System.Text.Json.Serialization.JsonPropertyName("isSystemDrive")]
+        public bool IsSystemDrive { get; set; }
+    }
+
+    public class InstalledSoftwareInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("publisher")]
+        public string Publisher { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("version")]
+        public string Version { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("installDate")]
+        public string InstallDate { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("installLocation")]
+        public string InstallLocation { get; set; } = string.Empty;
+    }
+
+    public class WindowsServiceInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("serviceName")]
+        public string ServiceName { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("displayName")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("startType")]
+        public string StartType { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("account")]
+        public string Account { get; set; } = "LocalSystem";
+    }
+
+    public class StartupApplicationInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("command")]
+        public string Command { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("location")]
+        public string Location { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("user")]
+        public string User { get; set; } = string.Empty;
+    }
+
+    public class SecurityInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("windowsDefenderEnabled")]
+        public bool WindowsDefenderEnabled { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("firewallEnabled")]
+        public bool FirewallEnabled { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("bitLockerEnabled")]
+        public bool BitLockerEnabled { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("secureBootEnabled")]
+        public bool SecureBootEnabled { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("tpmEnabled")]
+        public bool TpmEnabled { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("tpmVersion")]
+        public string TpmVersion { get; set; } = "2.0";
+    }
+
+    public class FullInventoryPayloadDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("deviceId")]
+        public string DeviceId { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("manufacturer")]
+        public string Manufacturer { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("model")]
+        public string Model { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("serialNumber")]
+        public string SerialNumber { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("motherboard")]
+        public string Motherboard { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("biosVendor")]
+        public string BiosVendor { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("biosVersion")]
+        public string BiosVersion { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("biosReleaseDate")]
+        public string BiosReleaseDate { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("cpuModel")]
+        public string CpuModel { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("cpuVendor")]
+        public string CpuVendor { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("physicalCores")]
+        public int PhysicalCores { get; set; } = 1;
+
+        [System.Text.Json.Serialization.JsonPropertyName("logicalCores")]
+        public int LogicalCores { get; set; } = 1;
+
+        [System.Text.Json.Serialization.JsonPropertyName("hostname")]
+        public string Hostname { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("domain")]
+        public string Domain { get; set; } = "WORKGROUP";
+
+        [System.Text.Json.Serialization.JsonPropertyName("workgroup")]
+        public string Workgroup { get; set; } = "WORKGROUP";
+
+        [System.Text.Json.Serialization.JsonPropertyName("osEdition")]
+        public string OsEdition { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("osBuild")]
+        public string OsBuild { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("architecture")]
+        public string Architecture { get; set; } = "x64";
+
+        [System.Text.Json.Serialization.JsonPropertyName("agentVersion")]
+        public string AgentVersion { get; set; } = "1.0.0";
+
+        [System.Text.Json.Serialization.JsonPropertyName("schemaVersion")]
+        public string SchemaVersion { get; set; } = "1.0.0";
+
+        [System.Text.Json.Serialization.JsonPropertyName("memoryModules")]
+        public List<MemoryModuleInventoryDto> MemoryModules { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("diskDrives")]
+        public List<DiskDriveInventoryDto> DiskDrives { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("networkAdapters")]
+        public List<NetworkAdapterInventoryDto> NetworkAdapters { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("installedSoftware")]
+        public List<InstalledSoftwareInventoryDto> InstalledSoftware { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("windowsServices")]
+        public List<WindowsServiceInventoryDto> WindowsServices { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("startupApplications")]
+        public List<StartupApplicationInventoryDto> StartupApplications { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("security")]
+        public SecurityInventoryDto Security { get; set; } = new();
     }
 
     public class NetworkAdapterInventoryDto
