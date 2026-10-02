@@ -43,11 +43,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await api.get<any>("/auth/me");
       const userData = response.data?.data || response.data;
       setUser(userData);
+      if (typeof window !== "undefined" && userData) {
+        localStorage.setItem("nos_cached_user", JSON.stringify(userData));
+      }
     } catch (err) {
       setUser(null);
       if (typeof window !== "undefined") {
         localStorage.removeItem("nos_access_token");
         localStorage.removeItem("nos_refresh_token");
+        localStorage.removeItem("nos_cached_user");
       }
     } finally {
       setIsLoading(false);
@@ -60,6 +64,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ? localStorage.getItem("nos_access_token")
         : null;
     if (token) {
+      const cached =
+        typeof window !== "undefined"
+          ? localStorage.getItem("nos_cached_user")
+          : null;
+      if (cached) {
+        try {
+          setUser(JSON.parse(cached));
+          setIsLoading(false);
+        } catch {}
+      }
       fetchUser();
     } else {
       setIsLoading(false);
@@ -94,13 +108,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (data?.user) {
         setUser(data.user);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("nos_cached_user", JSON.stringify(data.user));
+        }
       } else {
         await fetchUser();
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Login failed"));
-      setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -113,8 +131,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await login(payload.email, payload.password);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Registration failed"));
-      setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -312,17 +312,24 @@ namespace NOS.Agent.Services
                     {
                         try
                         {
-                            long mem = p.WorkingSet64;
+                            int pid = p.Id;
+                            string pName = p.ProcessName;
+                            if (string.IsNullOrWhiteSpace(pName) || pName == "Idle") continue;
+
+                            long mem = 0;
+                            try { mem = p.WorkingSet64; } catch { }
+
                             double cpuTime = 0.0;
                             try { cpuTime = Math.Round(p.TotalProcessorTime.TotalSeconds, 1); } catch { }
+
                             int threadCount = 1;
                             try { threadCount = p.Threads.Count; } catch { }
 
                             processList.Add(new LiveProcessDto
                             {
-                                Pid = p.Id,
-                                Name = p.ProcessName + ".exe",
-                                ProcessName = p.ProcessName,
+                                Pid = pid,
+                                Name = pName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? pName : (pName + ".exe"),
+                                ProcessName = pName,
                                 MemoryBytes = mem,
                                 MemoryMb = Math.Round((double)mem / (1024.0 * 1024.0), 1),
                                 CpuTimeSec = cpuTime,
@@ -406,7 +413,7 @@ namespace NOS.Agent.Services
             public string Status { get; set; } = "Running";
         }
 
-        private class HeartbeatPayload
+        public class HeartbeatPayload
         {
             [System.Text.Json.Serialization.JsonPropertyName("deviceId")]
             public string? DeviceId { get; set; }

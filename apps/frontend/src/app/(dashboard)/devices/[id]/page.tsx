@@ -1096,70 +1096,107 @@ export default function DeviceDetailPage() {
           </div>
         )}
 
-        {activeTab === "processes" && (
-          <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
-            {processes.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 text-sm">
-                No process data yet. Inventory collects this on first scan.
-                <br />
-                <span className="text-xs text-gray-600">
-                  Live count: {runningProcesses} processes running
-                </span>
-              </div>
-            ) : (
-              <table className="w-full text-sm text-left text-gray-400">
-                <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
-                  <tr>
-                    <th className="px-6 py-3">PID</th>
-                    <th className="px-6 py-3">Name</th>
-                    <th className="px-6 py-3">Memory (MB)</th>
-                    <th className="px-6 py-3">CPU Time (s)</th>
-                    <th className="px-6 py-3">Threads</th>
-                    <th className="px-6 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {processes.map((proc: any, idx: number) => (
-                    <tr
-                      key={proc.pid || idx}
-                      className="border-b border-gray-800 hover:bg-gray-800/50"
-                    >
-                      <td className="px-6 py-3 font-mono text-xs">
-                        {proc.pid ?? proc.Pid ?? "—"}
-                      </td>
-                      <td className="px-6 py-3 font-medium text-gray-300">
-                        {proc.name ??
-                          proc.Name ??
+        {activeTab === "processes" &&
+          (() => {
+            const validProcesses = processes.filter(
+              (proc: any) =>
+                proc &&
+                (proc.pid !== undefined ||
+                  proc.Pid !== undefined ||
+                  proc.processId !== undefined) &&
+                (proc.name ||
+                  proc.Name ||
+                  proc.processName ||
+                  proc.ProcessName),
+            );
+
+            return (
+              <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
+                {validProcesses.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500 text-sm">
+                    No process data yet. Running processes stream via live agent
+                    heartbeats.
+                    <br />
+                    <span className="text-xs text-gray-600">
+                      Live count: {runningProcesses} processes running
+                    </span>
+                  </div>
+                ) : (
+                  <table className="w-full text-sm text-left text-gray-400">
+                    <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+                      <tr>
+                        <th className="px-6 py-3">PID</th>
+                        <th className="px-6 py-3">Name</th>
+                        <th className="px-6 py-3">Memory (MB)</th>
+                        <th className="px-6 py-3">CPU Time (s)</th>
+                        <th className="px-6 py-3">Threads</th>
+                        <th className="px-6 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {validProcesses.map((proc: any, idx: number) => {
+                        const pidVal =
+                          proc.pid ?? proc.Pid ?? proc.processId ?? "—";
+                        const nameVal =
                           proc.processName ??
                           proc.ProcessName ??
-                          "Unknown"}
-                      </td>
-                      <td className="px-6 py-3 font-mono">
-                        {(
+                          proc.name ??
+                          proc.Name ??
+                          "Unknown";
+                        const memVal =
                           proc.memoryMb ??
                           proc.MemoryMb ??
-                          (proc.memoryBytes ?? proc.MemoryBytes ?? 0) /
-                            (1024 * 1024)
-                        ).toFixed(1)}
-                      </td>
-                      <td className="px-6 py-3 font-mono">
-                        {(proc.cpuTimeSec ?? proc.CpuTimeSec ?? 0).toFixed(1)}
-                      </td>
-                      <td className="px-6 py-3 font-mono">
-                        {proc.threads ?? proc.Threads ?? "—"}
-                      </td>
-                      <td className="px-6 py-3">
-                        <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400">
-                          {proc.status ?? proc.Status ?? "Running"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
+                          ((proc.memoryBytes ?? proc.MemoryBytes)
+                            ? (proc.memoryBytes ?? proc.MemoryBytes) /
+                              (1024 * 1024)
+                            : 0);
+                        const cpuVal =
+                          proc.cpuTimeSec ??
+                          proc.CpuTimeSec ??
+                          proc.cpuPercent ??
+                          0;
+                        const threadsVal = proc.threads ?? proc.Threads ?? 1;
+                        const statusVal =
+                          proc.status ?? proc.Status ?? "Running";
+
+                        return (
+                          <tr
+                            key={pidVal !== "—" ? `${pidVal}-${idx}` : idx}
+                            className="border-b border-gray-800 hover:bg-gray-800/50"
+                          >
+                            <td className="px-6 py-3 font-mono text-xs text-cyan-400 font-semibold">
+                              {pidVal}
+                            </td>
+                            <td className="px-6 py-3 font-medium text-gray-200">
+                              {nameVal}
+                            </td>
+                            <td className="px-6 py-3 font-mono text-xs">
+                              {typeof memVal === "number"
+                                ? memVal.toFixed(1)
+                                : Number(memVal || 0).toFixed(1)}
+                            </td>
+                            <td className="px-6 py-3 font-mono text-xs">
+                              {typeof cpuVal === "number"
+                                ? cpuVal.toFixed(1)
+                                : Number(cpuVal || 0).toFixed(1)}
+                            </td>
+                            <td className="px-6 py-3 font-mono text-xs">
+                              {threadsVal}
+                            </td>
+                            <td className="px-6 py-3">
+                              <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                                {statusVal}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            );
+          })()}
 
         {activeTab === "services" && (
           <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">

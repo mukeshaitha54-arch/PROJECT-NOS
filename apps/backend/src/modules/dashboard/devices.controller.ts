@@ -265,10 +265,16 @@ export class DevicesController {
     const live =
       deviceLiveProcessesStore.get(device.id) ||
       (device.uuid ? deviceLiveProcessesStore.get(device.uuid) : null);
-    if (live && live.length > 0) {
+    const validLive = live?.filter(
+      (p: any) =>
+        p &&
+        (p.pid !== undefined || p.Pid !== undefined) &&
+        (p.name || p.Name || p.processName || p.ProcessName),
+    );
+    if (validLive && validLive.length > 0) {
       return {
         success: true,
-        data: live,
+        data: validLive,
       };
     }
 

@@ -185,38 +185,133 @@ namespace NOS.Agent.Services
         }
 
         // ─── Network Adapters ────────────────────────────────────────────────
-        private List<object> GetNetworkAdapters()
+        private List<NetworkAdapterInventoryDto> GetNetworkAdapters()
         {
-            var adapters = new List<object>();
+            var adapters = new List<NetworkAdapterInventoryDto>();
             if (!OperatingSystem.IsWindows()) return adapters;
             try
             {
-                using var s = new ManagementObjectSearcher(
-                    "SELECT Description, MACAddress, IPAddress, DefaultIPGateway, DNSServerSearchOrder, Speed FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled=True");
-                foreach (ManagementObject obj in s.Get())
+                // Query .NET NetworkInterface first to map speeds and interface types
+                var netInterfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+                var ifaceMap = new Dictionary<string, System.Net.NetworkInformation.NetworkInterface>(StringComparer.OrdinalIgnoreCase);
+                foreach (var ni in netInterfaces)
                 {
-                    string[] ips = obj["IPAddress"] as string[] ?? Array.Empty<string>();
-                    string[] gateways = obj["DefaultIPGateway"] as string[] ?? Array.Empty<string>();
-                    string[] dns = obj["DNSServerSearchOrder"] as string[] ?? Array.Empty<string>();
-
-                    string ipv4 = ips.FirstOrDefault(ip => !ip.Contains(':')) ?? "";
-                    string ipv6 = ips.FirstOrDefault(ip => ip.Contains(':')) ?? "";
-                    long speed = obj["Speed"] != null ? Convert.ToInt64(obj["Speed"]) : 0;
-
-                    adapters.Add(new
+                    try
                     {
-                        name = obj["Description"]?.ToString() ?? "",
-                        description = obj["Description"]?.ToString() ?? "",
-                        macAddress = obj["MACAddress"]?.ToString() ?? "",
-                        ipv4 = ipv4,
-                        ipv6 = ipv6,
-                        gateway = gateways.Length > 0 ? gateways[0] : "",
-                        dns = dns.Length > 0 ? string.Join(", ", dns) : "",
-                        speedMbps = speed > 0 ? (int)(speed / 1_000_000) : 0,
-                        isWireless = false,
-                        isPhysical = true,
-                        isOperational = true,
-                    });
+                        ifaceMap[ni.Description] = ni;
+                        ifaceMap[ni.Name] = ni;
+                        if (!string.IsNullOrWhiteSpace(ni.Id)) ifaceMap[ni.Id] = ni;
+                    }
+                    catch { }
+                }
+
+                // Query WMI without the invalid 'Speed' column on Win32_NetworkAdapterConfiguration
+                try
+                {
+                    using var s = new ManagementObjectSearcher(
+                        "SELECT Description, MACAddress, IPAddress, DefaultIPGateway, DNSServerSearchOrder FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled=True");
+                    foreach (ManagementObject obj in s.Get())
+                    {
+                        string desc = obj["Description"]?.ToString() ?? "";
+                        string mac = obj["MACAddress"]?.ToString() ?? "";
+                        string[] ips = obj["IPAddress"] as string[] ?? Array.Empty<string>();
+                        string[] gateways = obj["DefaultIPGateway"] as string[] ?? Array.Empty<string>();
+                        string[] dns = obj["DNSServerSearchOrder"] as string[] ?? Array.Empty<string>();
+
+                        string ipv4 = ips.FirstOrDefault(ip => !ip.Contains(':')) ?? "";
+                        string ipv6 = ips.FirstOrDefault(ip => ip.Contains(':')) ?? "";
+
+                        long speed = 0;
+                        bool isWireless = desc.IndexOf("wireless", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                          desc.IndexOf("wi-fi", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                          desc.IndexOf("802.11", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        if (ifaceMap.TryGetValue(desc, out var ni))
+                        {
+                            try
+                            {
+                                speed = ni.Speed;
+                                if (ni.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
+                                {
+                                    isWireless = true;
+                                }
+                            }
+                            catch { }
+                        }
+
+                        bool isVirtual = desc.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         desc.IndexOf("vpn", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         desc.IndexOf("hyper-v", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         desc.IndexOf("pseudo", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        adapters.Add(new NetworkAdapterInventoryDto
+                        {
+                            Name = desc,
+                            Description = desc,
+                            MacAddress = mac,
+                            Ipv4 = ipv4,
+                            Ipv6 = ipv6,
+                            Gateway = gateways.Length > 0 ? gateways[0] : "",
+                            Dns = dns.Length > 0 ? string.Join(", ", dns) : "",
+                            SpeedMbps = speed > 0 ? (int)(speed / 1_000_000) : 0,
+                            IsWireless = isWireless,
+                            IsPhysical = !isVirtual,
+                            IsOperational = true,
+                        });
+                    }
+                }
+                catch (Exception wmiEx)
+                {
+                    _logger.LogWarning(wmiEx, "WMI query for Win32_NetworkAdapterConfiguration failed, falling back to System.Net.NetworkInformation.");
+                }
+
+                // Resilient fallback: If WMI returned 0 adapters, use .NET NetworkInterface directly
+                if (adapters.Count == 0)
+                {
+                    foreach (var ni in netInterfaces)
+                    {
+                        try
+                        {
+                            if (ni.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up) continue;
+                            if (ni.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback) continue;
+
+                            var ipProps = ni.GetIPProperties();
+                            string ipv4 = "";
+                            string ipv6 = "";
+                            foreach (var u in ipProps.UnicastAddresses)
+                            {
+                                if (u.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && string.IsNullOrEmpty(ipv4))
+                                    ipv4 = u.Address.ToString();
+                                else if (u.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 && string.IsNullOrEmpty(ipv6))
+                                    ipv6 = u.Address.ToString();
+                            }
+
+                            if (string.IsNullOrEmpty(ipv4) && string.IsNullOrEmpty(ipv6)) continue;
+
+                            string gateway = ipProps.GatewayAddresses.FirstOrDefault()?.Address?.ToString() ?? "";
+                            string dns = string.Join(", ", ipProps.DnsAddresses.Select(d => d.ToString()));
+                            string mac = string.Join(":", ni.GetPhysicalAddress().GetAddressBytes().Select(b => b.ToString("X2")));
+
+                            bool isWireless = ni.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211 ||
+                                              ni.Description.IndexOf("wi-fi", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                            adapters.Add(new NetworkAdapterInventoryDto
+                            {
+                                Name = ni.Name,
+                                Description = ni.Description,
+                                MacAddress = mac,
+                                Ipv4 = ipv4,
+                                Ipv6 = ipv6,
+                                Gateway = gateway,
+                                Dns = dns,
+                                SpeedMbps = ni.Speed > 0 ? (int)(ni.Speed / 1_000_000) : 0,
+                                IsWireless = isWireless,
+                                IsPhysical = true,
+                                IsOperational = true,
+                            });
+                        }
+                        catch { }
+                    }
                 }
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect network adapters."); }
@@ -424,5 +519,41 @@ namespace NOS.Agent.Services
             catch { }
             return defaultValue;
         }
+    }
+
+    public class NetworkAdapterInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("macAddress")]
+        public string MacAddress { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("ipv4")]
+        public string Ipv4 { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("ipv6")]
+        public string Ipv6 { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("gateway")]
+        public string Gateway { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("dns")]
+        public string Dns { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("speedMbps")]
+        public int SpeedMbps { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("isWireless")]
+        public bool IsWireless { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("isPhysical")]
+        public bool IsPhysical { get; set; } = true;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isOperational")]
+        public bool IsOperational { get; set; } = true;
     }
 }

@@ -245,9 +245,17 @@ export class DeviceService {
       Array.isArray(dto.processes) &&
       dto.processes.length > 0
     ) {
-      deviceLiveProcessesStore.set(device.id, dto.processes);
-      if (device.uuid) {
-        deviceLiveProcessesStore.set(device.uuid, dto.processes);
+      const validProcs = dto.processes.filter(
+        (p: any) =>
+          p &&
+          (p.pid !== undefined || p.Pid !== undefined) &&
+          (p.name || p.Name || p.processName || p.ProcessName),
+      );
+      if (validProcs.length > 0) {
+        deviceLiveProcessesStore.set(device.id, validProcs);
+        if (device.uuid) {
+          deviceLiveProcessesStore.set(device.uuid, validProcs);
+        }
       }
     }
 
