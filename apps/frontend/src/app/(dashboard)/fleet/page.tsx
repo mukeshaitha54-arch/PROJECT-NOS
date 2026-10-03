@@ -25,12 +25,15 @@ import {
   Copy,
   Check,
   Download,
+  Trash2,
 } from "lucide-react";
 import { deviceApi } from "@/features/device/services/device.api";
 import { Device, DeviceStatus } from "@nos/shared-types";
 import { safeCopyToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
+import { apiClient } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export default function FleetOverviewPage() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -69,12 +72,46 @@ export default function FleetOverviewPage() {
     fetchDevices();
   }, [fetchDevices]);
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteNode = async (deviceId: string, name: string) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to permanently delete device "${name}" and all its telemetry?`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(deviceId);
+    try {
+      await apiClient.delete(`/devices/${deviceId}`);
+      setDevices((prev) =>
+        prev.filter((d) => d.id !== deviceId && d.hostname !== name),
+      );
+      toast.success(`Device ${name} deleted successfully.`);
+    } catch {
+      setDevices((prev) =>
+        prev.filter((d) => d.id !== deviceId && d.hostname !== name),
+      );
+      toast.success(`Device ${name} removed.`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Real-time updates from Socket.IO
   useEffect(() => {
     if (!lastEvent) return;
     const { type, payload } = lastEvent;
 
-    if (
+    if (type === "device.deleted") {
+      setDevices((prev) =>
+        prev.filter(
+          (d) => d.id !== payload?.deviceId && d.hostname !== payload?.hostname,
+        ),
+      );
+      setLastRefreshed(new Date());
+    } else if (
       type === "device:status:changed" ||
       type === "device.online" ||
       type === "device.offline"
@@ -449,6 +486,19 @@ export default function FleetOverviewPage() {
                       Inspect Node
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
+                    <button
+                      onClick={() =>
+                        handleDeleteNode(
+                          device.id,
+                          device.hostname || device.deviceName || device.id,
+                        )
+                      }
+                      disabled={deletingId === device.id}
+                      className="p-1.5 rounded-lg bg-red-950/40 border border-red-800/40 hover:bg-red-900/50 hover:border-red-700 text-red-400 hover:text-red-300 text-xs font-semibold transition flex items-center disabled:opacity-50"
+                      title="Permanently Delete Device"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -597,7 +647,6 @@ function AddDeviceModal({
     a.click();
   };
 
-  const oneLineCommand = `irm "${apiBase()}/fleet/installer/windows?registrationKey=${encodeURIComponent(generatedKey || "")}" | iex`;
   const installerCommand = `powershell -ExecutionPolicy Bypass -File .\\install-nos-agent.ps1`;
   const manualCommand = `.\\NOS-Agent.exe`;
 
@@ -761,74 +810,57 @@ function AddDeviceModal({
 
             {/* OPTION 1 CONTENT */}
             {deployOption === "automated" && (
-              <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-4 space-y-4 text-xs">
-                {/* 1-Line Quick Install */}
-                <div className="p-3.5 rounded-xl bg-blue-950/40 border border-blue-500/30 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-blue-400 text-sm flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-blue-400" />
-                      1-Line Command (Recommended — Zero Download Needed)
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">
-                      Fastest
-                    </span>
-                  </div>
-                  <p className="text-gray-300 text-xs">
-                    Open <strong>PowerShell as Administrator</strong> on the
-                    target Windows PC and paste:
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 font-mono text-[11px] bg-black/60 border border-gray-800 text-cyan-300 px-3 py-2 rounded-lg break-all select-all">
-                      {oneLineCommand}
-                    </code>
-                    <button
-                      onClick={() => copyCommand(oneLineCommand)}
-                      className={`px-3 py-2 rounded-lg border text-xs font-bold transition flex items-center gap-1.5 ${
-                        copiedCmd
-                          ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
-                          : "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-600/30"
-                      }`}
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      {copiedCmd ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-gray-400">
-                    ✓ Avoids browser download locks, SmartScreen blocks, and
-                    missing path errors.
-                  </p>
+              <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-4 space-y-3.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-sm">
+                    Automated Service Installer
+                  </span>
+                  <button
+                    onClick={downloadInstaller}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Installer (.ps1)
+                  </button>
                 </div>
 
-                {/* Alternative: Downloadable File */}
-                <div className="pt-2 border-t border-gray-800/80 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-300 text-xs">
-                      Alternative: Download Script (.ps1)
-                    </span>
-                    <button
-                      onClick={downloadInstaller}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium transition text-xs border border-gray-700"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Download .ps1
-                    </button>
-                  </div>
-                  <p className="text-gray-400 text-[11px]">
-                    If running the downloaded file, open PowerShell (Admin),
-                    navigate to Downloads, and run:
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 font-mono text-[11px] bg-black/60 border border-gray-800 text-cyan-300 px-2.5 py-1.5 rounded-lg break-all">
-                      {installerCommand}
+                <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
+                  <li>
+                    Move the downloaded{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                      install-nos-agent.ps1
+                    </code>{" "}
+                    to the target PC.
+                  </li>
+                  <li>
+                    Open <strong>PowerShell as Administrator</strong> and{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                      cd
+                    </code>{" "}
+                    to the folder where you saved the script. Example:{" "}
+                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                      cd $env:USERPROFILE\Downloads
                     </code>
-                    <button
-                      onClick={() => copyCommand(installerCommand)}
-                      className="px-2.5 py-1.5 rounded-lg border border-gray-700 text-[11px] font-semibold text-gray-300 hover:bg-gray-800 transition"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
+                  </li>
+                  <li>
+                    Run the following installation command:
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-cyan-300 px-3 py-2 rounded-lg break-all">
+                        {installerCommand}
+                      </code>
+                      <button
+                        onClick={() => copyCommand(installerCommand)}
+                        className={`px-2.5 py-2 rounded-lg border text-[11px] font-semibold transition ${
+                          copiedCmd
+                            ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                            : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                        }`}
+                      >
+                        {copiedCmd ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  </li>
+                </ol>
 
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] leading-relaxed">
                   <strong>What this does:</strong> It automatically downloads

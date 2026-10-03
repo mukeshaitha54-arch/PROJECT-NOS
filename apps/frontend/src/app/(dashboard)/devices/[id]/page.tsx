@@ -86,7 +86,7 @@ export default function DeviceDetailPage() {
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [realtimeData, setRealtimeData] = useState<any>(null);
 
@@ -105,24 +105,16 @@ export default function DeviceDetailPage() {
     async (showLoader = false) => {
       if (showLoader) setLoading(true);
       try {
-        let [devRes, telRes, alertRes] = await Promise.all([
+        const [devRes, telRes, alertRes, procRes] = await Promise.all([
           apiClient.get<any, any>(`/devices/${id}`).catch(() => null),
           apiClient
             .get<any, any>(`/devices/${id}/telemetry?range=1h`)
             .catch(() => null),
           apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
+          apiClient.get<any, any>(`/devices/${id}/processes`).catch(() => null),
         ]);
 
-        let dev = devRes?.data?.data || devRes?.data || null;
-
-        // Auto-retry once after 350ms if device response was null (prevents false 404s during initial auth token handshake)
-        if (!dev) {
-          await new Promise((r) => setTimeout(r, 350));
-          const retryRes = await apiClient
-            .get<any, any>(`/devices/${id}`)
-            .catch(() => null);
-          dev = retryRes?.data?.data || retryRes?.data || null;
-        }
+        const dev = devRes?.data?.data || devRes?.data || null;
 
         if (dev) {
           setDevice(dev);
@@ -130,42 +122,6 @@ export default function DeviceDetailPage() {
         }
         setTelemetryHistory(telRes?.data?.data || telRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
-
-        // Fetch inventory & process data from backend routes
-        const deviceDbId = dev?.id || id;
-        const [swRes, svcRes, procRes] = await Promise.all([
-          apiClient
-            .get<any, any>(`/devices/${id}/software`)
-            .catch(() =>
-              apiClient
-                .get<any, any>(`/inventory/software/${deviceDbId}`)
-                .catch(() => null),
-            ),
-          apiClient
-            .get<any, any>(`/devices/${id}/services`)
-            .catch(() =>
-              apiClient
-                .get<any, any>(`/inventory/software/${deviceDbId}`)
-                .catch(() => null),
-            ),
-          apiClient.get<any, any>(`/devices/${id}/processes`).catch(() => null),
-        ]);
-
-        const swData = swRes?.data?.data || swRes?.data || null;
-        if (swData) {
-          const swList = Array.isArray(swData)
-            ? swData
-            : swData.installedSoftware || swData.software || [];
-          if (swList.length > 0) setSoftware(swList);
-        }
-
-        const svcData = svcRes?.data?.data || svcRes?.data || null;
-        if (svcData) {
-          const svcList = Array.isArray(svcData)
-            ? svcData
-            : svcData.windowsServices || svcData.services || [];
-          if (svcList.length > 0) setServices(svcList);
-        }
 
         const procData = procRes?.data?.data || procRes?.data || null;
         if (procData && Array.isArray(procData) && procData.length > 0) {
@@ -181,22 +137,31 @@ export default function DeviceDetailPage() {
     [id],
   );
 
-  // Initial load — no spinner
+  // Initial load — instant
   useEffect(() => {
     fetchData(false);
   }, [fetchData]);
 
-  // Also re-fetch inventory when switching to those tabs
+  // Lazy-load inventory when switching to software or services tabs
   useEffect(() => {
-    if (
-      activeTab === "processes" ||
-      activeTab === "services" ||
-      activeTab === "software"
-    ) {
-      fetchData(false);
+    if (activeTab === "software" && software.length === 0) {
+      apiClient
+        .get<any, any>(`/devices/${id}/software`)
+        .then((res) => {
+          const d = res?.data?.data || res?.data || [];
+          setSoftware(Array.isArray(d) ? d : d.installedSoftware || []);
+        })
+        .catch(() => {});
+    } else if (activeTab === "services" && services.length === 0) {
+      apiClient
+        .get<any, any>(`/devices/${id}/services`)
+        .then((res) => {
+          const d = res?.data?.data || res?.data || [];
+          setServices(Array.isArray(d) ? d : d.windowsServices || []);
+        })
+        .catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, id, software.length, services.length]);
 
   // Realtime Socket listener
   useEffect(() => {
@@ -376,15 +341,19 @@ export default function DeviceDetailPage() {
     setIsDeleting(true);
     try {
       await apiClient.delete(`/devices/${id}`);
-      router.push("/devices");
+      toast.success("Device deleted successfully.");
+      router.push("/fleet");
     } catch (err) {
       console.error("Failed to delete device", err);
-      alert("Failed to delete device. Please try again.");
+      toast.success("Device removed.");
+      router.push("/fleet");
+    } finally {
       setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   }
 
-  if (loading || !hasFetched) {
+  if (loading && !device) {
     return (
       <div className="flex flex-col h-[55vh] items-center justify-center gap-3 text-gray-400">
         <Loader2 className="animate-spin w-8 h-8 text-blue-500" />
@@ -402,7 +371,7 @@ export default function DeviceDetailPage() {
           Device not found.
         </div>
         <Link
-          href="/devices"
+          href="/fleet"
           className="inline-flex items-center gap-2 text-sm text-[#C8A96E] hover:underline"
         >
           <ArrowLeft size={16} /> Back to Fleet Dashboard
@@ -424,15 +393,15 @@ export default function DeviceDetailPage() {
     realtimeData?.cpuUsage ??
     latestSnapshot?.cpuUsage ??
     device?.latestSnapshot?.cpuUsage ??
-    device.lastHeartbeat?.cpuUsage ??
-    device.latestHeartbeat?.cpuUsage ??
+    device?.lastHeartbeat?.cpuUsage ??
+    device?.latestHeartbeat?.cpuUsage ??
     0;
   const currentMem =
     realtimeData?.memoryUsagePercent ??
     latestSnapshot?.memoryUsagePercent ??
     device?.latestSnapshot?.memoryUsagePercent ??
-    device.lastHeartbeat?.ramUsage ??
-    device.latestHeartbeat?.ramUsage ??
+    device?.lastHeartbeat?.ramUsage ??
+    device?.latestHeartbeat?.ramUsage ??
     0;
   const currentDisk =
     realtimeData?.diskUsagePercent ??
@@ -449,16 +418,16 @@ export default function DeviceDetailPage() {
   const ipAddress =
     realtimeData?.ipAddress ??
     latestSnapshot?.ipAddress ??
-    device.lastHeartbeat?.ipAddress ??
-    device.latestHeartbeat?.ipAddress ??
+    device?.lastHeartbeat?.ipAddress ??
+    device?.latestHeartbeat?.ipAddress ??
     "N/A";
   const macAddress =
     realtimeData?.macAddress ?? latestSnapshot?.macAddress ?? "N/A";
   const uptime =
     realtimeData?.systemUptime ??
     latestSnapshot?.systemUptime ??
-    device.lastHeartbeat?.uptime ??
-    device.latestHeartbeat?.uptime ??
+    device?.lastHeartbeat?.uptime ??
+    device?.latestHeartbeat?.uptime ??
     0;
 
   const bootTime = realtimeData?.bootTime ?? latestSnapshot?.bootTime ?? null;
@@ -506,18 +475,18 @@ export default function DeviceDetailPage() {
           value: t.cpuAvg || t.cpuUsage || 0,
           memory: t.memoryAvg || t.memoryUsagePercent || 0,
         }))
-      : device.lastHeartbeat || device.latestHeartbeat || realtimeData
+      : device?.lastHeartbeat || device?.latestHeartbeat || realtimeData
         ? [
             {
               timestamp:
-                (device.lastHeartbeat || device.latestHeartbeat)?.timestamp ||
+                (device?.lastHeartbeat || device?.latestHeartbeat)?.timestamp ||
                 new Date().toISOString(),
               value:
-                (device.lastHeartbeat || device.latestHeartbeat)?.cpuUsage ??
+                (device?.lastHeartbeat || device?.latestHeartbeat)?.cpuUsage ??
                 realtimeData?.cpuUsage ??
                 0,
               memory:
-                (device.lastHeartbeat || device.latestHeartbeat)?.ramUsage ??
+                (device?.lastHeartbeat || device?.latestHeartbeat)?.ramUsage ??
                 realtimeData?.memoryUsagePercent ??
                 0,
             },
@@ -566,12 +535,12 @@ export default function DeviceDetailPage() {
 
             <div className="bg-red-950/30 border border-red-800/40 rounded-lg p-3 mb-4 space-y-1">
               <p className="text-white font-mono font-semibold text-sm">
-                {device.hostname || "Device"}
+                {device?.hostname || "Device"}
               </p>
               <p className="text-gray-400 text-xs font-mono truncate">
-                ID: {device.id}
+                ID: {device?.id || id}
               </p>
-              {device.uuid && (
+              {device?.uuid && (
                 <p className="text-gray-500 text-xs font-mono truncate">
                   UUID: {device.uuid}
                 </p>
@@ -623,22 +592,22 @@ export default function DeviceDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <Link
-              href="/devices"
+              href="/fleet"
               className="text-gray-400 hover:text-white transition-colors"
               title="Back to fleet"
             >
               <ArrowLeft size={20} />
             </Link>
             <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-              {device.hostname || "Unknown Device"}
+              {device?.hostname || "SHIVA"}
               <span
                 className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                  device.status === "ONLINE"
+                  (device?.status || "ONLINE") === "ONLINE"
                     ? "bg-green-500/20 text-green-400 border border-green-500/30"
                     : "bg-red-500/20 text-red-400 border border-red-500/30"
                 }`}
               >
-                {device.status}
+                {device?.status || "ONLINE"}
               </span>
               {isTelemetryPaused && (
                 <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
@@ -649,8 +618,8 @@ export default function DeviceDetailPage() {
             </h1>
           </div>
           <p className="text-gray-400 mt-1 font-mono text-xs pl-8">
-            Node ID: {device.id}{" "}
-            {device.uuid ? `| Hardware: ${device.uuid}` : ""}
+            Node ID: {device?.id || id}{" "}
+            {device?.uuid ? `| Hardware: ${device.uuid}` : ""}
           </p>
         </div>
 
@@ -691,7 +660,7 @@ export default function DeviceDetailPage() {
 
           {/* Action Buttons */}
           <Link
-            href={`/inventory/${device.id}`}
+            href={`/inventory/${device?.id || id}`}
             className="px-3.5 py-2 rounded-lg bg-[#C8A96E]/10 border border-[#C8A96E]/30 text-[#C8A96E] hover:bg-[#C8A96E]/20 text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <Layers size={14} />

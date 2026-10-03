@@ -49,24 +49,24 @@ export function useRealtime() {
 
     setConnectionState("connecting");
 
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("nos_access_token")
-        : null;
+    const getToken = () => {
+      const t =
+        typeof window !== "undefined"
+          ? localStorage.getItem("nos_access_token")
+          : null;
+      return t ? `Bearer ${t}` : undefined;
+    };
 
-    // Connect to backend Socket.IO with token authentication
+    // Connect to backend Socket.IO with dynamic token authentication
     const socketInstance = io(SOCKET_URL + "/realtime", {
       path: "/socket.io",
       transports: ["websocket", "polling"],
-      auth: {
-        token: token ? `Bearer ${token}` : undefined,
-      },
-      query: {
-        token: token ? `Bearer ${token}` : undefined,
+      auth: (cb) => {
+        cb({ token: getToken() });
       },
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 30000,
+      reconnectionDelayMax: 10000,
       randomizationFactor: 0.5,
     });
 
@@ -76,7 +76,6 @@ export function useRealtime() {
       setIsConnected(true);
       setConnectionState("connected");
       setError(null);
-      // Emit device:subscribe with organizationId
       // Join the global dashboard room to receive events for all devices
       socketInstance.emit("joinRoom", "dashboard");
     });
@@ -88,9 +87,17 @@ export function useRealtime() {
       );
     });
 
-    socketInstance.on("connect_error", (err) => {
+    socketInstance.on("connect_error", (err: any) => {
       setError(err);
       setConnectionState("reconnecting");
+      // If token expired, update auth object for next retry
+      if (
+        err?.message?.includes("jwt") ||
+        err?.message?.includes("token") ||
+        err?.message?.includes("expired")
+      ) {
+        socketInstance.auth = { token: getToken() };
+      }
     });
 
     // Centralized event listener for all events to trigger local callbacks and update lastEvent

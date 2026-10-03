@@ -30,9 +30,9 @@ import { GlobalExceptionFilter } from "./common/filters/global-exception.filter"
     // Tier 2 — auth:         5 req/60s  (login, register, forgot-password)
     // Tier 3 — telemetry: 1000 req/60s  (agent telemetry ingest)
     ThrottlerModule.forRoot([
-      { name: "default", ttl: 60000, limit: 100 },
-      { name: "auth", ttl: 60000, limit: 5 },
-      { name: "telemetry", ttl: 60000, limit: 1000 },
+      { name: "default", ttl: 60000, limit: 1000 },
+      { name: "auth", ttl: 60000, limit: 30 },
+      { name: "telemetry", ttl: 60000, limit: 2000 },
     ]),
     DatabaseModule,
     HealthModule,

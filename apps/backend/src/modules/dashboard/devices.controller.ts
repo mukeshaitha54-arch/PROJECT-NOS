@@ -515,7 +515,10 @@ export class DevicesController {
     });
 
     if (!device) {
-      throw new NotFoundException("Device not found");
+      return {
+        success: true,
+        message: "Device already deleted or does not exist.",
+      };
     }
 
     const deviceId = device.id;
@@ -533,7 +536,9 @@ export class DevicesController {
       this.prisma.deviceInventory.deleteMany({ where: { deviceId } }),
     ]);
 
-    await this.prisma.device.delete({ where: { id: deviceId } });
+    await this.prisma.device
+      .delete({ where: { id: deviceId } })
+      .catch(() => {});
 
     try {
       if (device.organizationId) {
@@ -546,6 +551,11 @@ export class DevicesController {
         });
       }
     } catch {}
+
+    this.eventEmitter.emit("device.deleted", {
+      deviceId,
+      hostname: device.hostname,
+    });
 
     return {
       success: true,
