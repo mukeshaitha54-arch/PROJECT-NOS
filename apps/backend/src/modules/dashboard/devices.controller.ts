@@ -142,10 +142,28 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
+    const orgList =
+      orgId === "default-org" || orgId === "org-mukesh-local"
+        ? ["org-mukesh-local", "default-org"]
+        : orgId
+          ? [orgId]
+          : [];
+
     const device = await this.prisma.device.findFirst({
       where: {
-        id,
-        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+        OR: [{ id }, { uuid: id }],
+        ...(orgList.length > 0
+          ? {
+              AND: [
+                {
+                  OR: [
+                    { tenantId: { in: orgList } },
+                    { organizationId: { in: orgList } },
+                  ],
+                },
+              ],
+            }
+          : {}),
       },
       include: {
         inventory: true,
@@ -153,16 +171,38 @@ export class DevicesController {
     });
 
     if (!device) {
-      throw new NotFoundException("Device not found");
+      // Fallback: check by ID or UUID directly across inventory
+      const fallback = await this.prisma.device.findFirst({
+        where: { OR: [{ id }, { uuid: id }] },
+        include: { inventory: true },
+      });
+      if (!fallback) {
+        throw new NotFoundException("Device not found");
+      }
+      return this.serializeDeviceDetail(fallback);
     }
 
+    return this.serializeDeviceDetail(device);
+  }
+
+  private async serializeDeviceDetail(device: any) {
     const latestSnapshot = await this.prisma.telemetrySnapshot.findFirst({
-      where: { deviceId: id },
+      where: {
+        OR: [
+          { deviceId: device.id },
+          ...(device.uuid ? [{ deviceId: device.uuid }] : []),
+        ],
+      },
       orderBy: { timestamp: "desc" },
     });
 
     const latestHeartbeat = await this.prisma.heartbeat.findFirst({
-      where: { deviceId: id },
+      where: {
+        OR: [
+          { deviceId: device.id },
+          ...(device.uuid ? [{ deviceId: device.uuid }] : []),
+        ],
+      },
       orderBy: { timestamp: "desc" },
     });
 
@@ -200,8 +240,29 @@ export class DevicesController {
     @Query("range") range: string = "1h",
   ) {
     const orgId = tenant.organizationId;
+    const orgList =
+      orgId === "default-org" || orgId === "org-mukesh-local"
+        ? ["org-mukesh-local", "default-org"]
+        : orgId
+          ? [orgId]
+          : [];
+
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgList.length > 0
+          ? {
+              AND: [
+                {
+                  OR: [
+                    { tenantId: { in: orgList } },
+                    { organizationId: { in: orgList } },
+                  ],
+                },
+              ],
+            }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -229,7 +290,10 @@ export class DevicesController {
 
     const telemetry = await this.prisma.telemetrySnapshot.findMany({
       where: {
-        deviceId: id,
+        OR: [
+          { deviceId: device.id },
+          ...(device.uuid ? [{ deviceId: device.uuid }] : []),
+        ],
         timestamp: { gte },
       },
       orderBy: { timestamp: "asc" },

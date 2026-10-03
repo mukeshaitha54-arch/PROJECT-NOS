@@ -86,7 +86,8 @@ export default function DeviceDetailPage() {
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
-  const [loading, setLoading] = useState(false); // FIXED: don't block initial render
+  const [loading, setLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
   const [realtimeData, setRealtimeData] = useState<any>(null);
 
   // Self-resetting 30s countdown timer
@@ -104,7 +105,7 @@ export default function DeviceDetailPage() {
     async (showLoader = false) => {
       if (showLoader) setLoading(true);
       try {
-        const [devRes, telRes, alertRes] = await Promise.all([
+        let [devRes, telRes, alertRes] = await Promise.all([
           apiClient.get<any, any>(`/devices/${id}`).catch(() => null),
           apiClient
             .get<any, any>(`/devices/${id}/telemetry?range=1h`)
@@ -112,7 +113,17 @@ export default function DeviceDetailPage() {
           apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
         ]);
 
-        const dev = devRes?.data?.data || devRes?.data || null;
+        let dev = devRes?.data?.data || devRes?.data || null;
+
+        // Auto-retry once after 350ms if device response was null (prevents false 404s during initial auth token handshake)
+        if (!dev) {
+          await new Promise((r) => setTimeout(r, 350));
+          const retryRes = await apiClient
+            .get<any, any>(`/devices/${id}`)
+            .catch(() => null);
+          dev = retryRes?.data?.data || retryRes?.data || null;
+        }
+
         if (dev) {
           setDevice(dev);
           setIsTelemetryPaused(!!dev.telemetryPaused);
@@ -164,6 +175,7 @@ export default function DeviceDetailPage() {
         console.error("Failed to load device details", err);
       } finally {
         setLoading(false);
+        setHasFetched(true);
       }
     },
     [id],
@@ -372,15 +384,18 @@ export default function DeviceDetailPage() {
     }
   }
 
-  if (loading) {
+  if (loading || !hasFetched) {
     return (
-      <div className="flex h-[50vh] items-center justify-center text-gray-500">
-        <Loader2 className="animate-spin w-8 h-8" />
+      <div className="flex flex-col h-[55vh] items-center justify-center gap-3 text-gray-400">
+        <Loader2 className="animate-spin w-8 h-8 text-blue-500" />
+        <span className="text-xs text-gray-500 font-medium tracking-wide">
+          Connecting to monitored node...
+        </span>
       </div>
     );
   }
 
-  if (!device) {
+  if (hasFetched && !device) {
     return (
       <div className="p-8 text-center space-y-4">
         <div className="text-red-400 font-semibold text-lg">

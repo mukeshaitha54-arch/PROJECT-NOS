@@ -120,7 +120,8 @@ export default function DeviceInventoryDetailPage({
 
   const [activeTab, setActiveTab] = useState<TabType>("HARDWARE");
   const [inventory, setInventory] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [hasLoaded, setHasLoaded] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [rescanLoading, setRescanLoading] = useState(false);
 
@@ -128,17 +129,33 @@ export default function DeviceInventoryDetailPage({
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get<any>(`/inventory/${deviceId}`);
-      const inv =
-        res.data?.data?.inventory || res.data?.inventory || res.data?.data;
-      setInventory(inv);
-    } catch (err: any) {
-      if (err?.response?.status === 404) {
+      let res = await apiClient
+        .get<any>(`/inventory/${deviceId}`)
+        .catch((err) => {
+          if (err?.response?.status === 404) return null;
+          throw err;
+        });
+
+      // Quick retry in case token or discovery was finishing
+      if (!res) {
+        await new Promise((r) => setTimeout(r, 400));
+        res = await apiClient
+          .get<any>(`/inventory/${deviceId}`)
+          .catch(() => null);
+      }
+
+      if (res?.data) {
+        const inv =
+          res.data?.data?.inventory || res.data?.inventory || res.data?.data;
+        setInventory(inv);
+      } else {
         setError(
           "Inventory has not yet been discovered for this device. The agent will run the asset discovery cycle on next startup.",
         );
         setInventory(null);
-      } else if (err?.response?.status === 429) {
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 429) {
         setError("Rate limit reached. Waiting before retrying...");
       } else {
         setError(
@@ -149,6 +166,7 @@ export default function DeviceInventoryDetailPage({
       }
     } finally {
       setLoading(false);
+      setHasLoaded(true);
     }
   }, [deviceId]);
 
@@ -338,488 +356,524 @@ export default function DeviceInventoryDetailPage({
 
         {/* Tab Content */}
         <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-6 backdrop-blur-xl">
-          {loading && !inventory && (
-            <div className="text-center py-16 text-slate-500">
-              <RefreshCw className="animate-spin w-8 h-8 mx-auto mb-4 text-cyan-500" />
-              <p>Running asset discovery scan…</p>
+          {(loading || !hasLoaded) && !inventory && (
+            <div className="text-center py-20 text-slate-400 flex flex-col items-center justify-center gap-3">
+              <RefreshCw className="animate-spin w-8 h-8 text-cyan-400" />
+              <p className="text-xs font-medium tracking-wide text-slate-400">
+                Retrieving hardware inventory &amp; asset telemetry...
+              </p>
             </div>
           )}
 
-          {/* ── HARDWARE TAB ── */}
-          {activeTab === "HARDWARE" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* CPU */}
-                <Card title="Processor (CPU)" color="blue">
-                  <InfoRow label="Model" value={inventory?.cpuModel} />
-                  <InfoRow label="Vendor" value={inventory?.cpuVendor} />
-                  <InfoRow
-                    label="Physical Cores"
-                    value={inventory?.physicalCores}
-                  />
-                  <InfoRow
-                    label="Logical Processors"
-                    value={inventory?.logicalCores}
-                  />
-                </Card>
+          {inventory && (
+            <>
+              {/* ── HARDWARE TAB ── */}
+              {activeTab === "HARDWARE" && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* CPU */}
+                    <Card title="Processor (CPU)" color="blue">
+                      <InfoRow label="Model" value={inventory?.cpuModel} />
+                      <InfoRow label="Vendor" value={inventory?.cpuVendor} />
+                      <InfoRow
+                        label="Physical Cores"
+                        value={inventory?.physicalCores}
+                      />
+                      <InfoRow
+                        label="Logical Processors"
+                        value={inventory?.logicalCores}
+                      />
+                    </Card>
 
-                {/* System Board & BIOS */}
-                <Card title="System Board & BIOS" color="purple">
-                  <InfoRow label="Motherboard" value={inventory?.motherboard} />
-                  <InfoRow label="BIOS Vendor" value={inventory?.biosVendor} />
-                  <InfoRow
-                    label="BIOS Version"
-                    value={inventory?.biosVersion}
-                    mono
-                  />
-                  <InfoRow
-                    label="BIOS Date"
-                    value={
-                      inventory?.biosReleaseDate
-                        ? new Date(
-                            inventory.biosReleaseDate,
-                          ).toLocaleDateString()
-                        : null
-                    }
-                  />
-                </Card>
+                    {/* System Board & BIOS */}
+                    <Card title="System Board & BIOS" color="purple">
+                      <InfoRow
+                        label="Motherboard"
+                        value={inventory?.motherboard}
+                      />
+                      <InfoRow
+                        label="BIOS Vendor"
+                        value={inventory?.biosVendor}
+                      />
+                      <InfoRow
+                        label="BIOS Version"
+                        value={inventory?.biosVersion}
+                        mono
+                      />
+                      <InfoRow
+                        label="BIOS Date"
+                        value={
+                          inventory?.biosReleaseDate
+                            ? new Date(
+                                inventory.biosReleaseDate,
+                              ).toLocaleDateString()
+                            : null
+                        }
+                      />
+                    </Card>
 
-                {/* Operating System */}
-                <Card title="Operating System" color="emerald">
-                  <InfoRow label="Edition" value={inventory?.osEdition} />
-                  <InfoRow label="Build" value={inventory?.osBuild} mono />
-                  <InfoRow
-                    label="Architecture"
-                    value={inventory?.architecture}
-                  />
-                  <InfoRow
-                    label="OS Serial"
-                    value={inventory?.osSerialNumber}
-                    mono
-                  />
-                </Card>
+                    {/* Operating System */}
+                    <Card title="Operating System" color="emerald">
+                      <InfoRow label="Edition" value={inventory?.osEdition} />
+                      <InfoRow label="Build" value={inventory?.osBuild} mono />
+                      <InfoRow
+                        label="Architecture"
+                        value={inventory?.architecture}
+                      />
+                      <InfoRow
+                        label="OS Serial"
+                        value={inventory?.osSerialNumber}
+                        mono
+                      />
+                    </Card>
 
-                {/* Core System */}
-                <Card title="Core System" color="orange">
-                  <InfoRow
-                    label="Manufacturer"
-                    value={inventory?.manufacturer}
-                  />
-                  <InfoRow label="Model" value={inventory?.model} />
-                  <InfoRow
-                    label="Serial Number"
-                    value={inventory?.serialNumber}
-                    mono
-                  />
-                </Card>
+                    {/* Core System */}
+                    <Card title="Core System" color="orange">
+                      <InfoRow
+                        label="Manufacturer"
+                        value={inventory?.manufacturer}
+                      />
+                      <InfoRow label="Model" value={inventory?.model} />
+                      <InfoRow
+                        label="Serial Number"
+                        value={inventory?.serialNumber}
+                        mono
+                      />
+                    </Card>
 
-                {/* Network Identity */}
-                <Card title="Network Identity" color="cyan">
-                  <InfoRow label="Hostname" value={inventory?.hostname} mono />
-                  <InfoRow label="Domain" value={inventory?.domain} mono />
-                  <InfoRow label="Workgroup" value={inventory?.workgroup} />
-                </Card>
-              </div>
-
-              {/* RAM Sticks */}
-              {inventory?.memoryModules &&
-                inventory.memoryModules.length > 0 && (
-                  <Card
-                    title={`Memory Modules — ${inventory.memoryModules.length} Stick(s)`}
-                    color="purple"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                      {inventory.memoryModules.map((mem: any, i: number) => (
-                        <div
-                          key={i}
-                          className="border-l-2 border-purple-500/50 pl-3"
-                        >
-                          <p className="text-sm font-bold text-white">
-                            {mem.manufacturer || "Unknown"}{" "}
-                            {mem.capacityGB
-                              ? `${mem.capacityGB} GB`
-                              : mem.capacityBytes
-                                ? bytes(mem.capacityBytes)
-                                : "? GB"}
-                          </p>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            {mem.speedMHz ? `${mem.speedMHz} MHz` : ""}{" "}
-                            {mem.partNumber ? `| PN: ${mem.partNumber}` : ""}{" "}
-                            {mem.slot ? `| Slot: ${mem.slot}` : ""}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-
-              {/* Disk Drives */}
-              {inventory?.diskDrives && inventory.diskDrives.length > 0 && (
-                <Card
-                  title={`Storage Drives — ${inventory.diskDrives.length} Drive(s)`}
-                  color="emerald"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                    {inventory.diskDrives.map((disk: any, i: number) => (
-                      <div
-                        key={i}
-                        className="border-l-2 border-emerald-500/50 pl-3"
-                      >
-                        <p className="text-sm font-bold text-white">
-                          {disk.model || "Unknown Drive"}{" "}
-                          <span className="text-emerald-400">
-                            (
-                            {disk.sizeGB
-                              ? `${disk.sizeGB} GB`
-                              : disk.sizeBytes
-                                ? bytes(disk.sizeBytes)
-                                : "?"}
-                            )
-                          </span>
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {disk.mediaType ? `Type: ${disk.mediaType}` : ""}{" "}
-                          {disk.interfaceType
-                            ? `| Interface: ${disk.interfaceType}`
-                            : ""}{" "}
-                          {disk.serialNumber
-                            ? `| SN: ${disk.serialNumber}`
-                            : ""}
-                        </p>
-                      </div>
-                    ))}
+                    {/* Network Identity */}
+                    <Card title="Network Identity" color="cyan">
+                      <InfoRow
+                        label="Hostname"
+                        value={inventory?.hostname}
+                        mono
+                      />
+                      <InfoRow label="Domain" value={inventory?.domain} mono />
+                      <InfoRow label="Workgroup" value={inventory?.workgroup} />
+                    </Card>
                   </div>
-                </Card>
-              )}
 
-              {/* GPUs */}
-              {inventory?.gpus && inventory.gpus.length > 0 && (
-                <Card
-                  title={`Graphics (GPU) — ${inventory.gpus.length} Adapter(s)`}
-                  color="orange"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                    {inventory.gpus.map((gpu: any, i: number) => (
-                      <div
-                        key={i}
-                        className="border-l-2 border-orange-500/50 pl-3"
+                  {/* RAM Sticks */}
+                  {inventory?.memoryModules &&
+                    inventory.memoryModules.length > 0 && (
+                      <Card
+                        title={`Memory Modules — ${inventory.memoryModules.length} Stick(s)`}
+                        color="purple"
                       >
-                        <p className="text-sm font-bold text-white">
-                          {gpu.name || "Unknown GPU"}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {gpu.vramMB
-                            ? `VRAM: ${(gpu.vramMB / 1024).toFixed(1)} GB`
-                            : gpu.vramBytes
-                              ? `VRAM: ${bytes(gpu.vramBytes)}`
-                              : ""}{" "}
-                          {gpu.driverVersion
-                            ? `| Driver: ${gpu.driverVersion}`
-                            : ""}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {/* ── SOFTWARE TAB ── */}
-          {activeTab === "SOFTWARE" && (
-            <DataTable
-              columns={softwareCols}
-              data={inventory?.installedSoftware || []}
-              loading={loading}
-              searchable={true}
-              searchPlaceholder="Search installed software…"
-              emptyTitle="No software records yet"
-            />
-          )}
-
-          {/* ── SERVICES TAB ── */}
-          {activeTab === "SERVICES" && (
-            <DataTable
-              columns={serviceCols}
-              data={inventory?.windowsServices || []}
-              loading={loading}
-              searchable={true}
-              searchPlaceholder="Search Windows services…"
-              emptyTitle="No service records yet"
-            />
-          )}
-
-          {/* ── NETWORK TAB ── */}
-          {activeTab === "NETWORK" && (
-            <div className="space-y-4">
-              {inventory?.networkAdapters &&
-              inventory.networkAdapters.length > 0 ? (
-                inventory.networkAdapters.map((net: any, i: number) => (
-                  <Card
-                    key={i}
-                    title={net.name || net.description || `Adapter ${i + 1}`}
-                    color="blue"
-                  >
-                    <div className="grid grid-cols-2 gap-x-8">
-                      <div>
-                        <InfoRow
-                          label="MAC Address"
-                          value={net.macAddress}
-                          mono
-                        />
-                        <InfoRow
-                          label="IPv4 Address"
-                          value={net.ipAddress || net.ipv4}
-                          mono
-                        />
-                        <InfoRow label="IPv6 Address" value={net.ipv6} mono />
-                        <InfoRow label="Gateway" value={net.gateway} mono />
-                      </div>
-                      <div>
-                        <InfoRow
-                          label="DNS Domain"
-                          value={net.dns || net.dnsDomain}
-                          mono
-                        />
-                        <InfoRow
-                          label="Type"
-                          value={
-                            net.isWireless
-                              ? "Wireless (Wi-Fi)"
-                              : net.isPhysical
-                                ? "Wired (Ethernet)"
-                                : "Virtual"
-                          }
-                        />
-                        <InfoRow
-                          label="Status"
-                          value={
-                            net.isOperational ? "Connected" : "Disconnected"
-                          }
-                        />
-                        <InfoRow
-                          label="Speed"
-                          value={net.speedMbps ? `${net.speedMbps} Mbps` : null}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="text-center py-16 text-slate-500">
-                  <Wifi size={32} className="mx-auto mb-3 opacity-40" />
-                  <p>No network adapters found in inventory yet.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── SECURITY TAB ── */}
-          {activeTab === "SECURITY" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Defender */}
-              <Card title="Windows Defender / Antivirus" color="green">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">
-                    Real-Time Protection
-                  </span>
-                  <StatusBool
-                    value={
-                      inventory?.windowsDefenderEnabled ??
-                      inventory?.security?.windowsDefenderEnabled
-                    }
-                  />
-                </div>
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">Firewall</span>
-                  <StatusBool
-                    value={
-                      inventory?.firewallEnabled ??
-                      inventory?.security?.firewallEnabled
-                    }
-                  />
-                </div>
-              </Card>
-
-              {/* TPM */}
-              <Card title="TPM (Trusted Platform Module)" color="cyan">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">TPM Enabled</span>
-                  <StatusBool
-                    value={
-                      inventory?.tpmEnabled ?? inventory?.security?.tpmEnabled
-                    }
-                  />
-                </div>
-                <InfoRow
-                  label="TPM Version"
-                  value={
-                    inventory?.tpmVersion ?? inventory?.security?.tpmVersion
-                  }
-                  mono
-                />
-              </Card>
-
-              {/* BitLocker */}
-              <Card title="BitLocker Encryption" color="amber">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">
-                    BitLocker Enabled
-                  </span>
-                  <StatusBool
-                    value={
-                      inventory?.bitLockerEnabled ??
-                      inventory?.security?.bitLockerEnabled
-                    }
-                  />
-                </div>
-                <InfoRow
-                  label="Protected Drive"
-                  value={
-                    inventory?.bitLockerDrive ??
-                    inventory?.security?.bitLockerDrive
-                  }
-                />
-              </Card>
-
-              {/* Secure Boot */}
-              <Card title="Secure Boot" color="green">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">Secure Boot</span>
-                  <StatusBool
-                    value={
-                      inventory?.secureBootEnabled ??
-                      inventory?.security?.secureBootEnabled
-                    }
-                  />
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* ── EXTENDED TAB ── */}
-          {activeTab === "EXTENDED" && (
-            <div className="space-y-6">
-              {/* Startup Apps */}
-              {inventory?.startupApplications &&
-                inventory.startupApplications.length > 0 && (
-                  <Card
-                    title={`Startup Applications — ${inventory.startupApplications.length} entries`}
-                    color="amber"
-                  >
-                    <div className="space-y-1 mt-1 max-h-64 overflow-y-auto">
-                      {inventory.startupApplications.map(
-                        (app: any, i: number) => (
-                          <div
-                            key={i}
-                            className="flex justify-between items-center text-xs py-1 border-b border-slate-800/40"
-                          >
-                            <span className="text-slate-200 font-semibold">
-                              {app.name}
-                            </span>
-                            <span className="text-slate-500 font-mono truncate max-w-[320px]">
-                              {app.command || app.executablePath}
-                            </span>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </Card>
-                )}
-
-              {/* USB Devices */}
-              <Card title="Connected USB Devices" color="blue">
-                {inventory?.usbDevices && inventory.usbDevices.length > 0 ? (
-                  <div className="space-y-1 mt-1">
-                    {inventory.usbDevices.map((usb: any, i: number) => (
-                      <div
-                        key={i}
-                        className="text-xs py-1 border-b border-slate-800/40 last:border-0"
-                      >
-                        <span className="text-slate-200 font-semibold">
-                          {usb.description || usb.name}
-                        </span>{" "}
-                        <span className="text-slate-500 font-mono">
-                          VID:{usb.vendorId} PID:{usb.productId}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 mt-1">
-                    USB enumeration requires the agent to run with Administrator
-                    privileges. Data will appear on next scan.
-                  </p>
-                )}
-              </Card>
-
-              {/* Windows Updates (KB patches) */}
-              {inventory?.windowsUpdates &&
-                inventory.windowsUpdates.length > 0 && (
-                  <Card
-                    title={`Windows Updates — ${inventory.windowsUpdates.length} KB patches`}
-                    color="cyan"
-                  >
-                    <div className="max-h-64 overflow-y-auto mt-1">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="text-slate-500">
-                            <th className="text-left py-1">KB ID</th>
-                            <th className="text-left py-1">Installed On</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {inventory.windowsUpdates.map(
-                            (kb: any, i: number) => (
-                              <tr
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                          {inventory.memoryModules.map(
+                            (mem: any, i: number) => (
+                              <div
                                 key={i}
-                                className="border-t border-slate-800/40"
+                                className="border-l-2 border-purple-500/50 pl-3"
                               >
-                                <td className="py-1 font-mono text-cyan-400">
-                                  {kb.hotFixId || kb.kbId}
-                                </td>
-                                <td className="py-1 text-slate-400">
-                                  {kb.installedOn || kb.installedAt}
-                                </td>
-                              </tr>
+                                <p className="text-sm font-bold text-white">
+                                  {mem.manufacturer || "Unknown"}{" "}
+                                  {mem.capacityGB
+                                    ? `${mem.capacityGB} GB`
+                                    : mem.capacityBytes
+                                      ? bytes(mem.capacityBytes)
+                                      : "? GB"}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  {mem.speedMHz ? `${mem.speedMHz} MHz` : ""}{" "}
+                                  {mem.partNumber
+                                    ? `| PN: ${mem.partNumber}`
+                                    : ""}{" "}
+                                  {mem.slot ? `| Slot: ${mem.slot}` : ""}
+                                </p>
+                              </div>
                             ),
                           )}
-                        </tbody>
-                      </table>
+                        </div>
+                      </Card>
+                    )}
+
+                  {/* Disk Drives */}
+                  {inventory?.diskDrives && inventory.diskDrives.length > 0 && (
+                    <Card
+                      title={`Storage Drives — ${inventory.diskDrives.length} Drive(s)`}
+                      color="emerald"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                        {inventory.diskDrives.map((disk: any, i: number) => (
+                          <div
+                            key={i}
+                            className="border-l-2 border-emerald-500/50 pl-3"
+                          >
+                            <p className="text-sm font-bold text-white">
+                              {disk.model || "Unknown Drive"}{" "}
+                              <span className="text-emerald-400">
+                                (
+                                {disk.sizeGB
+                                  ? `${disk.sizeGB} GB`
+                                  : disk.sizeBytes
+                                    ? bytes(disk.sizeBytes)
+                                    : "?"}
+                                )
+                              </span>
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {disk.mediaType ? `Type: ${disk.mediaType}` : ""}{" "}
+                              {disk.interfaceType
+                                ? `| Interface: ${disk.interfaceType}`
+                                : ""}{" "}
+                              {disk.serialNumber
+                                ? `| SN: ${disk.serialNumber}`
+                                : ""}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* GPUs */}
+                  {inventory?.gpus && inventory.gpus.length > 0 && (
+                    <Card
+                      title={`Graphics (GPU) — ${inventory.gpus.length} Adapter(s)`}
+                      color="orange"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                        {inventory.gpus.map((gpu: any, i: number) => (
+                          <div
+                            key={i}
+                            className="border-l-2 border-orange-500/50 pl-3"
+                          >
+                            <p className="text-sm font-bold text-white">
+                              {gpu.name || "Unknown GPU"}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {gpu.vramMB
+                                ? `VRAM: ${(gpu.vramMB / 1024).toFixed(1)} GB`
+                                : gpu.vramBytes
+                                  ? `VRAM: ${bytes(gpu.vramBytes)}`
+                                  : ""}{" "}
+                              {gpu.driverVersion
+                                ? `| Driver: ${gpu.driverVersion}`
+                                : ""}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* ── SOFTWARE TAB ── */}
+              {activeTab === "SOFTWARE" && (
+                <DataTable
+                  columns={softwareCols}
+                  data={inventory?.installedSoftware || []}
+                  loading={loading}
+                  searchable={true}
+                  searchPlaceholder="Search installed software…"
+                  emptyTitle="No software records yet"
+                />
+              )}
+
+              {/* ── SERVICES TAB ── */}
+              {activeTab === "SERVICES" && (
+                <DataTable
+                  columns={serviceCols}
+                  data={inventory?.windowsServices || []}
+                  loading={loading}
+                  searchable={true}
+                  searchPlaceholder="Search Windows services…"
+                  emptyTitle="No service records yet"
+                />
+              )}
+
+              {/* ── NETWORK TAB ── */}
+              {activeTab === "NETWORK" && (
+                <div className="space-y-4">
+                  {inventory?.networkAdapters &&
+                  inventory.networkAdapters.length > 0 ? (
+                    inventory.networkAdapters.map((net: any, i: number) => (
+                      <Card
+                        key={i}
+                        title={
+                          net.name || net.description || `Adapter ${i + 1}`
+                        }
+                        color="blue"
+                      >
+                        <div className="grid grid-cols-2 gap-x-8">
+                          <div>
+                            <InfoRow
+                              label="MAC Address"
+                              value={net.macAddress}
+                              mono
+                            />
+                            <InfoRow
+                              label="IPv4 Address"
+                              value={net.ipAddress || net.ipv4}
+                              mono
+                            />
+                            <InfoRow
+                              label="IPv6 Address"
+                              value={net.ipv6}
+                              mono
+                            />
+                            <InfoRow label="Gateway" value={net.gateway} mono />
+                          </div>
+                          <div>
+                            <InfoRow
+                              label="DNS Domain"
+                              value={net.dns || net.dnsDomain}
+                              mono
+                            />
+                            <InfoRow
+                              label="Type"
+                              value={
+                                net.isWireless
+                                  ? "Wireless (Wi-Fi)"
+                                  : net.isPhysical
+                                    ? "Wired (Ethernet)"
+                                    : "Virtual"
+                              }
+                            />
+                            <InfoRow
+                              label="Status"
+                              value={
+                                net.isOperational ? "Connected" : "Disconnected"
+                              }
+                            />
+                            <InfoRow
+                              label="Speed"
+                              value={
+                                net.speedMbps ? `${net.speedMbps} Mbps` : null
+                              }
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-16 text-slate-500">
+                      <Wifi size={32} className="mx-auto mb-3 opacity-40" />
+                      <p>No network adapters found in inventory yet.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── SECURITY TAB ── */}
+              {activeTab === "SECURITY" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Defender */}
+                  <Card title="Windows Defender / Antivirus" color="green">
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-xs text-slate-400">
+                        Real-Time Protection
+                      </span>
+                      <StatusBool
+                        value={
+                          inventory?.windowsDefenderEnabled ??
+                          inventory?.security?.windowsDefenderEnabled
+                        }
+                      />
+                    </div>
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-xs text-slate-400">Firewall</span>
+                      <StatusBool
+                        value={
+                          inventory?.firewallEnabled ??
+                          inventory?.security?.firewallEnabled
+                        }
+                      />
                     </div>
                   </Card>
-                )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* S.M.A.R.T Disk Health */}
-                <Card title="S.M.A.R.T Disk Health" color="emerald">
-                  {inventory?.smartData && inventory.smartData.length > 0 ? (
-                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                      {JSON.stringify(inventory.smartData, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="text-xs text-slate-500">
-                      S.M.A.R.T data requires elevated WMI access. Available on
-                      next privileged scan.
-                    </p>
-                  )}
-                </Card>
+                  {/* TPM */}
+                  <Card title="TPM (Trusted Platform Module)" color="cyan">
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-xs text-slate-400">
+                        TPM Enabled
+                      </span>
+                      <StatusBool
+                        value={
+                          inventory?.tpmEnabled ??
+                          inventory?.security?.tpmEnabled
+                        }
+                      />
+                    </div>
+                    <InfoRow
+                      label="TPM Version"
+                      value={
+                        inventory?.tpmVersion ?? inventory?.security?.tpmVersion
+                      }
+                      mono
+                    />
+                  </Card>
 
-                {/* Event Logs */}
-                <Card title="Recent Critical Events" color="red">
-                  {inventory?.eventLogs && inventory.eventLogs.length > 0 ? (
-                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                      {JSON.stringify(inventory.eventLogs, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="text-xs text-slate-500">
-                      No critical Windows Event Viewer entries in the last 24
-                      hours.
-                    </p>
-                  )}
-                </Card>
-              </div>
-            </div>
+                  {/* BitLocker */}
+                  <Card title="BitLocker Encryption" color="amber">
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-xs text-slate-400">
+                        BitLocker Enabled
+                      </span>
+                      <StatusBool
+                        value={
+                          inventory?.bitLockerEnabled ??
+                          inventory?.security?.bitLockerEnabled
+                        }
+                      />
+                    </div>
+                    <InfoRow
+                      label="Protected Drive"
+                      value={
+                        inventory?.bitLockerDrive ??
+                        inventory?.security?.bitLockerDrive
+                      }
+                    />
+                  </Card>
+
+                  {/* Secure Boot */}
+                  <Card title="Secure Boot" color="green">
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-xs text-slate-400">
+                        Secure Boot
+                      </span>
+                      <StatusBool
+                        value={
+                          inventory?.secureBootEnabled ??
+                          inventory?.security?.secureBootEnabled
+                        }
+                      />
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* ── EXTENDED TAB ── */}
+              {activeTab === "EXTENDED" && (
+                <div className="space-y-6">
+                  {/* Startup Apps */}
+                  {inventory?.startupApplications &&
+                    inventory.startupApplications.length > 0 && (
+                      <Card
+                        title={`Startup Applications — ${inventory.startupApplications.length} entries`}
+                        color="amber"
+                      >
+                        <div className="space-y-1 mt-1 max-h-64 overflow-y-auto">
+                          {inventory.startupApplications.map(
+                            (app: any, i: number) => (
+                              <div
+                                key={i}
+                                className="flex justify-between items-center text-xs py-1 border-b border-slate-800/40"
+                              >
+                                <span className="text-slate-200 font-semibold">
+                                  {app.name}
+                                </span>
+                                <span className="text-slate-500 font-mono truncate max-w-[320px]">
+                                  {app.command || app.executablePath}
+                                </span>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </Card>
+                    )}
+
+                  {/* USB Devices */}
+                  <Card title="Connected USB Devices" color="blue">
+                    {inventory?.usbDevices &&
+                    inventory.usbDevices.length > 0 ? (
+                      <div className="space-y-1 mt-1">
+                        {inventory.usbDevices.map((usb: any, i: number) => (
+                          <div
+                            key={i}
+                            className="text-xs py-1 border-b border-slate-800/40 last:border-0"
+                          >
+                            <span className="text-slate-200 font-semibold">
+                              {usb.description || usb.name}
+                            </span>{" "}
+                            <span className="text-slate-500 font-mono">
+                              VID:{usb.vendorId} PID:{usb.productId}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-1">
+                        USB enumeration requires the agent to run with
+                        Administrator privileges. Data will appear on next scan.
+                      </p>
+                    )}
+                  </Card>
+
+                  {/* Windows Updates (KB patches) */}
+                  {inventory?.windowsUpdates &&
+                    inventory.windowsUpdates.length > 0 && (
+                      <Card
+                        title={`Windows Updates — ${inventory.windowsUpdates.length} KB patches`}
+                        color="cyan"
+                      >
+                        <div className="max-h-64 overflow-y-auto mt-1">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-slate-500">
+                                <th className="text-left py-1">KB ID</th>
+                                <th className="text-left py-1">Installed On</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {inventory.windowsUpdates.map(
+                                (kb: any, i: number) => (
+                                  <tr
+                                    key={i}
+                                    className="border-t border-slate-800/40"
+                                  >
+                                    <td className="py-1 font-mono text-cyan-400">
+                                      {kb.hotFixId || kb.kbId}
+                                    </td>
+                                    <td className="py-1 text-slate-400">
+                                      {kb.installedOn || kb.installedAt}
+                                    </td>
+                                  </tr>
+                                ),
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </Card>
+                    )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* S.M.A.R.T Disk Health */}
+                    <Card title="S.M.A.R.T Disk Health" color="emerald">
+                      {inventory?.smartData &&
+                      inventory.smartData.length > 0 ? (
+                        <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                          {JSON.stringify(inventory.smartData, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          S.M.A.R.T data requires elevated WMI access. Available
+                          on next privileged scan.
+                        </p>
+                      )}
+                    </Card>
+
+                    {/* Event Logs */}
+                    <Card title="Recent Critical Events" color="red">
+                      {inventory?.eventLogs &&
+                      inventory.eventLogs.length > 0 ? (
+                        <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                          {JSON.stringify(inventory.eventLogs, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          No critical Windows Event Viewer entries in the last
+                          24 hours.
+                        </p>
+                      )}
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

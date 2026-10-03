@@ -155,27 +155,92 @@ namespace NOS.Agent.Services
                     logicalSizes[drive] = ld["Size"] != null ? Convert.ToInt64(ld["Size"]) : 0L;
                 }
 
+                // Query MSFT_PhysicalDisk from ROOT\Microsoft\Windows\Storage for 100% accurate BusType (NVMe vs SATA vs USB)
+                var physicalDiskInfo = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    using var msftSearcher = new ManagementObjectSearcher(
+                        @"ROOT\Microsoft\Windows\Storage",
+                        "SELECT DeviceId, FriendlyName, Model, SerialNumber, BusType, MediaType FROM MSFT_PhysicalDisk");
+                    foreach (ManagementObject pd in msftSearcher.Get())
+                    {
+                        string model = pd["Model"]?.ToString() ?? pd["FriendlyName"]?.ToString() ?? "";
+                        string serial = pd["SerialNumber"]?.ToString()?.Trim() ?? "";
+                        string devId = pd["DeviceId"]?.ToString() ?? "";
+                        int busType = pd["BusType"] != null ? Convert.ToInt32(pd["BusType"]) : 0;
+
+                        // BusType 17 = NVMe, 11 = SATA, 7 = USB, 9 = SCSI, 10 = SAS, 3 = ATA
+                        string busTypeName = busType switch
+                        {
+                            17 => "NVMe",
+                            11 => "SATA",
+                            7 => "USB",
+                            9 => "SCSI",
+                            10 => "SAS",
+                            3 => "ATA",
+                            _ => ""
+                        };
+
+                        if (!string.IsNullOrEmpty(busTypeName))
+                        {
+                            if (!string.IsNullOrEmpty(model)) physicalDiskInfo[model] = busTypeName;
+                            if (!string.IsNullOrEmpty(serial)) physicalDiskInfo[serial] = busTypeName;
+                            if (!string.IsNullOrEmpty(devId)) physicalDiskInfo[devId] = busTypeName;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "MSFT_PhysicalDisk query not available, falling back to Win32_DiskDrive inspection.");
+                }
+
                 using var s = new ManagementObjectSearcher(
-                    "SELECT Caption, Model, SerialNumber, MediaType, Size FROM Win32_DiskDrive");
+                    "SELECT Caption, Model, SerialNumber, MediaType, InterfaceType, PNPDeviceID, Size FROM Win32_DiskDrive");
                 int idx = 0;
                 foreach (ManagementObject obj in s.Get())
                 {
                     // Assign drive letter from logical disk map by index
                     string driveLetter = idx == 0 ? "C:" : $"Disk{idx}";
-                    string mediaType = obj["MediaType"]?.ToString() ?? "Unknown";
-                    string interfaceType = "SATA";
-                    if (mediaType.Contains("SSD", StringComparison.OrdinalIgnoreCase) ||
-                        (obj["Model"]?.ToString() ?? "").Contains("NVMe", StringComparison.OrdinalIgnoreCase))
-                        interfaceType = "NVMe";
-                    else if (mediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase))
-                        interfaceType = "USB";
+                    string model = obj["Model"]?.ToString() ?? "";
+                    string serialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
+                    string pnpId = obj["PNPDeviceID"]?.ToString() ?? "";
+                    string caption = obj["Caption"]?.ToString() ?? "";
+                    string ifaceType = obj["InterfaceType"]?.ToString() ?? "";
+                    string mediaType = obj["MediaType"]?.ToString() ?? "";
+
+                    string detectedInterface = "SATA"; // default fallback
+
+                    // 1. Check if MSFT_PhysicalDisk mapped this drive accurately
+                    if (physicalDiskInfo.TryGetValue(model, out var busType) ||
+                        physicalDiskInfo.TryGetValue(serialNumber, out busType) ||
+                        physicalDiskInfo.TryGetValue(idx.ToString(), out busType))
+                    {
+                        detectedInterface = busType;
+                    }
+                    // 2. Inspect PNPDeviceID (e.g. SCSI\DISK&VEN_NVME&PROD_PHISON...)
+                    else if (pnpId.Contains("NVME", StringComparison.OrdinalIgnoreCase) ||
+                             model.Contains("NVMe", StringComparison.OrdinalIgnoreCase) ||
+                             caption.Contains("NVMe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        detectedInterface = "NVMe";
+                    }
+                    else if (pnpId.Contains("USB", StringComparison.OrdinalIgnoreCase) ||
+                             ifaceType.Contains("USB", StringComparison.OrdinalIgnoreCase) ||
+                             mediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase))
+                    {
+                        detectedInterface = "USB";
+                    }
+                    else if (pnpId.Contains("SCSI", StringComparison.OrdinalIgnoreCase))
+                    {
+                        detectedInterface = "SCSI";
+                    }
 
                     disks.Add(new DiskDriveInventoryDto
                     {
                         DriveName = driveLetter,
-                        Model = obj["Model"]?.ToString() ?? "",
-                        SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
-                        MediaType = interfaceType,
+                        Model = model,
+                        SerialNumber = serialNumber,
+                        MediaType = detectedInterface,
                         SizeBytes = obj["Size"] != null ? Convert.ToInt64(obj["Size"]) : 0L,
                         FileSystem = "NTFS",
                         IsSystemDrive = idx == 0,

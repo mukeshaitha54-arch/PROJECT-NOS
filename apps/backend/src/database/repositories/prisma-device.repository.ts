@@ -24,22 +24,30 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   }
 
   async findAll(organizationId?: string): Promise<Device[]> {
-    const where =
-      organizationId && organizationId !== "default-org"
-        ? { organizationId }
-        : {};
+    if (!organizationId) {
+      return [];
+    }
+    const orgFilter =
+      organizationId === "default-org" || organizationId === "org-mukesh-local"
+        ? { in: ["org-mukesh-local", "default-org"] }
+        : organizationId;
     return this.prisma.device.findMany({
-      where,
+      where: {
+        organizationId: orgFilter,
+      },
       orderBy: { lastSeen: "desc" },
     });
   }
 
   async countByOrganization(organizationId?: string): Promise<number> {
-    const where =
-      organizationId && organizationId !== "default-org"
-        ? { organizationId }
-        : {};
-    return this.prisma.device.count({ where });
+    if (!organizationId) {
+      return 0;
+    }
+    const orgFilter =
+      organizationId === "default-org" || organizationId === "org-mukesh-local"
+        ? { in: ["org-mukesh-local", "default-org"] }
+        : organizationId;
+    return this.prisma.device.count({ where: { organizationId: orgFilter } });
   }
 
   async create(data: CreateDeviceInput): Promise<Device> {

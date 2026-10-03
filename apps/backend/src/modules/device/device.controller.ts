@@ -143,20 +143,33 @@ export class DeviceController {
   }
 
   @Get("status")
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: "Retrieve real-time platform device status and heartbeat roster",
     description:
-      "Returns devices scoped to the authenticated user's organization. Unauthenticated requests return all devices (legacy).",
+      "Returns devices scoped strictly to the authenticated user's organization.",
   })
   @ApiResponse({
     status: 200,
     description: "Platform heartbeat status retrieved successfully.",
   })
   async getStatus(@CurrentUser() user?: any) {
-    // Scope to user's organization for data isolation
-    const organizationId =
-      user?.organizationId || user?.organization?.id || undefined;
+    const organizationId = user?.organizationId || user?.organization?.id;
+    if (!organizationId) {
+      return {
+        success: true,
+        data: {
+          devices: [],
+          summary: {
+            totalRegistered: 0,
+            totalOnline: 0,
+            totalOffline: 0,
+            totalDegraded: 0,
+          },
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
     const data = await this.deviceService.getPlatformStatus(organizationId);
     return {
       success: true,

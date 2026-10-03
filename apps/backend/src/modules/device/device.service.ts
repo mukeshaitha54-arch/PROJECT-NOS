@@ -447,15 +447,18 @@ export class DeviceService {
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
       );
     }
-    // FIX: Enforce org isolation — if caller provides organizationId, validate ownership
-    if (
-      organizationId &&
-      device.organizationId &&
-      device.organizationId !== organizationId
-    ) {
-      throw new NotFoundException(
-        `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
-      );
+    // Enforce org isolation — check matching or default-org/org-mukesh-local equivalence
+    if (organizationId && device.organizationId) {
+      const isDefaultMatch =
+        (organizationId === "default-org" ||
+          organizationId === "org-mukesh-local") &&
+        (device.organizationId === "default-org" ||
+          device.organizationId === "org-mukesh-local");
+      if (!isDefaultMatch && device.organizationId !== organizationId) {
+        throw new NotFoundException(
+          `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
+        );
+      }
     }
     const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(
       device.id,
