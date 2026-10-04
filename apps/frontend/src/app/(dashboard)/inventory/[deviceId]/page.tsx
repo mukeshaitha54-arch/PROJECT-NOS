@@ -22,13 +22,21 @@ import {
   MemoryStick,
   Usb,
   Calendar,
+  Bell,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { apiClient } from "@/lib/api-client";
 
 type TabType =
-  "HARDWARE" | "SOFTWARE" | "SERVICES" | "NETWORK" | "SECURITY" | "EXTENDED";
+  | "HARDWARE"
+  | "SOFTWARE"
+  | "SERVICES"
+  | "PROCESSES"
+  | "ALERTS"
+  | "NETWORK"
+  | "SECURITY"
+  | "EXTENDED";
 
 // ─── Small display helpers ──────────────────────────────────────────────────
 
@@ -120,6 +128,8 @@ export default function DeviceInventoryDetailPage({
 
   const [activeTab, setActiveTab] = useState<TabType>("HARDWARE");
   const [inventory, setInventory] = useState<any>(null);
+  const [processes, setProcesses] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [rescanLoading, setRescanLoading] = useState(false);
@@ -128,10 +138,27 @@ export default function DeviceInventoryDetailPage({
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get<any>(`/inventory/${deviceId}`);
+      const [invRes, procRes, alertRes] = await Promise.all([
+        apiClient.get<any>(`/inventory/${deviceId}`).catch((e) => e.response),
+        apiClient.get<any>(`/devices/${deviceId}/processes`).catch(() => null),
+        apiClient.get<any>(`/devices/${deviceId}/alerts`).catch(() => null),
+      ]);
+
       const inv =
-        res.data?.data?.inventory || res.data?.inventory || res.data?.data;
+        invRes?.data?.data?.inventory ||
+        invRes?.data?.inventory ||
+        invRes?.data?.data;
       setInventory(inv);
+
+      const procList = procRes?.data?.data || procRes?.data || [];
+      if (Array.isArray(procList)) {
+        setProcesses(procList);
+      }
+
+      const alertList = alertRes?.data?.data || alertRes?.data || [];
+      if (Array.isArray(alertList)) {
+        setAlerts(alertList);
+      }
     } catch (err: any) {
       if (err?.response?.status === 404) {
         setError(
@@ -218,15 +245,72 @@ export default function DeviceInventoryDetailPage({
     { key: "startType", header: "Start Type", sortable: true },
   ];
 
+  const processCols: Column<any>[] = [
+    {
+      key: "pid",
+      header: "PID",
+      sortable: true,
+      render: (r) => (
+        <span className="font-mono text-xs">{r.pid ?? r.Pid ?? "—"}</span>
+      ),
+    },
+    {
+      key: "name",
+      header: "Process Name",
+      sortable: true,
+      render: (r) => (
+        <span className="font-semibold text-xs text-slate-200">
+          {r.processName ?? r.ProcessName ?? r.name ?? r.Name}
+        </span>
+      ),
+    },
+    {
+      key: "memoryMb",
+      header: "Memory",
+      sortable: true,
+      render: (r) => (
+        <span className="font-mono text-xs text-cyan-400">
+          {(
+            r.memoryMb ??
+            r.MemoryMb ??
+            (r.memoryBytes ? r.memoryBytes / 1048576 : 0)
+          ).toFixed(1)}{" "}
+          MB
+        </span>
+      ),
+    },
+    {
+      key: "threads",
+      header: "Threads",
+      sortable: true,
+      render: (r) => (
+        <span className="text-xs text-slate-400">
+          {r.threads ?? r.Threads ?? "—"}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: () => (
+        <Badge variant="online" size="xs">
+          Running
+        </Badge>
+      ),
+    },
+  ];
+
   // ─ Tab definitions ───────────────────────────────────────────────────────
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: "HARDWARE", label: "Hardware", icon: <Cpu size={13} /> },
     { id: "SOFTWARE", label: "Software", icon: <FileText size={13} /> },
     { id: "SERVICES", label: "Services", icon: <Activity size={13} /> },
+    { id: "PROCESSES", label: "Processes", icon: <Terminal size={13} /> },
+    { id: "ALERTS", label: "Alerts", icon: <AlertTriangle size={13} /> },
     { id: "NETWORK", label: "Network", icon: <Network size={13} /> },
     { id: "SECURITY", label: "Security", icon: <Shield size={13} /> },
-    { id: "EXTENDED", label: "Extended", icon: <Terminal size={13} /> },
+    { id: "EXTENDED", label: "Extended", icon: <Server size={13} /> },
   ];
 
   return (
@@ -547,6 +631,88 @@ export default function DeviceInventoryDetailPage({
               searchPlaceholder="Search Windows services…"
               emptyTitle="No service records yet"
             />
+          )}
+
+          {/* ── PROCESSES TAB ── */}
+          {activeTab === "PROCESSES" && (
+            <DataTable
+              columns={processCols}
+              data={processes}
+              loading={loading}
+              searchable={true}
+              searchPlaceholder="Search running processes…"
+              emptyTitle="No live process stream yet"
+            />
+          )}
+
+          {/* ── ALERTS TAB ── */}
+          {activeTab === "ALERTS" && (
+            <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-amber-400" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Incident &amp; Failure History ({alerts.length})
+                  </h3>
+                </div>
+                <span className="text-xs text-slate-500 font-mono">
+                  Timestamped Event Ledger
+                </span>
+              </div>
+              {alerts.length === 0 ? (
+                <div className="p-12 text-center text-slate-500">
+                  <CheckCircle
+                    size={32}
+                    className="mx-auto mb-2 text-green-500/60"
+                  />
+                  <p className="text-sm font-medium text-slate-300">
+                    No alert events recorded for this device
+                  </p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    System threshold violations and hardware errors will be
+                    logged here with timestamps.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-800/80">
+                  {alerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className="p-4 hover:bg-slate-900/50 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-0.5">
+                          <AlertTriangle size={16} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              {alert.severity || "WARNING"}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-200">
+                              {alert.title ||
+                                alert.message ||
+                                `Rule ${alert.ruleId || "Triggered"}`}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              {alert.status || "OPEN"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {alert.description ||
+                              alert.message ||
+                              "Threshold breached"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-slate-400 font-mono shrink-0">
+                        {new Date(alert.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* ── NETWORK TAB ── */}

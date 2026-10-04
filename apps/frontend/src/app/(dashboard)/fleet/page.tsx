@@ -25,8 +25,12 @@ import {
   Copy,
   Check,
   Download,
+  Trash2,
+  Loader2,
+  X,
 } from "lucide-react";
 import { deviceApi } from "@/features/device/services/device.api";
+import { apiClient } from "@/lib/api-client";
 import { Device, DeviceStatus } from "@nos/shared-types";
 import { safeCopyToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
@@ -34,13 +38,30 @@ import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 
 export default function FleetOverviewPage() {
   const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isClaimModalOpen, setIsClaimModalOpen] = useState<boolean>(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  const [confirmDelete, setConfirmDelete] = useState<Device | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const handleDeleteDevice = async (device: Device) => {
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/devices/${device.id}`);
+      setDevices((prev) => prev.filter((d) => d.id !== device.id));
+      setConfirmDelete(null);
+    } catch (err) {
+      console.error("Failed to delete device", err);
+      alert("Failed to delete device. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -337,7 +358,28 @@ export default function FleetOverviewPage() {
           </span>
         </div>
 
-        {filteredDevices.length === 0 ? (
+        {loading && filteredDevices.length === 0 ? (
+          <div className="divide-y divide-gray-800">
+            {[1, 2, 3, 4, 5].map((idx) => (
+              <div
+                key={idx}
+                className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pulse"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gray-800/80" />
+                  <div className="space-y-2">
+                    <div className="h-5 w-44 bg-gray-800 rounded-md" />
+                    <div className="h-3.5 w-72 bg-gray-800/60 rounded" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-20 bg-gray-800 rounded-lg" />
+                  <div className="h-7 w-28 bg-gray-800 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredDevices.length === 0 ? (
           <div className="py-16 text-center">
             <Server className="w-12 h-12 text-gray-600 mx-auto mb-3" />
             <p className="text-base font-semibold text-gray-300">
@@ -449,6 +491,13 @@ export default function FleetOverviewPage() {
                       Inspect Node
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
+                    <button
+                      onClick={() => setConfirmDelete(device)}
+                      className="p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition flex items-center justify-center"
+                      title="Delete Device Permanently"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -456,6 +505,89 @@ export default function FleetOverviewPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Device Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 border border-red-800/60 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-900/40 flex items-center justify-center text-red-400">
+                  <Trash2 size={18} />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">
+                    Delete Device Permanently
+                  </h3>
+                  <p className="text-gray-400 text-xs">Irreversible action</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="text-gray-500 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-gray-300 text-sm mb-3">
+              Are you sure you want to permanently delete this device and all
+              its records?
+            </p>
+
+            <div className="bg-red-950/30 border border-red-800/40 rounded-lg p-3 mb-4 space-y-1">
+              <p className="text-white font-mono font-semibold text-sm">
+                {confirmDelete.hostname || confirmDelete.deviceName || "Device"}
+              </p>
+              <p className="text-gray-400 text-xs font-mono truncate">
+                ID: {confirmDelete.id}
+              </p>
+              {confirmDelete.uuid && (
+                <p className="text-gray-500 text-xs font-mono truncate">
+                  UUID: {confirmDelete.uuid}
+                </p>
+              )}
+            </div>
+
+            <div className="bg-red-950/20 border border-red-900/40 rounded-lg p-3 mb-5 flex items-start gap-2">
+              <AlertTriangle
+                size={16}
+                className="text-red-400 shrink-0 mt-0.5"
+              />
+              <p className="text-red-300 text-xs leading-relaxed">
+                All telemetry snapshots, heartbeats, and discovered inventory
+                will be permanently deleted. If the agent is currently running,
+                it will automatically uninstall its service and shut down
+                permanently upon its next communication.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteDevice(confirmDelete)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Delete Permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Device / Onboard Agent Modal */}
       {isClaimModalOpen && (

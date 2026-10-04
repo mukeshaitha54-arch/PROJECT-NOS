@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Net.NetworkInformation;
 using System.ServiceProcess;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -67,6 +69,7 @@ namespace NOS.Agent.Services
                 var startup = GetStartupApplications();
                 var mem = GetMemoryModules();
                 var disks = GetDiskDrives();
+                var gpus = GetGpuAdapters();
                 var net = GetNetworkAdapters();
                 var sec = GetSecurityInfo();
 
@@ -94,6 +97,7 @@ namespace NOS.Agent.Services
                     SchemaVersion = "1.0.0",
                     MemoryModules = mem,
                     DiskDrives = disks,
+                    Gpus = gpus,
                     NetworkAdapters = net,
                     InstalledSoftware = sw,
                     WindowsServices = svc,
@@ -103,8 +107,8 @@ namespace NOS.Agent.Services
 
                 await _outboxQueue.EnqueueAsync("inventory", payload, 2, stoppingToken);
                 _logger.LogInformation(
-                    "Inventory queued. Software: {sw}, Services: {svc}, Startup: {st}, MemModules: {mm}, Disks: {dk}",
-                    sw.Count, svc.Count, startup.Count, mem.Count, disks.Count);
+                    "Inventory queued. Software: {sw}, Services: {svc}, Startup: {st}, MemModules: {mm}, Disks: {dk}, GPUs: {gp}",
+                    sw.Count, svc.Count, startup.Count, mem.Count, disks.Count, gpus.Count);
             }
             catch (Exception ex)
             {
@@ -138,53 +142,256 @@ namespace NOS.Agent.Services
             return modules;
         }
 
-        // ─── Disk Drives ─────────────────────────────────────────────────────
+        // ─── Disk Drives (Exact NVMe / SATA / USB / SSD / HDD Detection) ──────
         private List<DiskDriveInventoryDto> GetDiskDrives()
         {
             var disks = new List<DiskDriveInventoryDto>();
             if (!OperatingSystem.IsWindows()) return disks;
             try
             {
-                // Map logical disk sizes
-                var logicalSizes = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-                using var logSearcher = new ManagementObjectSearcher(
-                    "SELECT DeviceID, Size, FileSystem FROM Win32_LogicalDisk WHERE DriveType=3");
-                foreach (ManagementObject ld in logSearcher.Get())
+                // 1. Gather all Logical Disks (Volume name, FileSystem, Size)
+                var logicalDisks = new Dictionary<string, (string FileSystem, long Size)>(StringComparer.OrdinalIgnoreCase);
+                try
                 {
-                    var drive = ld["DeviceID"]?.ToString() ?? "";
-                    logicalSizes[drive] = ld["Size"] != null ? Convert.ToInt64(ld["Size"]) : 0L;
+                    using var logSearcher = new ManagementObjectSearcher(
+                        "SELECT DeviceID, FileSystem, Size FROM Win32_LogicalDisk WHERE DriveType=3");
+                    foreach (ManagementObject ld in logSearcher.Get())
+                    {
+                        var driveId = ld["DeviceID"]?.ToString() ?? "";
+                        var fs = ld["FileSystem"]?.ToString() ?? "NTFS";
+                        long sz = ld["Size"] != null ? Convert.ToInt64(ld["Size"]) : 0L;
+                        if (!string.IsNullOrEmpty(driveId))
+                        {
+                            logicalDisks[driveId] = (fs, sz);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to query Win32_LogicalDisk.");
                 }
 
+                // 2. Query Storage Management API (MSFT_PhysicalDisk) for precise BusType & MediaType
+                var msftStorageMap = new Dictionary<string, (string BusType, string MediaType)>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    using var msftSearcher = new ManagementObjectSearcher(
+                        @"root\Microsoft\Windows\Storage",
+                        "SELECT DeviceId, FriendlyName, MediaType, BusType FROM MSFT_PhysicalDisk");
+                    foreach (ManagementObject pd in msftSearcher.Get())
+                    {
+                        string devId = pd["DeviceId"]?.ToString() ?? "";
+                        int busType = pd["BusType"] != null ? Convert.ToInt32(pd["BusType"]) : 0;
+                        int mediaType = pd["MediaType"] != null ? Convert.ToInt32(pd["MediaType"]) : 0;
+
+                        // BusType: 17=NVMe, 11=SATA, 7=USB, 8=RAID, 3=ATA, 1=SCSI
+                        // MediaType: 4=SSD, 3=HDD, 5=SCM
+                        string detectedType;
+                        if (busType == 17)
+                        {
+                            detectedType = "NVMe SSD";
+                        }
+                        else if (busType == 7)
+                        {
+                            detectedType = "USB";
+                        }
+                        else if (mediaType == 4)
+                        {
+                            detectedType = busType == 11 ? "SATA SSD" : "SSD";
+                        }
+                        else if (mediaType == 3)
+                        {
+                            detectedType = busType == 11 ? "SATA HDD" : "HDD";
+                        }
+                        else
+                        {
+                            detectedType = busType == 11 ? "SATA" : "Fixed";
+                        }
+
+                        if (!string.IsNullOrEmpty(devId))
+                        {
+                            msftStorageMap[devId] = (detectedType, mediaType == 4 ? "SSD" : (mediaType == 3 ? "HDD" : "Fixed"));
+                        }
+                    }
+                }
+                catch
+                {
+                    // Non-elevated or MSFT_PhysicalDisk not available, fall back to Win32_DiskDrive analysis
+                }
+
+                // 3. Map physical disk index to logical drive letters via Win32_LogicalDiskToPartition
+                var diskDriveLetters = new Dictionary<string, List<string>>();
+                try
+                {
+                    using var partSearcher = new ManagementObjectSearcher(
+                        "SELECT Antecedent, Dependent FROM Win32_LogicalDiskToPartition");
+                    foreach (ManagementObject rel in partSearcher.Get())
+                    {
+                        string ante = rel["Antecedent"]?.ToString() ?? "";
+                        string dep = rel["Dependent"]?.ToString() ?? "";
+
+                        var matchDisk = Regex.Match(ante, @"Disk #(\d+)");
+                        var matchLetter = Regex.Match(dep, @"DeviceID\s*=\s*""([^""]+)""");
+                        if (matchDisk.Success && matchLetter.Success)
+                        {
+                            string dIdx = matchDisk.Groups[1].Value;
+                            string letter = matchLetter.Groups[1].Value;
+                            if (!diskDriveLetters.ContainsKey(dIdx))
+                                diskDriveLetters[dIdx] = new List<string>();
+                            if (!diskDriveLetters[dIdx].Contains(letter))
+                                diskDriveLetters[dIdx].Add(letter);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to query Win32_LogicalDiskToPartition.");
+                }
+
+                // 4. Query Win32_DiskDrive
                 using var s = new ManagementObjectSearcher(
-                    "SELECT Caption, Model, SerialNumber, MediaType, Size FROM Win32_DiskDrive");
-                int idx = 0;
+                    "SELECT Index, DeviceID, Model, SerialNumber, InterfaceType, MediaType, PNPDeviceID, Size FROM Win32_DiskDrive");
+                
+                int diskIndex = 0;
+                string systemDriveLetter = Path.GetPathRoot(Environment.SystemDirectory)?.TrimEnd('\\') ?? "C:";
+
                 foreach (ManagementObject obj in s.Get())
                 {
-                    // Assign drive letter from logical disk map by index
-                    string driveLetter = idx == 0 ? "C:" : $"Disk{idx}";
-                    string mediaType = obj["MediaType"]?.ToString() ?? "Unknown";
-                    string interfaceType = "SATA";
-                    if (mediaType.Contains("SSD", StringComparison.OrdinalIgnoreCase) ||
-                        (obj["Model"]?.ToString() ?? "").Contains("NVMe", StringComparison.OrdinalIgnoreCase))
-                        interfaceType = "NVMe";
-                    else if (mediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase))
-                        interfaceType = "USB";
+                    string driveIndexStr = obj["Index"]?.ToString() ?? diskIndex.ToString();
+                    string model = obj["Model"]?.ToString()?.Trim() ?? "";
+                    string pnp = obj["PNPDeviceID"]?.ToString() ?? "";
+                    string interfaceType = obj["InterfaceType"]?.ToString() ?? "";
+                    string rawMediaType = obj["MediaType"]?.ToString() ?? "";
+                    string serial = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
+                    long sizeBytes = obj["Size"] != null ? Convert.ToInt64(obj["Size"]) : 0L;
+
+                    // Determine disk media type accurately (NVMe SSD, SATA SSD, SATA HDD, USB)
+                    string finalMediaType = "SATA";
+                    if (msftStorageMap.TryGetValue(driveIndexStr, out var msftInfo))
+                    {
+                        finalMediaType = msftInfo.BusType;
+                    }
+                    else if (pnp.Contains("NVME", StringComparison.OrdinalIgnoreCase) ||
+                             model.Contains("NVMe", StringComparison.OrdinalIgnoreCase) ||
+                             pnp.Contains("DEV_NVME", StringComparison.OrdinalIgnoreCase) ||
+                             (interfaceType.Equals("SCSI", StringComparison.OrdinalIgnoreCase) && pnp.Contains("VEN_NVME", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        finalMediaType = "NVMe SSD";
+                    }
+                    else if (pnp.Contains("USB", StringComparison.OrdinalIgnoreCase) || rawMediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase))
+                    {
+                        finalMediaType = "USB";
+                    }
+                    else if (model.Contains("SSD", StringComparison.OrdinalIgnoreCase) || rawMediaType.Contains("SSD", StringComparison.OrdinalIgnoreCase))
+                    {
+                        finalMediaType = "SATA SSD";
+                    }
+                    else
+                    {
+                        finalMediaType = "SATA HDD";
+                    }
+
+                    // Map logical drive letter & real filesystem
+                    string assignedDriveLetter;
+                    string assignedFs = "NTFS";
+                    bool isSystem = false;
+
+                    if (diskDriveLetters.TryGetValue(driveIndexStr, out var letters) && letters.Count > 0)
+                    {
+                        assignedDriveLetter = string.Join(", ", letters);
+                        isSystem = letters.Any(l => l.Equals(systemDriveLetter, StringComparison.OrdinalIgnoreCase));
+                        if (logicalDisks.TryGetValue(letters[0], out var fsInfo))
+                        {
+                            assignedFs = fsInfo.FileSystem;
+                        }
+                    }
+                    else
+                    {
+                        assignedDriveLetter = diskIndex == 0 ? systemDriveLetter : $"Disk {diskIndex}";
+                        isSystem = diskIndex == 0;
+                        if (logicalDisks.TryGetValue(assignedDriveLetter, out var logInfo))
+                        {
+                            assignedFs = logInfo.FileSystem;
+                        }
+                        else if (logicalDisks.Count > 0)
+                        {
+                            assignedFs = logicalDisks.First().Value.FileSystem;
+                        }
+                    }
 
                     disks.Add(new DiskDriveInventoryDto
                     {
-                        DriveName = driveLetter,
-                        Model = obj["Model"]?.ToString() ?? "",
-                        SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "",
-                        MediaType = interfaceType,
-                        SizeBytes = obj["Size"] != null ? Convert.ToInt64(obj["Size"]) : 0L,
-                        FileSystem = "NTFS",
-                        IsSystemDrive = idx == 0,
+                        DriveName = assignedDriveLetter,
+                        Model = model,
+                        SerialNumber = serial,
+                        MediaType = finalMediaType,
+                        SizeBytes = sizeBytes,
+                        FileSystem = assignedFs,
+                        IsSystemDrive = isSystem,
                     });
-                    idx++;
+
+                    diskIndex++;
+                }
+
+                // If no physical disks were returned by WMI, construct from logical disks
+                if (disks.Count == 0)
+                {
+                    foreach (var kvp in logicalDisks)
+                    {
+                        disks.Add(new DiskDriveInventoryDto
+                        {
+                            DriveName = kvp.Key,
+                            Model = "Generic Fixed Disk",
+                            SerialNumber = "N/A",
+                            MediaType = "Fixed",
+                            SizeBytes = kvp.Value.Size,
+                            FileSystem = kvp.Value.FileSystem,
+                            IsSystemDrive = kvp.Key.Equals(systemDriveLetter, StringComparison.OrdinalIgnoreCase),
+                        });
+                    }
                 }
             }
-            catch (Exception ex) { _logger.LogWarning(ex, "Failed to collect disk drives."); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect disk drives.");
+            }
             return disks;
+        }
+
+        // ─── GPU Video Controllers ──────────────────────────────────────────
+        private List<GpuInventoryDto> GetGpuAdapters()
+        {
+            var gpus = new List<GpuInventoryDto>();
+            if (!OperatingSystem.IsWindows()) return gpus;
+            try
+            {
+                using var s = new ManagementObjectSearcher(
+                    "SELECT Name, AdapterCompatibility, DriverVersion, AdapterRAM, VideoModeDescription FROM Win32_VideoController");
+                foreach (ManagementObject obj in s.Get())
+                {
+                    string name = obj["Name"]?.ToString()?.Trim() ?? "";
+                    if (string.IsNullOrWhiteSpace(name)) continue;
+
+                    string manufacturer = obj["AdapterCompatibility"]?.ToString()?.Trim() ?? "Unknown";
+                    string driver = obj["DriverVersion"]?.ToString()?.Trim() ?? "Unknown";
+                    double vram = obj["AdapterRAM"] != null ? Convert.ToDouble(obj["AdapterRAM"]) : 0.0;
+                    string res = obj["VideoModeDescription"]?.ToString()?.Trim() ?? "Unknown";
+
+                    gpus.Add(new GpuInventoryDto
+                    {
+                        Name = name,
+                        Manufacturer = manufacturer,
+                        DriverVersion = driver,
+                        VRamBytes = vram,
+                        Resolution = res,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect GPU video controllers.");
+            }
+            return gpus;
         }
 
         // ─── Network Adapters ────────────────────────────────────────────────
@@ -194,7 +401,6 @@ namespace NOS.Agent.Services
             if (!OperatingSystem.IsWindows()) return adapters;
             try
             {
-                // Query .NET NetworkInterface first to map speeds and interface types
                 var netInterfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
                 var ifaceMap = new Dictionary<string, System.Net.NetworkInformation.NetworkInterface>(StringComparer.OrdinalIgnoreCase);
                 foreach (var ni in netInterfaces)
@@ -208,7 +414,6 @@ namespace NOS.Agent.Services
                     catch { }
                 }
 
-                // Query WMI without the invalid 'Speed' column on Win32_NetworkAdapterConfiguration
                 try
                 {
                     using var s = new ManagementObjectSearcher(
@@ -268,7 +473,6 @@ namespace NOS.Agent.Services
                     _logger.LogWarning(wmiEx, "WMI query for Win32_NetworkAdapterConfiguration failed, falling back to System.Net.NetworkInformation.");
                 }
 
-                // Resilient fallback: If WMI returned 0 adapters, use .NET NetworkInterface directly
                 if (adapters.Count == 0)
                 {
                     foreach (var ni in netInterfaces)
@@ -361,7 +565,7 @@ namespace NOS.Agent.Services
                     }
                     catch { }
                 }
-                // Also user hive
+
                 try
                 {
                     using var userKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
@@ -392,7 +596,6 @@ namespace NOS.Agent.Services
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to enumerate installed software from registry."); }
 
-            // Deduplicate by name, sort alphabetically
             return software
                 .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First())
@@ -400,45 +603,59 @@ namespace NOS.Agent.Services
                 .ToList();
         }
 
-        // ─── Windows Services (field names match WindowsServicePayloadDto) ───
+        // ─── Windows Services (High-Performance Single Batch WMI Query) ─────
         private List<WindowsServiceInventoryDto> GetWindowsServices()
         {
             var services = new List<WindowsServiceInventoryDto>();
             if (!OperatingSystem.IsWindows()) return services;
             try
             {
-                foreach (var svc in ServiceController.GetServices())
+                using var searcher = new ManagementObjectSearcher(
+                    "SELECT Name, DisplayName, State, StartMode, StartName FROM Win32_Service");
+                foreach (ManagementObject obj in searcher.Get())
                 {
-                    try
-                    {
-                        string startType = "Unknown";
-                        try
-                        {
-                            using var wmi = new ManagementObjectSearcher(
-                                $"SELECT StartMode FROM Win32_Service WHERE Name='{svc.ServiceName.Replace("'", "''")}'");
-                            var wmiSvc = wmi.Get().Cast<ManagementObject>().FirstOrDefault();
-                            startType = wmiSvc?["StartMode"]?.ToString() ?? "Unknown";
-                        }
-                        catch { }
+                    string name = obj["Name"]?.ToString() ?? "";
+                    if (string.IsNullOrWhiteSpace(name)) continue;
 
+                    string displayName = obj["DisplayName"]?.ToString() ?? name;
+                    string status = obj["State"]?.ToString() ?? "Stopped";
+                    string startType = obj["StartMode"]?.ToString() ?? "Unknown";
+                    string account = obj["StartName"]?.ToString() ?? "LocalSystem";
+
+                    services.Add(new WindowsServiceInventoryDto
+                    {
+                        ServiceName = name,
+                        DisplayName = displayName,
+                        Status = status,
+                        StartType = startType,
+                        Account = account,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to enumerate Windows services via WMI batch query. Falling back to ServiceController.");
+                try
+                {
+                    foreach (var svc in ServiceController.GetServices())
+                    {
                         services.Add(new WindowsServiceInventoryDto
                         {
                             ServiceName = svc.ServiceName,
                             DisplayName = svc.DisplayName,
                             Status = svc.Status.ToString(),
-                            StartType = startType,
+                            StartType = "Unknown",
                             Account = "LocalSystem",
                         });
+                        try { svc.Dispose(); } catch { }
                     }
-                    catch { }
-                    finally { try { svc.Dispose(); } catch { } }
                 }
+                catch { }
             }
-            catch (Exception ex) { _logger.LogWarning(ex, "Failed to enumerate Windows services."); }
             return services;
         }
 
-        // ─── Startup Apps (field names match StartupApplicationPayloadDto) ───
+        // ─── Startup Apps ────────────────────────────────────────────────────
         private List<StartupApplicationInventoryDto> GetStartupApplications()
         {
             var items = new List<StartupApplicationInventoryDto>();
@@ -462,11 +679,13 @@ namespace NOS.Agent.Services
             return items;
         }
 
-        // ─── Security Info ────────────────────────────────────────────────────
+        // ─── Security Info (Defender, Firewall, SecureBoot, TPM, BitLocker) ──
         private SecurityInventoryDto GetSecurityInfo()
         {
-            bool defender = false, firewall = false, secureBoot = false, tpm = false;
+            bool defender = false, firewall = false, secureBoot = false, tpm = false, bitLocker = false;
             string tpmVersion = "Unknown";
+
+            // 1. Antivirus / Defender
             try
             {
                 using var wmiSec = new ManagementObjectSearcher(
@@ -474,6 +693,8 @@ namespace NOS.Agent.Services
                 defender = wmiSec.Get().Count > 0;
             }
             catch { }
+
+            // 2. Firewall
             try
             {
                 using var fwSearcher = new ManagementObjectSearcher(
@@ -483,6 +704,23 @@ namespace NOS.Agent.Services
                     o["Enabled"] != null && Convert.ToBoolean(o["Enabled"]));
             }
             catch { }
+
+            // 3. UEFI SecureBoot from Registry
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\SecureBoot\State");
+                if (key != null)
+                {
+                    var val = key.GetValue("UEFISecureBootEnabled");
+                    if (val != null && Convert.ToInt32(val) == 1)
+                    {
+                        secureBoot = true;
+                    }
+                }
+            }
+            catch { }
+
+            // 4. TPM Device
             try
             {
                 using var tpmSearcher = new ManagementObjectSearcher(
@@ -496,11 +734,21 @@ namespace NOS.Agent.Services
             }
             catch { }
 
+            // 5. BitLocker Drive Encryption
+            try
+            {
+                using var encSearcher = new ManagementObjectSearcher(
+                    @"root\CIMv2\Security\MicrosoftVolumeEncryption", "SELECT ProtectionStatus FROM Win32_EncryptableVolume");
+                bitLocker = encSearcher.Get().Cast<ManagementObject>().Any(v =>
+                    v["ProtectionStatus"] != null && Convert.ToInt32(v["ProtectionStatus"]) == 1);
+            }
+            catch { }
+
             return new SecurityInventoryDto
             {
                 WindowsDefenderEnabled = defender,
                 FirewallEnabled = firewall,
-                BitLockerEnabled = false,
+                BitLockerEnabled = bitLocker,
                 SecureBootEnabled = secureBoot,
                 TpmEnabled = tpm,
                 TpmVersion = tpmVersion,
@@ -565,6 +813,24 @@ namespace NOS.Agent.Services
 
         [System.Text.Json.Serialization.JsonPropertyName("isSystemDrive")]
         public bool IsSystemDrive { get; set; }
+    }
+
+    public class GpuInventoryDto
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("manufacturer")]
+        public string Manufacturer { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("driverVersion")]
+        public string DriverVersion { get; set; } = "Unknown";
+
+        [System.Text.Json.Serialization.JsonPropertyName("vRamBytes")]
+        public double VRamBytes { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("resolution")]
+        public string Resolution { get; set; } = "Unknown";
     }
 
     public class InstalledSoftwareInventoryDto
@@ -706,6 +972,9 @@ namespace NOS.Agent.Services
 
         [System.Text.Json.Serialization.JsonPropertyName("diskDrives")]
         public List<DiskDriveInventoryDto> DiskDrives { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("gpus")]
+        public List<GpuInventoryDto> Gpus { get; set; } = new();
 
         [System.Text.Json.Serialization.JsonPropertyName("networkAdapters")]
         public List<NetworkAdapterInventoryDto> NetworkAdapters { get; set; } = new();

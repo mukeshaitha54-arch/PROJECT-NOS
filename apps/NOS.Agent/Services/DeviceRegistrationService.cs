@@ -130,6 +130,15 @@ namespace NOS.Agent.Services
                     {
                         var errorBody = await response.Content.ReadAsStringAsync(stoppingToken);
                         _logger.LogError("Registration request returned HTTP {StatusCode}: {Content}", (int)response.StatusCode, errorBody);
+
+                        if (response.StatusCode == System.Net.HttpStatusCode.Gone ||
+                            errorBody.Contains("\"decommissioned\":true", StringComparison.OrdinalIgnoreCase) ||
+                            errorBody.Contains("\"decommissioned\": true", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.LogCritical("Endpoint has been permanently decommissioned by administrator. Halting registration and removing agent.");
+                            DecommissionManager.ExecutePermanentShutdown("Server returned HTTP 410 Gone / decommissioned during registration.");
+                            return;
+                        }
                     }
                 }
                 catch (Exception ex)

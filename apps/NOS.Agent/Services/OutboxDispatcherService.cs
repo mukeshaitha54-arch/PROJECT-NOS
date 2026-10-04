@@ -122,6 +122,14 @@ namespace NOS.Agent.Services
                             try
                             {
                                 var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                                if (responseBody.Contains("\"decommissioned\":true", StringComparison.OrdinalIgnoreCase) ||
+                                    responseBody.Contains("\"decommissioned\": true", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    _logger.LogCritical("Heartbeat response indicated permanent agent decommission. Terminating service permanently.");
+                                    DecommissionManager.ExecutePermanentShutdown("Heartbeat payload indicated decommission.");
+                                    return;
+                                }
+
                                 using var doc = JsonDocument.Parse(responseBody);
                                 if (doc.RootElement.TryGetProperty("telemetryPaused", out var pausedProp))
                                 {
@@ -146,11 +154,21 @@ namespace NOS.Agent.Services
                     }
                     else if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                     {
-                        var responseBody = await response.Content.ReadAsStringAsync();
+                        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                         _logger.LogError(
                             "Dispatch FAILED for {MessageType} to {Url} | " +
                             "HTTP {Status} | Response: {ResponseBody}",
                             message.MessageType, url, (int)response.StatusCode, responseBody);
+
+                        // Permanent Decommission Signal (HTTP 410 Gone or decommissioned: true)
+                        if (response.StatusCode == System.Net.HttpStatusCode.Gone ||
+                            responseBody.Contains("\"decommissioned\":true", StringComparison.OrdinalIgnoreCase) ||
+                            responseBody.Contains("\"decommissioned\": true", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.LogCritical("Permanent DECOMMISSION signal received from server (HTTP 410 Gone). Agent is permanently removed from fleet.");
+                            DecommissionManager.ExecutePermanentShutdown("Received HTTP 410 Gone or decommissioned payload from server.");
+                            return;
+                        }
 
                         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || 
                             response.StatusCode == System.Net.HttpStatusCode.Forbidden)

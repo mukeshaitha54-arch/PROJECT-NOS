@@ -27,9 +27,6 @@ namespace NOS.Agent.Services
         private readonly IWindowsEventLogService _eventLog;
         private readonly ISafeModeService _safeMode;
 
-        // Cache WMI admin availability — only log AccessDenied once per lifetime
-        private static bool _cpuTempAdminChecked = false;
-        private static bool _cpuTempAdminAvailable = false;
 
         public TelemetryCollector(
             IOutboxQueueService outboxQueue,
@@ -174,88 +171,115 @@ namespace NOS.Agent.Services
 
         private void CollectCpuTemperature(SubmitTelemetryDto dto)
         {
-            // If we already confirmed access denied, skip silently
-            if (_cpuTempAdminChecked && !_cpuTempAdminAvailable)
+            // Strategy 1: Win32_PerfFormattedData_Counters_ThermalZoneInformation (standard Windows performance counter, accessible without elevation)
+            try
             {
-                dto.CpuTemperature = 0.0;
-                return;
+                using var perfSearcher = new ManagementObjectSearcher(
+                    "SELECT HighPrecisionTemperature, Temperature FROM Win32_PerfFormattedData_Counters_ThermalZoneInformation");
+                foreach (ManagementObject obj in perfSearcher.Get())
+                {
+                    if (obj["HighPrecisionTemperature"] != null)
+                    {
+                        double tenthK = Convert.ToDouble(obj["HighPrecisionTemperature"]);
+                        double c = (tenthK / 10.0) - 273.15;
+                        if (c >= 10.0 && c <= 125.0)
+                        {
+                            dto.CpuTemperature = Math.Round(c, 1);
+                            return;
+                        }
+                    }
+                    if (obj["Temperature"] != null)
+                    {
+                        double kelvin = Convert.ToDouble(obj["Temperature"]);
+                        double c = kelvin - 273.15;
+                        if (c >= 10.0 && c <= 125.0)
+                        {
+                            dto.CpuTemperature = Math.Round(c, 1);
+                            return;
+                        }
+                    }
+                }
             }
+            catch { }
 
-            // Strategy 1: MSAcpi_ThermalZoneTemperature (requires admin, most accurate)
+            // Strategy 2: MSAcpi_ThermalZoneTemperature (root\WMI, standard ACPI thermal zone)
             try
             {
                 using var thermalSearcher = new ManagementObjectSearcher(@"root\WMI", "SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature");
-                var thermal = thermalSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
-                if (thermal != null && thermal["CurrentTemperature"] != null)
+                foreach (ManagementObject thermal in thermalSearcher.Get())
                 {
-                    _cpuTempAdminChecked = true;
-                    _cpuTempAdminAvailable = true;
-                    double tempTenthsKelvin = Convert.ToDouble(thermal["CurrentTemperature"]);
-                    dto.CpuTemperature = Math.Round((tempTenthsKelvin / 10.0) - 273.15, 2);
-                    return;
+                    if (thermal["CurrentTemperature"] != null)
+                    {
+                        double tempTenthsKelvin = Convert.ToDouble(thermal["CurrentTemperature"]);
+                        double c = (tempTenthsKelvin / 10.0) - 273.15;
+                        if (c >= 10.0 && c <= 125.0)
+                        {
+                            dto.CpuTemperature = Math.Round(c, 1);
+                            return;
+                        }
+                    }
                 }
             }
-            catch (ManagementException ex) when (ex.ErrorCode == ManagementStatus.AccessDenied)
-            {
-                _cpuTempAdminChecked = true;
-                _cpuTempAdminAvailable = false;
-                _logger.LogWarning(
-                    "WMI Access Denied reading CPU temperature (MSAcpi_ThermalZoneTemperature). " +
-                    "Run agent as Administrator for thermal data. Trying Win32_TemperatureProbe fallback. " +
-                    "This warning will NOT repeat.");
-            }
-            catch (ManagementException ex)
-            {
-                _logger.LogWarning(ex, "WMI error reading CPU temperature via MSAcpi: {ErrorCode}.", ex.ErrorCode);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Unexpected error reading CPU temperature via MSAcpi.");
-            }
+            catch { }
 
-            // Strategy 2: Win32_TemperatureProbe (available on some BIOSes without full admin)
+            // Strategy 3: Win32_TemperatureProbe (available on certain BIOS configurations)
             try
             {
                 using var probeSearcher = new ManagementObjectSearcher("SELECT CurrentReading FROM Win32_TemperatureProbe");
-                var probe = probeSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
-                if (probe != null && probe["CurrentReading"] != null)
+                foreach (ManagementObject probe in probeSearcher.Get())
                 {
-                    double tempTenthsCelsius = Convert.ToDouble(probe["CurrentReading"]);
-                    // Win32_TemperatureProbe returns in tenths of degrees Kelvin
-                    double tempCelsius = (tempTenthsCelsius / 10.0) - 273.15;
-                    if (tempCelsius > 0 && tempCelsius < 120) // sanity check
+                    if (probe["CurrentReading"] != null)
                     {
-                        dto.CpuTemperature = Math.Round(tempCelsius, 2);
-                        return;
+                        double tempTenthsCelsius = Convert.ToDouble(probe["CurrentReading"]);
+                        double tempCelsius = (tempTenthsCelsius / 10.0) - 273.15;
+                        if (tempCelsius >= 10.0 && tempCelsius <= 125.0)
+                        {
+                            dto.CpuTemperature = Math.Round(tempCelsius, 1);
+                            return;
+                        }
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Win32_TemperatureProbe fallback failed.");
-            }
+            catch { }
 
-            // Strategy 3: OpenHardwareMonitor WMI namespace (if OHM is running on the machine)
+            // Strategy 4: OpenHardwareMonitor WMI namespace
             try
             {
                 using var ohmSearcher = new ManagementObjectSearcher(@"root\OpenHardwareMonitor", "SELECT Value FROM Sensor WHERE SensorType='Temperature' AND Name LIKE 'CPU%'");
-                var sensor = ohmSearcher.Get().Cast<ManagementObject>().FirstOrDefault();
-                if (sensor != null && sensor["Value"] != null)
+                foreach (ManagementObject sensor in ohmSearcher.Get())
                 {
-                    double temp = Convert.ToDouble(sensor["Value"]);
-                    if (temp > 0 && temp < 120)
+                    if (sensor["Value"] != null)
                     {
-                        dto.CpuTemperature = Math.Round(temp, 2);
-                        return;
+                        double temp = Convert.ToDouble(sensor["Value"]);
+                        if (temp >= 10.0 && temp <= 125.0)
+                        {
+                            dto.CpuTemperature = Math.Round(temp, 1);
+                            return;
+                        }
                     }
                 }
             }
-            catch
-            {
-                // OHM not installed — silent fail
-            }
+            catch { }
 
-            // Final fallback: report 0 (insufficient permissions)
+            // Strategy 5: LibreHardwareMonitor WMI namespace
+            try
+            {
+                using var lhmSearcher = new ManagementObjectSearcher(@"root\LibreHardwareMonitor", "SELECT Value FROM Sensor WHERE SensorType='Temperature' AND Name LIKE 'CPU%'");
+                foreach (ManagementObject sensor in lhmSearcher.Get())
+                {
+                    if (sensor["Value"] != null)
+                    {
+                        double temp = Convert.ToDouble(sensor["Value"]);
+                        if (temp >= 10.0 && temp <= 125.0)
+                        {
+                            dto.CpuTemperature = Math.Round(temp, 1);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch { }
+
             dto.CpuTemperature = 0.0;
         }
 

@@ -486,7 +486,7 @@ namespace NOS.Agent
 
                 var payload = new
                 {
-                    uuid = Guid.NewGuid().ToString(),
+                    uuid = GetHardwareUuid(),
                     deviceName = Environment.MachineName,
                     hostname = Environment.MachineName,
                     os = GetOsDescription(),
@@ -635,6 +635,30 @@ namespace NOS.Agent
             }
             catch { }
             return RuntimeInformation.OSDescription;
+        }
+
+        private static string GetHardwareUuid()
+        {
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    using var cspSearcher = new System.Management.ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
+                    var cspInfo = cspSearcher.Get().Cast<System.Management.ManagementObject>().FirstOrDefault();
+                    if (cspInfo != null && cspInfo["UUID"] != null)
+                    {
+                        var u = cspInfo["UUID"].ToString();
+                        if (!string.IsNullOrWhiteSpace(u) && u != "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
+                            return u;
+                    }
+                }
+            }
+            catch { }
+
+            var stableInput = $"{Environment.MachineName}-{Environment.OSVersion.Platform}";
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(stableInput));
+            return new Guid(hashBytes.Take(16).ToArray()).ToString();
         }
 
         private static string ReadPasswordLine()

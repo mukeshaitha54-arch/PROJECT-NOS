@@ -23,6 +23,7 @@ import { TenantContext } from "@nos/shared-types";
 import { PrismaService } from "../../database/prisma.service";
 import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
 import { deviceTelemetryPausedStore } from "../../common/stores/device-telemetry-paused.store";
+import { decommissionedDevicesStore } from "../../common/stores/device-decommissioned.store";
 import { DeviceTelemetryStatusEvent } from "../../common/events/domain-events";
 
 @ApiTags("Frontend Dashboard Devices API")
@@ -144,8 +145,10 @@ export class DevicesController {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
       where: {
-        id,
-        OR: [{ tenantId: orgId }, { organizationId: orgId }],
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
       },
       include: {
         inventory: true,
@@ -156,13 +159,17 @@ export class DevicesController {
       throw new NotFoundException("Device not found");
     }
 
+    const deviceIdMatch = device.uuid
+      ? { in: [device.id, device.uuid] }
+      : device.id;
+
     const latestSnapshot = await this.prisma.telemetrySnapshot.findFirst({
-      where: { deviceId: id },
+      where: { deviceId: deviceIdMatch },
       orderBy: { timestamp: "desc" },
     });
 
     const latestHeartbeat = await this.prisma.heartbeat.findFirst({
-      where: { deviceId: id },
+      where: { deviceId: deviceIdMatch },
       orderBy: { timestamp: "desc" },
     });
 
@@ -201,7 +208,12 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -227,9 +239,13 @@ export class DevicesController {
         gte.setHours(gte.getHours() - 1);
     }
 
+    const deviceIdMatch = device.uuid
+      ? { in: [device.id, device.uuid] }
+      : device.id;
+
     const telemetry = await this.prisma.telemetrySnapshot.findMany({
       where: {
-        deviceId: id,
+        deviceId: deviceIdMatch,
         timestamp: { gte },
       },
       orderBy: { timestamp: "asc" },
@@ -398,13 +414,22 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
 
+    const deviceIdMatch = device.uuid
+      ? { in: [device.id, device.uuid] }
+      : device.id;
+
     const alerts = await this.prisma.alert.findMany({
-      where: { deviceId: id },
+      where: { deviceId: deviceIdMatch },
       orderBy: { createdAt: "desc" },
     });
 
@@ -423,13 +448,22 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: { id, OR: [{ tenantId: orgId }, { organizationId: orgId }] },
+      where: {
+        OR: [{ id }, { uuid: id }],
+        ...(orgId
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
+      },
     });
 
     if (!device) throw new NotFoundException("Device not found");
 
+    const deviceIdMatch = device.uuid
+      ? { in: [device.id, device.uuid] }
+      : device.id;
+
     const heartbeats = await this.prisma.heartbeat.findMany({
-      where: { deviceId: id },
+      where: { deviceId: deviceIdMatch },
       orderBy: { timestamp: "desc" },
       take: 50,
     });
@@ -439,6 +473,7 @@ export class DevicesController {
       data: heartbeats,
     };
   }
+
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete a device and all its data" })
@@ -457,6 +492,21 @@ export class DevicesController {
     }
 
     const deviceId = device.id;
+
+    // Record into decommission registry so running agents immediately self-terminate on next call
+    decommissionedDevicesStore.add(deviceId);
+    if (device.uuid) {
+      decommissionedDevicesStore.add(device.uuid);
+    }
+    if (device.hostname) {
+      decommissionedDevicesStore.add(device.hostname);
+    }
+    if (device.deviceName) {
+      decommissionedDevicesStore.add(device.deviceName);
+    }
+    if ((device as any).tokenHash) {
+      decommissionedDevicesStore.add((device as any).tokenHash);
+    }
 
     // Delete all related data in order (cascade where not automatic)
     await Promise.allSettled([
