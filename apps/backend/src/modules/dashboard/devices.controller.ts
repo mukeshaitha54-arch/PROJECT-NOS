@@ -495,9 +495,6 @@ export class DevicesController {
 
     // Record into decommission registry so running agents immediately self-terminate on next call
     decommissionedDevicesStore.add(deviceId);
-    if (device.uuid) {
-      decommissionedDevicesStore.add(device.uuid);
-    }
     if ((device as any).tokenHash) {
       decommissionedDevicesStore.add((device as any).tokenHash);
     }

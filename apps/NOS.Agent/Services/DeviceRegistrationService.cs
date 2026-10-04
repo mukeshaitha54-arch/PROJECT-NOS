@@ -111,11 +111,11 @@ namespace NOS.Agent.Services
                             CurrentToken = token;
                             CurrentDeviceId = deviceId;
 
-                            // Save DeviceId to %LOCALAPPDATA%\NOS\device.json
-                            SaveDeviceIdLocally(deviceId, _configuration["AgentConfiguration:ServerUrl"] ?? "http://localhost:3001");
+                            // Save DeviceId and DeviceToken to %LOCALAPPDATA%\NOS\device.json and %ProgramData%\NOS\device.json
+                            SaveDeviceIdLocally(deviceId, _configuration["AgentConfiguration:ServerUrl"] ?? "http://localhost:3001", token);
 
                             // Update appsettings.json if writable
-                            UpdateAppsettings(deviceId);
+                            UpdateAppsettings(deviceId, token);
 
                             _logger.LogInformation("Successfully registered device. Assigned DeviceId: {DeviceId}", deviceId);
                             break;
@@ -252,11 +252,12 @@ namespace NOS.Agent.Services
             return null;
         }
 
-        private void SaveDeviceIdLocally(string deviceId, string serverUrl)
+        private void SaveDeviceIdLocally(string deviceId, string serverUrl, string? token = null)
         {
             var payload = new
             {
                 DeviceId = deviceId,
+                DeviceToken = token ?? CurrentToken ?? string.Empty,
                 ServerUrl = serverUrl,
                 Hostname = Environment.MachineName,
                 RegisteredAt = DateTime.UtcNow.ToString("o")
@@ -286,25 +287,34 @@ namespace NOS.Agent.Services
             catch { }
         }
 
-        private void UpdateAppsettings(string newDeviceId)
+        private void UpdateAppsettings(string newDeviceId, string? token = null)
         {
-            try
+            var candidatePaths = new[]
             {
-                var filePath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-                if (File.Exists(filePath))
+                Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "appsettings.json")
+            };
+
+            foreach (var filePath in candidatePaths)
+            {
+                try
                 {
-                    var json = File.ReadAllText(filePath);
-                    var node = JsonNode.Parse(json);
-                    if (node != null && node["AgentConfiguration"] != null)
+                    if (File.Exists(filePath))
                     {
-                        node["AgentConfiguration"]!["DeviceId"] = newDeviceId;
-                        File.WriteAllText(filePath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                        var json = File.ReadAllText(filePath);
+                        var node = JsonNode.Parse(json);
+                        if (node != null && node["AgentConfiguration"] != null)
+                        {
+                            node["AgentConfiguration"]!["DeviceId"] = newDeviceId;
+                            if (!string.IsNullOrEmpty(token))
+                            {
+                                node["AgentConfiguration"]!["DeviceToken"] = token;
+                            }
+                            File.WriteAllText(filePath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                        }
                     }
                 }
-            }
-            catch
-            {
-                // In single-file self-contained bundle, app directory may be read-only; %LOCALAPPDATA% handles persistence
+                catch { }
             }
         }
 

@@ -3,12 +3,21 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace NOS.Agent.Services
 {
     public class CredentialManagerService : ICredentialManagerService
     {
+        private readonly IConfiguration? _configuration;
+
+        public CredentialManagerService(IConfiguration? configuration = null)
+        {
+            _configuration = configuration;
+        }
+
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern bool CredRead(string targetName, uint type, int reservedFlag, out IntPtr credentialPtr);
 
@@ -41,6 +50,7 @@ namespace NOS.Agent.Services
         private const uint CRED_TYPE_GENERIC = 1;
         private const uint CRED_PERSIST_LOCAL_MACHINE = 2;
         private const string CredentialTarget = "NOS_Agent_Token";
+        private const string LegacyCredentialTarget = "NOS_DeviceToken";
 
         private static string GetEncryptedTokenPath()
         {
@@ -55,57 +65,65 @@ namespace NOS.Agent.Services
 
         public Task<string?> GetDeviceTokenAsync()
         {
-            // 1. Try Windows DPAPI Encrypted File in %LOCALAPPDATA%\NOS\token.dat (highest priority for user process)
+            // 1. Direct configuration / appsettings.json lookup
             try
             {
-                var tokenPath = GetEncryptedTokenPath();
-                if (File.Exists(tokenPath))
+                var cfgToken = _configuration?["AgentConfiguration:DeviceToken"];
+                if (!string.IsNullOrWhiteSpace(cfgToken))
                 {
-                    var encryptedBytes = File.ReadAllBytes(tokenPath);
-                    var decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
-                    var token = Encoding.UTF8.GetString(decryptedBytes);
-                    if (!string.IsNullOrWhiteSpace(token))
+                    return Task.FromResult<string?>(cfgToken.Trim());
+                }
+            }
+            catch { }
+
+            // 2. Local device.json lookup in AppContext, ProgramData, or LocalAppData
+            try
+            {
+                var candidatePaths = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, "device.json"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "device.json"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "device.json")
+                };
+
+                foreach (var path in candidatePaths)
+                {
+                    if (File.Exists(path))
                     {
-                        return Task.FromResult<string?>(token);
+                        var json = File.ReadAllText(path);
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("DeviceToken", out var dt) && !string.IsNullOrWhiteSpace(dt.GetString()))
+                            return Task.FromResult<string?>(dt.GetString()!.Trim());
+                        if (doc.RootElement.TryGetProperty("Token", out var t) && !string.IsNullOrWhiteSpace(t.GetString()))
+                            return Task.FromResult<string?>(t.GetString()!.Trim());
+                        if (doc.RootElement.TryGetProperty("RegistrationToken", out var rt) && !string.IsNullOrWhiteSpace(rt.GetString()))
+                            return Task.FromResult<string?>(rt.GetString()!.Trim());
                     }
                 }
             }
-            catch
-            {
-                // Fallback to Credential Manager
-            }
+            catch { }
 
-            // 2. Fallback to Windows Credential Manager
+            // 3. Fallback to token.txt in ProgramData or AppContext
             try
             {
-                if (CredRead(CredentialTarget, CRED_TYPE_GENERIC, 0, out IntPtr credPtr))
+                var txtPaths = new[]
                 {
-                    try
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "token.txt"),
+                    Path.Combine(AppContext.BaseDirectory, "token.txt")
+                };
+                foreach (var path in txtPaths)
+                {
+                    if (File.Exists(path))
                     {
-                        var cred = Marshal.PtrToStructure<CREDENTIAL>(credPtr);
-                        if (cred.CredentialBlobSize > 0 && cred.CredentialBlob != IntPtr.Zero)
-                        {
-                            var bytes = new byte[cred.CredentialBlobSize];
-                            Marshal.Copy(cred.CredentialBlob, bytes, 0, bytes.Length);
-                            var token = Encoding.Unicode.GetString(bytes);
-                            if (!string.IsNullOrWhiteSpace(token))
-                            {
-                                return Task.FromResult<string?>(token);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        CredFree(credPtr);
+                        var txt = File.ReadAllText(path)?.Trim();
+                        if (!string.IsNullOrWhiteSpace(txt) && txt.Length >= 16)
+                            return Task.FromResult<string?>(txt);
                     }
                 }
             }
-            catch
-            {
-                // Fallback to machine level storage
-            }
+            catch { }
 
-            // 3. Fallback to Windows DPAPI Encrypted File in %ProgramData%\NOS\token.dat (accessible by LocalSystem Windows Service)
+            // 4. Windows DPAPI Encrypted File in %ProgramData%\NOS\token.dat (accessible by LocalSystem Windows Service)
             try
             {
                 var commonTokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "token.dat");
@@ -116,13 +134,57 @@ namespace NOS.Agent.Services
                     var token = Encoding.UTF8.GetString(decryptedBytes);
                     if (!string.IsNullOrWhiteSpace(token))
                     {
-                        return Task.FromResult<string?>(token);
+                        return Task.FromResult<string?>(token.Trim());
                     }
                 }
             }
-            catch
+            catch { }
+
+            // 5. Windows DPAPI Encrypted File in %LOCALAPPDATA%\NOS\token.dat (user process)
+            try
             {
-                // Return null if inaccessible
+                var tokenPath = GetEncryptedTokenPath();
+                if (File.Exists(tokenPath))
+                {
+                    var encryptedBytes = File.ReadAllBytes(tokenPath);
+                    var decryptedBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
+                    var token = Encoding.UTF8.GetString(decryptedBytes);
+                    if (!string.IsNullOrWhiteSpace(token))
+                    {
+                        return Task.FromResult<string?>(token.Trim());
+                    }
+                }
+            }
+            catch { }
+
+            // 6. Fallback to Windows Credential Manager
+            foreach (var target in new[] { CredentialTarget, LegacyCredentialTarget })
+            {
+                try
+                {
+                    if (CredRead(target, CRED_TYPE_GENERIC, 0, out IntPtr credPtr))
+                    {
+                        try
+                        {
+                            var cred = Marshal.PtrToStructure<CREDENTIAL>(credPtr);
+                            if (cred.CredentialBlobSize > 0 && cred.CredentialBlob != IntPtr.Zero)
+                            {
+                                var bytes = new byte[cred.CredentialBlobSize];
+                                Marshal.Copy(cred.CredentialBlob, bytes, 0, bytes.Length);
+                                var token = Encoding.Unicode.GetString(bytes);
+                                if (!string.IsNullOrWhiteSpace(token))
+                                {
+                                    return Task.FromResult<string?>(token.Trim());
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            CredFree(credPtr);
+                        }
+                    }
+                }
+                catch { }
             }
 
             return Task.FromResult<string?>(null);
@@ -150,6 +212,12 @@ namespace NOS.Agent.Services
 
             try
             {
+                CredDelete(LegacyCredentialTarget, CRED_TYPE_GENERIC, 0);
+            }
+            catch { }
+
+            try
+            {
                 var tokenPath = GetEncryptedTokenPath();
                 if (File.Exists(tokenPath)) File.Delete(tokenPath);
             }
@@ -161,40 +229,50 @@ namespace NOS.Agent.Services
                 if (File.Exists(commonTokenPath)) File.Delete(commonTokenPath);
             }
             catch { }
+
+            try
+            {
+                var commonTxtPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "token.txt");
+                if (File.Exists(commonTxtPath)) File.Delete(commonTxtPath);
+            }
+            catch { }
         }
 
         public static void WriteToken(string token, string? username = "NOS_Device")
         {
             if (string.IsNullOrWhiteSpace(token)) return;
 
-            // 1. Write to Windows Credential Manager
-            try
+            // 1. Write to Windows Credential Manager under both targets
+            foreach (var target in new[] { CredentialTarget, LegacyCredentialTarget })
             {
-                var passwordBytes = Encoding.Unicode.GetBytes(token);
-                var passPtr = Marshal.AllocCoTaskMem(passwordBytes.Length);
-                Marshal.Copy(passwordBytes, 0, passPtr, passwordBytes.Length);
-
                 try
                 {
-                    var cred = new CREDENTIAL
+                    var passwordBytes = Encoding.Unicode.GetBytes(token);
+                    var passPtr = Marshal.AllocCoTaskMem(passwordBytes.Length);
+                    Marshal.Copy(passwordBytes, 0, passPtr, passwordBytes.Length);
+
+                    try
                     {
-                        Type = CRED_TYPE_GENERIC,
-                        TargetName = CredentialTarget,
-                        UserName = username ?? "NOS_Device",
-                        CredentialBlobSize = (uint)passwordBytes.Length,
-                        CredentialBlob = passPtr,
-                        Persist = CRED_PERSIST_LOCAL_MACHINE
-                    };
-                    CredWrite(ref cred, 0);
+                        var cred = new CREDENTIAL
+                        {
+                            Type = CRED_TYPE_GENERIC,
+                            TargetName = target,
+                            UserName = username ?? "NOS_Device",
+                            CredentialBlobSize = (uint)passwordBytes.Length,
+                            CredentialBlob = passPtr,
+                            Persist = CRED_PERSIST_LOCAL_MACHINE
+                        };
+                        CredWrite(ref cred, 0);
+                    }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(passPtr);
+                    }
                 }
-                finally
+                catch
                 {
-                    Marshal.FreeCoTaskMem(passPtr);
+                    // Ignore Credential Manager write failure, will save to DPAPI and files
                 }
-            }
-            catch
-            {
-                // Ignore Credential Manager write failure, will save to DPAPI
             }
 
             // 2. Write DPAPI encrypted file in %LOCALAPPDATA%\NOS\token.dat
@@ -205,10 +283,7 @@ namespace NOS.Agent.Services
                 var encryptedBytes = ProtectedData.Protect(rawBytes, null, DataProtectionScope.CurrentUser);
                 File.WriteAllBytes(tokenPath, encryptedBytes);
             }
-            catch
-            {
-                // Fallback
-            }
+            catch { }
 
             // 3. Write DPAPI encrypted file in %ProgramData%\NOS\token.dat (LocalMachine scope for services)
             try
@@ -220,10 +295,41 @@ namespace NOS.Agent.Services
                 var encryptedBytes = ProtectedData.Protect(rawBytes, null, DataProtectionScope.LocalMachine);
                 File.WriteAllBytes(commonTokenPath, encryptedBytes);
             }
-            catch
+            catch { }
+
+            // 4. Write plaintext token.txt in %ProgramData%\NOS (fallback for LocalSystem services)
+            try
             {
-                // Fallback
+                var commonDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+                if (!Directory.Exists(commonDir)) Directory.CreateDirectory(commonDir);
+                var commonTxtPath = Path.Combine(commonDir, "token.txt");
+                File.WriteAllText(commonTxtPath, token.Trim(), Encoding.UTF8);
             }
+            catch { }
+
+            // 5. Update device.json in %ProgramData%\NOS and AppContext.BaseDirectory
+            try
+            {
+                var candidatePaths = new[]
+                {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS", "device.json"),
+                    Path.Combine(AppContext.BaseDirectory, "device.json")
+                };
+                foreach (var path in candidatePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        var json = File.ReadAllText(path);
+                        var node = System.Text.Json.Nodes.JsonNode.Parse(json);
+                        if (node != null)
+                        {
+                            node["DeviceToken"] = token.Trim();
+                            File.WriteAllText(path, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                        }
+                    }
+                }
+            }
+            catch { }
         }
     }
 }

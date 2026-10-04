@@ -141,11 +141,10 @@ export class DeviceService {
       if ((dto as any).serialNumber)
         decommissionedDevicesStore.delete(String((dto as any).serialNumber));
     } else {
-      // No registration key provided - verify if this device was permanently decommissioned
+      // No registration key provided - verify if this device was permanently decommissioned by primary ID
       if (
-        (dto.uuid && decommissionedDevicesStore.has(dto.uuid)) ||
-        ((dto as any).deviceId &&
-          decommissionedDevicesStore.has(String((dto as any).deviceId)))
+        (dto as any).deviceId &&
+        decommissionedDevicesStore.has(String((dto as any).deviceId))
       ) {
         throw new HttpException(
           {
@@ -466,8 +465,15 @@ export class DeviceService {
     const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(
       device.id,
     );
+    const now = Date.now();
+    const lastSeenMs = device.lastSeen ? device.lastSeen.getTime() : 0;
+    const isStale = now - lastSeenMs > this.STALE_HEARTBEAT_THRESHOLD_MS;
+    const effectiveStatus =
+      device.status === DeviceStatus.ONLINE && isStale
+        ? DeviceStatus.OFFLINE
+        : device.status;
     return {
-      ...this.sanitizeDevice(device),
+      ...this.sanitizeDevice({ ...device, status: effectiveStatus }),
       lastHeartbeat: latestHeartbeat
         ? this.sanitizeHeartbeat(latestHeartbeat)
         : null,

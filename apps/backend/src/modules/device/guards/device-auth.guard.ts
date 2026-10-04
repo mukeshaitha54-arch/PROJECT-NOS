@@ -89,10 +89,7 @@ export class DeviceAuthGuard implements CanActivate {
       );
     }
 
-    if (
-      decommissionedDevicesStore.has(device.id) ||
-      (device.uuid && decommissionedDevicesStore.has(device.uuid))
-    ) {
+    if (decommissionedDevicesStore.has(device.id)) {
       throw new HttpException(
         {
           statusCode: 410,
