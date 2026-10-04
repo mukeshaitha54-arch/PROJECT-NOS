@@ -4,8 +4,11 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   forwardRef,
 } from "@nestjs/common";
+import { decommissionedDevicesStore } from "../../common/stores/device-decommissioned.store";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as crypto from "crypto";
 import { Device, DeviceStatus } from "@prisma/client";
@@ -128,6 +131,32 @@ export class DeviceService {
             err.stack,
           );
         });
+
+      // Valid registration key provided by administrator explicitly re-authorizes this device.
+      // Clear any prior decommission blocks for this device hardware identity.
+      if (dto.uuid) decommissionedDevicesStore.delete(dto.uuid);
+      if (dto.hostname) decommissionedDevicesStore.delete(dto.hostname);
+      if ((dto as any).deviceId)
+        decommissionedDevicesStore.delete(String((dto as any).deviceId));
+      if ((dto as any).serialNumber)
+        decommissionedDevicesStore.delete(String((dto as any).serialNumber));
+    } else {
+      // No registration key provided - verify if this device was permanently decommissioned
+      if (
+        (dto.uuid && decommissionedDevicesStore.has(dto.uuid)) ||
+        ((dto as any).deviceId &&
+          decommissionedDevicesStore.has(String((dto as any).deviceId)))
+      ) {
+        throw new HttpException(
+          {
+            statusCode: 410,
+            decommissioned: true,
+            message:
+              "Device has been permanently removed by administrator. Terminate agent.",
+          },
+          HttpStatus.GONE,
+        );
+      }
     }
 
     const rawToken = crypto.randomBytes(32).toString("hex");
@@ -136,6 +165,9 @@ export class DeviceService {
       .update(rawToken)
       .digest("hex");
     const existing = await this.deviceRepository.findByUuid(dto.uuid);
+    if (existing?.id && dto.registrationKey) {
+      decommissionedDevicesStore.delete(existing.id);
+    }
     const isNew = !existing;
     let device: Device;
 

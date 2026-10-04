@@ -498,12 +498,6 @@ export class DevicesController {
     if (device.uuid) {
       decommissionedDevicesStore.add(device.uuid);
     }
-    if (device.hostname) {
-      decommissionedDevicesStore.add(device.hostname);
-    }
-    if (device.deviceName) {
-      decommissionedDevicesStore.add(device.deviceName);
-    }
     if ((device as any).tokenHash) {
       decommissionedDevicesStore.add((device as any).tokenHash);
     }

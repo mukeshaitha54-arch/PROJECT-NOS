@@ -191,7 +191,11 @@ namespace NOS.Agent.Services
                 machineUuid = new Guid(hashBytes.Take(16).ToArray()).ToString();
             }
 
-            var apiKey = _configuration["AgentConfiguration:ApiKey"] ?? string.Empty;
+            var apiKey = _configuration["AgentConfiguration:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                apiKey = _configuration["AgentConfiguration:RegistrationKey"] ?? string.Empty;
+            }
 
             return new
             {

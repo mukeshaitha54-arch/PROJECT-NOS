@@ -15,7 +15,6 @@ import {
 } from "@nestjs/common";
 import { Request } from "express";
 import { SkipThrottle } from "@nestjs/throttler";
-import { decommissionedDevicesStore } from "../../common/stores/device-decommissioned.store";
 import {
   ApiTags,
   ApiOperation,
@@ -60,25 +59,6 @@ export class DeviceController {
     description: "Invalid device payload parameters.",
   })
   async register(@Body() dto: RegisterDeviceDto, @Req() req: Request) {
-    if (
-      (dto.uuid && decommissionedDevicesStore.has(dto.uuid)) ||
-      (dto.hostname && decommissionedDevicesStore.has(dto.hostname)) ||
-      ((dto as any).serialNumber &&
-        decommissionedDevicesStore.has(String((dto as any).serialNumber))) ||
-      ((dto as any).deviceId &&
-        decommissionedDevicesStore.has(String((dto as any).deviceId)))
-    ) {
-      throw new HttpException(
-        {
-          statusCode: 410,
-          decommissioned: true,
-          message:
-            "Device has been permanently removed by administrator. Terminate agent.",
-        },
-        HttpStatus.GONE,
-      );
-    }
-
     const ipAddress = req.ip || req.socket.remoteAddress;
     const data = await this.deviceService.register(dto, ipAddress);
     return {

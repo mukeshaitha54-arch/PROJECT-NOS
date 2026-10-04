@@ -55,7 +55,7 @@ namespace NOS.Agent.Services
                         var psi = new ProcessStartInfo
                         {
                             FileName = "cmd.exe",
-                            Arguments = "/c timeout /t 2 /nobreak > NUL & sc.exe stop \"NOS Agent\" & sc.exe delete \"NOS Agent\" & taskkill /F /IM NOS-Agent.exe /T & taskkill /F /IM NOS.Agent.exe /T",
+                            Arguments = "/c timeout /t 2 /nobreak > NUL & sc.exe stop \"NOS-Agent\" & sc.exe delete \"NOS-Agent\" & sc.exe stop \"NOS Agent\" & sc.exe delete \"NOS Agent\" & taskkill /F /IM NOS-Agent.exe /T & taskkill /F /IM NOS.Agent.exe /T",
                             CreateNoWindow = true,
                             UseShellExecute = false,
                             WindowStyle = ProcessWindowStyle.Hidden

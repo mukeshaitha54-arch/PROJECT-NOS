@@ -23,7 +23,7 @@ namespace NOS.Agent
 {
     public class Program
     {
-        private const string ServiceName = "NOS Agent";
+        private const string ServiceName = "NOS-Agent";
         private const string ServiceDisplayName = "Neural Operating System (NOS) Agent";
 
         public static async Task<int> Main(string[] args)

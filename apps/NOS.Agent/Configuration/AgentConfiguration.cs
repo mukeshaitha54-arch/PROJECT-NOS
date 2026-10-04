@@ -16,6 +16,7 @@ namespace NOS.Agent.Configuration
         public string TenantId { get; set; } = "default-org";
 
         public string ApiKey { get; set; } = string.Empty;
+        public string RegistrationKey { get; set; } = string.Empty;
 
         [Range(10, 3600)]
         public int HeartbeatIntervalSeconds { get; set; } = 30;
