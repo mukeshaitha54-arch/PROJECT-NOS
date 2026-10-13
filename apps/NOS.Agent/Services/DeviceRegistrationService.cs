@@ -54,9 +54,9 @@ namespace NOS.Agent.Services
                 var effectiveDeviceId = !string.IsNullOrWhiteSpace(configuredDeviceId) ? configuredDeviceId : savedDeviceId;
 
                 var existingToken = await _credentialManager.GetDeviceTokenAsync();
-                var needsRegistration = string.IsNullOrWhiteSpace(effectiveDeviceId) || string.IsNullOrWhiteSpace(existingToken) || string.IsNullOrWhiteSpace(CurrentToken);
+                var hasExistingIdentity = !string.IsNullOrWhiteSpace(effectiveDeviceId) && !string.IsNullOrWhiteSpace(existingToken);
 
-                if (!needsRegistration && !string.IsNullOrEmpty(existingToken))
+                if (hasExistingIdentity && !string.IsNullOrEmpty(existingToken))
                 {
                     CurrentToken = existingToken;
                     CurrentDeviceId = effectiveDeviceId;

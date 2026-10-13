@@ -86,16 +86,10 @@ export default function DashboardPage() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Recharts fleet sparklines telemetry history
-  const [sparklineData, setSparklineData] = useState([
-    { time: "00:00", cpu: 18, ram: 42 },
-    { time: "04:00", cpu: 22, ram: 45 },
-    { time: "08:00", cpu: 35, ram: 52 },
-    { time: "12:00", cpu: 28, ram: 49 },
-    { time: "16:00", cpu: 42, ram: 60 },
-    { time: "20:00", cpu: 25, ram: 48 },
-    { time: "Now", cpu: 24, ram: 48 },
-  ]);
+  // Recharts fleet sparklines telemetry history (dynamically populated from real agent telemetry)
+  const [sparklineData, setSparklineData] = useState<
+    Array<{ time: string; cpu: number; ram: number }>
+  >([]);
 
   const fetchDashboardData = useCallback(async () => {
     // FIXED: never block UI — always silently refresh in background
@@ -216,33 +210,43 @@ export default function DashboardPage() {
       triggerDebouncedRefresh();
     });
 
-    const unsubTelemetry = on("telemetry.received", (payload) => {
+    const handleTelemetryData = (payload: any) => {
       if (payload?.cpuUsage !== undefined) {
         const newCpu = Math.round(payload.cpuUsage);
-        const newRam = Math.round(payload.memoryUsagePercent || stats.ramAvg);
+        const newRam = Math.round(
+          payload.memoryUsagePercent ?? payload.ramUsage ?? stats.ramAvg,
+        );
         setStats((prev) => ({ ...prev, cpuAvg: newCpu, ramAvg: newRam }));
-        setSparklineData((prev) => [
-          ...prev.slice(1),
-          {
-            time: new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            cpu: newCpu,
-            ram: newRam,
-          },
-        ]);
+        setSparklineData((prev) => {
+          const next = [
+            ...prev,
+            {
+              time: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              }),
+              cpu: newCpu,
+              ram: newRam,
+            },
+          ];
+          return next.slice(-20);
+        });
       }
       triggerDebouncedRefresh();
-    });
+    };
 
-    const unsubAlert = on("alert:triggered", (payload) => {
+    const unsubTelemetry = on("telemetry.received", handleTelemetryData);
+    const unsubTelemetryNew = on("telemetry:new", handleTelemetryData);
+
+    const handleAlertEvent = (payload: any) => {
       setStats((prev) => ({ ...prev, alertsToday: prev.alertsToday + 1 }));
       if (payload) {
         setAlerts((prev) => [
           {
             id: payload.id || `alt-${Date.now()}`,
-            title: payload.title || "Critical Telemetry Breach",
+            title:
+              payload.title || payload.message || "Critical Telemetry Breach",
             severity: payload.severity || "CRITICAL",
             deviceName: payload.deviceName || "Unknown Device",
             deviceId: payload.deviceId,
@@ -253,13 +257,18 @@ export default function DashboardPage() {
         ]);
       }
       triggerDebouncedRefresh();
-    });
+    };
+
+    const unsubAlert = on("alert:triggered", handleAlertEvent);
+    const unsubAlertCreated = on("alert.created", handleAlertEvent);
 
     return () => {
       unsubOnline();
       unsubOffline();
       unsubTelemetry();
+      unsubTelemetryNew();
       unsubAlert();
+      unsubAlertCreated();
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
   }, [on, fetchDashboardData, stats.ramAvg]);

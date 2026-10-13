@@ -38,16 +38,22 @@ export class PrismaTelemetryRepository implements ITelemetryRepository {
         bytesSent: data.bytesSent,
         bytesReceived: data.bytesReceived,
         activeConnections: data.activeConnections,
-        runningProcesses: data.runningProcesses,
-        runningServices: data.runningServices
-          ? (data.runningServices as any)
-          : Prisma.JsonNull,
+        runningProcesses:
+          typeof data.runningProcesses === "number" ? data.runningProcesses : 0,
+        runningServices:
+          typeof data.runningServices === "number" ? data.runningServices : 0,
         systemUptime: data.systemUptime,
         bootTime: data.bootTime,
         ipAddress: data.ipAddress,
         macAddress: data.macAddress,
-        gateway: data.gateway,
-        dns: data.dns ? (data.dns as any) : Prisma.JsonNull,
+        gateway:
+          typeof data.gateway === "string" && data.gateway.trim().length > 0
+            ? data.gateway
+            : "0.0.0.0",
+        dns:
+          typeof data.dns === "string" && data.dns.trim().length > 0
+            ? data.dns
+            : "8.8.8.8",
         timestamp: data.timestamp || new Date(),
       },
     });

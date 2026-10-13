@@ -150,6 +150,15 @@ export default function DeviceInventoryDetailPage({
         invRes?.data?.data;
       setInventory(inv);
 
+      if (
+        !inv &&
+        (invRes?.status === 404 || invRes?.data?.statusCode === 404)
+      ) {
+        setError(
+          "Inventory has not yet been discovered for this device. The agent will run the asset discovery cycle on next startup.",
+        );
+      }
+
       const procList = procRes?.data?.data || procRes?.data || [];
       if (Array.isArray(procList)) {
         setProcesses(procList);

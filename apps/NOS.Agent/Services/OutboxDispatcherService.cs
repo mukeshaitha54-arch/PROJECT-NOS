@@ -24,6 +24,7 @@ namespace NOS.Agent.Services
         private readonly ILogger<OutboxDispatcherService> _logger;
 
         private int _consecutiveNetworkErrors = 0;
+        private int _consecutiveAuthErrors = 0;
         private DateTime _circuitBreakerUntil = DateTime.MinValue;
 
         public OutboxDispatcherService(
@@ -149,6 +150,7 @@ namespace NOS.Agent.Services
                             }
                         }
 
+                        _consecutiveAuthErrors = 0;
                         await _queueService.MarkDeliveredAsync(message.Id, cancellationToken);
                         ResetCircuitBreaker();
                     }
@@ -173,10 +175,15 @@ namespace NOS.Agent.Services
                         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || 
                             response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                         {
-                            _eventLogService.WriteEvent(1000, $"Authentication failure for message {message.Id} (Status {response.StatusCode})", EventLogEntryType.Error);
-                            _logger.LogWarning("Authentication failure detected (HTTP 401/403). Clearing invalid credentials and requesting re-registration.");
-                            await _credentialManager.ClearDeviceTokenAsync();
-                            DeviceRegistrationService.RequestReRegistration();
+                            _consecutiveAuthErrors++;
+                            _eventLogService.WriteEvent(1000, $"Authentication failure for message {message.Id} (Status {response.StatusCode}, count: {_consecutiveAuthErrors})", EventLogEntryType.Error);
+                            _logger.LogWarning("Authentication failure detected (HTTP 401/403). Consecutive auth failures: {Count}", _consecutiveAuthErrors);
+                            if (_consecutiveAuthErrors >= 5)
+                            {
+                                _logger.LogWarning("5 consecutive authentication failures. Clearing credentials and requesting re-registration.");
+                                await _credentialManager.ClearDeviceTokenAsync();
+                                DeviceRegistrationService.RequestReRegistration();
+                            }
                         }
                         
                         var error = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase} - {responseBody}";

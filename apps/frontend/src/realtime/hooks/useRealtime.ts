@@ -76,8 +76,11 @@ export function useRealtime() {
       setIsConnected(true);
       setConnectionState("connected");
       setError(null);
-      // Emit device:subscribe with organizationId
       // Join the global dashboard room to receive events for all devices
+      socketInstance.emit("joinRoom", "dashboard");
+    });
+
+    socketInstance.io.on("reconnect", () => {
       socketInstance.emit("joinRoom", "dashboard");
     });
 
@@ -112,13 +115,24 @@ export function useRealtime() {
     const eventsToListen = [
       "device.online",
       "device.offline",
+      "device.connected",
+      "device.disconnected",
+      "device.registered",
       "device:status:changed",
       "telemetry.received",
       "telemetry:new",
       "alert:triggered",
       "alert.created",
+      "alert.updated",
+      "alert.resolved",
+      "alert:resolved",
+      "alert.closed",
+      "alert.suppressed",
+      "alert.escalated",
       "device:heartbeat:missed",
       "heartbeat.received",
+      "inventory.updated",
+      "device.telemetry.status",
     ];
 
     eventsToListen.forEach((event) => {
@@ -137,6 +151,14 @@ export function useRealtime() {
     lastEvent,
     error,
     on,
-    reconnect: () => socket?.connect(),
+    reconnect: () => {
+      if (socket) {
+        if (!socket.connected) {
+          socket.connect();
+        } else {
+          socket.emit("joinRoom", "dashboard");
+        }
+      }
+    },
   };
 }

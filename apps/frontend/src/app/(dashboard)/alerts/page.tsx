@@ -72,14 +72,16 @@ export default function AlertsCenterPage() {
   const { on } = useRealtime();
 
   useEffect(() => {
-    const unsubAlert = on("alert:triggered", (payload) => {
+    const handleNewAlert = (payload: any) => {
       if (payload) {
         const newAlert: AlertCardData = {
           id: payload.id || `alt-${Date.now()}`,
           severity: (payload.severity || "CRITICAL") as AlertSeverityType,
-          title: payload.title || "Critical Telemetry Alert",
+          title: payload.title || payload.message || "Critical Telemetry Alert",
           description:
-            payload.description || "Breach condition detected by rule engine.",
+            payload.description ||
+            payload.message ||
+            "Breach condition detected by rule engine.",
           deviceName: payload.deviceName || "Unknown Device",
           deviceId: payload.deviceId,
           createdAt: new Date().toISOString(),
@@ -98,10 +100,14 @@ export default function AlertsCenterPage() {
             : "bg-gray-900 text-gray-200 border-gray-800",
         });
       }
-    });
+    };
+
+    const unsubAlert = on("alert:triggered", handleNewAlert);
+    const unsubAlertCreated = on("alert.created", handleNewAlert);
 
     return () => {
       unsubAlert();
+      unsubAlertCreated();
     };
   }, [on]);
 

@@ -91,11 +91,16 @@ namespace NOS.Agent
                 await RunFirstTimeSetupAsync();
             }
 
-            // 3. Ensure Local AppData Directory Exists
+            // 3. Ensure Local AppData and CommonProgramData Directories Exist
             var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS");
             if (!Directory.Exists(appDataDir))
             {
                 Directory.CreateDirectory(appDataDir);
+            }
+            var commonDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+            if (!Directory.Exists(commonDataDir))
+            {
+                try { Directory.CreateDirectory(commonDataDir); } catch { }
             }
 
             // 4. Try Registering Windows Event Log Source
@@ -154,7 +159,9 @@ namespace NOS.Agent
                     // 2. Write to SQLite CrashLogs
                     // Re-build host/config just to get DB path if we couldn't get it from services, 
                     // or parse it from LocalAppData
-                    var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "outbox.db");
+                    var crashCommonNos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+                    if (!Directory.Exists(crashCommonNos)) { try { Directory.CreateDirectory(crashCommonNos); } catch { } }
+                    var dbPath = Path.Combine(crashCommonNos, "outbox.db");
                     var optionsBuilder = new DbContextOptionsBuilder<OutboxDbContext>();
                     optionsBuilder.UseSqlite($"Data Source={dbPath}");
 
@@ -248,10 +255,12 @@ namespace NOS.Agent
                         options.ResourceGuardrails = config.ResourceGuardrails;
                     });
 
-                    // Database storage in LocalAppData
+                    // Database storage in ProgramData\NOS
+                    var commonNos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NOS");
+                    if (!Directory.Exists(commonNos)) { try { Directory.CreateDirectory(commonNos); } catch { } }
                     var dbPath = !string.IsNullOrWhiteSpace(config.SqliteDbPath)
                         ? config.SqliteDbPath
-                        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS", "outbox.db");
+                        : Path.Combine(commonNos, "outbox.db");
 
                     services.AddDbContext<OutboxDbContext>(options =>
                         options.UseSqlite($"Data Source={dbPath}"));

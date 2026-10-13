@@ -107,13 +107,26 @@ namespace NOS.Agent.Services
 
         private SubmitTelemetryDto CollectTelemetryData()
         {
-            var dto = new SubmitTelemetryDto();
+            var dto = new SubmitTelemetryDto
+            {
+                DeviceId = DeviceRegistrationService.CurrentDeviceId,
+                Timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                BootTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            };
 
             CollectCpuData(dto);
             CollectMemoryData(dto);
             CollectDiskData(dto);
             CollectNetworkData(dto);
             CollectSystemData(dto);
+
+            // Safety guardrails for validation constraints
+            if (dto.LogicalProcessors < 1) dto.LogicalProcessors = Math.Max(1, Environment.ProcessorCount);
+            if (dto.PhysicalProcessors < 1) dto.PhysicalProcessors = Math.Max(1, Environment.ProcessorCount / 2);
+            if (string.IsNullOrWhiteSpace(dto.IpAddress) || dto.IpAddress == "Unknown") dto.IpAddress = "127.0.0.1";
+            if (string.IsNullOrWhiteSpace(dto.MacAddress) || dto.MacAddress == "Unknown") dto.MacAddress = "00:00:00:00:00:00";
+            if (string.IsNullOrWhiteSpace(dto.Gateway)) dto.Gateway = "0.0.0.0";
+            if (string.IsNullOrWhiteSpace(dto.Dns)) dto.Dns = "8.8.8.8";
 
             return dto;
         }
@@ -555,14 +568,17 @@ namespace NOS.Agent.Services
         public double BytesReceived { get; set; } = 0.0;
         public int ActiveConnections { get; set; } = 0;
 
+        public string? DeviceId { get; set; }
+        public string Timestamp { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
         public int RunningProcesses { get; set; } = 0;
         public int RunningServices { get; set; } = 0;
         public double SystemUptime { get; set; } = 0.0;
-        public string BootTime { get; set; } = "Unknown";
+        public string BootTime { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
-        public string IpAddress { get; set; } = "Unknown";
+        public string IpAddress { get; set; } = "127.0.0.1";
         public string Gateway { get; set; } = "0.0.0.0";
         public string Dns { get; set; } = "8.8.8.8";
-        public string MacAddress { get; set; } = "Unknown";
+        public string MacAddress { get; set; } = "00:00:00:00:00:00";
     }
 }

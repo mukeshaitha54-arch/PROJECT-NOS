@@ -99,8 +99,10 @@ namespace NOS.Agent.Configuration
 
             if (string.IsNullOrWhiteSpace(SqliteDbPath))
             {
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                var nosDir = Path.Combine(appData, "NOS");
+                var commonData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                var nosDir = !string.IsNullOrWhiteSpace(commonData)
+                    ? Path.Combine(commonData, "NOS")
+                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NOS");
                 if (!Directory.Exists(nosDir))
                 {
                     Directory.CreateDirectory(nosDir);

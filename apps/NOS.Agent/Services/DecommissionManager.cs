@@ -92,6 +92,7 @@ namespace NOS.Agent.Services
                 {
                     "device.json",
                     "token.dat",
+                    "token.txt",
                     "outbox.db",
                     "outbox.db-shm",
                     "outbox.db-wal"

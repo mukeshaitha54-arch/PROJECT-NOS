@@ -45,12 +45,17 @@ export class TelemetryService {
     authenticatedDevice: PrismaDevice,
     dto: SubmitTelemetryDto,
   ): Promise<TelemetrySnapshotContract> {
-    const targetDeviceId = dto.deviceId || authenticatedDevice.id;
-    if (targetDeviceId !== authenticatedDevice.id) {
+    const requestedDeviceId = dto.deviceId;
+    if (
+      requestedDeviceId &&
+      requestedDeviceId !== authenticatedDevice.id &&
+      requestedDeviceId !== authenticatedDevice.uuid
+    ) {
       throw new BadRequestException(
         "Security violation: Cannot submit telemetry metrics on behalf of a differing device UUID.",
       );
     }
+    const targetDeviceId = authenticatedDevice.id;
 
     const isPaused =
       deviceTelemetryPausedStore.get(authenticatedDevice.id) ??
