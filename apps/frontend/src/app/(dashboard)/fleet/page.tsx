@@ -648,7 +648,7 @@ function AddDeviceModal({
     setCreating(true);
     setError(null);
     try {
-      let orgId = "default-org";
+      let orgId: string | null = null;
       try {
         const meRes = await fetch(`${apiBase()}/auth/me`, {
           headers: { Authorization: `Bearer ${getToken()}` },
@@ -656,10 +656,18 @@ function AddDeviceModal({
         if (meRes.ok) {
           const meData = await meRes.json();
           orgId =
-            meData?.data?.organizationId || meData?.organizationId || orgId;
+            meData?.data?.organizationId || meData?.organizationId || null;
         }
       } catch (err) {
-        // Fallback to default org
+        // resolution failed
+      }
+
+      if (!orgId) {
+        setError(
+          "Unable to determine your organization. Please refresh and try again.",
+        );
+        setCreating(false);
+        return;
       }
 
       const expiresAt = new Date();

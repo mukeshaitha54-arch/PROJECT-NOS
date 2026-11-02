@@ -10,6 +10,7 @@ import {
   UseGuards,
   NotFoundException,
   ForbiddenException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -481,13 +482,16 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
-    const orgId = tenant.organizationId;
+    const orgId = tenant?.organizationId;
+    if (!orgId) {
+      throw new UnauthorizedException(
+        "Organization context is required to delete a device",
+      );
+    }
     const device = await this.prisma.device.findFirst({
       where: {
         OR: [{ id }, { uuid: id }],
-        ...(orgId && orgId !== "default-org"
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
+        AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }],
       },
     });
 

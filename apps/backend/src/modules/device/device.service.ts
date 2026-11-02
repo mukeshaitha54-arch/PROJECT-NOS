@@ -116,7 +116,7 @@ export class DeviceService {
       `Registering monitoring agent UUID [${dto.uuid}] Hostname [${dto.hostname}] (${dto.os})`,
     );
 
-    let organizationId: string | undefined = dto.organizationId;
+    let organizationId: string | undefined = undefined;
 
     let validatedRegKey: any = null;
     if (dto.registrationKey) {
@@ -183,6 +183,25 @@ export class DeviceService {
           }
         }
       }
+
+      if (
+        organizationId &&
+        existing.organizationId &&
+        existing.organizationId !== organizationId
+      ) {
+        throw new UnauthorizedException(
+          "Device is already registered to another organization.",
+        );
+      }
+
+      if (validatedRegKey) {
+        await this.registrationKeyService.incrementKeyUsage(
+          validatedRegKey.id,
+          existing.id,
+          ipAddress,
+        );
+      }
+
       this.logger.log(
         `Agent UUID [${dto.uuid}] recognized. Refreshing cryptographic token and metadata.`,
       );
@@ -196,14 +215,14 @@ export class DeviceService {
         status: DeviceStatus.ONLINE,
         lastSeen: new Date(),
         tokenHash: tokenHash,
-        organizationId: organizationId || existing.organizationId,
+        organizationId: existing.organizationId || organizationId,
       });
     } else {
-      // Registration key check bypassed for local development
-      if (!organizationId)
+      if (!organizationId) {
         throw new BadRequestException(
           "A valid registration key is required to register a new device.",
         );
+      }
       device = await this.deviceRepository.create({
         uuid: dto.uuid,
         hostname: dto.hostname,
@@ -217,14 +236,19 @@ export class DeviceService {
         tokenHash: tokenHash,
         lastSeen: new Date(),
       });
-    }
 
-    if (validatedRegKey) {
-      await this.registrationKeyService.incrementKeyUsage(
-        validatedRegKey.id,
-        device.id,
-        ipAddress,
-      );
+      if (validatedRegKey) {
+        try {
+          await this.registrationKeyService.incrementKeyUsage(
+            validatedRegKey.id,
+            device.id,
+            ipAddress,
+          );
+        } catch (err) {
+          await this.deviceRepository.delete(device.id).catch(() => {});
+          throw err;
+        }
+      }
     }
 
     const sanitized = this.sanitizeDevice(device);
@@ -475,8 +499,7 @@ export class DeviceService {
     // FIX: Enforce org isolation — if caller provides organizationId, validate ownership
     if (
       organizationId &&
-      device.organizationId &&
-      device.organizationId !== organizationId
+      (!device.organizationId || device.organizationId !== organizationId)
     ) {
       throw new NotFoundException(
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
@@ -516,9 +539,7 @@ export class DeviceService {
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
     if (
       organizationId &&
-      organizationId !== "default-org" &&
-      device.organizationId &&
-      device.organizationId !== organizationId
+      (!device.organizationId || device.organizationId !== organizationId)
     ) {
       throw new NotFoundException(`Device [${deviceId}] not found.`);
     }
@@ -553,9 +574,7 @@ export class DeviceService {
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
     if (
       organizationId &&
-      organizationId !== "default-org" &&
-      device.organizationId &&
-      device.organizationId !== organizationId
+      (!device.organizationId || device.organizationId !== organizationId)
     ) {
       throw new NotFoundException(`Device [${deviceId}] not found.`);
     }
@@ -591,9 +610,7 @@ export class DeviceService {
         const device = await this.deviceRepository.findById(id);
         if (
           organizationId &&
-          organizationId !== "default-org" &&
-          device?.organizationId &&
-          device.organizationId !== organizationId
+          (!device?.organizationId || device.organizationId !== organizationId)
         ) {
           continue;
         }

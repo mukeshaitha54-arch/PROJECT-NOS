@@ -224,10 +224,11 @@ export class InventoryService {
 
   async getHealthDiagnostics(
     deviceId?: string,
+    organizationId?: string,
   ): Promise<InventoryHealthResponse> {
     this.checkFeatureFlag();
 
-    return this.repository.getInventoryHealth(deviceId);
+    return this.repository.getInventoryHealth(deviceId, organizationId);
   }
 
   async triggerManualScan(

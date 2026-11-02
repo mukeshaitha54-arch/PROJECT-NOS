@@ -51,46 +51,47 @@ export class PrismaRegistrationKeyRepository implements IRegistrationKeyReposito
     deviceId: string,
     ipAddress?: string,
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const key = await tx.registrationKey.findUnique({
-        where: { id },
-      });
-      if (!key) {
-        throw new BadRequestException("Registration key not found");
-      }
-      if (key.status !== "ACTIVE") {
-        await tx.registrationKey.update({
-          where: { id },
-          data: { failedAttempts: { increment: 1 } },
-        });
-        throw new BadRequestException("Registration key is not active");
-      }
-      if (key.expiresAt && new Date() > key.expiresAt) {
-        await tx.registrationKey.update({
-          where: { id },
-          data: { failedAttempts: { increment: 1 } },
-        });
-        throw new BadRequestException("Registration key has expired");
-      }
-      if (key.maxUses > 0 && key.currentUses >= key.maxUses) {
-        await tx.registrationKey.update({
-          where: { id },
-          data: { failedAttempts: { increment: 1 } },
-        });
-        throw new BadRequestException("Registration key usage limit reached");
-      }
-
-      await tx.registrationKey.update({
-        where: { id },
-        data: {
-          currentUses: { increment: 1 },
-          devicesCreated: { increment: 1 },
-          lastUsed: new Date(),
-          lastUsedBy: deviceId, // Storing the actual device ID that enrolled
-          lastUsedIp: ipAddress,
-        },
-      });
+    const key = await this.prisma.registrationKey.findUnique({
+      where: { id },
     });
+    if (!key) {
+      throw new BadRequestException("Registration key not found");
+    }
+    if (key.status !== "ACTIVE") {
+      await this.recordFailedAttempt(id).catch(() => {});
+      throw new BadRequestException("Registration key is not active");
+    }
+    if (key.expiresAt && new Date() > key.expiresAt) {
+      await this.recordFailedAttempt(id).catch(() => {});
+      throw new BadRequestException("Registration key has expired");
+    }
+    if (key.maxUses > 0 && key.currentUses >= key.maxUses) {
+      await this.recordFailedAttempt(id).catch(() => {});
+      throw new BadRequestException("Registration key usage limit reached");
+    }
+
+    // Atomic conditional update under concurrency
+    const updateResult = await this.prisma.registrationKey.updateMany({
+      where: {
+        id,
+        status: "ACTIVE",
+        currentUses: key.currentUses,
+      },
+      data: {
+        currentUses: { increment: 1 },
+        devicesCreated: { increment: 1 },
+        lastUsed: new Date(),
+        lastUsedBy: deviceId,
+        lastUsedIp: ipAddress,
+      },
+    });
+
+    if (updateResult.count === 0) {
+      await this.recordFailedAttempt(id).catch(() => {});
+      throw new BadRequestException(
+        "Registration key usage limit reached or modified concurrently",
+      );
+    }
   }
 
   async recordFailedAttempt(id: string): Promise<void> {

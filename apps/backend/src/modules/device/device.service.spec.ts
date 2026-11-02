@@ -221,4 +221,29 @@ describe("DeviceService - Anti-Takeover & Registration Security", () => {
     );
     expect(mockDeviceRepo.create).not.toHaveBeenCalled();
   });
+
+  it("should reject re-registering existing device with registrationKey of a different organization", async () => {
+    mockDeviceRepo.findByUuid.mockResolvedValue(existingDeviceRecord);
+    mockRegistrationKeyService.validateKey.mockResolvedValue({
+      id: "reg-key-diff",
+      organizationId: "org-beta-456",
+      status: "ACTIVE",
+    });
+
+    const dto: RegisterDeviceDto = {
+      uuid: "hw-uuid-1111",
+      hostname: "DESKTOP-EXISTING",
+      deviceName: "Existing Monitored PC",
+      os: "Windows 11",
+      osVersion: "10.0.22631",
+      architecture: "X64",
+      agentVersion: "2.0.0",
+      registrationKey: "ADMIN-DIFFERENT-ORG-KEY",
+    };
+
+    await expect(service.register(dto, "192.168.1.50")).rejects.toThrow(
+      UnauthorizedException,
+    );
+    expect(mockDeviceRepo.update).not.toHaveBeenCalled();
+  });
 });

@@ -7,7 +7,8 @@ export default () => ({
   jwt: {
     secret: process.env.JWT_SECRET,
     expiration: process.env.JWT_EXPIRATION || "15m",
-    refreshSecret: process.env.REFRESH_SECRET,
+    refreshSecret:
+      process.env.REFRESH_SECRET || process.env.REFRESH_TOKEN_SECRET,
   },
   agent: {
     tokenSecret: process.env.AGENT_TOKEN_SECRET,

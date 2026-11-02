@@ -708,11 +708,15 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
   async getInventoryHealth(
     deviceId?: string,
+    organizationId?: string,
   ): Promise<InventoryHealthResponse> {
     if (deviceId) {
       const targetDeviceId = await this.resolveDeviceId(deviceId);
-      const inv = await this.prisma.deviceInventory.findUnique({
-        where: { deviceId: targetDeviceId },
+      const inv = await this.prisma.deviceInventory.findFirst({
+        where: {
+          deviceId: targetDeviceId,
+          ...(organizationId ? { device: { organizationId } } : {}),
+        },
         include: { device: { select: { agentVersion: true } } },
       });
       if (!inv) {
@@ -740,8 +744,9 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       };
     }
 
-    // Global health diagnostics across all monitored nodes
+    // Health diagnostics scoped to organization if provided
     const latestInv = await this.prisma.deviceInventory.findFirst({
+      where: organizationId ? { device: { organizationId } } : undefined,
       orderBy: { lastScanAt: "desc" },
       include: { device: { select: { agentVersion: true } } },
     });

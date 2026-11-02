@@ -41,6 +41,11 @@ export function useRealtime() {
     };
   }, []);
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("nos_access_token")
+      : null;
+
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsConnected(false);
@@ -48,11 +53,6 @@ export function useRealtime() {
     }
 
     setConnectionState("connecting");
-
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("nos_access_token")
-        : null;
 
     // Connect to backend Socket.IO with token authentication
     const socketInstance = io(SOCKET_URL + "/realtime", {
@@ -142,7 +142,7 @@ export function useRealtime() {
     return () => {
       socketInstance.disconnect();
     };
-  }, [user?.id]);
+  }, [user?.id, token]);
 
   return {
     socket,

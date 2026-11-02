@@ -165,10 +165,6 @@ export class RealtimeGateway
         client.handshake.query.reconnect === "true",
       );
 
-      // Automatically subscribe to common authorized dashboard namespace room
-      client.join(SocketRooms.DASHBOARD);
-      this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
-
       // Phase 6: Automatically subscribe to Tenant Isolated Room after validating membership
       const requestedOrgId =
         client.handshake.query?.organizationId ||
@@ -184,6 +180,7 @@ export class RealtimeGateway
             where: {
               userId: user.id,
               organizationId: requestedOrgId as string,
+              isSuspended: false,
             },
           });
           if (membership) {
@@ -194,13 +191,19 @@ export class RealtimeGateway
             );
             const userDefaultOrg =
               await this.prisma.organizationMember.findFirst({
-                where: { userId: user.id },
+                where: { userId: user.id, isSuspended: false },
                 orderBy: { joinedAt: "asc" },
                 select: { organizationId: true },
               });
             orgId = userDefaultOrg?.organizationId || "default-org";
           }
         }
+      }
+
+      // Only SUPER_ADMIN subscribes to global cross-tenant dashboard room
+      if (user.role === UserRole.SUPER_ADMIN) {
+        client.join(SocketRooms.DASHBOARD);
+        this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
       }
 
       const orgRoom = `org_${orgId}`;
@@ -265,10 +268,10 @@ export class RealtimeGateway
    * Validates client RBAC before allowing subscription to specific namespaces.
    */
   @SubscribeMessage("joinRoom")
-  handleJoinRoom(
+  async handleJoinRoom(
     @MessageBody() room: string,
     @ConnectedSocket() client: Socket,
-  ): { status: string; room: string; timestamp: string } {
+  ): Promise<{ status: string; room: string; timestamp: string }> {
     const user = (client as any).user;
     if (!user) {
       throw new UnauthorizedException("Socket unauthenticated.");
@@ -284,7 +287,7 @@ export class RealtimeGateway
       };
     }
 
-    this.authorizeRoomAccess(user, room);
+    await this.authorizeRoomAccess(user, room);
 
     client.join(room);
     this.registry.addRoom(client.id, room);
@@ -348,13 +351,30 @@ export class RealtimeGateway
     return null;
   }
 
-  private authorizeRoomAccess(user: any, room: string): void {
+  private async authorizeRoomAccess(user: any, room: string): Promise<void> {
     if (!room) {
       throw new ForbiddenException("Invalid room parameter.");
     }
 
     // Super Admin overrides all room locks
     if (user.role === UserRole.SUPER_ADMIN) {
+      return;
+    }
+
+    if (room.startsWith("org_") || room.startsWith("org:")) {
+      const targetOrg = room.replace(/^org[_:]/, "");
+      const membership = await this.prisma.organizationMember.findFirst({
+        where: {
+          userId: user.id,
+          organizationId: targetOrg,
+          isSuspended: false,
+        },
+      });
+      if (!membership) {
+        throw new ForbiddenException(
+          `Access to organization room [${room}] denied.`,
+        );
+      }
       return;
     }
 
@@ -376,8 +396,28 @@ export class RealtimeGateway
       );
     }
 
-    // Anyone authenticated can view standard dashboard or specific device rooms in Phase 4
-    if (room === SocketRooms.DASHBOARD || room.startsWith("device:")) {
+    if (room === SocketRooms.DASHBOARD) {
+      throw new ForbiddenException(
+        "Global dashboard room restricted to SUPER_ADMIN.",
+      );
+    }
+
+    if (room.startsWith("device:")) {
+      const targetDeviceId = room.replace(/^device:/, "");
+      const userMemberships = await this.prisma.organizationMember.findMany({
+        where: { userId: user.id, isSuspended: false },
+        select: { organizationId: true },
+      });
+      const allowedOrgIds = userMemberships.map((m) => m.organizationId);
+      const device = await this.prisma.device.findFirst({
+        where: {
+          id: targetDeviceId,
+          organizationId: { in: allowedOrgIds },
+        },
+      });
+      if (!device) {
+        throw new ForbiddenException(`Access to device room [${room}] denied.`);
+      }
       return;
     }
   }

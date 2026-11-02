@@ -23,12 +23,21 @@ export class BulkOperationsController {
     @CurrentUser() user: any,
   ) {
     const userOrgId = user?.organizationId || user?.organization?.id;
+    const effectiveOrgId =
+      user?.role === "SUPER_ADMIN"
+        ? dto.organizationId || userOrgId
+        : userOrgId;
+
+    if (!effectiveOrgId) {
+      throw new UnauthorizedException(
+        "Organization scope is required for bulk operations",
+      );
+    }
+
     if (
-      userOrgId &&
-      userOrgId !== "default-org" &&
+      user?.role !== "SUPER_ADMIN" &&
       dto.organizationId &&
-      dto.organizationId !== userOrgId &&
-      user?.role !== "SUPER_ADMIN"
+      dto.organizationId !== userOrgId
     ) {
       throw new UnauthorizedException(
         "Unauthorized cross-tenant bulk action attempt",
@@ -37,6 +46,7 @@ export class BulkOperationsController {
 
     const result = await this.bulkService.executeBulkAction({
       ...dto,
+      organizationId: effectiveOrgId,
       performedByUserId: user.id,
     });
 
