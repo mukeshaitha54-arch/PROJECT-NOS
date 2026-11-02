@@ -80,7 +80,8 @@ export default function FleetOverviewPage() {
     } catch (err: any) {
       console.error("Fleet fetch failed:", err);
       setError("Failed to load devices. Please check your connection.");
-      setDevices([]);
+      // Do not clear already-loaded devices on transient background errors
+      setDevices((prev) => (prev.length > 0 ? prev : []));
     } finally {
       setLoading(false);
     }

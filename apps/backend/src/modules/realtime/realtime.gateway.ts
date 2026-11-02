@@ -200,8 +200,12 @@ export class RealtimeGateway
         }
       }
 
-      // Only SUPER_ADMIN subscribes to global cross-tenant dashboard room
-      if (user.role === UserRole.SUPER_ADMIN) {
+      // SUPER_ADMIN, ADMIN, and OWNER subscribe to global cross-tenant dashboard room
+      if (
+        user.role === UserRole.SUPER_ADMIN ||
+        user.role === UserRole.ADMIN ||
+        user.role === UserRole.OWNER
+      ) {
         client.join(SocketRooms.DASHBOARD);
         this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
       }
@@ -397,9 +401,16 @@ export class RealtimeGateway
     }
 
     if (room === SocketRooms.DASHBOARD) {
-      throw new ForbiddenException(
-        "Global dashboard room restricted to SUPER_ADMIN.",
-      );
+      if (
+        user.role !== UserRole.SUPER_ADMIN &&
+        user.role !== UserRole.ADMIN &&
+        user.role !== UserRole.OWNER
+      ) {
+        throw new ForbiddenException(
+          "Global dashboard room restricted to administrators.",
+        );
+      }
+      return;
     }
 
     if (room.startsWith("device:")) {
@@ -409,10 +420,25 @@ export class RealtimeGateway
         select: { organizationId: true },
       });
       const allowedOrgIds = userMemberships.map((m) => m.organizationId);
+      if (
+        user.role === UserRole.SUPER_ADMIN ||
+        user.role === UserRole.ADMIN ||
+        user.role === UserRole.OWNER
+      ) {
+        allowedOrgIds.push("default-org");
+      }
       const device = await this.prisma.device.findFirst({
         where: {
-          id: targetDeviceId,
-          organizationId: { in: allowedOrgIds },
+          OR: [{ id: targetDeviceId }, { uuid: targetDeviceId }],
+          ...(allowedOrgIds.length > 0
+            ? {
+                OR: [
+                  { organizationId: { in: allowedOrgIds } },
+                  { tenantId: { in: allowedOrgIds } },
+                  { organizationId: null, tenantId: null },
+                ],
+              }
+            : {}),
         },
       });
       if (!device) {

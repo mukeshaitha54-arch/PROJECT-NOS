@@ -36,6 +36,26 @@ export class DevicesController {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  private getDeviceQueryWhere(id: string, orgId?: string) {
+    const where: any = {
+      OR: [{ id }, { uuid: id }],
+    };
+    if (orgId && orgId !== "default-org") {
+      where.AND = [
+        {
+          OR: [
+            { tenantId: orgId },
+            { organizationId: orgId },
+            { tenantId: null, organizationId: null },
+            { tenantId: "default-org" },
+            { organizationId: "default-org" },
+          ],
+        },
+      ];
+    }
+    return where;
+  }
+
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "List all devices with latest snapshot" })
@@ -43,18 +63,34 @@ export class DevicesController {
     const orgId = tenant.organizationId;
 
     // Fire-and-forget: sync tenantId for any legacy device that has organizationId but wrong tenantId
-    this.prisma.device
-      .updateMany({
-        where: { organizationId: orgId, tenantId: { not: orgId } },
-        data: { tenantId: orgId },
-      })
-      .catch(() => {});
+    if (orgId && orgId !== "default-org") {
+      this.prisma.device
+        .updateMany({
+          where: {
+            organizationId: orgId,
+            OR: [{ tenantId: { not: orgId } }, { tenantId: null }],
+          },
+          data: { tenantId: orgId },
+        })
+        .catch(() => {});
+    }
+
+    const where =
+      orgId && orgId !== "default-org"
+        ? {
+            OR: [
+              { tenantId: orgId },
+              { organizationId: orgId },
+              { tenantId: null, organizationId: null },
+              { tenantId: "default-org" },
+              { organizationId: "default-org" },
+            ],
+          }
+        : {};
 
     // Query by tenantId OR organizationId to catch all devices for this org
     const devices = await this.prisma.device.findMany({
-      where: {
-        OR: [{ tenantId: orgId }, { organizationId: orgId }],
-      },
+      where,
       orderBy: { lastSeen: "desc" },
       include: {
         telemetrySnapshots: {
@@ -106,10 +142,21 @@ export class DevicesController {
   async getStats(@CurrentTenant() tenant: TenantContext) {
     const orgId = tenant.organizationId;
 
+    const where =
+      orgId && orgId !== "default-org"
+        ? {
+            OR: [
+              { tenantId: orgId },
+              { organizationId: orgId },
+              { tenantId: null, organizationId: null },
+              { tenantId: "default-org" },
+              { organizationId: "default-org" },
+            ],
+          }
+        : {};
+
     const devices = await this.prisma.device.findMany({
-      where: {
-        OR: [{ tenantId: orgId }, { organizationId: orgId }],
-      },
+      where,
       select: { status: true },
     });
 
@@ -145,12 +192,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
       include: {
         inventory: true,
       },
@@ -209,12 +251,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -268,12 +305,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -341,12 +373,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -378,12 +405,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -415,12 +437,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -449,12 +466,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        ...(orgId
-          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
-          : {}),
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) throw new NotFoundException("Device not found");
@@ -489,10 +501,7 @@ export class DevicesController {
       );
     }
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }],
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) {
@@ -549,10 +558,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }],
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) {
@@ -592,10 +598,7 @@ export class DevicesController {
   ) {
     const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
-      where: {
-        OR: [{ id }, { uuid: id }],
-        AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }],
-      },
+      where: this.getDeviceQueryWhere(id, orgId),
     });
 
     if (!device) {

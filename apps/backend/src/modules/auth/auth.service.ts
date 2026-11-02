@@ -331,7 +331,8 @@ export class AuthService {
       });
     }
 
-    await this.tokenRepo.revokeAllUserRefreshTokens(user.id);
+    // Revoke the specific exchanged refresh token rather than all user tokens (prevents concurrent tab/request disconnects)
+    await this.tokenRepo.revokeRefreshToken(tokenHash);
     const { passwordHash: _, ...cleanUser } = user;
     this.logger.log(
       `🔄 Rotated session refresh tokens for user: [${cleanUser.email}]`,

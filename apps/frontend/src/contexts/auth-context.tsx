@@ -42,16 +42,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await api.get<any>("/auth/me");
       const userData = response.data?.data || response.data;
-      setUser(userData);
-      if (typeof window !== "undefined" && userData) {
-        localStorage.setItem("nos_cached_user", JSON.stringify(userData));
+      if (userData) {
+        setUser(userData);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("nos_cached_user", JSON.stringify(userData));
+        }
       }
-    } catch (err) {
-      setUser(null);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("nos_access_token");
-        localStorage.removeItem("nos_refresh_token");
-        localStorage.removeItem("nos_cached_user");
+    } catch (err: any) {
+      console.warn("Session check (/auth/me) error:", err?.message || err);
+      // ONLY clear credentials and log out if the backend explicitly rejected the token with 401
+      if (err?.response?.status === 401) {
+        setUser(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("nos_access_token");
+          localStorage.removeItem("nos_refresh_token");
+          localStorage.removeItem("nos_cached_user");
+        }
       }
     } finally {
       setIsLoading(false);
@@ -167,11 +173,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           localStorage.setItem("nos_refresh_token", data.refreshToken);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("nos_access_token");
-        localStorage.removeItem("nos_refresh_token");
-        setUser(null);
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem("nos_access_token");
+          localStorage.removeItem("nos_refresh_token");
+          localStorage.removeItem("nos_cached_user");
+          setUser(null);
+        }
       }
       throw err;
     }

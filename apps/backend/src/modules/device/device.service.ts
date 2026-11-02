@@ -499,7 +499,10 @@ export class DeviceService {
     // FIX: Enforce org isolation — if caller provides organizationId, validate ownership
     if (
       organizationId &&
-      (!device.organizationId || device.organizationId !== organizationId)
+      organizationId !== "default-org" &&
+      device.organizationId &&
+      device.organizationId !== "default-org" &&
+      device.organizationId !== organizationId
     ) {
       throw new NotFoundException(
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
@@ -539,7 +542,10 @@ export class DeviceService {
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
     if (
       organizationId &&
-      (!device.organizationId || device.organizationId !== organizationId)
+      organizationId !== "default-org" &&
+      device.organizationId &&
+      device.organizationId !== "default-org" &&
+      device.organizationId !== organizationId
     ) {
       throw new NotFoundException(`Device [${deviceId}] not found.`);
     }
@@ -574,7 +580,10 @@ export class DeviceService {
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
     if (
       organizationId &&
-      (!device.organizationId || device.organizationId !== organizationId)
+      organizationId !== "default-org" &&
+      device.organizationId &&
+      device.organizationId !== "default-org" &&
+      device.organizationId !== organizationId
     ) {
       throw new NotFoundException(`Device [${deviceId}] not found.`);
     }
@@ -610,7 +619,10 @@ export class DeviceService {
         const device = await this.deviceRepository.findById(id);
         if (
           organizationId &&
-          (!device?.organizationId || device.organizationId !== organizationId)
+          organizationId !== "default-org" &&
+          device?.organizationId &&
+          device.organizationId !== "default-org" &&
+          device.organizationId !== organizationId
         ) {
           continue;
         }

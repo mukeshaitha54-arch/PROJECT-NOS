@@ -88,7 +88,7 @@ export default function DeviceDetailPage() {
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
-  const [loading, setLoading] = useState(false); // FIXED: don't block initial render
+  const [loading, setLoading] = useState(true);
   const [realtimeData, setRealtimeData] = useState<any>(null);
 
   // Self-resetting 30s countdown timer
@@ -106,19 +106,30 @@ export default function DeviceDetailPage() {
     async (showLoader = false) => {
       if (showLoader) setLoading(true);
       try {
-        const [devRes, telRes, alertRes] = await Promise.all([
-          apiClient.get<any, any>(`/devices/${id}`).catch(() => null),
+        let devRes = await apiClient
+          .get<any, any>(`/devices/${id}`)
+          .catch(() => null);
+        let dev = devRes?.data?.data || devRes?.data || null;
+
+        // Fallback to /device/${id} route if /devices/${id} returns not found
+        if (!dev) {
+          devRes = await apiClient
+            .get<any, any>(`/device/${id}`)
+            .catch(() => null);
+          dev = devRes?.data?.data || devRes?.data || null;
+        }
+
+        if (dev) {
+          setDevice(dev);
+          setIsTelemetryPaused(!!dev.telemetryPaused);
+        }
+
+        const [telRes, alertRes] = await Promise.all([
           apiClient
             .get<any, any>(`/devices/${id}/telemetry?range=1h`)
             .catch(() => null),
           apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
         ]);
-
-        const dev = devRes?.data?.data || devRes?.data || null;
-        if (dev) {
-          setDevice(dev);
-          setIsTelemetryPaused(!!dev.telemetryPaused);
-        }
         setTelemetryHistory(telRes?.data?.data || telRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
 
@@ -171,9 +182,9 @@ export default function DeviceDetailPage() {
     [id],
   );
 
-  // Initial load — no spinner
+  // Initial load — fetch with loader spinner
   useEffect(() => {
-    fetchData(false);
+    fetchData(true);
   }, [fetchData]);
 
   // Also re-fetch inventory when switching to those tabs
@@ -368,10 +379,10 @@ export default function DeviceDetailPage() {
     }
   }
 
-  if (loading) {
+  if (loading && !device) {
     return (
       <div className="flex h-[50vh] items-center justify-center text-gray-500">
-        <Loader2 className="animate-spin w-8 h-8" />
+        <Loader2 className="animate-spin w-8 h-8 text-[#C8A96E]" />
       </div>
     );
   }

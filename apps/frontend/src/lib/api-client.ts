@@ -139,12 +139,17 @@ rawApi.interceptors.response.use(
         processQueue(null, accessToken);
 
         return rawApi(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         processQueue(refreshError as Error, null);
         if (typeof window !== "undefined") {
-          localStorage.removeItem("nos_access_token");
-          localStorage.removeItem("nos_refresh_token");
-          window.location.href = "/auth/login";
+          const status = refreshError?.response?.status;
+          // Only invalidate session and force logout if the server definitively rejected the refresh token
+          if (status === 401 || status === 403) {
+            localStorage.removeItem("nos_access_token");
+            localStorage.removeItem("nos_refresh_token");
+            localStorage.removeItem("nos_cached_user");
+            window.location.href = "/auth/login";
+          }
         }
         return Promise.reject(refreshError);
       } finally {
