@@ -1,5 +1,6 @@
 import { Module, Global } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
+import { DatabaseModule } from "../../database/database.module";
 import { RealtimeController } from "./realtime.controller";
 import { RealtimeGateway } from "./realtime.gateway";
 import { RealtimeService } from "./realtime.service";
@@ -16,7 +17,7 @@ import { LocalSocketEventBusService } from "../../common/services/local-socket-e
 
 @Global()
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, DatabaseModule],
   controllers: [RealtimeController],
   providers: [
     RealtimeGateway,

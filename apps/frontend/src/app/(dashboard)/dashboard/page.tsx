@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ChartCard } from "@/components/ChartCard";
-import { useRealtime } from "@/realtime/hooks/useRealtime";
+import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 import { apiClient } from "@/lib/api-client";
 
 interface DashboardStats {
@@ -182,7 +182,7 @@ export default function DashboardPage() {
   }, [fetchDashboardData]);
 
   // Real-time Socket.IO subscriptions with 5s debounce
-  const { on, isConnected } = useRealtime();
+  const { on, isConnected } = useRealtimeContext();
 
   useEffect(() => {
     const triggerDebouncedRefresh = () => {
@@ -213,10 +213,12 @@ export default function DashboardPage() {
     const handleTelemetryData = (payload: any) => {
       if (payload?.cpuUsage !== undefined) {
         const newCpu = Math.round(payload.cpuUsage);
-        const newRam = Math.round(
-          payload.memoryUsagePercent ?? payload.ramUsage ?? stats.ramAvg,
-        );
-        setStats((prev) => ({ ...prev, cpuAvg: newCpu, ramAvg: newRam }));
+        setStats((prev) => {
+          const newRam = Math.round(
+            payload.memoryUsagePercent ?? payload.ramUsage ?? prev.ramAvg,
+          );
+          return { ...prev, cpuAvg: newCpu, ramAvg: newRam };
+        });
         setSparklineData((prev) => {
           const next = [
             ...prev,
@@ -227,7 +229,9 @@ export default function DashboardPage() {
                 second: "2-digit",
               }),
               cpu: newCpu,
-              ram: newRam,
+              ram: Math.round(
+                payload.memoryUsagePercent ?? payload.ramUsage ?? 0,
+              ),
             },
           ];
           return next.slice(-20);
@@ -271,7 +275,7 @@ export default function DashboardPage() {
       unsubAlertCreated();
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [on, fetchDashboardData, stats.ramAvg]);
+  }, [on, fetchDashboardData]);
 
   // Distribution Pie Chart Data
   const pieData = [

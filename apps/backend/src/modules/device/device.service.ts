@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
   HttpException,
   HttpStatus,
   forwardRef,
@@ -117,20 +118,12 @@ export class DeviceService {
 
     let organizationId: string | undefined = dto.organizationId;
 
+    let validatedRegKey: any = null;
     if (dto.registrationKey) {
-      const regKey = await this.registrationKeyService.validateKey(
+      validatedRegKey = await this.registrationKeyService.validateKey(
         dto.registrationKey,
       );
-      organizationId = regKey.organizationId;
-      // Increment the key usage asynchronously
-      this.registrationKeyService
-        .incrementKeyUsage(regKey.id, ipAddress)
-        .catch((err) => {
-          this.logger.error(
-            `Failed to increment registration key usage: ${err.message}`,
-            err.stack,
-          );
-        });
+      organizationId = validatedRegKey.organizationId;
 
       // Valid registration key provided by administrator explicitly re-authorizes this device.
       // Clear any prior decommission blocks for this device hardware identity.
@@ -171,6 +164,25 @@ export class DeviceService {
     let device: Device;
 
     if (existing) {
+      if (!dto.registrationKey) {
+        const providedToken = dto.currentDeviceToken;
+        if (!providedToken) {
+          throw new UnauthorizedException(
+            "Registration key or valid current device token is required to re-register an existing device.",
+          );
+        }
+        if (existing.tokenHash) {
+          const providedHash = crypto
+            .createHash("sha256")
+            .update(providedToken)
+            .digest("hex");
+          if (providedHash !== existing.tokenHash) {
+            throw new UnauthorizedException(
+              "Invalid current device token provided for re-registration.",
+            );
+          }
+        }
+      }
       this.logger.log(
         `Agent UUID [${dto.uuid}] recognized. Refreshing cryptographic token and metadata.`,
       );
@@ -190,7 +202,7 @@ export class DeviceService {
       // Registration key check bypassed for local development
       if (!organizationId)
         throw new BadRequestException(
-          "A valid registration key is required...",
+          "A valid registration key is required to register a new device.",
         );
       device = await this.deviceRepository.create({
         uuid: dto.uuid,
@@ -205,6 +217,14 @@ export class DeviceService {
         tokenHash: tokenHash,
         lastSeen: new Date(),
       });
+    }
+
+    if (validatedRegKey) {
+      await this.registrationKeyService.incrementKeyUsage(
+        validatedRegKey.id,
+        device.id,
+        ipAddress,
+      );
     }
 
     const sanitized = this.sanitizeDevice(device);
@@ -490,9 +510,18 @@ export class DeviceService {
     enabled: boolean,
     actorId?: string,
     actorName?: string,
+    organizationId?: string,
   ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
+    if (
+      organizationId &&
+      organizationId !== "default-org" &&
+      device.organizationId &&
+      device.organizationId !== organizationId
+    ) {
+      throw new NotFoundException(`Device [${deviceId}] not found.`);
+    }
 
     const newStatus = enabled ? DeviceStatus.MAINTENANCE : DeviceStatus.ONLINE;
     const updated = await this.deviceRepository.update(deviceId, {
@@ -518,9 +547,18 @@ export class DeviceService {
     deviceId: string,
     actorId?: string,
     actorName?: string,
+    organizationId?: string,
   ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
+    if (
+      organizationId &&
+      organizationId !== "default-org" &&
+      device.organizationId &&
+      device.organizationId !== organizationId
+    ) {
+      throw new NotFoundException(`Device [${deviceId}] not found.`);
+    }
 
     const updated = await this.deviceRepository.update(deviceId, {
       status: DeviceStatus.OFFLINE,
@@ -545,11 +583,20 @@ export class DeviceService {
     status: DeviceStatus,
     actorId?: string,
     actorName?: string,
+    organizationId?: string,
   ): Promise<{ updatedCount: number }> {
     let count = 0;
     for (const id of deviceIds) {
       try {
         const device = await this.deviceRepository.findById(id);
+        if (
+          organizationId &&
+          organizationId !== "default-org" &&
+          device?.organizationId &&
+          device.organizationId !== organizationId
+        ) {
+          continue;
+        }
         await this.deviceRepository.update(id, { status });
         count++;
 

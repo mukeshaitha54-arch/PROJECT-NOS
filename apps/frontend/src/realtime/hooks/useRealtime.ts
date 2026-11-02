@@ -142,7 +142,7 @@ export function useRealtime() {
     return () => {
       socketInstance.disconnect();
     };
-  }, [user]);
+  }, [user?.id]);
 
   return {
     socket,

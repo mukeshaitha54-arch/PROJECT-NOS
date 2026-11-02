@@ -81,6 +81,7 @@ describe("Phase 6 - Multi-Tenant SaaS Transformation & Cross-Tenant Safety Integ
       emitSystemStatusChanged: jest.fn(),
       emitAlertEvent: jest.fn(),
       emitTenantEvent: jest.fn(),
+      emitDeviceTelemetryStatus: jest.fn(),
     };
 
     const mockOrgRepo: Partial<IOrganizationRepository> = {

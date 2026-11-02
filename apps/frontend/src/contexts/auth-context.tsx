@@ -127,8 +127,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setError(null);
       await rawApi.post("/auth/register", payload);
-      // Automatically log the newly registered user in
-      await login(payload.email, payload.password);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Registration failed"));
       throw err;

@@ -648,7 +648,7 @@ function AddDeviceModal({
     setCreating(true);
     setError(null);
     try {
-      let orgId = "org-mukesh-local";
+      let orgId = "default-org";
       try {
         const meRes = await fetch(`${apiBase()}/auth/me`, {
           headers: { Authorization: `Bearer ${getToken()}` },

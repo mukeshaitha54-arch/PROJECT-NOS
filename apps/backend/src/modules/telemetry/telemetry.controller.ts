@@ -26,6 +26,9 @@ import {
 import { DeviceAuthGuard } from "../device/guards/device-auth.guard";
 import { CurrentDevice } from "../device/decorators/current-device.decorator";
 import { AlertRuleEngineService } from "../alerts/alert-rule-engine.service";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { DeviceService } from "../device/device.service";
 
 @SkipThrottle({ auth: true })
 @ApiTags("Telemetry Ingestion & Queries (Phase 2B)")
@@ -34,6 +37,7 @@ export class TelemetryController {
   constructor(
     private readonly telemetryService: TelemetryService,
     private readonly alertRuleEngine: AlertRuleEngineService,
+    private readonly deviceService: DeviceService,
   ) {}
 
   @Post()
@@ -89,6 +93,7 @@ export class TelemetryController {
   }
 
   @Get("latest/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: "Retrieve latest telemetry snapshot by Device UUID",
     description:
@@ -107,7 +112,15 @@ export class TelemetryController {
     status: 404,
     description: "No telemetry historical records exist for target device.",
   })
-  async getLatest(@Param("deviceId") deviceId: string) {
+  async getLatest(
+    @Param("deviceId") deviceId: string,
+    @CurrentUser() user?: any,
+  ) {
+    const userOrgId =
+      user?.role === "SUPER_ADMIN"
+        ? undefined
+        : user?.organizationId || user?.organization?.id;
+    await this.deviceService.getDeviceById(deviceId, userOrgId);
     const data = await this.telemetryService.getLatestTelemetry(deviceId);
     return {
       success: true,
@@ -116,6 +129,7 @@ export class TelemetryController {
   }
 
   @Get("history/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary:
       "Retrieve historical telemetry snapshots with time-series pagination",
@@ -134,7 +148,13 @@ export class TelemetryController {
   async getHistory(
     @Param("deviceId") deviceId: string,
     @Query() query: TelemetryHistoryQueryDto,
+    @CurrentUser() user?: any,
   ) {
+    const userOrgId =
+      user?.role === "SUPER_ADMIN"
+        ? undefined
+        : user?.organizationId || user?.organization?.id;
+    await this.deviceService.getDeviceById(deviceId, userOrgId);
     const result = await this.telemetryService.getTelemetryHistory(
       deviceId,
       query,

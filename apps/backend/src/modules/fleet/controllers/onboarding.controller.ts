@@ -4,6 +4,8 @@ import {
   Body,
   Inject,
   BadRequestException,
+  UnauthorizedException,
+  UseGuards,
 } from "@nestjs/common";
 import { RegistrationKeyService } from "../services/registration-key.service";
 import {
@@ -15,10 +17,13 @@ import {
   IPasswordHasher,
   IPasswordHasherToken,
 } from "../../../common/services/password-hasher.interface";
+import {
+  IMailServiceToken,
+  IMailService,
+} from "../../../common/services/mail-service.interface";
+import { OptionalJwtAuthGuard } from "../../../common/guards/optional-jwt-auth.guard";
+import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import * as crypto from "crypto";
-// Assuming we might have a TenantService or similar to handle Org creation,
-// but for now we'll inject PrismaService to handle the transaction if needed,
-// or use the repositories.
 
 export interface OnboardingWizardDto {
   companyName: string;
@@ -26,7 +31,7 @@ export interface OnboardingWizardDto {
   ownerEmail: string;
   ownerFirstName: string;
   ownerLastName: string;
-  // password handling usually separate or included here
+  password?: string;
   passwordHash?: string;
   timezone?: string;
 }
@@ -39,14 +44,25 @@ export class OnboardingController {
     private readonly orgRepo: IOrganizationRepository,
     @Inject(IPasswordHasherToken)
     private readonly hasher: IPasswordHasher,
+    @Inject(IMailServiceToken)
+    private readonly mailService: IMailService,
     private readonly prisma: PrismaService, // Direct access for transactional creation
   ) {}
 
   @Post("wizard")
-  async completeOnboarding(@Body() dto: OnboardingWizardDto) {
-    // 1. Create Organization & Owner User (Transactional)
-    // To respect clean architecture as much as possible, this would ideally be in a domain service.
-    // However, to keep it functional for Phase 8:
+  @UseGuards(OptionalJwtAuthGuard)
+  async completeOnboarding(
+    @Body() dto: OnboardingWizardDto,
+    @CurrentUser() currentUser?: any,
+  ) {
+    const totalOrgs = await this.prisma.organization.count();
+
+    // If the system already has organizations, only authenticated users can create an organization
+    if (totalOrgs > 0 && !currentUser) {
+      throw new UnauthorizedException(
+        "Public onboarding is locked. Please log in or register an account first.",
+      );
+    }
 
     // Check if slug exists
     const existingOrg = await this.prisma.organization.findUnique({
@@ -56,28 +72,57 @@ export class OnboardingController {
       throw new BadRequestException("Organization slug already exists");
     }
 
-    // Check if user exists
-    let user = await this.prisma.user.findUnique({
-      where: { email: dto.ownerEmail },
-    });
+    let user: any;
 
-    const transactionResult = await this.prisma.$transaction(async (tx) => {
+    if (currentUser) {
+      // Authenticated user path: user must match their own identity unless SUPER_ADMIN
+      if (
+        dto.ownerEmail &&
+        currentUser.email &&
+        currentUser.email.toLowerCase() !== dto.ownerEmail.toLowerCase() &&
+        currentUser.role !== "SUPER_ADMIN"
+      ) {
+        throw new BadRequestException(
+          "Owner email must match your authenticated account email.",
+        );
+      }
+      user = await this.prisma.user.findUnique({
+        where: { id: currentUser.id },
+      });
       if (!user) {
-        const generatedPassword = crypto.randomUUID();
-        const hash =
-          dto.passwordHash || (await this.hasher.hash(generatedPassword));
-        user = await tx.user.create({
-          data: {
-            email: dto.ownerEmail,
-            firstName: dto.ownerFirstName,
-            lastName: dto.ownerLastName,
-            passwordHash: hash,
-            role: "OWNER",
-            isEmailVerified: true,
-          },
-        });
+        throw new UnauthorizedException("Authenticated user not found");
+      }
+    } else {
+      // Initial bootstrap path (totalOrgs === 0)
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.ownerEmail },
+      });
+      if (existingUser) {
+        throw new BadRequestException(
+          "User with this email already exists. Please log in to complete onboarding.",
+        );
       }
 
+      if (!dto.password || dto.password.length < 8) {
+        throw new BadRequestException(
+          "A password of at least 8 characters is required for the initial administrator account.",
+        );
+      }
+
+      const hash = await this.hasher.hash(dto.password);
+      user = await this.prisma.user.create({
+        data: {
+          email: dto.ownerEmail,
+          firstName: dto.ownerFirstName,
+          lastName: dto.ownerLastName,
+          passwordHash: hash,
+          role: "OWNER",
+          isEmailVerified: true,
+        },
+      });
+    }
+
+    const transactionResult = await this.prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
         data: {
           name: dto.companyName,
@@ -100,7 +145,7 @@ export class OnboardingController {
       return { org, user };
     });
 
-    // 2. Generate Registration Key
+    // Generate Registration Key for the newly onboarded org
     const keyResult = await this.registrationKeyService.generateKey({
       organizationId: transactionResult.org.id,
       displayName: "Default Deployment Key",
@@ -108,11 +153,14 @@ export class OnboardingController {
       maxUses: 0, // unlimited
     });
 
+    // Strip sensitive fields
+    const { passwordHash: _, ...sanitizedUser } = transactionResult.user;
+
     return {
       success: true,
       data: {
         organization: transactionResult.org,
-        user: transactionResult.user,
+        user: sanitizedUser,
         registrationKey: keyResult,
       },
       message: "Onboarding complete. Please save the Registration Key safely.",

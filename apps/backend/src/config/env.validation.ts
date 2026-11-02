@@ -22,9 +22,15 @@ export const envValidationSchema = Joi.object({
     "any.required": "JWT_SECRET is required",
   }),
   JWT_EXPIRATION: Joi.string().default("15m"),
-  REFRESH_SECRET: Joi.string().min(32).required().messages({
-    "string.min": "REFRESH_SECRET must be at least 32 characters",
-  }),
+  REFRESH_SECRET: Joi.string()
+    .min(32)
+    .default(() => process.env.REFRESH_TOKEN_SECRET)
+    .required()
+    .messages({
+      "string.min": "REFRESH_SECRET must be at least 32 characters",
+      "any.required": "REFRESH_SECRET or REFRESH_TOKEN_SECRET is required",
+    }),
+  REFRESH_TOKEN_SECRET: Joi.string().min(32).optional(),
   FRONTEND_URL: Joi.string().uri().default("http://localhost:3000"),
   AGENT_TOKEN_SECRET: Joi.string().min(32).required().messages({
     "string.min": "AGENT_TOKEN_SECRET must be at least 32 characters",

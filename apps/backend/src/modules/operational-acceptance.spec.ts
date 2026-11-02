@@ -112,6 +112,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       emitSystemStatusChanged: jest.fn().mockResolvedValue(undefined),
       emitAlertEvent: jest.fn().mockResolvedValue(undefined),
       emitTenantEvent: jest.fn().mockResolvedValue(undefined),
+      emitDeviceTelemetryStatus: jest.fn().mockResolvedValue(undefined),
     };
 
     const mockTelemetryPublisher: ITelemetryPublisher = {
@@ -175,6 +176,16 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
         .mockImplementation(
           async (deviceId) => heartbeatStore.get(deviceId) || null,
         ),
+      findLatestForDevices: jest
+        .fn()
+        .mockImplementation(async (deviceIds: string[]) => {
+          const map = new Map<string, any>();
+          for (const id of deviceIds) {
+            const hb = heartbeatStore.get(id);
+            if (hb) map.set(id, hb);
+          }
+          return map;
+        }),
     };
 
     const mockTelemetryRepo: Partial<ITelemetryRepository> = {

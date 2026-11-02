@@ -33,6 +33,9 @@ import {
   SecurityInventoryResponse,
   InventoryHealthResponse,
 } from "@nos/shared-types";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { DeviceService } from "../device/device.service";
 
 import { SkipThrottle } from "@nestjs/throttler";
 
@@ -41,7 +44,21 @@ import { SkipThrottle } from "@nestjs/throttler";
 @SkipThrottle({ default: true, auth: true, telemetry: true })
 @Controller("inventory")
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
+  constructor(
+    private readonly inventoryService: InventoryService,
+    private readonly deviceService: DeviceService,
+  ) {}
+
+  private async validateDeviceAccess(
+    deviceId: string,
+    user?: any,
+  ): Promise<void> {
+    const userOrgId =
+      user?.role === "SUPER_ADMIN"
+        ? undefined
+        : user?.organizationId || user?.organization?.id;
+    await this.deviceService.getDeviceById(deviceId, userOrgId);
+  }
 
   @Post()
   @HttpCode(HttpStatus.OK)
@@ -84,6 +101,7 @@ export class InventoryController {
   }
 
   @Get("health")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: "Retrieve inventory diagnostic health and freshness metrics",
@@ -104,6 +122,7 @@ export class InventoryController {
   }
 
   @Get("hardware/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
@@ -120,7 +139,9 @@ export class InventoryController {
   })
   async getHardware(
     @Param("deviceId") deviceId: string,
+    @CurrentUser() user?: any,
   ): Promise<ApiResponse<HardwareInventoryResponse>> {
+    await this.validateDeviceAccess(deviceId, user);
     const data = await this.inventoryService.getHardwareInventory(deviceId);
     return {
       success: true,
@@ -130,6 +151,7 @@ export class InventoryController {
   }
 
   @Get("software/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
@@ -147,7 +169,9 @@ export class InventoryController {
   async getSoftware(
     @Param("deviceId") deviceId: string,
     @Query() query: InventoryQueryDto,
+    @CurrentUser() user?: any,
   ): Promise<ApiResponse<SoftwareInventoryResponse>> {
+    await this.validateDeviceAccess(deviceId, user);
     const data = await this.inventoryService.getSoftwareInventory(
       deviceId,
       query,
@@ -160,6 +184,7 @@ export class InventoryController {
   }
 
   @Get("network/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
@@ -176,7 +201,9 @@ export class InventoryController {
   })
   async getNetwork(
     @Param("deviceId") deviceId: string,
+    @CurrentUser() user?: any,
   ): Promise<ApiResponse<NetworkInventoryResponse>> {
+    await this.validateDeviceAccess(deviceId, user);
     const data = await this.inventoryService.getNetworkInventory(deviceId);
     return {
       success: true,
@@ -186,6 +213,7 @@ export class InventoryController {
   }
 
   @Get("security/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
@@ -202,7 +230,9 @@ export class InventoryController {
   })
   async getSecurity(
     @Param("deviceId") deviceId: string,
+    @CurrentUser() user?: any,
   ): Promise<ApiResponse<SecurityInventoryResponse>> {
+    await this.validateDeviceAccess(deviceId, user);
     const data = await this.inventoryService.getSecurityInventory(deviceId);
     return {
       success: true,
@@ -212,6 +242,7 @@ export class InventoryController {
   }
 
   @Post("scan/:deviceId")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: "Trigger manual inventory diagnostic re-scan for a monitored node",
@@ -229,9 +260,11 @@ export class InventoryController {
   })
   async triggerScan(
     @Param("deviceId") deviceId: string,
+    @CurrentUser() user?: any,
   ): Promise<
     ApiResponse<{ deviceId: string; status: string; message: string }>
   > {
+    await this.validateDeviceAccess(deviceId, user);
     const data = await this.inventoryService.triggerManualScan(deviceId);
     return {
       success: true,
@@ -241,6 +274,7 @@ export class InventoryController {
   }
 
   @Get(":deviceId")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: "Retrieve complete asset profile and recent audit difference logs",
@@ -256,7 +290,9 @@ export class InventoryController {
   })
   async getCompleteInventory(
     @Param("deviceId") deviceId: string,
+    @CurrentUser() user?: any,
   ): Promise<ApiResponse<CompleteInventoryResponse>> {
+    await this.validateDeviceAccess(deviceId, user);
     const data = await this.inventoryService.getCompleteInventory(deviceId);
     return {
       success: true,
