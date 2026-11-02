@@ -182,7 +182,7 @@ class Program
             using var searcher = new System.Management.ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
             foreach (var obj in searcher.Get())
             {
-                if (obj["UUID"] != null) return obj["UUID"].ToString();
+                if (obj["UUID"] != null) return obj["UUID"].ToString() ?? Guid.NewGuid().ToString();
             }
         }
         catch { }

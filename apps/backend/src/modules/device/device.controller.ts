@@ -11,6 +11,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  BadRequestException,
   Optional,
 } from "@nestjs/common";
 import { Request } from "express";
@@ -143,7 +144,7 @@ export class DeviceController {
   }
 
   @Get("status")
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: "Retrieve real-time platform device status and heartbeat roster",
     description:
@@ -165,12 +166,22 @@ export class DeviceController {
   }
 
   @Get("unassigned/:orgId")
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "Retrieve unassigned devices for an organization" })
   @ApiResponse({
     status: 200,
     description: "Unassigned devices retrieved successfully.",
   })
-  async getUnassignedDevices(@Param("orgId") orgId: string) {
+  async getUnassignedDevices(
+    @Param("orgId") orgId: string,
+    @CurrentUser() user?: any,
+  ) {
+    const userOrgId = user?.organizationId || user?.organization?.id;
+    if (userOrgId && userOrgId !== orgId && user?.role !== "SUPER_ADMIN") {
+      throw new UnauthorizedException(
+        "Unauthorized access to target organization devices",
+      );
+    }
     const data = await this.deviceService.getUnassignedDevices(orgId);
     return {
       success: true,
@@ -184,16 +195,31 @@ export class DeviceController {
   @ApiOperation({ summary: "Claim an unassigned device" })
   async claimDevice(
     @Param("id") id: string,
-    @Body("organizationId") organizationId: string,
+    @Body("organizationId") organizationId?: string,
     @Body("teamId") teamId?: string,
     @Body("departmentId") departmentId?: string,
     @CurrentUser() user?: any,
   ) {
     if (!user)
       throw new UnauthorizedException("Must be logged in to claim device");
+    const userOrgId = user.organizationId || user.organization?.id;
+    const targetOrgId =
+      user.role === "SUPER_ADMIN" ? organizationId || userOrgId : userOrgId;
+    if (!targetOrgId) {
+      throw new BadRequestException("Organization ID required to claim device");
+    }
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      organizationId &&
+      organizationId !== userOrgId
+    ) {
+      throw new UnauthorizedException(
+        "Cannot claim device for a different organization.",
+      );
+    }
     const data = await this.deviceService.claimDevice(
       id,
-      organizationId,
+      targetOrgId,
       user.id,
       teamId,
       departmentId,
@@ -206,7 +232,7 @@ export class DeviceController {
   }
 
   @Get(":id")
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary:
       "Retrieve specific registered machine profile by primary DB ID or UUID",
@@ -229,6 +255,7 @@ export class DeviceController {
   }
 
   @Post(":id/maintenance")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: "Toggle device maintenance mode",
@@ -238,8 +265,16 @@ export class DeviceController {
   async setMaintenanceMode(
     @Param("id") id: string,
     @Body("enabled") enabled: boolean,
+    @CurrentUser() user?: any,
   ) {
-    const data = await this.deviceService.setMaintenanceMode(id, enabled);
+    const orgId = user?.organizationId || user?.organization?.id;
+    const data = await this.deviceService.setMaintenanceMode(
+      id,
+      enabled,
+      user?.id,
+      user?.email,
+      orgId,
+    );
     return {
       success: true,
       message: enabled
@@ -250,10 +285,17 @@ export class DeviceController {
   }
 
   @Post(":id/retire")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Retire device from active monitoring roster" })
-  async retireDevice(@Param("id") id: string) {
-    const data = await this.deviceService.retireDevice(id);
+  async retireDevice(@Param("id") id: string, @CurrentUser() user?: any) {
+    const orgId = user?.organizationId || user?.organization?.id;
+    const data = await this.deviceService.retireDevice(
+      id,
+      user?.id,
+      user?.email,
+      orgId,
+    );
     return {
       success: true,
       message: "Device retired.",
@@ -283,7 +325,16 @@ export class DeviceController {
       "NOS.Installer.exe",
     );
     if (require("fs").existsSync(installerPath)) {
-      return res.download(installerPath, "NOS_Agent_Installer.exe");
+      if (typeof res.download === "function") {
+        return res.download(installerPath, "NOS_Agent_Installer.exe");
+      }
+      const stream = require("fs").createReadStream(installerPath);
+      res.header(
+        "Content-Disposition",
+        'attachment; filename="NOS_Agent_Installer.exe"',
+      );
+      res.header("Content-Type", "application/octet-stream");
+      return res.send(stream);
     }
     return res
       .status(404)
@@ -291,13 +342,22 @@ export class DeviceController {
   }
 
   @Post("bulk/status")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Bulk update status for multiple devices" })
   async bulkUpdateStatus(
     @Body("deviceIds") deviceIds: string[],
     @Body("status") status: any,
+    @CurrentUser() user?: any,
   ) {
-    const data = await this.deviceService.bulkUpdateStatus(deviceIds, status);
+    const orgId = user?.organizationId || user?.organization?.id;
+    const data = await this.deviceService.bulkUpdateStatus(
+      deviceIds,
+      status,
+      user?.id,
+      user?.email,
+      orgId,
+    );
     return {
       success: true,
       message: `Bulk updated status for ${data.updatedCount} devices.`,

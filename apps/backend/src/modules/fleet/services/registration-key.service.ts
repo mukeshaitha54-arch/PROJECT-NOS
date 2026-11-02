@@ -123,6 +123,10 @@ export class RegistrationKeyService {
     return registrationKey;
   }
 
+  async getKeyById(id: string): Promise<RegistrationKey | null> {
+    return this.registrationKeyRepo.findById(id);
+  }
+
   async revokeKey(
     id: string,
     revokedBy: string,
@@ -141,14 +145,11 @@ export class RegistrationKeyService {
     return this.registrationKeyRepo.findByOrganizationId(organizationId);
   }
 
-  async incrementKeyUsage(keyId: string, ipAddress?: string): Promise<void> {
-    const key = await this.registrationKeyRepo.findById(keyId);
-    if (!key) return;
-
-    await this.registrationKeyRepo.update(keyId, {
-      currentUses: key.currentUses + 1,
-      lastUsed: new Date(),
-      lastUsedIp: ipAddress,
-    });
+  async incrementKeyUsage(
+    keyId: string,
+    deviceId: string,
+    ipAddress?: string,
+  ): Promise<void> {
+    await this.registrationKeyRepo.incrementUsage(keyId, deviceId, ipAddress);
   }
 }

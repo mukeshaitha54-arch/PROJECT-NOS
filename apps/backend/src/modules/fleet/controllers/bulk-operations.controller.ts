@@ -1,4 +1,10 @@
-import { Controller, Post, Body, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  UnauthorizedException,
+} from "@nestjs/common";
 import {
   BulkOperationsService,
   BulkActionDto,
@@ -16,6 +22,19 @@ export class BulkOperationsController {
     @Body() dto: Omit<BulkActionDto, "performedByUserId">,
     @CurrentUser() user: any,
   ) {
+    const userOrgId = user?.organizationId || user?.organization?.id;
+    if (
+      userOrgId &&
+      userOrgId !== "default-org" &&
+      dto.organizationId &&
+      dto.organizationId !== userOrgId &&
+      user?.role !== "SUPER_ADMIN"
+    ) {
+      throw new UnauthorizedException(
+        "Unauthorized cross-tenant bulk action attempt",
+      );
+    }
+
     const result = await this.bulkService.executeBulkAction({
       ...dto,
       performedByUserId: user.id,

@@ -8,6 +8,7 @@ import {
   Inject,
   Query,
   Delete,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {
   RegistrationKeyService,
@@ -44,6 +45,18 @@ export class RegistrationKeyController {
     @Body() dto: Omit<CreateRegistrationKeyDto, "createdBy">,
     @CurrentUser() user: any,
   ) {
+    const userOrgId = user?.organizationId || user?.organization?.id;
+    if (
+      userOrgId &&
+      userOrgId !== "default-org" &&
+      dto.organizationId &&
+      dto.organizationId !== userOrgId &&
+      user?.role !== "SUPER_ADMIN"
+    ) {
+      throw new UnauthorizedException(
+        "Unauthorized cross-tenant key generation attempt",
+      );
+    }
     const result = await this.registrationKeyService.generateKey({
       ...dto,
       createdBy: user.id,
@@ -90,14 +103,38 @@ export class RegistrationKeyController {
   }
 
   @Get("organization/:orgId")
-  async getKeys(@Param("orgId") orgId: string) {
+  async getKeys(@Param("orgId") orgId: string, @CurrentUser() user: any) {
+    const userOrgId = user?.organizationId || user?.organization?.id;
+    if (
+      userOrgId &&
+      userOrgId !== "default-org" &&
+      userOrgId !== orgId &&
+      user?.role !== "SUPER_ADMIN"
+    ) {
+      throw new UnauthorizedException(
+        "Unauthorized access to organization keys",
+      );
+    }
     const keys = await this.registrationKeyService.getKeysByOrganization(orgId);
-    return keys; // Return the array directly or wrapped depending on what frontend expects. The user's code just says api.get(...)
+    return keys;
   }
 
   @Post(":id/revoke")
   async revokeKey(@Param("id") id: string, @CurrentUser() user: any) {
-    // In a real implementation we would fetch the key first to get the orgId for the audit log
+    const key = await this.registrationKeyService.getKeyById(id);
+    const userOrgId = user?.organizationId || user?.organization?.id;
+    if (
+      key &&
+      userOrgId &&
+      userOrgId !== "default-org" &&
+      key.organizationId !== userOrgId &&
+      user?.role !== "SUPER_ADMIN"
+    ) {
+      throw new UnauthorizedException(
+        "Unauthorized cross-tenant key revocation attempt",
+      );
+    }
+
     const revoked = await this.registrationKeyService.revokeKey(
       id,
       user.id,

@@ -81,6 +81,14 @@ export class RegisterDeviceDto implements RegisterDevicePayload {
   registrationKey?: string;
 
   @ApiPropertyOptional({
+    description:
+      "Existing device token required when re-registering an already enrolled device without registrationKey",
+  })
+  @IsOptional()
+  @IsString()
+  currentDeviceToken?: string;
+
+  @ApiPropertyOptional({
     example: "org-uuid",
     description:
       "Optional explicit organization ID for operational acceptance tests",

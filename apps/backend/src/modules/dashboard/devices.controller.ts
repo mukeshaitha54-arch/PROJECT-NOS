@@ -481,9 +481,13 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
   ) {
+    const orgId = tenant.organizationId;
     const device = await this.prisma.device.findFirst({
       where: {
         OR: [{ id }, { uuid: id }],
+        ...(orgId && orgId !== "default-org"
+          ? { AND: [{ OR: [{ tenantId: orgId }, { organizationId: orgId }] }] }
+          : {}),
       },
     });
 

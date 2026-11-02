@@ -55,6 +55,14 @@ export class PrismaTokenRepository implements ITokenRepository {
     type: OtpTypeEnum,
     expiresAt: Date,
   ): Promise<OtpRecord> {
+    // Invalidate any existing unused OTPs for this email and type
+    await this.prisma.verificationOtp.deleteMany({
+      where: {
+        email: email.toLowerCase(),
+        type: type as unknown as OtpType,
+      },
+    });
+
     const created = await this.prisma.verificationOtp.create({
       data: {
         userId,

@@ -21,7 +21,15 @@ import { LoggerService } from "./common/logger/logger.service";
  */
 function validateProductionSecrets(): void {
   if (process.env.NODE_ENV !== "production") return;
-  const required = ["JWT_SECRET", "REFRESH_TOKEN_SECRET", "DATABASE_URL"];
+  const refreshSecret =
+    process.env.REFRESH_SECRET || process.env.REFRESH_TOKEN_SECRET;
+  if (!refreshSecret) {
+    throw new Error(
+      `[NOS] FATAL: Missing production secrets: [REFRESH_SECRET or REFRESH_TOKEN_SECRET]. ` +
+        `Set all required environment variables before starting in production mode.`,
+    );
+  }
+  const required = ["JWT_SECRET", "DATABASE_URL"];
   const missing = required.filter((k) => !process.env[k]);
   if (missing.length > 0) {
     throw new Error(
@@ -93,7 +101,19 @@ async function bootstrap() {
 
   // Security headers & compression middleware
   await app.register(fastifyHelmet as any, {
-    contentSecurityPolicy: false, // Adjusted for local OpenAPI doc viewer compatibility
+    contentSecurityPolicy:
+      process.env.NODE_ENV === "production"
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "'unsafe-inline'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", "data:", "blob:"],
+              connectSrc: ["'self'", "wss:", "ws:"],
+            },
+          }
+        : false, // Adjusted for local OpenAPI doc viewer compatibility
+    crossOriginEmbedderPolicy: false,
   });
   await app.register(fastifyCompress as any, {
     encodings: ["gzip", "deflate"],

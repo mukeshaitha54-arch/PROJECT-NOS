@@ -33,6 +33,7 @@ import { ConnectionRegistryService } from "./services/connection-registry.servic
 import { PresenceService } from "./services/presence.service";
 import { SocketMetricsService } from "./services/socket-metrics.service";
 import { SocketRateLimiterService } from "./services/socket-rate-limiter.service";
+import { PrismaService } from "../../database/prisma.service";
 import {
   ISocketPublisherToken,
   ISocketPublisher,
@@ -67,6 +68,7 @@ export class RealtimeGateway
     private readonly rateLimiter: SocketRateLimiterService,
     @Inject(forwardRef(() => ISocketPublisherToken))
     private readonly publisher: SocketPublisherService,
+    private readonly prisma: PrismaService,
   ) {}
 
   afterInit(server: Server) {
@@ -167,12 +169,40 @@ export class RealtimeGateway
       client.join(SocketRooms.DASHBOARD);
       this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
 
-      // Phase 6: Automatically subscribe to Tenant Isolated Room if organizationId is present
-      const orgId =
+      // Phase 6: Automatically subscribe to Tenant Isolated Room after validating membership
+      const requestedOrgId =
         client.handshake.query?.organizationId ||
         client.handshake.headers?.["x-organization-id"] ||
-        payload.org ||
-        "default-org";
+        payload.org;
+
+      let orgId = "default-org";
+      if (requestedOrgId && requestedOrgId !== "default-org") {
+        if (user.role === UserRole.SUPER_ADMIN) {
+          orgId = requestedOrgId as string;
+        } else {
+          const membership = await this.prisma.organizationMember.findFirst({
+            where: {
+              userId: user.id,
+              organizationId: requestedOrgId as string,
+            },
+          });
+          if (membership) {
+            orgId = requestedOrgId as string;
+          } else {
+            this.logger.warn(
+              `User [${user.id}] attempted unauthorized subscription to org room [${requestedOrgId}]. Defaulting to authorized tenant.`,
+            );
+            const userDefaultOrg =
+              await this.prisma.organizationMember.findFirst({
+                where: { userId: user.id },
+                orderBy: { joinedAt: "asc" },
+                select: { organizationId: true },
+              });
+            orgId = userDefaultOrg?.organizationId || "default-org";
+          }
+        }
+      }
+
       const orgRoom = `org_${orgId}`;
       client.join(orgRoom);
       this.registry.addRoom(client.id, orgRoom);

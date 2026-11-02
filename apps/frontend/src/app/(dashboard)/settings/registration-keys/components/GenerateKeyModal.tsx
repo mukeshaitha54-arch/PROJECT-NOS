@@ -36,7 +36,8 @@ export function GenerateKeyModal({
           Date.now() + 30 * 24 * 60 * 60 * 1000,
         ).toISOString(),
       });
-      setGeneratedKey(res.data.plainKey);
+      const plainKey = res?.data?.plainKey || res?.plainKey;
+      setGeneratedKey(plainKey);
       onSuccess();
     } catch (err) {
       console.error("Failed to generate key", err);

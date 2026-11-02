@@ -142,9 +142,12 @@ export class AuthService {
       );
     }
 
-    this.logger.log(
-      `📧 [OTP ISSUED] For [${user.email}]: Verification OTP is [${otp}] (expires in 15m)`,
-    );
+    const isProduction = process.env.NODE_ENV === "production";
+    if (!isProduction) {
+      this.logger.log(
+        `📧 [OTP ISSUED] For [${user.email}]: Verification OTP is [${otp}] (expires in 15m)`,
+      );
+    }
 
     const { passwordHash: _, ...cleanUser } = user;
     this.logger.log(
@@ -154,7 +157,7 @@ export class AuthService {
       message:
         "Registration successful. Please enter the 6-digit verification code sent to your email.",
       user: cleanUser,
-      devOtp: smtpConfigured ? undefined : otp,
+      devOtp: smtpConfigured || isProduction ? undefined : otp,
     };
   }
 
@@ -191,12 +194,15 @@ export class AuthService {
       );
     }
 
-    this.logger.log(`📧 [OTP RESENT] For [${email}]: New OTP is [${otp}]`);
+    const isProduction = process.env.NODE_ENV === "production";
+    if (!isProduction) {
+      this.logger.log(`📧 [OTP RESENT] For [${email}]: New OTP is [${otp}]`);
+    }
     return {
       message: smtpDelivered
         ? "A new verification code has been dispatched to your email."
-        : "OTP generated. SMTP not configured — check the code displayed on screen.",
-      devOtp: smtpDelivered ? undefined : otp,
+        : "OTP generated. SMTP delivery unavailable or pending.",
+      devOtp: smtpDelivered || isProduction ? undefined : otp,
     };
   }
 
@@ -362,7 +368,9 @@ export class AuthService {
         this.logger.warn(
           `Password reset email delivery skipped: ${mailErr?.message || mailErr}`,
         );
-        devOtp = otp;
+        if (process.env.NODE_ENV !== "production") {
+          devOtp = otp;
+        }
       }
     }
     return {

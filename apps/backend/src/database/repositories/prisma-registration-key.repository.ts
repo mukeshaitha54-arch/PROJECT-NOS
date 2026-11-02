@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { IRegistrationKeyRepository } from "../../common/repositories/registration-key.repository.interface";
 import { RegistrationKey } from "@prisma/client";
@@ -51,15 +51,45 @@ export class PrismaRegistrationKeyRepository implements IRegistrationKeyReposito
     deviceId: string,
     ipAddress?: string,
   ): Promise<void> {
-    await this.prisma.registrationKey.update({
-      where: { id },
-      data: {
-        currentUses: { increment: 1 },
-        devicesCreated: { increment: 1 },
-        lastUsed: new Date(),
-        lastUsedBy: deviceId, // Storing the device ID that used it
-        lastUsedIp: ipAddress,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const key = await tx.registrationKey.findUnique({
+        where: { id },
+      });
+      if (!key) {
+        throw new BadRequestException("Registration key not found");
+      }
+      if (key.status !== "ACTIVE") {
+        await tx.registrationKey.update({
+          where: { id },
+          data: { failedAttempts: { increment: 1 } },
+        });
+        throw new BadRequestException("Registration key is not active");
+      }
+      if (key.expiresAt && new Date() > key.expiresAt) {
+        await tx.registrationKey.update({
+          where: { id },
+          data: { failedAttempts: { increment: 1 } },
+        });
+        throw new BadRequestException("Registration key has expired");
+      }
+      if (key.maxUses > 0 && key.currentUses >= key.maxUses) {
+        await tx.registrationKey.update({
+          where: { id },
+          data: { failedAttempts: { increment: 1 } },
+        });
+        throw new BadRequestException("Registration key usage limit reached");
+      }
+
+      await tx.registrationKey.update({
+        where: { id },
+        data: {
+          currentUses: { increment: 1 },
+          devicesCreated: { increment: 1 },
+          lastUsed: new Date(),
+          lastUsedBy: deviceId, // Storing the actual device ID that enrolled
+          lastUsedIp: ipAddress,
+        },
+      });
     });
   }
 

@@ -38,6 +38,12 @@ export class SmartGroupService {
     });
   }
 
+  async getGroupById(id: string) {
+    return this.prisma.smartGroup.findUnique({
+      where: { id },
+    });
+  }
+
   async getGroups(organizationId: string) {
     return this.prisma.smartGroup.findMany({
       where: { organizationId },

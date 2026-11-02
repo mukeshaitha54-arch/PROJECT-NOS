@@ -47,17 +47,6 @@ function VerifyEmailForm() {
   useEffect(() => {
     if (initialEmail) {
       setValue("email", initialEmail);
-      // Auto-request OTP on page load to show devOtp immediately
-      rawApi
-        .post("/auth/resend-otp", { email: initialEmail })
-        .then((res) => {
-          const data = res.data?.data || res.data;
-          if (data?.devOtp) {
-            setDevOtp(data.devOtp);
-            setValue("otp", data.devOtp);
-          }
-        })
-        .catch(() => {});
     }
   }, [initialEmail, setValue]);
 

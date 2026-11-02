@@ -48,6 +48,7 @@ describe("Phase 5 - Enterprise Alert & Notification Engine", () => {
       emitSystemStatusChanged: jest.fn(),
       emitAlertEvent: jest.fn(),
       emitTenantEvent: jest.fn(),
+      emitDeviceTelemetryStatus: jest.fn(),
     };
 
     const alertsStore = new Map<string, any>();

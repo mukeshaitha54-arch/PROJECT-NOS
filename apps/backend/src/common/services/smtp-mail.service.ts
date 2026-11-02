@@ -31,7 +31,8 @@ export class SmtpMailService implements IMailService {
         secure: port === 465,
         auth: { user, pass },
         tls: {
-          rejectUnauthorized: false,
+          rejectUnauthorized:
+            this.configService.get<string>("NODE_ENV") === "production",
         },
       });
       // Mask credentials in logs
