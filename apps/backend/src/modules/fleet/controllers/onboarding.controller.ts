@@ -72,14 +72,18 @@ export class OnboardingController {
       throw new BadRequestException("Organization slug already exists");
     }
 
+    const normalizedEmail = dto.ownerEmail
+      ? dto.ownerEmail.trim().toLowerCase()
+      : "";
+
     let user: any;
 
     if (currentUser) {
       // Authenticated user path: user must match their own identity unless SUPER_ADMIN
       if (
-        dto.ownerEmail &&
+        normalizedEmail &&
         currentUser.email &&
-        currentUser.email.toLowerCase() !== dto.ownerEmail.toLowerCase() &&
+        currentUser.email.toLowerCase() !== normalizedEmail &&
         currentUser.role !== "SUPER_ADMIN"
       ) {
         throw new BadRequestException(
@@ -95,7 +99,7 @@ export class OnboardingController {
     } else {
       // Initial bootstrap path (totalOrgs === 0)
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: dto.ownerEmail },
+        where: { email: normalizedEmail },
       });
       if (existingUser) {
         throw new BadRequestException(
@@ -112,7 +116,7 @@ export class OnboardingController {
       const hash = await this.hasher.hash(dto.password);
       user = await this.prisma.user.create({
         data: {
-          email: dto.ownerEmail,
+          email: normalizedEmail,
           firstName: dto.ownerFirstName,
           lastName: dto.ownerLastName,
           passwordHash: hash,

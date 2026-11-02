@@ -397,9 +397,17 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
         {
           provide: RegistrationKeyService,
           useValue: {
-            validateKey: jest.fn().mockResolvedValue({
-              id: "key-test-1",
-              organizationId: orgAlphaContext.organizationId,
+            validateKey: jest.fn().mockImplementation(async (key: string) => {
+              if (key && key.includes("beta")) {
+                return {
+                  id: "key-test-beta-id",
+                  organizationId: orgBetaContext.organizationId,
+                };
+              }
+              return {
+                id: "key-test-1",
+                organizationId: orgAlphaContext.organizationId,
+              };
             }),
             incrementKeyUsage: jest.fn().mockResolvedValue(true),
           },
@@ -547,7 +555,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0.20348",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     };
 
     const registration = await deviceService.register(dto);
@@ -574,7 +582,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0.22631",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     const device = deviceStore.get(registration.deviceId)!;
@@ -605,7 +613,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "24.04",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     const device = deviceStore.get(registration.deviceId)!;
@@ -661,7 +669,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "12.5",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     const device = deviceStore.get(registration.deviceId)!;
@@ -715,7 +723,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0.20348",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     const fullInventory: SubmitInventoryPayload = {
@@ -874,7 +882,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "6.5",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     // Register Device in Org Beta
@@ -886,7 +894,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "6.5",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgBetaContext.organizationId,
+      registrationKey: "key-test-beta",
     });
 
     // Query All Devices -> 2 Total
@@ -920,7 +928,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     let device = deviceStore.get(registration.deviceId)!;
@@ -969,7 +977,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha",
     });
 
     // Toggle Maintenance Mode ON
@@ -1011,7 +1019,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha-1",
     });
 
     const reg2 = await deviceService.register({
@@ -1022,7 +1030,7 @@ describe("Operational Acceptance Test (OAT) Suite — Pre-Phase 7 Operational Re
       osVersion: "10.0",
       architecture: "X64",
       agentVersion: "1.0.0",
-      organizationId: orgAlphaContext.organizationId,
+      registrationKey: "key-test-alpha-2",
     });
 
     const result = await deviceService.bulkUpdateStatus(

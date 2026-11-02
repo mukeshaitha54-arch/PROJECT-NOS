@@ -112,8 +112,17 @@ export class InventoryController {
     status: 200,
     description: "Diagnostic health data returned successfully.",
   })
-  async getHealth(): Promise<ApiResponse<InventoryHealthResponse>> {
-    const data = await this.inventoryService.getHealthDiagnostics();
+  async getHealth(
+    @CurrentUser() user?: any,
+  ): Promise<ApiResponse<InventoryHealthResponse>> {
+    const userOrgId =
+      user?.role === "SUPER_ADMIN"
+        ? undefined
+        : user?.organizationId || user?.organization?.id;
+    const data = await this.inventoryService.getHealthDiagnostics(
+      undefined,
+      userOrgId,
+    );
     return {
       success: true,
       data,

@@ -76,6 +76,12 @@ export class AuthService {
     return { accessToken, refreshToken, user };
   }
 
+  private shouldExposeDevOtp(): boolean {
+    if (process.env.NODE_ENV === "production") return false;
+    const flag = this.configService.get("EXPOSE_DEV_OTP");
+    return flag === true || flag === "true";
+  }
+
   async register(
     dto: RegisterDto,
   ): Promise<{ message: string; user: User; devOtp?: string }> {
@@ -142,8 +148,8 @@ export class AuthService {
       );
     }
 
-    const isProduction = process.env.NODE_ENV === "production";
-    if (!isProduction) {
+    const exposeDevOtp = this.shouldExposeDevOtp();
+    if (exposeDevOtp) {
       this.logger.log(
         `📧 [OTP ISSUED] For [${user.email}]: Verification OTP is [${otp}] (expires in 15m)`,
       );
@@ -157,7 +163,7 @@ export class AuthService {
       message:
         "Registration successful. Please enter the 6-digit verification code sent to your email.",
       user: cleanUser,
-      devOtp: smtpConfigured || isProduction ? undefined : otp,
+      devOtp: exposeDevOtp ? otp : undefined,
     };
   }
 
@@ -194,15 +200,15 @@ export class AuthService {
       );
     }
 
-    const isProduction = process.env.NODE_ENV === "production";
-    if (!isProduction) {
+    const exposeDevOtp = this.shouldExposeDevOtp();
+    if (exposeDevOtp) {
       this.logger.log(`📧 [OTP RESENT] For [${email}]: New OTP is [${otp}]`);
     }
     return {
       message: smtpDelivered
         ? "A new verification code has been dispatched to your email."
         : "OTP generated. SMTP delivery unavailable or pending.",
-      devOtp: smtpDelivered || isProduction ? undefined : otp,
+      devOtp: exposeDevOtp ? otp : undefined,
     };
   }
 
@@ -325,7 +331,8 @@ export class AuthService {
       });
     }
 
-    await this.tokenRepo.revokeAllUserRefreshTokens(user.id);
+    // Revoke the specific exchanged refresh token rather than all user tokens (prevents concurrent tab/request disconnects)
+    await this.tokenRepo.revokeRefreshToken(tokenHash);
     const { passwordHash: _, ...cleanUser } = user;
     this.logger.log(
       `🔄 Rotated session refresh tokens for user: [${cleanUser.email}]`,
@@ -368,7 +375,7 @@ export class AuthService {
         this.logger.warn(
           `Password reset email delivery skipped: ${mailErr?.message || mailErr}`,
         );
-        if (process.env.NODE_ENV !== "production") {
+        if (this.shouldExposeDevOtp()) {
           devOtp = otp;
         }
       }

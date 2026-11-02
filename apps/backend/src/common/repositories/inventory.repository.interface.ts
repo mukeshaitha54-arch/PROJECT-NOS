@@ -76,7 +76,10 @@ export interface IInventoryRepository {
   /**
    * Retrieves diagnostic health statistics for a target node or global averages.
    */
-  getInventoryHealth(deviceId?: string): Promise<InventoryHealthResponse>;
+  getInventoryHealth(
+    deviceId?: string,
+    organizationId?: string,
+  ): Promise<InventoryHealthResponse>;
 
   /**
    * Records an immutable audit log entry for inventory events and difference engine findings.

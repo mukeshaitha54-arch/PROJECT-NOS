@@ -41,6 +41,11 @@ export function useRealtime() {
     };
   }, []);
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("nos_access_token")
+      : null;
+
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsConnected(false);
@@ -48,11 +53,6 @@ export function useRealtime() {
     }
 
     setConnectionState("connecting");
-
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("nos_access_token")
-        : null;
 
     // Connect to backend Socket.IO with token authentication
     const socketInstance = io(SOCKET_URL + "/realtime", {
@@ -72,16 +72,26 @@ export function useRealtime() {
 
     setSocket(socketInstance);
 
+    const joinUserRooms = () => {
+      socketInstance.emit("joinRoom", "dashboard");
+      const orgId =
+        (user as any)?.organizationId ||
+        (user as any)?.tenantId ||
+        "default-org";
+      if (orgId) {
+        socketInstance.emit("joinRoom", `org_${orgId}`);
+      }
+    };
+
     socketInstance.on("connect", () => {
       setIsConnected(true);
       setConnectionState("connected");
       setError(null);
-      // Join the global dashboard room to receive events for all devices
-      socketInstance.emit("joinRoom", "dashboard");
+      joinUserRooms();
     });
 
     socketInstance.io.on("reconnect", () => {
-      socketInstance.emit("joinRoom", "dashboard");
+      joinUserRooms();
     });
 
     socketInstance.on("disconnect", (reason) => {
@@ -142,7 +152,7 @@ export function useRealtime() {
     return () => {
       socketInstance.disconnect();
     };
-  }, [user?.id]);
+  }, [user?.id, (user as any)?.organizationId, (user as any)?.tenantId, token]);
 
   return {
     socket,
