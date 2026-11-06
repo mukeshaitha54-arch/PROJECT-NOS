@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { apiClient } from "@/lib/api-client";
+import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 
 type TabType =
   | "HARDWARE"
@@ -202,6 +203,40 @@ export default function DeviceInventoryDetailPage({
   useEffect(() => {
     loadInventory();
   }, [loadInventory]);
+
+  // Real-time socket listener for live process updates and alerts
+  const { on } = useRealtimeContext();
+  useEffect(() => {
+    const unsubHeartbeat = on("heartbeat.received", (payload: any) => {
+      if (
+        payload.deviceId === deviceId ||
+        payload.deviceId === inventory?.deviceId ||
+        payload.deviceId === inventory?.device?.uuid
+      ) {
+        if (
+          payload.processes &&
+          Array.isArray(payload.processes) &&
+          payload.processes.length > 0
+        ) {
+          setProcesses(payload.processes);
+        }
+      }
+    });
+
+    const unsubAlert = on("alert:triggered", (payload: any) => {
+      if (
+        payload.deviceId === deviceId ||
+        payload.deviceId === inventory?.deviceId
+      ) {
+        setAlerts((prev) => [payload, ...prev]);
+      }
+    });
+
+    return () => {
+      unsubHeartbeat();
+      unsubAlert();
+    };
+  }, [on, deviceId, inventory]);
 
   // If inventory is not yet discovered, automatically poll every 15s so it displays as soon as agent finishes scan
   useEffect(() => {

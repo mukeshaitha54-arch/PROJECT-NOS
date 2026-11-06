@@ -484,6 +484,7 @@ export class DeviceService {
   async getDeviceById(
     id: string,
     organizationId?: string,
+    isSuperAdmin = false,
   ): Promise<
     SharedDevice & {
       lastHeartbeat?: SharedHeartbeat | null;
@@ -499,8 +500,9 @@ export class DeviceService {
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
       );
     }
-    // Enforce org isolation — allow access if device matches organizationId, tenantId, default-org, or legacy unassigned
+    // Enforce org isolation — allow access if SUPER_ADMIN or device matches organizationId, tenantId, default-org, or legacy unassigned
     if (
+      !isSuperAdmin &&
       organizationId &&
       organizationId !== "default-org" &&
       device.organizationId &&

@@ -125,7 +125,12 @@ export default function DeviceDetailPage() {
             .get<any, any>("/devices")
             .catch(() => null);
           const list: any[] = listRes?.data?.data || listRes?.data || [];
-          dev = list.find((d: any) => d.id === id || d.uuid === id) || null;
+          dev =
+            list.find(
+              (d: any) =>
+                String(d.id).toLowerCase() === String(id).toLowerCase() ||
+                String(d.uuid).toLowerCase() === String(id).toLowerCase(),
+            ) || (list.length === 1 ? list[0] : null);
         }
 
         if (dev) {
@@ -133,33 +138,49 @@ export default function DeviceDetailPage() {
           setIsTelemetryPaused(!!dev.telemetryPaused);
         }
 
+        const deviceDbId = dev?.id || id;
         const [telRes, alertRes] = await Promise.all([
           apiClient
-            .get<any, any>(`/devices/${id}/telemetry?range=1h`)
-            .catch(() => null),
-          apiClient.get<any, any>(`/devices/${id}/alerts`).catch(() => null),
+            .get<any, any>(`/devices/${deviceDbId}/telemetry?range=1h`)
+            .catch(() =>
+              apiClient
+                .get<any, any>(`/devices/${id}/telemetry?range=1h`)
+                .catch(() => null),
+            ),
+          apiClient
+            .get<any, any>(`/devices/${deviceDbId}/alerts`)
+            .catch(() =>
+              apiClient
+                .get<any, any>(`/devices/${id}/alerts`)
+                .catch(() => null),
+            ),
         ]);
         setTelemetryHistory(telRes?.data?.data || telRes?.data || []);
         setAlerts(alertRes?.data?.data || alertRes?.data || []);
 
         // Fetch inventory & process data from backend routes
-        const deviceDbId = dev?.id || id;
         const [swRes, svcRes, procRes] = await Promise.all([
           apiClient
-            .get<any, any>(`/devices/${id}/software`)
+            .get<any, any>(`/devices/${deviceDbId}/software`)
             .catch(() =>
               apiClient
                 .get<any, any>(`/inventory/software/${deviceDbId}`)
                 .catch(() => null),
             ),
           apiClient
-            .get<any, any>(`/devices/${id}/services`)
+            .get<any, any>(`/devices/${deviceDbId}/services`)
             .catch(() =>
               apiClient
                 .get<any, any>(`/inventory/services/${deviceDbId}`)
                 .catch(() => null),
             ),
-          apiClient.get<any, any>(`/devices/${id}/processes`).catch(() => null),
+          apiClient
+            .get<any, any>(`/devices/${deviceDbId}/processes`)
+            .catch(() =>
+              apiClient
+                .get<any, any>(`/devices/${id}/processes`)
+                .catch(() => null),
+            ),
         ]);
 
         const swData = swRes?.data?.data || swRes?.data || null;

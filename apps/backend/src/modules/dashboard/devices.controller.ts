@@ -20,6 +20,7 @@ import {
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CurrentTenant } from "../../common/decorators/current-tenant.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { TenantContext } from "@nos/shared-types";
 import { PrismaService } from "../../database/prisma.service";
 import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
@@ -59,10 +60,15 @@ export class DevicesController {
     };
   }
 
-  private async findDevice(id: string, orgId?: string, include?: any) {
+  private async findDevice(
+    id: string,
+    orgId?: string,
+    include?: any,
+    isSuperAdmin = false,
+  ) {
     const idFilter = { OR: [{ id }, { uuid: id }] };
 
-    if (orgId && orgId !== "default-org") {
+    if (!isSuperAdmin && orgId && orgId !== "default-org") {
       const scoped = await this.prisma.device.findFirst({
         where: {
           AND: [
@@ -93,18 +99,21 @@ export class DevicesController {
 
     if (!fallback) return null;
 
-    // Check cross-tenant isolation: only block if explicitly belongs to a different non-default org
-    if (
-      orgId &&
-      orgId !== "default-org" &&
-      fallback.organizationId &&
-      fallback.organizationId !== "default-org" &&
-      fallback.organizationId !== orgId &&
-      fallback.tenantId &&
-      fallback.tenantId !== "default-org" &&
-      fallback.tenantId !== orgId
-    ) {
-      return null;
+    // Check cross-tenant isolation: allow if SUPER_ADMIN or matches org or default-org
+    if (!isSuperAdmin && orgId && orgId !== "default-org") {
+      const devOrg = fallback.organizationId;
+      const devTenant = fallback.tenantId;
+      const isCrossTenant =
+        devOrg &&
+        devOrg !== "default-org" &&
+        devOrg !== orgId &&
+        devTenant &&
+        devTenant !== "default-org" &&
+        devTenant !== orgId;
+
+      if (isCrossTenant) {
+        return null;
+      }
     }
 
     // Auto-heal org mapping in background
@@ -127,8 +136,12 @@ export class DevicesController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "List all devices with latest snapshot" })
-  async getDevices(@CurrentTenant() tenant: TenantContext) {
-    const orgId = tenant.organizationId;
+  async getDevices(
+    @CurrentTenant() tenant: TenantContext,
+    @CurrentUser() user?: any,
+  ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+    const orgId = isSuperAdmin ? undefined : tenant.organizationId;
 
     // Fire-and-forget: sync tenantId for any legacy device that has organizationId but wrong tenantId
     if (orgId && orgId !== "default-org") {
@@ -207,8 +220,12 @@ export class DevicesController {
   @Get("stats")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Fleet statistics" })
-  async getStats(@CurrentTenant() tenant: TenantContext) {
-    const orgId = tenant.organizationId;
+  async getStats(
+    @CurrentTenant() tenant: TenantContext,
+    @CurrentUser() user?: any,
+  ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+    const orgId = isSuperAdmin ? undefined : tenant.organizationId;
 
     const where =
       orgId && orgId !== "default-org"
@@ -238,7 +255,7 @@ export class DevicesController {
 
     const alerts = await this.prisma.alert.count({
       where: {
-        tenantId: orgId,
+        ...(orgId && orgId !== "default-org" ? { tenantId: orgId } : {}),
         createdAt: {
           gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
@@ -257,9 +274,16 @@ export class DevicesController {
   async getDeviceById(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId, { inventory: true });
+    const device = await this.findDevice(
+      id,
+      orgId,
+      { inventory: true },
+      isSuperAdmin,
+    );
 
     if (!device) {
       throw new NotFoundException("Device not found");
@@ -311,9 +335,11 @@ export class DevicesController {
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
     @Query("range") range: string = "1h",
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -363,9 +389,11 @@ export class DevicesController {
   async getProcesses(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -382,7 +410,24 @@ export class DevicesController {
     if (validLive && validLive.length > 0) {
       return {
         success: true,
-        data: validLive,
+        data: validLive.map((p: any) => ({
+          pid: p.pid ?? p.Pid,
+          name: p.name ?? p.Name ?? p.processName ?? p.ProcessName,
+          processName: p.processName ?? p.ProcessName ?? p.name ?? p.Name,
+          memoryMb:
+            p.memoryMb ??
+            p.MemoryMb ??
+            (p.memoryBytes
+              ? Number((p.memoryBytes / (1024 * 1024)).toFixed(1))
+              : 0),
+          memoryBytes:
+            p.memoryBytes ??
+            p.MemoryBytes ??
+            (p.memoryMb ? Math.round(p.memoryMb * 1024 * 1024) : 0),
+          cpuTimeSec: p.cpuTimeSec ?? p.CpuTimeSec ?? 0,
+          threads: p.threads ?? p.Threads ?? 1,
+          status: p.status ?? p.Status ?? "Running",
+        })),
       };
     }
 
@@ -429,9 +474,11 @@ export class DevicesController {
   async getServices(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -459,9 +506,11 @@ export class DevicesController {
   async getSoftware(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -489,9 +538,11 @@ export class DevicesController {
   async getAlerts(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -516,9 +567,11 @@ export class DevicesController {
   async getHeartbeats(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant.organizationId;
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -544,14 +597,16 @@ export class DevicesController {
   async deleteDevice(
     @CurrentTenant() tenant: TenantContext,
     @Param("id") id: string,
+    @CurrentUser() user?: any,
   ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = tenant?.organizationId;
     if (!orgId) {
       throw new UnauthorizedException(
         "Organization context is required to delete a device",
       );
     }
-    const device = await this.findDevice(id, orgId);
+    const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) {
       throw new NotFoundException("Device not found");

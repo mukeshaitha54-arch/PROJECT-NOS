@@ -44,8 +44,12 @@ export default function MembersPage() {
         );
 
       if (res?.data || res) {
-        const payload = res.data || res;
-        const list = payload.members || payload.users || payload || [];
+        const payload = res.data?.data || res.data || res;
+        const list =
+          payload.items ||
+          payload.members ||
+          payload.users ||
+          (Array.isArray(payload) ? payload : []);
         if (Array.isArray(list)) {
           setMembers(
             list.map((m: any, idx: number) => ({

@@ -55,9 +55,21 @@ export default function OperationalAuditCenterPage() {
       if (actionFilter !== "ALL") payload.action = actionFilter;
       if (resourceFilter !== "ALL") payload.resourceType = resourceFilter;
 
-      const res = await apiClient.post<any>("/tenant/audit/search", payload);
-      const items = res.data?.data?.items || res.data?.items || [];
-      const total = res.data?.data?.total || res.data?.total || items.length;
+      let items: any[] = [];
+      let total = 0;
+      try {
+        const res = await apiClient.post<any>("/tenant/audit/search", payload);
+        items = res.data?.data?.items || res.data?.items || [];
+        total = res.data?.data?.total || res.data?.total || items.length;
+      } catch {
+        // Fallback to GET /audit endpoint
+        const fbRes = await apiClient
+          .get<any>(`/audit?page=${page}&limit=${limit}`)
+          .catch(() => null);
+        items =
+          fbRes?.data?.data?.items || fbRes?.data?.items || fbRes?.data || [];
+        total = fbRes?.data?.data?.total || fbRes?.data?.total || items.length;
+      }
       setLogs(items);
       setTotalRecords(total);
     } catch (err: any) {

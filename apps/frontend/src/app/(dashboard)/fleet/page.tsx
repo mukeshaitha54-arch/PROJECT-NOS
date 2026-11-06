@@ -73,9 +73,26 @@ export default function FleetOverviewPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await deviceApi.getStatus();
-      const payload = (res as any).data || res;
-      setDevices(payload.devices || []);
+      let list: Device[] = [];
+      try {
+        const res = await deviceApi.getStatus();
+        const payload = (res as any).data || res;
+        list = payload.devices || [];
+      } catch {
+        // Fallback to /devices
+      }
+
+      if (list.length === 0) {
+        const fallbackRes = await apiClient
+          .get<any>("/devices")
+          .catch(() => null);
+        const fbPayload = fallbackRes?.data?.data || fallbackRes?.data || [];
+        if (Array.isArray(fbPayload) && fbPayload.length > 0) {
+          list = fbPayload;
+        }
+      }
+
+      setDevices(list);
       setLastRefreshed(new Date());
     } catch (err: any) {
       console.error("Fleet fetch failed:", err);

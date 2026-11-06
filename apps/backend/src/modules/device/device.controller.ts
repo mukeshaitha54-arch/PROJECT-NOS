@@ -245,9 +245,15 @@ export class DeviceController {
   })
   @ApiResponse({ status: 404, description: "Device not found in registry." })
   async getDeviceById(@Param("id") id: string, @CurrentUser() user?: any) {
-    const organizationId =
-      user?.organizationId || user?.organization?.id || undefined;
-    const data = await this.deviceService.getDeviceById(id, organizationId);
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+    const organizationId = isSuperAdmin
+      ? undefined
+      : user?.organizationId || user?.organization?.id || undefined;
+    const data = await this.deviceService.getDeviceById(
+      id,
+      organizationId,
+      isSuperAdmin,
+    );
     return {
       success: true,
       data,
