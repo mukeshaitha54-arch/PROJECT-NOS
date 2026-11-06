@@ -12,7 +12,9 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): Promise<Device | null> {
-    return this.prisma.device.findUnique({ where: { id } });
+    const byId = await this.prisma.device.findUnique({ where: { id } });
+    if (byId) return byId;
+    return this.prisma.device.findUnique({ where: { uuid: id } });
   }
 
   async findByUuid(uuid: string): Promise<Device | null> {
@@ -26,7 +28,15 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   async findAll(organizationId?: string): Promise<Device[]> {
     const where =
       organizationId && organizationId !== "default-org"
-        ? { organizationId }
+        ? {
+            OR: [
+              { organizationId },
+              { tenantId: organizationId },
+              { organizationId: null, tenantId: null },
+              { organizationId: "default-org" },
+              { tenantId: "default-org" },
+            ],
+          }
         : {};
     return this.prisma.device.findMany({
       where,
@@ -37,7 +47,15 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   async countByOrganization(organizationId?: string): Promise<number> {
     const where =
       organizationId && organizationId !== "default-org"
-        ? { organizationId }
+        ? {
+            OR: [
+              { organizationId },
+              { tenantId: organizationId },
+              { organizationId: null, tenantId: null },
+              { organizationId: "default-org" },
+              { tenantId: "default-org" },
+            ],
+          }
         : {};
     return this.prisma.device.count({ where });
   }

@@ -45,6 +45,8 @@ export function useRealtime() {
     typeof window !== "undefined"
       ? localStorage.getItem("nos_access_token")
       : null;
+  const userId = user?.id;
+  const userOrgId = (user as any)?.organizationId || (user as any)?.tenantId;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -74,10 +76,7 @@ export function useRealtime() {
 
     const joinUserRooms = () => {
       socketInstance.emit("joinRoom", "dashboard");
-      const orgId =
-        (user as any)?.organizationId ||
-        (user as any)?.tenantId ||
-        "default-org";
+      const orgId = userOrgId || "default-org";
       if (orgId) {
         socketInstance.emit("joinRoom", `org_${orgId}`);
       }
@@ -152,7 +151,7 @@ export function useRealtime() {
     return () => {
       socketInstance.disconnect();
     };
-  }, [user?.id, (user as any)?.organizationId, (user as any)?.tenantId, token]);
+  }, [userId, userOrgId, token]);
 
   return {
     socket,

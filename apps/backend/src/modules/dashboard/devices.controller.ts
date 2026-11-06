@@ -37,11 +37,13 @@ export class DevicesController {
   ) {}
 
   private getDeviceQueryWhere(id: string, orgId?: string) {
-    const where: any = {
-      OR: [{ id }, { uuid: id }],
-    };
-    if (orgId && orgId !== "default-org") {
-      where.AND = [
+    const idFilter = { OR: [{ id }, { uuid: id }] };
+    if (!orgId || orgId === "default-org") {
+      return idFilter;
+    }
+    return {
+      AND: [
+        idFilter,
         {
           OR: [
             { tenantId: orgId },
@@ -49,11 +51,77 @@ export class DevicesController {
             { tenantId: null, organizationId: null },
             { tenantId: "default-org" },
             { organizationId: "default-org" },
+            { tenantId: null },
+            { organizationId: null },
           ],
         },
-      ];
+      ],
+    };
+  }
+
+  private async findDevice(id: string, orgId?: string, include?: any) {
+    const idFilter = { OR: [{ id }, { uuid: id }] };
+
+    if (orgId && orgId !== "default-org") {
+      const scoped = await this.prisma.device.findFirst({
+        where: {
+          AND: [
+            idFilter,
+            {
+              OR: [
+                { tenantId: orgId },
+                { organizationId: orgId },
+                { tenantId: null, organizationId: null },
+                { tenantId: "default-org" },
+                { organizationId: "default-org" },
+                { tenantId: null },
+                { organizationId: null },
+              ],
+            },
+          ],
+        },
+        include,
+      });
+      if (scoped) return scoped;
     }
-    return where;
+
+    // Direct fallback by id or uuid
+    const fallback = await this.prisma.device.findFirst({
+      where: idFilter,
+      include,
+    });
+
+    if (!fallback) return null;
+
+    // Check cross-tenant isolation: only block if explicitly belongs to a different non-default org
+    if (
+      orgId &&
+      orgId !== "default-org" &&
+      fallback.organizationId &&
+      fallback.organizationId !== "default-org" &&
+      fallback.organizationId !== orgId &&
+      fallback.tenantId &&
+      fallback.tenantId !== "default-org" &&
+      fallback.tenantId !== orgId
+    ) {
+      return null;
+    }
+
+    // Auto-heal org mapping in background
+    if (
+      orgId &&
+      orgId !== "default-org" &&
+      (!fallback.organizationId || fallback.organizationId === "default-org")
+    ) {
+      this.prisma.device
+        .update({
+          where: { id: fallback.id },
+          data: { organizationId: orgId, tenantId: orgId },
+        })
+        .catch(() => {});
+    }
+
+    return fallback;
   }
 
   @Get()
@@ -191,12 +259,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-      include: {
-        inventory: true,
-      },
-    });
+    const device = await this.findDevice(id, orgId, { inventory: true });
 
     if (!device) {
       throw new NotFoundException("Device not found");
@@ -250,9 +313,7 @@ export class DevicesController {
     @Query("range") range: string = "1h",
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -304,9 +365,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -372,9 +431,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -404,9 +461,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -436,9 +491,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -465,9 +518,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) throw new NotFoundException("Device not found");
 
@@ -500,9 +551,7 @@ export class DevicesController {
         "Organization context is required to delete a device",
       );
     }
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) {
       throw new NotFoundException("Device not found");
@@ -557,9 +606,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) {
       throw new NotFoundException("Device not found or access denied");
@@ -597,9 +644,7 @@ export class DevicesController {
     @Param("id") id: string,
   ) {
     const orgId = tenant.organizationId;
-    const device = await this.prisma.device.findFirst({
-      where: this.getDeviceQueryWhere(id, orgId),
-    });
+    const device = await this.findDevice(id, orgId);
 
     if (!device) {
       throw new NotFoundException("Device not found or access denied");

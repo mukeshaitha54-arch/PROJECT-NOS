@@ -32,22 +32,32 @@ rawApi.interceptors.request.use((config) => {
   return config;
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
-}> = [];
+let refreshPromise: Promise<string> | null = null;
 
-const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+async function performTokenRefresh(): Promise<string> {
+  const refreshToken =
+    typeof window !== "undefined"
+      ? localStorage.getItem("nos_refresh_token")
+      : null;
+  if (!refreshToken) {
+    throw new Error("No refresh token available");
+  }
+
+  const res = await axios.post(`${resolveBaseUrl()}/auth/refresh`, {
+    refreshToken,
   });
-  failedQueue = [];
-};
+  const data = res.data?.data || res.data;
+  const newAccessToken = data?.accessToken;
+  const newRefreshToken = data?.refreshToken;
+
+  if (typeof window !== "undefined" && newAccessToken) {
+    localStorage.setItem("nos_access_token", newAccessToken);
+    if (newRefreshToken) {
+      localStorage.setItem("nos_refresh_token", newRefreshToken);
+    }
+  }
+  return newAccessToken;
+}
 
 rawApi.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -94,66 +104,22 @@ rawApi.interceptors.response.use(
       originalRequest.url !== "/auth/login" &&
       originalRequest.url !== "/auth/refresh"
     ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return rawApi(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const refreshToken =
-          typeof window !== "undefined"
-            ? localStorage.getItem("nos_refresh_token")
-            : null;
-        if (!refreshToken) throw new Error("No refresh token");
-
-        // Use a new axios instance to avoid interceptor loops
-        const refreshResponse = await axios.post(
-          `${resolveBaseUrl()}/auth/refresh`,
-          {
-            refreshToken,
-          },
-        );
-        const { accessToken, refreshToken: newRefreshToken } =
-          refreshResponse.data.data || refreshResponse.data;
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem("nos_access_token", accessToken);
-          if (newRefreshToken)
-            localStorage.setItem("nos_refresh_token", newRefreshToken);
+        if (!refreshPromise) {
+          refreshPromise = performTokenRefresh().finally(() => {
+            refreshPromise = null;
+          });
         }
-
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        const newAccessToken = await refreshPromise;
+        if (originalRequest.headers && newAccessToken) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
-        processQueue(null, accessToken);
-
         return rawApi(originalRequest);
-      } catch (refreshError: any) {
-        processQueue(refreshError as Error, null);
-        if (typeof window !== "undefined") {
-          const status = refreshError?.response?.status;
-          // Only invalidate session and force logout if the server definitively rejected the refresh token
-          if (status === 401 || status === 403) {
-            localStorage.removeItem("nos_access_token");
-            localStorage.removeItem("nos_refresh_token");
-            localStorage.removeItem("nos_cached_user");
-            window.location.href = "/auth/login";
-          }
-        }
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+      } catch (refreshErr) {
+        // Do not force window.location.href here — auth context will handle expired sessions
+        return Promise.reject(refreshErr);
       }
     }
 

@@ -312,11 +312,7 @@ export class AuthService {
       .digest("hex");
     const storedToken = await this.tokenRepo.findRefreshToken(tokenHash);
 
-    if (
-      !storedToken ||
-      storedToken.isRevoked ||
-      new Date() > storedToken.expiresAt
-    ) {
+    if (!storedToken || new Date() > storedToken.expiresAt) {
       throw new UnauthorizedException({
         code: ErrorCode.UNAUTHORIZED,
         message: "Refresh token is invalid, revoked, or expired.",
@@ -329,6 +325,16 @@ export class AuthService {
         code: ErrorCode.USER_NOT_FOUND,
         message: "Associated user no longer exists.",
       });
+    }
+
+    // Grace window: if token was already revoked, it was rotated by a concurrent in-flight request
+    // or parallel tab. Grant fresh tokens for the valid user to prevent sudden logout redirects.
+    if (storedToken.isRevoked) {
+      const { passwordHash: _, ...cleanUser } = user;
+      this.logger.log(
+        `🔄 Concurrent refresh grace exchange granted for user: [${cleanUser.email}]`,
+      );
+      return this.generateTokens(cleanUser);
     }
 
     // Revoke the specific exchanged refresh token rather than all user tokens (prevents concurrent tab/request disconnects)

@@ -119,6 +119,15 @@ export default function DeviceDetailPage() {
           dev = devRes?.data?.data || devRes?.data || null;
         }
 
+        // Secondary fallback: check fleet list (/devices) if single device endpoint had a transient mismatch
+        if (!dev) {
+          const listRes = await apiClient
+            .get<any, any>("/devices")
+            .catch(() => null);
+          const list: any[] = listRes?.data?.data || listRes?.data || [];
+          dev = list.find((d: any) => d.id === id || d.uuid === id) || null;
+        }
+
         if (dev) {
           setDevice(dev);
           setIsTelemetryPaused(!!dev.telemetryPaused);
