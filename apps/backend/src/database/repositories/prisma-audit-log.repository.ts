@@ -113,7 +113,7 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
           organizationId: request.organizationId || "default-org",
           userId: null,
           userEmail: "mukesh Admin",
-          action: AuditActionType.DEVICE_REGISTERED,
+          action: AuditActionType.DEVICE_REGISTRATION,
           resourceType: "DEVICE",
           resourceId: d.id,
           reason: "Zero-Trust agent hardware verification",

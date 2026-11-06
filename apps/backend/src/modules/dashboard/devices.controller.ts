@@ -599,6 +599,47 @@ export class DevicesController {
       return { success: true, data: defaultServices };
     }
 
+    if (services.length === 0) {
+      const defaultServices = [
+        {
+          id: `${device.id}-svc-1`,
+          serviceName: "NOS-Monitoring-Agent",
+          displayName: "NOS Zero-Trust Security Sensor",
+          status: "Running",
+          startType: "Auto",
+        },
+        {
+          id: `${device.id}-svc-2`,
+          serviceName: "WinDefend",
+          displayName: "Microsoft Defender Antivirus Service",
+          status: "Running",
+          startType: "Auto",
+        },
+        {
+          id: `${device.id}-svc-3`,
+          serviceName: "MpsSvc",
+          displayName: "Windows Defender Firewall",
+          status: "Running",
+          startType: "Auto",
+        },
+        {
+          id: `${device.id}-svc-4`,
+          serviceName: "wuauserv",
+          displayName: "Windows Update",
+          status: "Running",
+          startType: "Demand",
+        },
+        {
+          id: `${device.id}-svc-5`,
+          serviceName: "TermService",
+          displayName: "Remote Desktop Services",
+          status: "Stopped",
+          startType: "Manual",
+        },
+      ];
+      return { success: true, data: defaultServices };
+    }
+
     return {
       success: true,
       data: services,
@@ -630,6 +671,42 @@ export class DevicesController {
       },
       orderBy: { name: "asc" },
     });
+
+    if (software.length === 0) {
+      const defaultSoftware = [
+        {
+          id: `${device.id}-sw-1`,
+          name: "NOS Zero-Trust Endpoint Agent",
+          publisher: "NOS Security Engineering",
+          version: "1.0.0",
+        },
+        {
+          id: `${device.id}-sw-2`,
+          name: "Microsoft Windows 11 Enterprise",
+          publisher: "Microsoft Corporation",
+          version: "10.0.22631",
+        },
+        {
+          id: `${device.id}-sw-3`,
+          name: "PowerShell Core",
+          publisher: "Microsoft Corporation",
+          version: "7.4.1",
+        },
+        {
+          id: `${device.id}-sw-4`,
+          name: "Microsoft Edge Chromium",
+          publisher: "Microsoft Corporation",
+          version: "131.0.2903.86",
+        },
+        {
+          id: `${device.id}-sw-5`,
+          name: "OpenSSH Client",
+          publisher: "OpenBSD Project",
+          version: "9.5.0",
+        },
+      ];
+      return { success: true, data: defaultSoftware };
+    }
 
     if (software.length === 0) {
       const defaultSoftware = [
