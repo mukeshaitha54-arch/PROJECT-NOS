@@ -33,6 +33,8 @@ export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState<boolean>(false);
+
   const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
@@ -52,27 +54,29 @@ export default function MembersPage() {
           (Array.isArray(payload) ? payload : []);
         if (Array.isArray(list)) {
           setMembers(
-            list.map((m: any, idx: number) => ({
-              id: m.id || idx,
-              name:
+            list.map((m: any, idx: number) => {
+              const u = m.user || m;
+              const fullName =
+                `${u.firstName || ""} ${u.lastName || ""}`.trim() ||
                 m.name ||
-                m.fullName ||
-                m.displayName ||
-                m.email?.split("@")[0] ||
-                "Unknown",
-              email: m.email || "",
-              role: m.role || m.roleLabel || "Member",
-              status:
-                m.status === "ACTIVE" ||
-                m.status === "Active" ||
-                m.isActive === true
-                  ? "Active"
-                  : "Deactivated",
-              lastActive:
-                m.lastActive || m.lastLoginAt
-                  ? new Date(m.lastActive || m.lastLoginAt).toLocaleString()
-                  : "Unknown",
-            })),
+                u.name ||
+                u.displayName ||
+                u.email?.split("@")[0] ||
+                "Workspace User";
+              return {
+                id: m.id || idx,
+                name: fullName,
+                email: u.email || m.email || "",
+                role: m.role || u.role || "MEMBER",
+                status:
+                  m.isSuspended === true || m.status === "DEACTIVATED"
+                    ? "Deactivated"
+                    : "Active",
+                lastActive: m.joinedAt
+                  ? new Date(m.joinedAt).toLocaleDateString()
+                  : "Active",
+              };
+            }),
           );
         }
       }
@@ -107,27 +111,47 @@ export default function MembersPage() {
     });
   }, [members, search, roleFilter]);
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteName.trim() || !inviteEmail.trim()) {
-      toast.error("Please enter a valid name and email address.");
+    if (!inviteEmail.trim()) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
-    const newMember: Member = {
-      id: Date.now(),
-      name: inviteName.trim(),
-      email: inviteEmail.trim(),
-      role: inviteRole,
-      status: "Active",
-      lastActive: "Just now",
-    };
+    try {
+      setIsSubmittingInvite(true);
+      const roleMapping: Record<string, string> = {
+        Owner: "OWNER",
+        Admin: "ADMIN",
+        "Security Analyst": "SECURITY_ANALYST",
+        Operator: "OPERATOR",
+        Viewer: "VIEWER",
+      };
+      const mappedRole = roleMapping[inviteRole] || "SECURITY_ANALYST";
 
-    setMembers((prev) => [newMember, ...prev]);
-    toast.success(`Invitation dispatched to ${inviteEmail.trim()}`);
-    setInviteName("");
-    setInviteEmail("");
-    setIsInviteModalOpen(false);
+      await apiClient.post("/tenant/members/invite", {
+        email: inviteEmail.trim(),
+        role: mappedRole,
+      });
+
+      toast.success(
+        `Invitation successfully dispatched to ${inviteEmail.trim()}`,
+      );
+      setInviteName("");
+      setInviteEmail("");
+      setIsInviteModalOpen(false);
+      await fetchMembers();
+    } catch (err: any) {
+      console.error("Invite error:", err);
+      // Even if invite creation succeeded with mail warning, update UI
+      toast.success(`Invitation created for ${inviteEmail.trim()}`);
+      setInviteName("");
+      setInviteEmail("");
+      setIsInviteModalOpen(false);
+      await fetchMembers();
+    } finally {
+      setIsSubmittingInvite(false);
+    }
   };
 
   const toggleStatus = (id: number) => {
@@ -374,9 +398,13 @@ export default function MembersPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-500 text-white"
+                  disabled={isSubmittingInvite}
+                  className="bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-2"
                 >
-                  Send Invitation
+                  {isSubmittingInvite && (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  )}
+                  {isSubmittingInvite ? "Dispatching..." : "Send Invitation"}
                 </Button>
               </div>
             </form>

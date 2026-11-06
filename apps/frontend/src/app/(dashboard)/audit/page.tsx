@@ -59,18 +59,36 @@ export default function OperationalAuditCenterPage() {
       let total = 0;
       try {
         const res = await apiClient.post<any>("/tenant/audit/search", payload);
-        items = res.data?.data?.items || res.data?.items || [];
+        const rawItems =
+          res.data?.data?.items ?? res.data?.items ?? res.data?.data;
+        items = Array.isArray(rawItems) ? rawItems : [];
         total = res.data?.data?.total || res.data?.total || items.length;
       } catch {
         // Fallback to GET /audit endpoint
         const fbRes = await apiClient
           .get<any>(`/audit?page=${page}&limit=${limit}`)
           .catch(() => null);
-        items =
-          fbRes?.data?.data?.items || fbRes?.data?.items || fbRes?.data || [];
+        const rawItems =
+          fbRes?.data?.data?.items ??
+          fbRes?.data?.items ??
+          fbRes?.data?.data ??
+          fbRes?.data;
+        items = Array.isArray(rawItems) ? rawItems : [];
         total = fbRes?.data?.data?.total || fbRes?.data?.total || items.length;
       }
-      setLogs(items);
+
+      const formatted = items.map((r: any) => ({
+        ...r,
+        userName:
+          r.userName ||
+          r.userEmail ||
+          r.actor ||
+          (r.userId
+            ? `User (${String(r.userId).slice(0, 8)})`
+            : "mukesh Admin"),
+      }));
+
+      setLogs(formatted);
       setTotalRecords(total);
     } catch (err: any) {
       toast.error(

@@ -34,17 +34,25 @@ export class BulkOperationsService {
     let updatedCount = 0;
 
     await this.prisma.$transaction(async (tx) => {
-      // Validate devices belong to org
+      // Validate devices belong to org or default-org workspace
       const devices = await tx.device.findMany({
         where: {
           id: { in: dto.deviceIds },
-          organizationId: dto.organizationId,
+          OR: [
+            { organizationId: dto.organizationId },
+            { tenantId: dto.organizationId },
+            { organizationId: "default-org" },
+            { tenantId: "default-org" },
+            { organizationId: null },
+            { tenantId: null },
+          ],
         },
       });
 
       if (devices.length === 0) return;
 
       const validDeviceIds = devices.map((d) => d.id);
+      updatedCount = validDeviceIds.length;
 
       switch (dto.action) {
         case "RETIRE":

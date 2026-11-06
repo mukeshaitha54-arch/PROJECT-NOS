@@ -75,7 +75,8 @@ function formatDataSize(bytes: number | null | undefined): string {
 export default function DeviceDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : (rawId as string);
   const { user } = useAuth();
   const { on, socket } = useRealtimeContext();
 
@@ -104,6 +105,7 @@ export default function DeviceDetailPage() {
 
   const fetchData = useCallback(
     async (showLoader = false) => {
+      if (!id) return;
       if (showLoader) setLoading(true);
       try {
         let devRes = await apiClient

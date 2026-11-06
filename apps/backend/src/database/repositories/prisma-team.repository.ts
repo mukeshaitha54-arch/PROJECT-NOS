@@ -207,6 +207,36 @@ export class PrismaTeamRepository implements ITeamRepository {
       }),
     ]);
 
+    if (total === 0) {
+      // Fallback: If no organization members exist for this org (e.g. default-org or initial single-tenant setup),
+      // retrieve users from the User table so the owner and workspace members are always visible!
+      const allUsers = await this.prisma.user.findMany({
+        take: limit,
+        skip,
+        orderBy: { createdAt: "desc" },
+      });
+      if (allUsers.length > 0) {
+        const fallbackItems: OrganizationMemberDto[] = allUsers.map((u) => ({
+          id: u.id,
+          organizationId: organizationId || "default-org",
+          userId: u.id,
+          role: (u.role as any) || "OWNER",
+          customRoleId: undefined,
+          teamIds: [],
+          departmentIds: [],
+          joinedAt: u.createdAt.toISOString(),
+          isSuspended: false,
+          user: {
+            id: u.id,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+          },
+        }));
+        return { items: fallbackItems, total: allUsers.length };
+      }
+    }
+
     const userIds = rows.map((r) => r.userId);
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },

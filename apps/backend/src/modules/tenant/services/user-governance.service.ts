@@ -1,6 +1,7 @@
 import {
   Injectable,
   Inject,
+  Optional,
   BadRequestException,
   ForbiddenException,
   NotFoundException,
@@ -24,6 +25,11 @@ import {
   IUserSessionRepository,
   IUserSessionRepositoryToken,
 } from "../../../common/repositories/tenant.repository.interface";
+import {
+  IMailService,
+  IMailServiceToken,
+} from "../../../common/services/mail-service.interface";
+import { PrismaService } from "../../../database/prisma.service";
 import { QuotaEngineService } from "./quota-engine.service";
 import { AuditEngineService } from "./audit-engine.service";
 
@@ -36,6 +42,11 @@ export class UserGovernanceService {
     private readonly sessionRepository: IUserSessionRepository,
     private readonly quotaService: QuotaEngineService,
     private readonly auditService: AuditEngineService,
+    @Optional()
+    private readonly prisma?: PrismaService,
+    @Optional()
+    @Inject(IMailServiceToken)
+    private readonly mailService?: IMailService,
   ) {}
 
   // Departments & Teams
@@ -186,7 +197,31 @@ export class UserGovernanceService {
       departmentIds,
     );
 
-    const inviteLink = `https://app.nos.enterprises/accept-invite?token=${token}`;
+    const baseUrl =
+      process.env.APP_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://nos.is-local.org";
+    const inviteLink = `${baseUrl.replace(/\/$/, "")}/organization/invitations?token=${token}`;
+
+    if (this.mailService) {
+      try {
+        let orgName = "NOS Zero-Trust Platform";
+        if (this.prisma) {
+          try {
+            const org = await this.prisma.organization.findUnique({
+              where: { id: organizationId },
+            });
+            if (org?.name) orgName = org.name;
+          } catch {
+            // Organization lookup fallback
+          }
+        }
+        await this.mailService.sendInvitationEmail(email, orgName, inviteLink);
+      } catch (mailErr) {
+        console.error("Failed to send invitation email:", mailErr);
+      }
+    }
 
     await this.auditService.logEvent(
       context,

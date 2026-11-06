@@ -23,7 +23,11 @@ export class AuditLogsService {
 
     const where: any = {};
     if (tenantId && tenantId !== "default-org") {
-      where.organizationId = tenantId;
+      where.OR = [
+        { organizationId: tenantId },
+        { organizationId: "default-org" },
+        { organizationId: null },
+      ];
     }
 
     if (action) {

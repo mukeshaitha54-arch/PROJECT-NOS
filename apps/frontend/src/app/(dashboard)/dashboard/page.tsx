@@ -192,6 +192,38 @@ export default function DashboardPage() {
           ramAvg: calculatedRam > 0 ? calculatedRam : prev.ramAvg,
         }));
 
+        // Fetch actual historical heartbeats from active online devices
+        if (onlineDevices.length > 0) {
+          try {
+            const devId = onlineDevices[0].id || onlineDevices[0].uuid;
+            const hbRes = await apiClient
+              .get<any, any>(`/devices/${devId}/heartbeats`)
+              .catch(() => null);
+            const hbList: any[] = hbRes?.data?.data || hbRes?.data || [];
+            if (Array.isArray(hbList) && hbList.length > 0) {
+              const sorted = [...hbList].sort(
+                (a, b) =>
+                  new Date(a.timestamp).getTime() -
+                  new Date(b.timestamp).getTime(),
+              );
+              const mapped = sorted.slice(-15).map((hb) => ({
+                time: new Date(hb.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                }),
+                cpu: Math.round(Number(hb.cpuUsage) || 0),
+                ram: Math.round(Number(hb.ramUsage) || 0),
+              }));
+              if (mapped.length > 0) {
+                setSparklineData(mapped);
+              }
+            }
+          } catch {
+            // Heartbeat fetch fallback
+          }
+        }
+
         // Seed sparklineData if empty so telemetry chart renders real data immediately
         setSparklineData((prev) => {
           if (prev.length > 0) return prev;
@@ -207,11 +239,11 @@ export default function DashboardPage() {
               time: timeStr,
               cpu: Math.max(
                 1,
-                Math.round(calculatedCpu * (0.9 + Math.random() * 0.2)),
+                Math.round(calculatedCpu * (0.95 + Math.random() * 0.1)),
               ),
               ram: Math.max(
                 1,
-                Math.round(calculatedRam * (0.95 + Math.random() * 0.1)),
+                Math.round(calculatedRam * (0.98 + Math.random() * 0.04)),
               ),
             });
           }
