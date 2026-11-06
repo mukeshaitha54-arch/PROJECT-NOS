@@ -490,19 +490,25 @@ export class DeviceService {
       latestHeartbeat?: SharedHeartbeat | null;
     }
   > {
-    const device = await this.deviceRepository.findById(id);
+    let device = await this.deviceRepository.findById(id);
+    if (!device) {
+      device = await this.deviceRepository.findByUuid(id);
+    }
     if (!device) {
       throw new NotFoundException(
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
       );
     }
-    // FIX: Enforce org isolation — if caller provides organizationId, validate ownership
+    // Enforce org isolation — allow access if device matches organizationId, tenantId, default-org, or legacy unassigned
     if (
       organizationId &&
       organizationId !== "default-org" &&
       device.organizationId &&
       device.organizationId !== "default-org" &&
-      device.organizationId !== organizationId
+      device.organizationId !== organizationId &&
+      device.tenantId &&
+      device.tenantId !== "default-org" &&
+      device.tenantId !== organizationId
     ) {
       throw new NotFoundException(
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,

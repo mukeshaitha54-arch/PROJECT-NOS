@@ -150,8 +150,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (typeof window !== "undefined") {
         localStorage.removeItem("nos_access_token");
         localStorage.removeItem("nos_refresh_token");
+        localStorage.removeItem("nos_cached_user");
         setUser(null);
-        window.location.href = "/auth/login";
+        // Use replace to avoid adding /auth/login to the browser history stack
+        window.location.replace("/auth/login");
       }
     }
   };
