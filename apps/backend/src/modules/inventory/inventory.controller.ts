@@ -53,11 +53,11 @@ export class InventoryController {
     deviceId: string,
     user?: any,
   ): Promise<void> {
-    const userOrgId =
-      user?.role === "SUPER_ADMIN"
-        ? undefined
-        : user?.organizationId || user?.organization?.id;
-    await this.deviceService.getDeviceById(deviceId, userOrgId);
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+    const userOrgId = isSuperAdmin
+      ? undefined
+      : user?.organizationId || user?.organization?.id;
+    await this.deviceService.getDeviceById(deviceId, userOrgId, isSuperAdmin);
   }
 
   @Post()
