@@ -23,6 +23,7 @@ import { TenantContextGuard } from "../../../common/guards/tenant-context.guard"
 import { RbacPermissionGuard } from "../../../common/guards/rbac-permission.guard";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { CurrentTenant } from "../../../common/decorators/current-tenant.decorator";
+import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import { RequirePermissions } from "../../../common/decorators/require-permissions.decorator";
 import {
   UserRole,
@@ -405,10 +406,18 @@ export class TenantController {
   async searchAudit(
     @Body() body: AuditSearchRequestDto,
     @CurrentTenant() tenant: TenantContext,
+    @CurrentUser() user?: any,
   ): Promise<ApiResponse<AuditSearchResultDto>> {
+    const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
+    const isOwner =
+      user?.role === UserRole.OWNER ||
+      user?.memberRole === "OWNER" ||
+      tenant.role === UserRole.OWNER;
+    const filterUserId = !isSuperAdmin && !isOwner ? user?.id : body.userId;
     const data = await this.auditService.search({
       ...body,
       organizationId: tenant.organizationId,
+      userId: filterUserId,
     });
     return { success: true, data, timestamp: new Date().toISOString() };
   }

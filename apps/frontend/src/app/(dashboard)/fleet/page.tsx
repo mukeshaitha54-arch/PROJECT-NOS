@@ -37,8 +37,21 @@ import { Badge } from "@/components/ui/badge";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 
 export default function FleetOverviewPage() {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [devices, setDevices] = useState<Device[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("nos_cached_devices");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem("nos_cached_devices");
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -69,9 +82,9 @@ export default function FleetOverviewPage() {
 
   const { isConnected, lastEvent } = useRealtimeContext();
 
-  const fetchDevices = useCallback(async () => {
+  const fetchDevices = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       let list: Device[] = [];
       try {
@@ -93,6 +106,11 @@ export default function FleetOverviewPage() {
       }
 
       setDevices(list);
+      if (typeof window !== "undefined" && list.length > 0) {
+        try {
+          sessionStorage.setItem("nos_cached_devices", JSON.stringify(list));
+        } catch {}
+      }
       setLastRefreshed(new Date());
     } catch (err: any) {
       console.error("Fleet fetch failed:", err);
@@ -105,10 +123,15 @@ export default function FleetOverviewPage() {
   }, []);
 
   useEffect(() => {
-    fetchDevices();
+    fetchDevices(false);
+    // Background sync every 8 seconds ensures freshness with zero user F5 needed
+    const interval = setInterval(() => {
+      fetchDevices(true);
+    }, 8000);
+    return () => clearInterval(interval);
   }, [fetchDevices]);
 
-  // Real-time updates from Socket.IO
+  // Real-time updates from Socket.IO with sub-millisecond reactions and auto-discovery
   useEffect(() => {
     if (!lastEvent) return;
     const { type, payload } = lastEvent;
@@ -116,27 +139,40 @@ export default function FleetOverviewPage() {
     if (
       type === "device:status:changed" ||
       type === "device.online" ||
-      type === "device.offline"
+      type === "device.offline" ||
+      type === "device.connected" ||
+      type === "device.reconnected" ||
+      type === "device.registered" ||
+      type === "heartbeat.received"
     ) {
-      setDevices((prev) =>
-        prev.map((d) => {
-          if (d.id === payload?.deviceId || d.hostname === payload?.hostname) {
+      setDevices((prev) => {
+        const targetId = payload?.deviceId || payload?.id;
+        const exists = prev.some(
+          (d) => d.id === targetId || d.hostname === payload?.hostname,
+        );
+        if (!exists) {
+          // New device discovered in real time — immediately fetch silently to show it!
+          fetchDevices(true);
+          return prev;
+        }
+        return prev.map((d) => {
+          if (d.id === targetId || d.hostname === payload?.hostname) {
             return {
               ...d,
               status:
                 payload.status ||
-                (type === "device.online"
-                  ? DeviceStatus.ONLINE
-                  : DeviceStatus.OFFLINE),
-              lastSeen: new Date().toISOString(),
+                (type === "device.offline"
+                  ? DeviceStatus.OFFLINE
+                  : DeviceStatus.ONLINE),
+              lastSeen: payload?.timestamp || new Date().toISOString(),
             };
           }
           return d;
-        }),
-      );
+        });
+      });
       setLastRefreshed(new Date());
     }
-  }, [lastEvent]);
+  }, [lastEvent, fetchDevices]);
 
   // Compute fleet metrics
   const metrics = useMemo(() => {
@@ -198,7 +234,7 @@ export default function FleetOverviewPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchDevices}
+            onClick={() => fetchDevices(false)}
             disabled={loading}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-orange-500/25 hover:border-orange-500/60 text-xs font-semibold text-white hover:bg-white/[0.08] transition shadow-sm active:scale-[0.98]"
           >

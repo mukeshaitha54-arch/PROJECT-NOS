@@ -10,37 +10,77 @@ import { Loader2, Trash2, X } from "lucide-react";
 export default function FleetDashboardPage() {
   const { user } = useAuth();
   const { on, lastEvent } = useRealtimeContext();
-  const [devices, setDevices] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [devices, setDevices] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("nos_cached_devices");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [stats, setStats] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("nos_cached_devices_stats");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem("nos_cached_devices");
+    }
+    return true;
+  });
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
 
   // Realtime overrides
   const [realtimeData, setRealtimeData] = useState<Record<string, any>>({});
 
-  async function fetchDevices() {
+  const fetchDevices = React.useCallback(async (silent = false) => {
     try {
+      if (!silent) setLoading(true);
       const res = await apiClient.get<any, any>("/devices").catch(() => null);
       if (res?.data) {
         const deviceList: any[] = res.data.data || res.data || [];
         setDevices(deviceList);
-        setStats({
+        const computedStats = {
           total: deviceList.length,
           online: deviceList.filter((d) => d.status === "ONLINE").length,
           offline: deviceList.filter((d) => d.status !== "ONLINE").length,
-        });
+        };
+        setStats(computedStats);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(
+              "nos_cached_devices",
+              JSON.stringify(deviceList),
+            );
+            sessionStorage.setItem(
+              "nos_cached_devices_stats",
+              JSON.stringify(computedStats),
+            );
+          } catch {}
+        }
       }
     } catch (err) {
       console.error("Failed to load devices", err);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    fetchDevices();
-  }, []);
+    fetchDevices(false);
+    // Background sync every 8 seconds ensures freshness with zero user F5 needed
+    const interval = setInterval(() => {
+      fetchDevices(true);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [fetchDevices]);
 
   useEffect(() => {
     const cleanupTelemetry = on("telemetry.received", (payload: any) => {
@@ -60,14 +100,73 @@ export default function FleetDashboardPage() {
           ipAddress: payload.ipAddress,
         },
       }));
+      setDevices((prev) => {
+        const targetId = payload?.deviceId || payload?.id;
+        const exists = prev.some(
+          (d) => d.id === targetId || d.uuid === targetId,
+        );
+        if (!exists) {
+          fetchDevices(true);
+          return prev;
+        }
+        return prev.map((d) =>
+          d.id === targetId || d.uuid === targetId
+            ? {
+                ...d,
+                status: "ONLINE",
+                lastSeen: payload.timestamp || new Date().toISOString(),
+              }
+            : d,
+        );
+      });
     });
 
     const cleanupOnline = on("device.online", (payload: any) => {
-      setDevices((prev) =>
-        prev.map((d) =>
-          d.id === payload.deviceId ? { ...d, status: "ONLINE" } : d,
-        ),
-      );
+      setDevices((prev) => {
+        const targetId = payload?.deviceId || payload?.id;
+        const exists = prev.some(
+          (d) => d.id === targetId || d.uuid === targetId,
+        );
+        if (!exists) {
+          fetchDevices(true);
+          return prev;
+        }
+        return prev.map((d) =>
+          d.id === targetId || d.uuid === targetId
+            ? {
+                ...d,
+                status: "ONLINE",
+                lastSeen: payload.timestamp || new Date().toISOString(),
+              }
+            : d,
+        );
+      });
+    });
+
+    const cleanupConnected = on("device.connected", (payload: any) => {
+      setDevices((prev) => {
+        const targetId = payload?.deviceId || payload?.id;
+        const exists = prev.some(
+          (d) => d.id === targetId || d.uuid === targetId,
+        );
+        if (!exists) {
+          fetchDevices(true);
+          return prev;
+        }
+        return prev.map((d) =>
+          d.id === targetId || d.uuid === targetId
+            ? { ...d, status: "ONLINE" }
+            : d,
+        );
+      });
+    });
+
+    const cleanupRegistered = on("device.registered", () => {
+      fetchDevices(true);
+    });
+
+    const cleanupReconnected = on("device.reconnected", () => {
+      fetchDevices(true);
     });
 
     const cleanupOffline = on("device.offline", (payload: any) => {
@@ -82,9 +181,12 @@ export default function FleetDashboardPage() {
       cleanupTelemetry();
       cleanupHeartbeat();
       cleanupOnline();
+      cleanupConnected();
+      cleanupRegistered();
+      cleanupReconnected();
       cleanupOffline();
     };
-  }, [on]);
+  }, [on, fetchDevices]);
 
   async function handleDeleteDevice(device: any) {
     setDeletingId(device.id);
@@ -212,24 +314,47 @@ export default function FleetDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {devices.map((device) => (
-          <div key={device.id}>
-            <DeviceCard
-              device={device}
-              realtimeData={realtimeData[device.id]}
-              onDelete={(d) => setConfirmDelete(d)}
-            />
-          </div>
-        ))}
-      </div>
-
-      {devices.length === 0 && (
-        <div className="text-center text-gray-500 py-16">
-          <p className="text-lg">No devices registered yet.</p>
-          <p className="text-sm mt-2">
+      {loading && devices.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="dashboard-glass-card rounded-2xl p-6 h-56 animate-pulse flex flex-col justify-between border border-orange-500/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/10" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-white/10 rounded w-2/3" />
+                  <div className="h-3 bg-white/5 rounded w-1/3" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-2 bg-white/10 rounded" />
+                <div className="h-2 bg-white/5 rounded w-4/5" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : devices.length === 0 ? (
+        <div className="text-center text-zinc-400 py-16 dashboard-glass-card rounded-2xl border border-orange-500/20 my-4">
+          <p className="text-lg font-medium text-white">
+            No devices registered yet.
+          </p>
+          <p className="text-sm mt-2 text-zinc-400">
             Install the NOS Agent on a Windows machine to get started.
           </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {devices.map((device) => (
+            <div key={device.id}>
+              <DeviceCard
+                device={device}
+                realtimeData={realtimeData[device.id]}
+                onDelete={(d) => setConfirmDelete(d)}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>

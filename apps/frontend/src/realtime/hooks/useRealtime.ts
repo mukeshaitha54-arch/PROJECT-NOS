@@ -76,16 +76,16 @@ export function useRealtime() {
       },
       extraHeaders: activeOrg ? { "x-organization-id": activeOrg } : undefined,
       reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 30000,
-      randomizationFactor: 0.5,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.2,
     });
 
     setSocket(socketInstance);
 
     const joinUserRooms = () => {
       socketInstance.emit("joinRoom", "dashboard");
-      const orgId = userOrgId || "default-org";
+      const orgId = activeOrg || userOrgId || "default-org";
       if (orgId) {
         socketInstance.emit("joinRoom", `org_${orgId}`);
       }

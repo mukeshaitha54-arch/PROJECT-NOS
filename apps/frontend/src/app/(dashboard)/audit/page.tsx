@@ -85,7 +85,7 @@ export default function OperationalAuditCenterPage() {
           r.actor ||
           (r.userId
             ? `User (${String(r.userId).slice(0, 8)})`
-            : "mukesh Admin"),
+            : "System Action"),
       }));
 
       setLogs(formatted);
