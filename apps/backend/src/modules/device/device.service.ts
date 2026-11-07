@@ -500,21 +500,29 @@ export class DeviceService {
         `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
       );
     }
-    // Enforce org isolation — allow access if SUPER_ADMIN or device matches organizationId, tenantId, default-org, or legacy unassigned
-    if (
-      !isSuperAdmin &&
-      organizationId &&
-      organizationId !== "default-org" &&
-      device.organizationId &&
-      device.organizationId !== "default-org" &&
-      device.organizationId !== organizationId &&
-      device.tenantId &&
-      device.tenantId !== "default-org" &&
-      device.tenantId !== organizationId
-    ) {
-      throw new NotFoundException(
-        `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
-      );
+    // Enforce org isolation — reject cross-tenant access and default-org sentinel bypasses for tenant-bound devices
+    if (!isSuperAdmin && organizationId) {
+      const devOrg =
+        device.organizationId && device.organizationId !== "default-org"
+          ? device.organizationId
+          : (device as any).tenantId &&
+              (device as any).tenantId !== "default-org"
+            ? (device as any).tenantId
+            : undefined;
+
+      if (devOrg) {
+        if (organizationId === "default-org" || organizationId !== devOrg) {
+          throw new NotFoundException(
+            `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
+          );
+        }
+      } else if (organizationId !== "default-org") {
+        if (device.organizationId && device.organizationId !== organizationId) {
+          throw new NotFoundException(
+            `Monitored agent node with primary UUID [${id}] not found in platform inventory.`,
+          );
+        }
+      }
     }
     const latestHeartbeat = await this.heartbeatRepository.findLatestByDeviceId(
       device.id,
@@ -548,14 +556,24 @@ export class DeviceService {
   ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
-    if (
-      organizationId &&
-      organizationId !== "default-org" &&
-      device.organizationId &&
-      device.organizationId !== "default-org" &&
-      device.organizationId !== organizationId
-    ) {
-      throw new NotFoundException(`Device [${deviceId}] not found.`);
+    if (organizationId) {
+      const devOrg =
+        device.organizationId && device.organizationId !== "default-org"
+          ? device.organizationId
+          : (device as any).tenantId &&
+              (device as any).tenantId !== "default-org"
+            ? (device as any).tenantId
+            : undefined;
+
+      if (devOrg) {
+        if (organizationId === "default-org" || organizationId !== devOrg) {
+          throw new NotFoundException(`Device [${deviceId}] not found.`);
+        }
+      } else if (organizationId !== "default-org") {
+        if (device.organizationId && device.organizationId !== organizationId) {
+          throw new NotFoundException(`Device [${deviceId}] not found.`);
+        }
+      }
     }
 
     const newStatus = enabled ? DeviceStatus.MAINTENANCE : DeviceStatus.ONLINE;
@@ -586,14 +604,24 @@ export class DeviceService {
   ): Promise<SharedDevice> {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundException(`Device [${deviceId}] not found.`);
-    if (
-      organizationId &&
-      organizationId !== "default-org" &&
-      device.organizationId &&
-      device.organizationId !== "default-org" &&
-      device.organizationId !== organizationId
-    ) {
-      throw new NotFoundException(`Device [${deviceId}] not found.`);
+    if (organizationId) {
+      const devOrg =
+        device.organizationId && device.organizationId !== "default-org"
+          ? device.organizationId
+          : (device as any).tenantId &&
+              (device as any).tenantId !== "default-org"
+            ? (device as any).tenantId
+            : undefined;
+
+      if (devOrg) {
+        if (organizationId === "default-org" || organizationId !== devOrg) {
+          throw new NotFoundException(`Device [${deviceId}] not found.`);
+        }
+      } else if (organizationId !== "default-org") {
+        if (device.organizationId && device.organizationId !== organizationId) {
+          throw new NotFoundException(`Device [${deviceId}] not found.`);
+        }
+      }
     }
 
     const updated = await this.deviceRepository.update(deviceId, {
@@ -625,14 +653,27 @@ export class DeviceService {
     for (const id of deviceIds) {
       try {
         const device = await this.deviceRepository.findById(id);
-        if (
-          organizationId &&
-          organizationId !== "default-org" &&
-          device?.organizationId &&
-          device.organizationId !== "default-org" &&
-          device.organizationId !== organizationId
-        ) {
-          continue;
+        if (organizationId) {
+          const devOrg =
+            device?.organizationId && device.organizationId !== "default-org"
+              ? device.organizationId
+              : (device as any)?.tenantId &&
+                  (device as any)?.tenantId !== "default-org"
+                ? (device as any).tenantId
+                : undefined;
+
+          if (devOrg) {
+            if (organizationId === "default-org" || organizationId !== devOrg) {
+              continue;
+            }
+          } else if (organizationId !== "default-org") {
+            if (
+              device?.organizationId &&
+              device.organizationId !== organizationId
+            ) {
+              continue;
+            }
+          }
         }
         await this.deviceRepository.update(id, { status });
         count++;

@@ -1255,23 +1255,34 @@ export default function DeviceDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {services.map((svc, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-gray-800 hover:bg-gray-800/50"
-                  >
-                    <td className="px-6 py-4 font-mono">{svc.serviceName}</td>
-                    <td className="px-6 py-4">{svc.displayName}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${svc.status === "Running" ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"}`}
-                      >
-                        {svc.status}
-                      </span>
+                {services.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      No Windows services reported yet.
                     </td>
-                    <td className="px-6 py-4">{svc.startType}</td>
                   </tr>
-                ))}
+                ) : (
+                  services.map((svc, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-b border-gray-800 hover:bg-gray-800/50"
+                    >
+                      <td className="px-6 py-4 font-mono">{svc.serviceName}</td>
+                      <td className="px-6 py-4">{svc.displayName}</td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${svc.status === "Running" ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"}`}
+                        >
+                          {svc.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">{svc.startType}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
