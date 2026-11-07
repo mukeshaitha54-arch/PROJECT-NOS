@@ -272,7 +272,7 @@ export class TelemetryService {
       },
     };
 
-    const [aggItems, total] = await Promise.all([
+    const [aggItems, total, latestSnapshot] = await Promise.all([
       this.prisma.telemetryAggregation.findMany({
         where,
         orderBy: { periodStart: "desc" },
@@ -280,10 +280,14 @@ export class TelemetryService {
         take: limitNum,
       }),
       this.prisma.telemetryAggregation.count({ where }),
+      this.prisma.telemetrySnapshot.findFirst({
+        where: { deviceId },
+        orderBy: { timestamp: "desc" },
+      }),
     ]);
 
     const snapshots = aggItems.map((agg) =>
-      mapAggregationToSnapshotContract(agg),
+      mapAggregationToSnapshotContract(agg, latestSnapshot),
     );
     const totalPages = Math.ceil(total / limitNum) || 1;
 
@@ -312,37 +316,45 @@ export class TelemetryService {
 
 function mapAggregationToSnapshotContract(
   agg: TelemetryAggregation,
+  latest?: any,
 ): TelemetrySnapshotContract {
+  const memTotal = latest?.memoryTotal || 0;
+  const diskTotal = latest?.diskTotal || 0;
+  const ramPct = agg.avgRam || 0;
+  const diskPct = agg.avgDisk || 0;
+
   return {
     id: agg.id,
     deviceId: agg.deviceId,
     cpuUsage: agg.avgCpu,
-    cpuTemperature: 0,
-    cpuFrequency: 0,
-    logicalProcessors: 1,
-    physicalProcessors: 1,
-    memoryUsed: 0,
-    memoryFree: 0,
-    memoryTotal: 16 * 1024 * 1024 * 1024,
-    memoryUsagePercent: agg.avgRam,
-    diskReadSpeed: 0,
-    diskWriteSpeed: 0,
-    diskUsagePercent: agg.avgDisk,
-    diskFree: 0,
-    diskTotal: 0,
-    networkUploadSpeed: agg.avgNetwork / 2,
-    networkDownloadSpeed: agg.avgNetwork / 2,
-    bytesSent: 0,
-    bytesReceived: 0,
+    cpuTemperature: latest?.cpuTemperature ?? 0,
+    cpuFrequency: latest?.cpuFrequency ?? 0,
+    logicalProcessors: latest?.logicalProcessors ?? 1,
+    physicalProcessors: latest?.physicalProcessors ?? 1,
+    memoryUsed: memTotal > 0 ? Math.round((memTotal * ramPct) / 100) : 0,
+    memoryFree: memTotal > 0 ? Math.round(memTotal * (1 - ramPct / 100)) : 0,
+    memoryTotal: memTotal,
+    memoryUsagePercent: ramPct,
+    diskReadSpeed: latest?.diskReadSpeed ?? 0,
+    diskWriteSpeed: latest?.diskWriteSpeed ?? 0,
+    diskUsagePercent: diskPct,
+    diskFree: diskTotal > 0 ? Math.round(diskTotal * (1 - diskPct / 100)) : 0,
+    diskTotal: diskTotal,
+    networkUploadSpeed: Math.round(((agg.avgNetwork || 0) / 2) * 100) / 100,
+    networkDownloadSpeed: Math.round(((agg.avgNetwork || 0) / 2) * 100) / 100,
+    bytesSent: latest?.bytesSent ?? 0,
+    bytesReceived: latest?.bytesReceived ?? 0,
     activeConnections: agg.sampleCount,
-    runningProcesses: 0,
-    runningServices: 0,
-    systemUptime: 0,
-    bootTime: agg.periodStart.toISOString(),
-    ipAddress: "aggregated",
-    gateway: "0.0.0.0",
-    dns: "8.8.8.8",
-    macAddress: "aggregated",
+    runningProcesses: latest?.runningProcesses ?? 0,
+    runningServices: latest?.runningServices ?? 0,
+    systemUptime: latest?.systemUptime ?? 0,
+    bootTime: latest?.bootTime
+      ? new Date(latest.bootTime).toISOString()
+      : agg.periodStart.toISOString(),
+    ipAddress: latest?.ipAddress || "aggregated",
+    gateway: latest?.gateway || "N/A",
+    dns: latest?.dns || "N/A",
+    macAddress: latest?.macAddress || "N/A",
     timestamp: agg.periodStart.toISOString(),
   };
 }

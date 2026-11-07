@@ -431,37 +431,6 @@ export class DevicesController {
       };
     }
 
-    // 2. Fallback: retrieve running services from inventory as processes
-    const services = await this.prisma.windowsService.findMany({
-      where: {
-        deviceInventory: {
-          OR: [
-            { deviceId: device.id },
-            ...(device.uuid ? [{ deviceId: device.uuid }] : []),
-          ],
-        },
-        status: "Running",
-      },
-      take: 50,
-      orderBy: { displayName: "asc" },
-    });
-
-    if (services.length > 0) {
-      return {
-        success: true,
-        data: services.map((s, idx) => ({
-          pid: 1000 + idx,
-          name: `${s.serviceName}.exe`,
-          processName: s.displayName,
-          memoryMb: 24.5,
-          memoryBytes: 25690112,
-          cpuTimeSec: 0,
-          threads: 4,
-          status: "Running",
-        })),
-      };
-    }
-
     return {
       success: true,
       data: [],
