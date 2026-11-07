@@ -118,7 +118,7 @@ export default function MembersPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState<boolean>(false);
   const [inviteName, setInviteName] = useState<string>("");
   const [inviteEmail, setInviteEmail] = useState<string>("");
-  const [inviteRole, setInviteRole] = useState<string>("Security Analyst");
+  const [inviteRole, setInviteRole] = useState<string>("Global Admin");
 
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
@@ -143,34 +143,34 @@ export default function MembersPage() {
     try {
       setIsSubmittingInvite(true);
       const roleMapping: Record<string, string> = {
-        Owner: "OWNER",
-        Admin: "ADMIN",
-        "Security Analyst": "SECURITY_ANALYST",
-        Operator: "OPERATOR",
-        Viewer: "VIEWER",
+        "Global Admin": "ADMIN",
+        "Read Only": "VIEWER",
+        "Alerts Only": "ANALYST",
       };
-      const mappedRole = roleMapping[inviteRole] || "SECURITY_ANALYST";
+      const mappedRole = roleMapping[inviteRole] || "ADMIN";
 
-      await apiClient.post("/tenant/members/invite", {
+      const res = await apiClient.post("/tenant/members/invite", {
         email: inviteEmail.trim(),
         role: mappedRole,
       });
 
+      const inviteLink = res.data?.data?.inviteLink;
       toast.success(
-        `Invitation successfully dispatched to ${inviteEmail.trim()}`,
+        `Invitation successfully dispatched to ${inviteEmail.trim()} via SMTP email.`,
       );
+      if (inviteLink) {
+        toast.info(`Direct Link: ${inviteLink}`);
+      }
       setInviteName("");
       setInviteEmail("");
       setIsInviteModalOpen(false);
       await fetchMembers();
     } catch (err: any) {
       console.error("Invite error:", err);
-      // Even if invite creation succeeded with mail warning, update UI
-      toast.success(`Invitation created for ${inviteEmail.trim()}`);
-      setInviteName("");
-      setInviteEmail("");
-      setIsInviteModalOpen(false);
-      await fetchMembers();
+      toast.error(
+        err?.response?.data?.message ||
+          `Failed to dispatch invitation to ${inviteEmail.trim()}`,
+      );
     } finally {
       setIsSubmittingInvite(false);
     }
@@ -411,13 +411,12 @@ export default function MembersPage() {
                   <option value="Global Admin">
                     Global Admin (Full Tenant Access)
                   </option>
-                  <option value="Security Analyst">
-                    Security Analyst (Alerts & Rules)
+                  <option value="Read Only">
+                    Read Only (Observer & Device Monitor)
                   </option>
-                  <option value="Operator">
-                    Operator (Device Maintenance)
+                  <option value="Alerts Only">
+                    Alerts Only (Security & Alerts)
                   </option>
-                  <option value="Read Only">Read Only (Observer)</option>
                 </select>
               </div>
 

@@ -1,8 +1,11 @@
 import {
   Controller,
+  Get,
   Post,
+  Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -12,13 +15,33 @@ import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 
 @Controller("tenant/invitations")
-@UseGuards(JwtAuthGuard)
 export class OrganizationInvitationController {
   constructor(
     private readonly invitationService: OrganizationInvitationService,
   ) {}
 
+  @Get("preview")
+  async preview(@Query("token") token: string) {
+    const data = await this.invitationService.previewInvitation(token);
+    return {
+      success: true,
+      data,
+    };
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async list(@CurrentUser() user: any) {
+    const orgId = user?.organizationId || "default-org";
+    const data = await this.invitationService.listInvitations(orgId);
+    return {
+      success: true,
+      data,
+    };
+  }
+
   @Post("invite")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async invite(
     @Body("organizationId") organizationId: string,
@@ -28,8 +51,9 @@ export class OrganizationInvitationController {
     @Body("departmentIds") departmentIds?: string[],
     @CurrentUser() user?: any,
   ) {
+    const targetOrgId = organizationId || user?.organizationId || "default-org";
     const result = await this.invitationService.inviteMember({
-      organizationId,
+      organizationId: targetOrgId,
       email,
       role,
       teamIds,
@@ -45,6 +69,7 @@ export class OrganizationInvitationController {
   }
 
   @Post("accept")
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async accept(@Body("token") token: string, @CurrentUser() user?: any) {
     const member = await this.invitationService.acceptInvitation(
@@ -57,6 +82,17 @@ export class OrganizationInvitationController {
       message:
         "Invitation accepted successfully. You are now a member of the organization.",
       data: member,
+    };
+  }
+
+  @Delete(":id")
+  @UseGuards(JwtAuthGuard)
+  async revoke(@Param("id") id: string, @CurrentUser() user: any) {
+    const orgId = user?.organizationId || "default-org";
+    await this.invitationService.revokeInvitation(id, orgId);
+    return {
+      success: true,
+      message: "Invitation revoked successfully.",
     };
   }
 }

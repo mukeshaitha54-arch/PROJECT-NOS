@@ -46,6 +46,12 @@ export class RegistrationKeyController {
     @CurrentUser() user: any,
   ) {
     const userOrgId = user?.organizationId || user?.organization?.id;
+    const targetOrgId = dto.organizationId || userOrgId;
+    if (!targetOrgId) {
+      throw new UnauthorizedException(
+        "Organization context required to generate registration keys",
+      );
+    }
     if (
       userOrgId &&
       userOrgId !== "default-org" &&
@@ -59,6 +65,7 @@ export class RegistrationKeyController {
     }
     const result = await this.registrationKeyService.generateKey({
       ...dto,
+      organizationId: targetOrgId,
       createdBy: user.id,
     });
 
@@ -100,6 +107,24 @@ export class RegistrationKeyController {
       data: result,
       message: "IMPORTANT: The plain key will only be shown this one time.",
     };
+  }
+
+  @Get()
+  async getKeysList(
+    @Query("organizationId") queryOrgId: string,
+    @CurrentUser() user: any,
+  ) {
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+    const userOrgId = user?.organizationId || user?.organization?.id;
+    const targetOrgId = isSuperAdmin && queryOrgId ? queryOrgId : userOrgId;
+    if (!targetOrgId) {
+      throw new UnauthorizedException(
+        "Unauthorized access to organization keys: organization context missing",
+      );
+    }
+    const keys =
+      await this.registrationKeyService.getKeysByOrganization(targetOrgId);
+    return keys;
   }
 
   @Get("organization/:orgId")

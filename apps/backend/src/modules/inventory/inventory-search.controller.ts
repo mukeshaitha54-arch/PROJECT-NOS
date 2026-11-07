@@ -10,6 +10,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { TenantGuard } from "../auth/guards/tenant.guard";
 import { CurrentTenant } from "../../common/decorators/current-tenant.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { TenantContext } from "@nos/shared-types";
 import { InventorySearchService } from "./inventory-search.service";
 
@@ -28,6 +29,7 @@ export class InventorySearchController {
   })
   async search(
     @CurrentTenant() tenant: TenantContext,
+    @CurrentUser() user?: any,
     @Query("q") q?: string,
     @Query("query") query?: string,
     @Query("category") category?: string,
@@ -36,14 +38,17 @@ export class InventorySearchController {
     @Query("page") page?: number,
     @Query("limit") limit?: number,
   ) {
-    const tenantId = tenant?.organizationId || "default-org";
+    const isSuperAdmin = user?.role === "SUPER_ADMIN";
+    const tenantId = isSuperAdmin
+      ? undefined
+      : user?.organizationId || tenant?.organizationId;
     const searchTerm = q !== undefined ? q : query || "";
     const categoryTerm = category !== undefined ? category : tab || "SOFTWARE";
     const pageNum = Number(page) && Number(page) > 0 ? Number(page) : 1;
     const limitNum = Number(limit) && Number(limit) > 0 ? Number(limit) : 20;
 
     return this.searchService.search({
-      tenantId,
+      tenantId: tenantId || "impossible-org",
       query: searchTerm,
       category: categoryTerm.toUpperCase(),
       deviceId,

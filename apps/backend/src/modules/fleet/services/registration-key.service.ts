@@ -42,17 +42,13 @@ export class RegistrationKeyService {
     let org = dto.organizationId
       ? await this.orgRepo.findById(dto.organizationId)
       : null;
+    if (!org && dto.organizationId) {
+      org = await this.orgRepo.findBySlug(dto.organizationId);
+    }
     if (!org) {
-      org = await this.orgRepo.findBySlug("default-org");
-      if (org) {
-        dto.organizationId = org.id;
-      } else {
-        org = await this.orgRepo.create({
-          name: "Default Organization",
-          slug: "default-org",
-        });
-        dto.organizationId = org.id;
-      }
+      throw new Error(
+        `Invalid or nonexistent organization [${dto.organizationId}] for registration key`,
+      );
     }
 
     // Generate plain key: NOS-ABCD-1234-...

@@ -28,12 +28,13 @@ export class TenantContextGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     if (!request) return true;
 
-    // Extract Organization ID from header, query, or body (fallback to 'default-org' for complete backward compatibility with Phase 1-5 tests)
+    // Extract Organization ID from request user, header, query, or body
     const orgId =
       request.headers?.["x-organization-id"] ||
       request.headers?.["x-tenant-id"] ||
       request.query?.organizationId ||
       request.body?.organizationId ||
+      request.user?.organizationId ||
       "default-org";
 
     const correlationId =
@@ -67,13 +68,16 @@ export class TenantContextGuard implements CanActivate {
           orgId,
           request.user.id,
         );
-        if (!member || member.isSuspended) {
+        if (member && !member.isSuspended) {
+          tenantContext.role = member.role as UserRole;
+        } else if (orgId === request.user.organizationId) {
+          tenantContext.role = UserRole.OWNER;
+        } else {
           throw new ForbiddenException({
             code: ErrorCode.INSUFFICIENT_PERMISSIONS,
             message: `User is not an active member of organization [${orgId}].`,
           });
         }
-        tenantContext.role = member.role as UserRole;
       }
     }
 

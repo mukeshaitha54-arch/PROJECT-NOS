@@ -62,12 +62,8 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.AuditLogWhereInput = {};
-    if (request.organizationId && request.organizationId !== "default-org") {
-      where.OR = [
-        { organizationId: request.organizationId },
-        { organizationId: "default-org" },
-        { organizationId: null as any },
-      ];
+    if (request.organizationId) {
+      where.organizationId = request.organizationId;
     }
     if (request.userId) {
       where.userId = request.userId;

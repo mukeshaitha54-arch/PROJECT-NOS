@@ -21,16 +21,9 @@ export class InventorySearchService {
     const skip = (page - 1) * limit;
 
     const tenantFilter: any =
-      tenantId && tenantId !== "default-org"
+      tenantId && tenantId !== "all"
         ? {
-            OR: [
-              { organizationId: tenantId },
-              { tenantId: tenantId },
-              { organizationId: "default-org" },
-              { tenantId: "default-org" },
-              { organizationId: null },
-              { tenantId: null },
-            ],
+            OR: [{ organizationId: tenantId }, { tenantId: tenantId }],
           }
         : {};
 
@@ -104,7 +97,9 @@ export class InventorySearchService {
 
       return { success: true, data, meta: { total, page, limit } };
     } else if (category === "CHANGES") {
-      const where: any = { ...(deviceId ? { deviceId } : {}) };
+      const where: any = {
+        device: { ...tenantFilter, ...(deviceId ? { id: deviceId } : {}) },
+      };
       if (query) {
         where.changeDetails = { contains: query, mode: "insensitive" };
       }

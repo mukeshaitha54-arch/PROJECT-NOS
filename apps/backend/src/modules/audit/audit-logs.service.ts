@@ -22,12 +22,8 @@ export class AuditLogsService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (tenantId && tenantId !== "default-org") {
-      where.OR = [
-        { organizationId: tenantId },
-        { organizationId: "default-org" },
-        { organizationId: null },
-      ];
+    if (tenantId && tenantId !== "all") {
+      where.organizationId = tenantId;
     }
 
     if (action) {
@@ -35,10 +31,19 @@ export class AuditLogsService {
     }
 
     if (actor) {
-      where.OR = [
+      const actorConditions = [
         { userId: { contains: actor, mode: "insensitive" } },
         { userEmail: { contains: actor, mode: "insensitive" } },
       ];
+      if (where.organizationId) {
+        where.AND = [
+          { organizationId: where.organizationId },
+          { OR: actorConditions },
+        ];
+        delete where.organizationId;
+      } else {
+        where.OR = actorConditions;
+      }
     }
 
     if (startDate || endDate) {

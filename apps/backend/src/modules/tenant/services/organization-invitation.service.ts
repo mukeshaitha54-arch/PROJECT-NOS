@@ -57,13 +57,66 @@ export class OrganizationInvitationService {
       },
     });
 
-    const inviteUrl = `http://localhost:3000/onboarding/invite?token=${token}`;
+    const baseUrl =
+      process.env.FRONTEND_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://nos.is-local.org";
+    const inviteUrl = `${baseUrl.replace(/\/$/, "")}/organization/invitations?token=${token}`;
     await this.mailService.sendInvitationEmail(dto.email, org.name, inviteUrl);
 
     return {
       invitationId: invitation.id,
-      token, // Return token so the caller (or tests) can simulate the link
+      token, // Return token so the caller can simulate or display direct link
+      inviteLink: inviteUrl,
     };
+  }
+
+  async previewInvitation(token: string) {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { tokenHash },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException("Invalid or non-existent invitation token");
+    }
+
+    const org = await this.prisma.organization.findUnique({
+      where: { id: invitation.organizationId },
+      select: { id: true, name: true, slug: true },
+    });
+
+    return {
+      id: invitation.id,
+      organizationName: org?.name || "Enterprise Fleet Workspace",
+      organizationId: invitation.organizationId,
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt,
+      isExpired: new Date() > invitation.expiresAt,
+    };
+  }
+
+  async listInvitations(organizationId: string) {
+    return this.prisma.organizationInvitation.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async revokeInvitation(id: string, organizationId: string) {
+    const inv = await this.prisma.organizationInvitation.findFirst({
+      where: { id, organizationId },
+    });
+    if (!inv) {
+      throw new NotFoundException("Invitation not found");
+    }
+
+    return this.prisma.organizationInvitation.update({
+      where: { id },
+      data: { status: "REVOKED" },
+    });
   }
 
   async acceptInvitation(token: string, userId: string) {
