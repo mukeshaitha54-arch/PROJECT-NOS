@@ -89,7 +89,7 @@ export function DataTable<T extends Record<string, unknown>>({
     <div className={`flex flex-col gap-3 ${className}`}>
       {searchable && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="search"
             value={search}
@@ -98,15 +98,15 @@ export function DataTable<T extends Record<string, unknown>>({
               setPage(1);
             }}
             placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-700/60
-              text-sm text-slate-200 placeholder-slate-500 outline-none
-              focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08]
+              shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-sm text-slate-200 placeholder-slate-500 outline-none
+              focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
             aria-label="Search table"
           />
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-700/50 overflow-hidden">
+      <div className="rounded-2xl border border-white/[0.08] bg-slate-950/60 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_32px_-8px_rgba(0,0,0,0.5)] overflow-hidden">
         <div className="overflow-x-auto">
           <table
             className="w-full text-sm"
@@ -114,12 +114,12 @@ export function DataTable<T extends Record<string, unknown>>({
             aria-label="Data table"
           >
             <thead>
-              <tr className="border-b border-slate-700/50 bg-slate-800/40">
+              <tr className="border-b border-white/[0.06] bg-white/[0.02]">
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     scope="col"
-                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400
+                    className={`px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400
                       ${col.sortable ? "cursor-pointer hover:text-slate-200 select-none" : ""}`}
                     style={col.width ? { width: col.width } : undefined}
                     onClick={
@@ -133,7 +133,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         : undefined
                     }
                   >
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1.5">
                       {col.header}
                       {col.sortable && (
                         <span className="flex flex-col opacity-40">
@@ -153,9 +153,9 @@ export function DataTable<T extends Record<string, unknown>>({
             <tbody>
               {loading ? (
                 Array.from({ length: Math.min(pageSize, 5) }).map((_, i) => (
-                  <tr key={i} className="border-b border-slate-800/50">
+                  <tr key={i} className="border-b border-white/[0.04]">
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3">
+                      <td key={col.key} className="px-4 py-3.5">
                         <Skeleton className={i % 2 === 0 ? "w-3/4" : "w-1/2"} />
                       </td>
                     ))}
@@ -174,12 +174,12 @@ export function DataTable<T extends Record<string, unknown>>({
                 paginated.map((row, i) => (
                   <tr
                     key={String(row[keyField] ?? i)}
-                    className={`border-b border-slate-800/40 transition-colors
-                      ${onRowClick ? "cursor-pointer hover:bg-slate-800/30" : "hover:bg-slate-800/20"}`}
+                    className={`border-b border-white/[0.04] transition-[background-color] duration-140 ease-out
+                      ${onRowClick ? "cursor-pointer hover:bg-white/[0.04]" : "hover:bg-white/[0.02]"}`}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3 text-slate-300">
+                      <td key={col.key} className="px-4 py-3.5 text-slate-300">
                         {col.render
                           ? col.render(row)
                           : String(row[col.key] ?? "—")}
@@ -194,7 +194,7 @@ export function DataTable<T extends Record<string, unknown>>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
           <span>
             {sorted.length} result{sorted.length !== 1 ? "s" : ""}
             {search ? ` matching "${search}"` : ""}
@@ -203,18 +203,18 @@ export function DataTable<T extends Record<string, unknown>>({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-slate-900/60 hover:bg-white/[0.06] active:scale-[0.96] disabled:opacity-30 disabled:cursor-not-allowed transition-[transform,background-color] duration-140 ease-out"
               aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="font-medium text-slate-300">
+            <span className="font-mono tabular-nums text-slate-300">
               {page} / {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-slate-900/60 hover:bg-white/[0.06] active:scale-[0.96] disabled:opacity-30 disabled:cursor-not-allowed transition-[transform,background-color] duration-140 ease-out"
               aria-label="Next page"
             >
               <ChevronRight className="w-4 h-4" />

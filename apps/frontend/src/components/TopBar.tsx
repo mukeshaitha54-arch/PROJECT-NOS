@@ -53,12 +53,12 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
 
   return (
     <>
-      <header className="h-16 border-b border-gray-800 bg-gray-950/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between gap-4">
+      <header className="h-16 border-b border-white/[0.08] bg-slate-950/70 backdrop-blur-2xl sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between gap-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]">
         {/* Left: Mobile hamburger + Title */}
         <div className="flex items-center gap-3">
           <button
             onClick={onHamburgerClick}
-            className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition"
+            className="md:hidden p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-[background-color,color,transform] duration-140 active:scale-[0.95]"
             aria-label="Open mobile menu"
           >
             <Menu className="w-5 h-5" />
@@ -75,13 +75,13 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
         <div className="flex-1 max-w-md mx-2 sm:mx-4">
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-lg bg-gray-900/80 border border-gray-800 text-xs text-gray-400 hover:text-gray-200 hover:border-gray-700 transition group shadow-inner"
+            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-slate-900/60 border border-white/[0.08] text-xs text-gray-400 hover:text-gray-200 hover:border-white/[0.18] transition-[border-color,background-color,color,transform] duration-140 active:scale-[0.99] group shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
           >
             <span className="flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-gray-500 group-hover:text-blue-400" />
+              <Search className="w-3.5 h-3.5 text-gray-500 group-hover:text-blue-400 transition-colors duration-140" />
               <span>Search devices, telemetry, alerts...</span>
             </span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] text-gray-400 font-mono">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] text-[10px] text-gray-400 font-mono shadow-sm">
               <Command className="w-3 h-3" /> K
             </kbd>
           </button>
@@ -92,41 +92,41 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
           {/* Alerts Bell Link */}
           <Link
             href="/alerts"
-            className="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition"
+            className="relative p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-[background-color,color,transform] duration-140 active:scale-[0.95]"
             title="View alerts"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-gray-950 animate-pulse" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-slate-950 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
           </Link>
 
           {/* User Profile Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-900 border border-transparent hover:border-gray-800 transition"
+              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-[background-color,border-color,transform] duration-140 active:scale-[0.97]"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_2px_8px_rgba(37,99,235,0.4)]">
                 {initials}
               </div>
               <span className="text-xs font-medium text-gray-200 hidden sm:block max-w-[100px] truncate">
                 {displayName}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-500 hidden sm:block" />
+              <ChevronDown className="w-3.5 h-3.5 text-gray-500 hidden sm:block transition-transform duration-140" />
             </button>
 
-            {/* Dropdown Menu */}
+            {/* Dropdown Menu - Origin-aware top-right scaling with Emil glass specs */}
             {isDropdownOpen && (
               <>
                 <div
                   className="fixed inset-0 z-40"
                   onClick={() => setIsDropdownOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-52 rounded-xl bg-gray-900 border border-gray-800 shadow-2xl p-1.5 z-50 text-xs text-gray-300 space-y-1 animate-in fade-in-50 zoom-in-95 duration-100">
-                  <div className="px-3 py-2 border-b border-gray-800">
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-slate-950/90 backdrop-blur-2xl border border-white/[0.1] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_20px_48px_-8px_rgba(0,0,0,0.85)] p-1.5 z-50 text-xs text-gray-300 space-y-1 origin-top-right animate-in fade-in-50 zoom-in-95 duration-150 ease-out">
+                  <div className="px-3.5 py-2.5 border-b border-white/[0.08]">
                     <p className="font-semibold text-white truncate">
                       {displayName}
                     </p>
-                    <p className="text-[11px] text-gray-500 truncate">
+                    <p className="text-[11px] text-gray-400 font-mono truncate mt-0.5">
                       {user?.email || "admin@nos.internal"}
                     </p>
                   </div>
@@ -134,7 +134,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                   <Link
                     href="/profile"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] text-gray-300 hover:text-white transition-[background-color,color,transform] duration-140 active:scale-[0.98]"
                   >
                     <User className="w-4 h-4 text-blue-400" />
                     <span>User Profile</span>
@@ -143,7 +143,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                   <Link
                     href="/settings"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] text-gray-300 hover:text-white transition-[background-color,color,transform] duration-140 active:scale-[0.98]"
                   >
                     <Settings className="w-4 h-4 text-purple-400" />
                     <span>Workspace Settings</span>
@@ -152,20 +152,20 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                   <Link
                     href="/admin"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] text-gray-300 hover:text-white transition-[background-color,color,transform] duration-140 active:scale-[0.98]"
                   >
                     <Shield className="w-4 h-4 text-emerald-400" />
                     <span>Admin Console</span>
                   </Link>
 
-                  <div className="border-t border-gray-800 my-1 pt-1" />
+                  <div className="border-t border-white/[0.08] my-1 pt-1" />
 
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false);
                       handleLogout();
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-950/40 text-red-400 hover:text-red-300 transition text-left"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-950/40 text-red-400 hover:text-red-300 transition-[background-color,color,transform] duration-140 active:scale-[0.98] text-left"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>

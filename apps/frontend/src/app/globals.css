@@ -33,22 +33,24 @@
     --ring: 224.3 76.3% 48%;
 
     --radius: 0.75rem;
+
+    /* Emil Kowalski custom motion curves */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    transition-property:
-      color, background-color, border-color, text-decoration-color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground;
     background-image:
-      radial-gradient(at 10% 10%, rgba(59, 130, 246, 0.07) 0, transparent 50%),
-      radial-gradient(at 90% 90%, rgba(139, 92, 246, 0.07) 0, transparent 50%);
+      radial-gradient(at 15% 15%, rgba(59, 130, 246, 0.08) 0, transparent 45%),
+      radial-gradient(at 85% 85%, rgba(139, 92, 246, 0.08) 0, transparent 45%),
+      radial-gradient(at 50% 0%, rgba(14, 165, 233, 0.04) 0, transparent 50%);
     background-attachment: fixed;
   }
 
@@ -70,17 +72,41 @@
 }
 
 @layer utilities {
+  /* High-craft glassy card with specular top rim highlight */
   .glass-card {
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(13, 19, 33, 0.7);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+      0 12px 32px -8px rgba(0, 0, 0, 0.5);
   }
+
   .glass-card-hover {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform 200ms var(--ease-out),
+      border-color 200ms ease,
+      box-shadow 200ms ease;
   }
+
   .glass-card-hover:hover {
     transform: translateY(-2px);
-    border-color: rgba(59, 130, 246, 0.35);
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1);
+    border-color: rgba(96, 165, 250, 0.35);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+      0 16px 36px -6px rgba(59, 130, 246, 0.15),
+      0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Emil Kowalski tactile button physics */
+  .btn-tactile {
+    transition:
+      transform 140ms var(--ease-out),
+      background-color 140ms ease,
+      box-shadow 140ms ease;
+  }
+  .btn-tactile:active {
+    transform: scale(0.97);
   }
 }

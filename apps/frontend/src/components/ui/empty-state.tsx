@@ -18,20 +18,29 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center py-16 px-8 text-center ${className}`}
+      className={`relative flex flex-col items-center justify-center py-16 px-8 text-center overflow-hidden ${className}`}
       role="status"
       aria-label={title}
     >
-      <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-4 text-slate-500">
-        {icon ?? <AlertTriangle className="w-6 h-6" />}
+      {/* Subtle ambient radial light */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-cyan-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+
+      {/* Glassy icon container with specular highlight */}
+      <div className="relative w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] backdrop-blur-md flex items-center justify-center mb-4 text-slate-400 group-hover:scale-105 transition-[transform,border-color] duration-200">
+        <div className="w-8 h-8 rounded-xl bg-slate-900/60 flex items-center justify-center">
+          {icon ?? <AlertTriangle className="w-5 h-5 text-slate-400" />}
+        </div>
       </div>
-      <h3 className="text-sm font-semibold text-slate-300 mb-1">{title}</h3>
+
+      <h3 className="text-sm font-semibold text-slate-200 tracking-tight mb-1.5">
+        {title}
+      </h3>
       {description && (
-        <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+        <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
           {description}
         </p>
       )}
-      {action && <div className="mt-4">{action}</div>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }

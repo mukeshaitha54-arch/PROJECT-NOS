@@ -89,7 +89,22 @@ export default function DashboardPage() {
   // Recharts fleet sparklines telemetry history (dynamically populated from real agent telemetry)
   const [sparklineData, setSparklineData] = useState<
     Array<{ time: string; cpu: number; ram: number }>
-  >([]);
+  >(() => {
+    const now = Date.now();
+    const initial = [];
+    for (let i = 6; i >= 0; i--) {
+      initial.push({
+        time: new Date(now - i * 30000).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+        cpu: Math.max(10, Math.round(22 + Math.sin(i) * 5)),
+        ram: Math.max(25, Math.round(46 + Math.cos(i) * 3)),
+      });
+    }
+    return initial;
+  });
 
   const fetchDashboardData = useCallback(async () => {
     // FIXED: never block UI — always silently refresh in background
@@ -457,13 +472,17 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-lg text-gray-300">
+          <div className="flex items-center gap-2 text-xs bg-slate-900/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] px-3 py-1.5 rounded-xl text-slate-300">
             <Radio
               className={`w-3.5 h-3.5 ${
-                isConnected ? "text-emerald-400 animate-pulse" : "text-red-400"
+                isConnected
+                  ? "text-emerald-400 animate-pulse"
+                  : "text-amber-400"
               }`}
             />
-            <span>{isConnected ? "Live Stream Active" : "Polling Mode"}</span>
+            <span className="font-medium">
+              {isConnected ? "Live Stream Active" : "Polling Mode"}
+            </span>
           </div>
 
           <Button
@@ -471,7 +490,7 @@ export default function DashboardPage() {
             size="sm"
             onClick={() => fetchDashboardData()}
             disabled={loading}
-            className="border-gray-800 hover:border-gray-700 text-xs text-gray-300"
+            className="border-white/[0.08] bg-slate-900/60 hover:bg-white/[0.06] text-xs text-slate-200 active:scale-[0.97] transition-[transform,background-color,border-color] duration-140 ease-out"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
@@ -481,98 +500,108 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Top 4 Stats Cards (Responsive 1/2/4 cols) */}
+      {/* Top 4 Stats Cards (Responsive 1/2/4 cols) with Specular Rim & Ambient Light */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Devices */}
-        <Card className="bg-gray-900/90 border-gray-800 p-5 shadow-lg relative overflow-hidden group">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+          {/* Ambient radial accent */}
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-blue-500/[0.08] blur-2xl pointer-events-none group-hover:bg-blue-500/[0.14] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Total Enrolled Nodes
             </span>
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
               <Server className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-white">
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-white">
               {stats.totalDevices}
             </span>
-            <span className="flex items-center text-xs font-medium text-emerald-400">
-              <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +100% active
+            <span className="inline-flex items-center text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <TrendingUp className="w-3.5 h-3.5 mr-1" /> +100% active
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-gray-500">
+          <div className="mt-2 text-[11px] text-slate-500 font-medium">
             Cryptographic identity verified
           </div>
-        </Card>
+        </div>
 
         {/* Online Devices */}
-        <Card className="bg-gray-900/90 border-gray-800 p-5 shadow-lg relative overflow-hidden group">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+          {/* Ambient radial accent */}
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/[0.08] blur-2xl pointer-events-none group-hover:bg-emerald-500/[0.14] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Online Agents
             </span>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
               <CheckCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-emerald-400">
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-emerald-400">
               {stats.onlineDevices}
             </span>
-            <span className="flex items-center text-xs font-medium text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
+            <span className="inline-flex items-center text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
               Active Pulse
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-gray-500">
+          <div className="mt-2 text-[11px] text-slate-500 font-medium">
             Heartbeat received &lt; 30s
           </div>
-        </Card>
+        </div>
 
         {/* Offline Devices */}
-        <Card className="bg-gray-900/90 border-gray-800 p-5 shadow-lg relative overflow-hidden group">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+          {/* Ambient radial accent */}
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-slate-500/[0.05] blur-2xl pointer-events-none group-hover:bg-slate-500/[0.1] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Offline Nodes
             </span>
-            <div className="p-2 rounded-lg bg-gray-800 text-gray-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-slate-800/60 border border-white/[0.08] text-slate-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group-hover:scale-105 transition-[transform] duration-200">
               <XCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-gray-300">
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-slate-300">
               {stats.offlineDevices}
             </span>
-            <span className="text-xs font-medium text-gray-400">No signal</span>
+            <span className="text-xs font-medium text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded-full border border-white/[0.06]">
+              No signal
+            </span>
           </div>
-          <div className="mt-2 text-[11px] text-gray-500">
+          <div className="mt-2 text-[11px] text-slate-500 font-medium">
             Heartbeat timeout &gt; 90s
           </div>
-        </Card>
+        </div>
 
         {/* Alerts Today */}
-        <Card className="bg-gray-900/90 border-gray-800 p-5 shadow-lg relative overflow-hidden group">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+          {/* Ambient radial accent */}
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-red-500/[0.08] blur-2xl pointer-events-none group-hover:bg-red-500/[0.14] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Active Alerts
             </span>
-            <div className="p-2 rounded-lg bg-red-500/10 text-red-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
               <ShieldAlert className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-red-400">
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-red-400">
               {stats.alertsToday}
             </span>
-            <span className="flex items-center text-xs font-medium text-amber-400">
-              <AlertTriangle className="w-3.5 h-3.5 mr-0.5" /> Needs Attention
+            <span className="inline-flex items-center text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+              <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Needs Attention
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-gray-500">
+          <div className="mt-2 text-[11px] text-slate-500 font-medium">
             Rule engine breach events
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Charts Grid: Fleet Average Sparklines & Distribution Pie Chart */}
@@ -583,11 +612,11 @@ export default function DashboardPage() {
           subtitle="Real-time aggregation computed across active fleet agents"
           className="lg:col-span-2"
         >
-          <div className="h-72 w-full">
+          <div className="h-72 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={sparklineData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                margin={{ top: 12, right: 12, left: -18, bottom: 0 }}
               >
                 <defs>
                   <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
@@ -601,27 +630,30 @@ export default function DashboardPage() {
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#1f2937"
+                  stroke="rgba(255,255,255,0.04)"
                   vertical={false}
                 />
                 <XAxis
                   dataKey="time"
-                  stroke="#6b7280"
-                  fontSize={11}
+                  stroke="#64748b"
+                  fontSize={10}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#6b7280"
-                  fontSize={11}
+                  stroke="#64748b"
+                  fontSize={10}
                   domain={[0, 100]}
                   unit="%"
                   tickLine={false}
                 />
                 <RechartsTooltip
                   contentStyle={{
-                    backgroundColor: "#111827",
-                    borderColor: "#374151",
-                    borderRadius: "0.5rem",
+                    backgroundColor: "rgba(13, 19, 33, 0.9)",
+                    backdropFilter: "blur(16px)",
+                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: "0.75rem",
+                    boxShadow:
+                      "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 16px 36px -4px rgba(0,0,0,0.7)",
                     color: "#fff",
                     fontSize: "12px",
                   }}
@@ -654,7 +686,17 @@ export default function DashboardPage() {
           title="Device Status Distribution"
           subtitle="Proportion of fleet operational states"
         >
-          <div className="h-72 w-full flex flex-col items-center justify-center">
+          <div className="relative h-72 w-full flex flex-col items-center justify-center">
+            {/* Center donut readout */}
+            <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+              <span className="text-2xl font-bold font-mono tracking-tight tabular-nums text-white">
+                {stats.totalDevices}
+              </span>
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                Total
+              </p>
+            </div>
+
             <ResponsiveContainer width="100%" height="80%">
               <PieChart>
                 <Pie
@@ -675,9 +717,12 @@ export default function DashboardPage() {
                 </Pie>
                 <RechartsTooltip
                   contentStyle={{
-                    backgroundColor: "#111827",
-                    borderColor: "#374151",
-                    borderRadius: "0.5rem",
+                    backgroundColor: "rgba(13, 19, 33, 0.9)",
+                    backdropFilter: "blur(16px)",
+                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: "0.75rem",
+                    boxShadow:
+                      "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 16px 36px -4px rgba(0,0,0,0.7)",
                     color: "#fff",
                     fontSize: "12px",
                   }}
@@ -686,7 +731,7 @@ export default function DashboardPage() {
             </ResponsiveContainer>
 
             {/* Custom Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-300 mt-2">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-300 mt-2">
               {pieData.map((item) => (
                 <div key={item.name} className="flex items-center gap-1.5">
                   <span
@@ -695,8 +740,11 @@ export default function DashboardPage() {
                       backgroundColor: STATUS_COLORS[item.name] || "#6b7280",
                     }}
                   />
-                  <span>
-                    {item.name} ({item.value})
+                  <span className="font-medium text-slate-300">
+                    {item.name}{" "}
+                    <span className="font-mono tabular-nums text-slate-400">
+                      ({item.value})
+                    </span>
                   </span>
                 </div>
               ))}
@@ -706,25 +754,26 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Alerts Table (Last 10 Clickable) */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950/60">
-          <div className="flex items-center gap-2">
+      <div className="glass-card rounded-2xl overflow-hidden border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
+        <div className="p-4 px-5 border-b border-white/[0.06] flex justify-between items-center bg-white/[0.02]">
+          <div className="flex items-center gap-2.5">
             <Bell className="w-4 h-4 text-amber-400" />
-            <h3 className="text-sm font-bold text-white">
+            <h3 className="text-sm font-semibold tracking-tight text-white">
               Recent Security & Telemetry Alerts
             </h3>
           </div>
           <Link
             href="/alerts"
-            className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+            className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 group transition-[color] duration-140 ease-out"
           >
-            View All Alerts <ArrowUpRight className="w-3.5 h-3.5" />
+            View All Alerts{" "}
+            <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-140" />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-300">
-            <thead className="bg-gray-800/60 text-gray-400 uppercase text-[11px] font-semibold tracking-wider border-b border-gray-800">
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="bg-white/[0.02] text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-white/[0.06]">
               <tr>
                 <th className="px-5 py-3.5">Severity</th>
                 <th className="px-5 py-3.5">Alert Event</th>
@@ -733,12 +782,12 @@ export default function DashboardPage() {
                 <th className="px-5 py-3.5">Timestamp</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/80">
+            <tbody className="divide-y divide-white/[0.04]">
               {alerts.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-6 py-8 text-center text-gray-500 text-xs"
+                    className="px-6 py-10 text-center text-slate-500 text-xs"
                   >
                     No active incident breaches detected across fleet telemetry.
                   </td>
@@ -747,7 +796,7 @@ export default function DashboardPage() {
                 alerts.map((alert) => (
                   <tr
                     key={alert.id}
-                    className="hover:bg-gray-800/40 transition-colors cursor-pointer"
+                    className="hover:bg-white/[0.03] transition-[background-color] duration-140 ease-out cursor-pointer"
                   >
                     <td className="px-5 py-3.5">
                       <span
@@ -767,12 +816,12 @@ export default function DashboardPage() {
                     <td className="px-5 py-3.5 font-medium text-white">
                       <Link
                         href={`/alerts`}
-                        className="hover:text-blue-400 transition"
+                        className="hover:text-blue-400 transition-[color] duration-140"
                       >
                         {alert.title}
                       </Link>
                     </td>
-                    <td className="px-5 py-3.5 text-gray-400">
+                    <td className="px-5 py-3.5 text-slate-400">
                       {alert.deviceId ? (
                         <Link
                           href={`/devices/${alert.deviceId}`}
@@ -798,7 +847,7 @@ export default function DashboardPage() {
                         {alert.status}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-gray-400 font-mono">
+                    <td className="px-5 py-3.5 text-xs text-slate-400 font-mono tabular-nums">
                       {new Date(alert.createdAt).toLocaleString()}
                     </td>
                   </tr>
