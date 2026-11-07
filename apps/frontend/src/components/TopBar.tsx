@@ -52,7 +52,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
 
   return (
     <>
-      <header className="h-16 border-b border-orange-500/20 bg-[#0d0e12]/80 backdrop-blur-2xl sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between gap-4 text-white shadow-lg">
+      <header className="h-16 border-b border-orange-500/20 bg-black/20 backdrop-blur-3xl backdrop-saturate-150 bg-gradient-to-r from-white/[0.04] via-transparent to-orange-500/[0.03] sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between gap-4 text-white shadow-lg">
         {/* Left: Mobile hamburger + Title */}
         <div className="flex items-center gap-3">
           <button

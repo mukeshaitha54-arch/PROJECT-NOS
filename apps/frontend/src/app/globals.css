@@ -129,25 +129,13 @@
       0 16px 36px -4px rgba(244, 123, 54, 0.25);
   }
 
-  /* Dynamic Mirror / Reversal Text for Landing Page only */
+  /* Landing Page Text transition */
   .mirror-text {
-    display: inline-block;
-    transform-origin: center;
-    transition:
-      transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
-      color 0.25s ease;
-    cursor: pointer;
+    display: inline;
+    transition: color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   }
   .mirror-text:hover {
-    transform: scaleX(-1);
-    color: #f47b36 !important;
-  }
-
-  /* Physically prevent mirror effect inside dashboard and internal pages */
-  .dashboard-scope .mirror-text,
-  .dashboard-scope .mirror-text:hover {
-    transform: none !important;
-    cursor: default !important;
+    color: #f47b36;
   }
 
   /* High-craft warm alabaster white card with crisp warm borders */

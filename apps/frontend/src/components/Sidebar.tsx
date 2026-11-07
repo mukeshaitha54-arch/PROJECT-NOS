@@ -56,9 +56,9 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   };
 
   const navContent = (
-    <div className="flex flex-col h-full bg-[#0d0e12]/85 backdrop-blur-2xl border-r border-orange-500/20 text-white select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.5)]">
+    <div className="flex flex-col h-full bg-black/20 backdrop-blur-3xl backdrop-saturate-150 border-r border-orange-500/20 text-white select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_rgba(0,0,0,0.3)] bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.03]">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-orange-500/20 bg-white/[0.02]">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-orange-500/20 bg-transparent">
         <Link
           href="/dashboard"
           className="flex items-center gap-3 transition-transform duration-150 active:scale-[0.98]"
@@ -135,7 +135,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       </div>
 
       {/* Socket.IO Real-time Connection Status Footer */}
-      <div className="p-3 border-t border-orange-500/20 bg-white/[0.02]">
+      <div className="p-3 border-t border-orange-500/20 bg-transparent">
         <div
           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs transition-colors duration-150 ${
             isConnected

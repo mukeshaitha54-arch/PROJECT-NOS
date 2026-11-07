@@ -9,9 +9,8 @@ interface MirrorTextProps {
 }
 
 /**
- * MirrorText: Wraps words so that hovering over text dynamically flips
- * the word into its mirror / reversal (scaleX(-1)) with smooth transitions,
- * reverting smoothly when the cursor leaves.
+ * MirrorText: Clean text wrapper without jarring horizontal flipping,
+ * smoothly transitioning text color on hover.
  */
 export function MirrorText({
   children,
@@ -19,18 +18,12 @@ export function MirrorText({
   as = "span",
 }: MirrorTextProps) {
   const Component = as;
-  const words = children.split(" ");
 
   return (
-    <Component className={className}>
-      {words.map((word, i) => (
-        <React.Fragment key={i}>
-          <span className="mirror-text inline-block transition-transform duration-300 ease-out hover:scale-x-[-1] hover:text-[#f47b36] select-none cursor-pointer">
-            {word}
-          </span>
-          {i < words.length - 1 && " "}
-        </React.Fragment>
-      ))}
+    <Component
+      className={`transition-colors duration-300 ease-out hover:text-[#f47b36] ${className}`}
+    >
+      {children}
     </Component>
   );
 }
