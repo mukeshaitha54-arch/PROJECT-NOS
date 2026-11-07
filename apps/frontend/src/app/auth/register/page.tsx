@@ -19,7 +19,7 @@ import { rawApi } from "@/lib/api-client";
 
 export default function AuthRegisterPage() {
   const router = useRouter();
-  const { register, login } = useAuth();
+  const { register } = useAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -32,13 +32,13 @@ export default function AuthRegisterPage() {
 
   // Password strength calculation
   const strengthInfo = useMemo(() => {
-    if (!password) return { label: "", percent: 0, color: "bg-gray-700" };
+    if (!password) return { label: "", percent: 0, color: "bg-zinc-700" };
     if (password.length < 8) {
       return {
         label: "Weak",
         percent: 25,
-        color: "bg-red-500",
-        text: "text-red-400",
+        color: "bg-rose-500",
+        text: "text-rose-400",
       };
     }
     const hasNumber = /\d/.test(password);
@@ -56,15 +56,15 @@ export default function AuthRegisterPage() {
       return {
         label: "Good",
         percent: 75,
-        color: "bg-blue-500",
-        text: "text-blue-400",
+        color: "bg-amber-500",
+        text: "text-amber-400",
       };
     }
     return {
       label: "Fair",
       percent: 50,
-      color: "bg-amber-500",
-      text: "text-amber-400",
+      color: "bg-orange-500",
+      text: "text-orange-400",
     };
   }, [password]);
 
@@ -100,134 +100,114 @@ export default function AuthRegisterPage() {
       // Forward directly to OTP verification page
       router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.message || err?.message;
-      if (status === 409 || msg?.toLowerCase().includes("already exists")) {
-        setError(
-          "An account with this email address already exists. Please Sign In below.",
-        );
-      } else {
-        setError(msg || "Registration failed. Please try again.");
-      }
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Registration failed. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const passwordsMatch = confirmPassword && password === confirmPassword;
-  const passwordsMismatch = confirmPassword && password !== confirmPassword;
+  const passwordsMatch =
+    confirmPassword && password && confirmPassword === password;
+  const passwordsMismatch =
+    confirmPassword && password && confirmPassword !== password;
 
   return (
-    <div className="min-h-screen w-full flex bg-slate-950 relative overflow-hidden">
-      {/* ── Animated background ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_30%,rgba(139,92,246,0.10)_0%,transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_70%,rgba(59,130,246,0.08)_0%,transparent_55%)]" />
-
-        {/* Grid */}
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(139,92,246,1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(139,92,246,1) 1px, transparent 1px)
-            `,
-            backgroundSize: "60px 60px",
-          }}
-        />
-
-        <div className="absolute top-16 left-32 w-72 h-72 rounded-full bg-violet-600/6 blur-3xl" />
-        <div className="absolute bottom-20 right-24 w-52 h-52 rounded-full bg-blue-600/6 blur-3xl" />
-
-        {/* Corner accents */}
-        <div className="absolute top-0 left-0 w-px h-48 bg-gradient-to-b from-violet-500/30 to-transparent" />
-        <div className="absolute top-0 left-0 h-px w-48 bg-gradient-to-r from-violet-500/30 to-transparent" />
-        <div className="absolute bottom-0 right-0 w-px h-48 bg-gradient-to-t from-blue-500/20 to-transparent" />
-        <div className="absolute bottom-0 right-0 h-px w-48 bg-gradient-to-l from-blue-500/20 to-transparent" />
-      </div>
-
+    <div className="min-h-screen w-full flex bg-transparent relative overflow-hidden">
       {/* ── Form panel (left on register so brand is right) ── */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center font-black text-white text-sm shadow-lg shadow-violet-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/30">
               N
             </div>
-            <span className="text-white font-black text-lg tracking-tight">
-              NOS
-            </span>
+            <div>
+              <span className="text-white font-extrabold text-xl tracking-tight block">
+                NOS
+              </span>
+              <span className="text-[10px] text-orange-400 font-mono tracking-widest uppercase block leading-none">
+                NEURAL OS
+              </span>
+            </div>
           </div>
 
-          {/* Card */}
-          <div className="bg-slate-900/70 border border-white/8 rounded-3xl p-8 shadow-2xl shadow-black/60 backdrop-blur-xl space-y-5">
+          {/* Card in Transparent Frosted Glass */}
+          <div className="dashboard-glass-card bg-black/30 border border-orange-500/25 rounded-3xl p-8 shadow-2xl backdrop-blur-3xl space-y-5 relative overflow-hidden">
+            {/* Specular sheen inside card */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+
             {/* Header */}
-            <div className="space-y-1">
+            <div className="space-y-1 relative z-10">
               <h2 className="text-2xl font-black text-white tracking-tight">
                 Create account
               </h2>
-              <p className="text-slate-400 text-sm">
+              <p className="text-zinc-300 text-sm">
                 Join the NOS fleet monitoring platform
               </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-4 relative z-10">
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-widest mb-2">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
                   <input
                     type="text"
                     required
                     placeholder="Alex Morgan"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950/80 border border-white/8 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/60 focus:bg-slate-950 focus:ring-1 focus:ring-violet-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
                   />
                 </div>
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-widest mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
                   <input
                     type="email"
                     required
                     placeholder="alex@nos.local"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950/80 border border-white/8 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/60 focus:bg-slate-950 focus:ring-1 focus:ring-violet-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-widest mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-950/80 border border-white/8 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/60 focus:bg-slate-950 focus:ring-1 focus:ring-violet-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -236,23 +216,20 @@ export default function AuthRegisterPage() {
                     )}
                   </button>
                 </div>
-
-                {/* Password Strength Indicator */}
+                {/* Strength Meter */}
                 {password && (
-                  <div className="mt-2.5 space-y-1.5">
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-slate-500 font-medium">
-                        Strength
-                      </span>
+                  <div className="mt-2 space-y-1">
+                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${strengthInfo.color}`}
+                        style={{ width: `${strengthInfo.percent}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-zinc-400">Password strength:</span>
                       <span className={`font-bold ${strengthInfo.text}`}>
                         {strengthInfo.label}
                       </span>
-                    </div>
-                    <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-500 rounded-full ${strengthInfo.color}`}
-                        style={{ width: `${strengthInfo.percent}%` }}
-                      />
                     </div>
                   </div>
                 )}
@@ -260,23 +237,23 @@ export default function AuthRegisterPage() {
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-widest mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="Re-enter password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full pl-10 pr-10 py-3 rounded-xl bg-slate-950/80 border text-white placeholder-slate-600 focus:outline-none text-sm transition-all duration-200 ${
+                    className={`w-full pl-10 pr-10 py-3 rounded-xl bg-black/35 border text-white placeholder-zinc-500 focus:outline-none focus:bg-black/50 focus:ring-2 text-sm transition-all duration-200 ${
                       passwordsMismatch
-                        ? "border-red-500/50 focus:border-red-500/60 focus:ring-1 focus:ring-red-500/20"
+                        ? "border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20"
                         : passwordsMatch
-                          ? "border-emerald-500/50 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20"
-                          : "border-white/8 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/20"
+                          ? "border-emerald-500/60 focus:border-emerald-500 focus:ring-emerald-500/20"
+                          : "border-orange-500/20 focus:border-orange-500/60 focus:ring-orange-500/20"
                     }`}
                   />
                   {/* Match indicator icon */}
@@ -284,7 +261,7 @@ export default function AuthRegisterPage() {
                     <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
                   )}
                   {passwordsMismatch && (
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-red-400 text-sm font-bold">
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-rose-400 text-sm font-bold">
                       ✕
                     </span>
                   )}
@@ -298,14 +275,14 @@ export default function AuthRegisterPage() {
                   type="checkbox"
                   checked={termsAgreed}
                   onChange={(e) => setTermsAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded bg-slate-950 border-slate-700 text-violet-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
+                  className="mt-0.5 w-4 h-4 rounded bg-black/40 border-orange-500/30 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 accent-orange-500"
                 />
                 <label
                   htmlFor="terms"
-                  className="text-xs text-slate-400 cursor-pointer leading-relaxed"
+                  className="text-xs text-zinc-300 cursor-pointer leading-relaxed"
                 >
                   I agree to the{" "}
-                  <span className="text-violet-400 hover:text-violet-300 transition-colors font-semibold">
+                  <span className="text-orange-400 hover:text-orange-300 transition-colors font-semibold">
                     Terms of Use &amp; Privacy Governance
                   </span>
                 </label>
@@ -313,8 +290,8 @@ export default function AuthRegisterPage() {
 
               {/* Error */}
               {error && (
-                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/8 border border-red-500/20 text-red-300 text-xs">
-                  <span className="mt-0.5 text-red-400 text-base leading-none">
+                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs backdrop-blur-sm">
+                  <span className="mt-0.5 text-rose-400 text-base leading-none">
                     ⚠
                   </span>
                   <span>{error}</span>
@@ -325,7 +302,7 @@ export default function AuthRegisterPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 h-12 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-black rounded-xl shadow-lg shadow-violet-500/25 text-sm transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
+                className="w-full py-3 h-12 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-extrabold rounded-xl shadow-lg shadow-orange-500/30 text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-orange-500/45 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
               >
                 {loading ? (
                   <>
@@ -342,11 +319,11 @@ export default function AuthRegisterPage() {
             </form>
 
             {/* Login Link */}
-            <div className="text-center pt-2 border-t border-white/6 text-xs text-slate-500">
+            <div className="text-center pt-2 border-t border-white/[0.08] text-xs text-zinc-400 relative z-10">
               Already have an account?{" "}
               <Link
                 href="/auth/login"
-                className="text-violet-400 font-bold hover:text-violet-300 transition-colors"
+                className="text-orange-400 font-bold hover:text-orange-300 transition-colors"
               >
                 Sign In →
               </Link>
@@ -356,45 +333,45 @@ export default function AuthRegisterPage() {
       </div>
 
       {/* ── Right brand panel (hidden on mobile) ── */}
-      <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative">
+      <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative z-10">
         {/* NOS wordmark */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center font-black text-white text-sm shadow-lg shadow-violet-500/30">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/30">
             N
           </div>
           <div>
-            <span className="text-white font-black text-lg tracking-tight">
+            <span className="text-white font-extrabold text-xl tracking-tight">
               NOS
             </span>
-            <div className="text-[10px] text-violet-400 font-bold tracking-widest uppercase leading-none">
-              SENTINEL
+            <div className="text-[10px] text-orange-400 font-mono font-medium tracking-widest uppercase leading-none">
+              NEURAL OS
             </div>
           </div>
         </div>
 
         {/* Central brand copy */}
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-3 py-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-            <span className="text-violet-400 text-xs font-bold tracking-widest uppercase">
+          <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-full px-3.5 py-1 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_8px_rgba(251,146,60,0.8)]" />
+            <span className="text-orange-400 text-xs font-bold tracking-widest uppercase">
               Enroll your fleet today
             </span>
           </div>
           <h1 className="text-5xl font-black text-white leading-[0.95] tracking-tight">
             ZERO
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-rose-500">
               BLINDSPOTS.
             </span>
             <br />
             EVER.
           </h1>
-          <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+          <p className="text-zinc-300 text-sm leading-relaxed max-w-sm">
             Deploy your first agent in under 5 minutes. Encrypted SQLite outbox
             ensures every metric is captured — even during network outages.
           </p>
 
-          {/* Feature list */}
+          {/* Feature list in frosted glass */}
           <div className="space-y-2.5">
             {[
               "S.M.A.R.T. predictive hardware failure detection",
@@ -404,12 +381,12 @@ export default function AuthRegisterPage() {
             ].map((feat) => (
               <div
                 key={feat}
-                className="flex items-center gap-2.5 text-xs text-slate-400"
+                className="flex items-center gap-3 text-xs text-zinc-300"
               >
-                <div className="w-4 h-4 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-2.5 h-2.5 text-violet-400" />
+                <div className="w-4 h-4 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-2.5 h-2.5 text-orange-400" />
                 </div>
-                {feat}
+                <span>{feat}</span>
               </div>
             ))}
           </div>
@@ -418,7 +395,7 @@ export default function AuthRegisterPage() {
         {/* Bottom back-to-home */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors group"
+          className="flex items-center gap-2 text-zinc-400 hover:text-orange-400 text-xs font-medium transition-colors group"
         >
           <span className="group-hover:-translate-x-1 transition-transform">
             ←
