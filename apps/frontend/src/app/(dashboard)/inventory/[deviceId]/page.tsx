@@ -59,13 +59,23 @@ function InfoRow({
   value?: string | number | null;
   mono?: boolean;
 }) {
+  const displayVal =
+    value !== null && value !== undefined && value !== ""
+      ? String(value)
+      : "N/A";
+
   return (
-    <div className="flex justify-between items-center py-1.5 border-b border-slate-800/60 last:border-0">
-      <span className="text-xs text-slate-400">{label}</span>
+    <div className="flex justify-between items-start gap-4 py-2 border-b border-white/[0.06] last:border-0">
+      <span className="text-xs font-medium text-zinc-400 shrink-0 select-none">
+        {label}
+      </span>
       <span
-        className={`text-xs font-semibold text-slate-200 ${mono ? "font-mono" : ""}`}
+        className={`text-xs font-semibold text-zinc-100 text-right break-words max-w-[70%] ${
+          mono ? "font-mono text-orange-300" : ""
+        }`}
+        title={displayVal}
       >
-        {value ?? "N/A"}
+        {displayVal}
       </span>
     </div>
   );
@@ -81,37 +91,39 @@ function Card({
   children: React.ReactNode;
 }) {
   const colors: Record<string, string> = {
-    slate: "text-slate-400",
-    blue: "text-blue-400",
-    purple: "text-purple-400",
-    emerald: "text-emerald-400",
-    orange: "text-orange-400",
-    cyan: "text-cyan-400",
-    red: "text-red-400",
-    green: "text-green-400",
-    amber: "text-amber-400",
+    slate: "text-zinc-300 border-zinc-700/50",
+    blue: "text-sky-400 border-sky-500/30",
+    purple: "text-purple-400 border-purple-500/30",
+    emerald: "text-emerald-400 border-emerald-500/30",
+    orange: "text-orange-400 border-orange-500/30",
+    cyan: "text-cyan-400 border-cyan-500/30",
+    red: "text-rose-400 border-rose-500/30",
+    green: "text-emerald-400 border-emerald-500/30",
+    amber: "text-amber-400 border-amber-500/30",
   };
   return (
-    <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+    <div className="p-5 rounded-2xl bg-black/35 backdrop-blur-2xl border border-orange-500/20 hover:border-orange-500/45 transition-all duration-200 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_8px_24px_rgba(0,0,0,0.35)] relative overflow-hidden group">
+      {/* Specular sheen inside each card */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-transparent pointer-events-none rounded-2xl" />
       <h4
-        className={`text-xs font-bold uppercase tracking-wider mb-3 pb-2 border-b border-slate-800 ${colors[color] || colors.slate}`}
+        className={`text-xs font-extrabold uppercase tracking-wider mb-3.5 pb-2.5 border-b border-orange-500/15 ${colors[color] || colors.slate}`}
       >
         {title}
       </h4>
-      {children}
+      <div className="relative z-10 space-y-1">{children}</div>
     </div>
   );
 }
 
 function StatusBool({ value }: { value: boolean | null | undefined }) {
   if (value === null || value === undefined)
-    return <span className="text-slate-500 text-xs">N/A</span>;
+    return <span className="text-zinc-500 text-xs">N/A</span>;
   return value ? (
-    <span className="flex items-center gap-1 text-green-400 text-xs font-semibold">
+    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
       <CheckCircle size={12} /> Enabled
     </span>
   ) : (
-    <span className="flex items-center gap-1 text-red-400 text-xs font-semibold">
+    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-bold">
       <XCircle size={12} /> Disabled
     </span>
   );
@@ -259,7 +271,7 @@ export default function DeviceInventoryDetailPage({
       key: "installLocation",
       header: "Location",
       render: (row) => (
-        <span className="text-xs font-mono text-slate-400 truncate max-w-[200px] block">
+        <span className="text-xs font-mono text-zinc-400 truncate max-w-[200px] block">
           {row.installLocation || "—"}
         </span>
       ),
@@ -295,7 +307,9 @@ export default function DeviceInventoryDetailPage({
       header: "PID",
       sortable: true,
       render: (r) => (
-        <span className="font-mono text-xs">{r.pid ?? r.Pid ?? "—"}</span>
+        <span className="font-mono text-xs text-orange-300">
+          {r.pid ?? r.Pid ?? "—"}
+        </span>
       ),
     },
     {
@@ -303,7 +317,7 @@ export default function DeviceInventoryDetailPage({
       header: "Process Name",
       sortable: true,
       render: (r) => (
-        <span className="font-semibold text-xs text-slate-200">
+        <span className="font-semibold text-xs text-zinc-100">
           {r.processName ?? r.ProcessName ?? r.name ?? r.Name}
         </span>
       ),
@@ -313,7 +327,7 @@ export default function DeviceInventoryDetailPage({
       header: "Memory",
       sortable: true,
       render: (r) => (
-        <span className="font-mono text-xs text-cyan-400">
+        <span className="font-mono text-xs text-cyan-400 font-semibold">
           {(
             r.memoryMb ??
             r.MemoryMb ??
@@ -328,7 +342,7 @@ export default function DeviceInventoryDetailPage({
       header: "Threads",
       sortable: true,
       render: (r) => (
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-zinc-300">
           {r.threads ?? r.Threads ?? "—"}
         </span>
       ),
@@ -347,138 +361,147 @@ export default function DeviceInventoryDetailPage({
   // ─ Tab definitions ───────────────────────────────────────────────────────
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
-    { id: "HARDWARE", label: "Hardware", icon: <Cpu size={13} /> },
-    { id: "SOFTWARE", label: "Software", icon: <FileText size={13} /> },
-    { id: "SERVICES", label: "Services", icon: <Activity size={13} /> },
-    { id: "PROCESSES", label: "Processes", icon: <Terminal size={13} /> },
-    { id: "ALERTS", label: "Alerts", icon: <AlertTriangle size={13} /> },
-    { id: "NETWORK", label: "Network", icon: <Network size={13} /> },
-    { id: "SECURITY", label: "Security", icon: <Shield size={13} /> },
-    { id: "EXTENDED", label: "Extended", icon: <Server size={13} /> },
+    { id: "HARDWARE", label: "Hardware", icon: <Cpu size={14} /> },
+    { id: "SOFTWARE", label: "Software", icon: <FileText size={14} /> },
+    { id: "SERVICES", label: "Services", icon: <Activity size={14} /> },
+    { id: "PROCESSES", label: "Processes", icon: <Terminal size={14} /> },
+    { id: "ALERTS", label: "Alerts", icon: <AlertTriangle size={14} /> },
+    { id: "NETWORK", label: "Network", icon: <Network size={14} /> },
+    { id: "SECURITY", label: "Security", icon: <Shield size={14} /> },
+    { id: "EXTENDED", label: "Extended", icon: <Server size={14} /> },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-6 sm:p-10">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-          <div className="flex items-center gap-4">
-            <Link
-              href={`/devices/${deviceId}`}
-              className="inline-flex items-center px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Device Profile
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-cyan-400" />
-                Device Asset &amp; Inventory Explorer
-              </h1>
-              <p className="text-xs font-mono text-slate-400 mt-0.5">
-                Device ID: {deviceId}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={triggerRescan}
-            disabled={loading || rescanLoading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition disabled:opacity-50"
+    <div className="min-h-screen bg-transparent text-white font-sans space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-orange-500/20 pb-6">
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/devices/${deviceId}`}
+            className="inline-flex items-center px-4 py-2 rounded-xl bg-black/30 backdrop-blur-xl border border-orange-500/25 hover:border-orange-500/50 text-xs font-semibold text-zinc-200 hover:text-white transition shadow-sm active:scale-[0.98]"
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${loading || rescanLoading ? "animate-spin" : ""}`}
-            />
-            Re-Scan Inventory
-          </button>
+            <ArrowLeft className="w-4 h-4 mr-2 text-orange-400" />
+            Device Profile
+          </Link>
+          <div>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
+              <Layers className="w-6 h-6 text-orange-400 drop-shadow-[0_0_10px_rgba(244,123,54,0.4)]" />
+              Device Asset &amp; Inventory Explorer
+            </h1>
+            <p className="text-xs font-mono text-zinc-400 mt-1">
+              Device ID:{" "}
+              <span className="text-orange-300 font-medium">{deviceId}</span>
+            </p>
+          </div>
         </div>
 
-        {/* Error Banner */}
-        {error && (
-          <div className="p-4 bg-rose-950/50 border border-rose-500/40 rounded-xl text-rose-300 flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0" />
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        )}
+        <button
+          onClick={triggerRescan}
+          disabled={loading || rescanLoading}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold transition shadow-lg shadow-orange-500/25 active:scale-[0.98] disabled:opacity-50"
+        >
+          <RefreshCw
+            className={`w-3.5 h-3.5 ${loading || rescanLoading ? "animate-spin" : ""}`}
+          />
+          Re-Scan Inventory
+        </button>
+      </div>
 
-        {/* Summary Row */}
-        {inventory && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            {[
-              {
-                label: "CPU",
-                value:
-                  inventory.cpuModel?.split(" ").slice(-2).join(" ") || "N/A",
-              },
-              {
-                label: "OS",
-                value: inventory.osEdition?.replace("Microsoft ", "") || "N/A",
-              },
-              {
-                label: "RAM Sticks",
-                value: `${inventory.memoryModules?.length || 0} modules`,
-              },
-              {
-                label: "Disks",
-                value: `${inventory.diskDrives?.length || 0} drives`,
-              },
-              {
-                label: "Software",
-                value: `${inventory.installedSoftware?.length || 0} apps`,
-              },
-              {
-                label: "Services",
-                value: `${inventory.windowsServices?.length || 0} found`,
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2"
-              >
-                <div className="text-[10px] text-slate-500 uppercase font-semibold">
-                  {item.label}
-                </div>
-                <div className="text-xs font-bold text-slate-200 mt-0.5 truncate">
-                  {item.value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 bg-rose-950/40 border border-rose-500/40 rounded-2xl text-rose-300 flex items-center gap-3 backdrop-blur-xl shadow-lg">
+          <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+          <span className="text-sm font-medium">{error}</span>
+        </div>
+      )}
 
-        {/* Tab Bar */}
-        <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-              }`}
+      {/* Summary Metrics Row in Glossy Frosted Glass */}
+      {inventory && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            {
+              label: "CPU",
+              value:
+                inventory.cpuModel?.split(" ").slice(-2).join(" ") || "N/A",
+            },
+            {
+              label: "OS",
+              value: inventory.osEdition?.replace("Microsoft ", "") || "N/A",
+            },
+            {
+              label: "RAM Sticks",
+              value: `${inventory.memoryModules?.length || 0} modules`,
+            },
+            {
+              label: "Disks",
+              value: `${inventory.diskDrives?.length || 0} drives`,
+            },
+            {
+              label: "Software",
+              value: `${inventory.installedSoftware?.length || 0} apps`,
+            },
+            {
+              label: "Services",
+              value: `${inventory.windowsServices?.length || 0} found`,
+            },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="dashboard-glass-card rounded-2xl p-3.5 relative overflow-hidden group border border-orange-500/20 bg-black/25 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.3)] transition-all hover:border-orange-500/45"
             >
-              {tab.icon}
-              {tab.label}
-            </button>
+              <div className="text-[10px] text-orange-400/90 uppercase font-bold tracking-wider">
+                {item.label}
+              </div>
+              <div
+                className="text-sm sm:text-base font-extrabold text-white mt-1 truncate drop-shadow-sm"
+                title={item.value}
+              >
+                {item.value}
+              </div>
+            </div>
           ))}
         </div>
+      )}
 
-        {/* Tab Content */}
-        <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-6 backdrop-blur-xl">
+      {/* Tab Bar */}
+      <div className="flex items-center gap-2 border-b border-orange-500/20 pb-2.5 overflow-x-auto scrollbar-thin">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap active:scale-[0.98] ${
+              activeTab === tab.id
+                ? "bg-gradient-to-r from-orange-500/25 to-orange-500/10 text-orange-400 border border-orange-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_16px_rgba(244,123,54,0.2)]"
+                : "text-zinc-400 hover:text-white hover:bg-white/[0.05] border border-transparent"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Main Tab Content Card (Transparent Frosted Glass with Specular Sheen) */}
+      <div className="dashboard-glass-card rounded-3xl p-6 sm:p-8 bg-black/25 backdrop-blur-3xl backdrop-saturate-150 border border-orange-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_16px_40px_rgba(0,0,0,0.4)] relative overflow-hidden">
+        {/* Specular sheen inside main container */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+
+        <div className="relative z-10">
           {loading && !inventory && (
-            <div className="text-center py-16 text-slate-500">
-              <RefreshCw className="animate-spin w-8 h-8 mx-auto mb-4 text-cyan-500" />
-              <p>Running asset discovery scan…</p>
+            <div className="text-center py-20 text-zinc-400">
+              <RefreshCw className="animate-spin w-8 h-8 mx-auto mb-4 text-orange-400" />
+              <p className="font-semibold text-sm">
+                Running asset discovery scan…
+              </p>
             </div>
           )}
 
           {/* ── HARDWARE TAB ── */}
           {activeTab === "HARDWARE" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {/* CPU */}
-                <Card title="Processor (CPU)" color="blue">
+                <Card title="Processor (CPU)" color="orange">
                   <InfoRow label="Model" value={inventory?.cpuModel} />
                   <InfoRow label="Vendor" value={inventory?.cpuVendor} />
                   <InfoRow
@@ -492,7 +515,7 @@ export default function DeviceInventoryDetailPage({
                 </Card>
 
                 {/* System Board & BIOS */}
-                <Card title="System Board & BIOS" color="purple">
+                <Card title="System Board & BIOS" color="amber">
                   <InfoRow label="Motherboard" value={inventory?.motherboard} />
                   <InfoRow label="BIOS Vendor" value={inventory?.biosVendor} />
                   <InfoRow
@@ -528,7 +551,7 @@ export default function DeviceInventoryDetailPage({
                 </Card>
 
                 {/* Core System */}
-                <Card title="Core System" color="orange">
+                <Card title="Core System" color="cyan">
                   <InfoRow
                     label="Manufacturer"
                     value={inventory?.manufacturer}
@@ -542,7 +565,7 @@ export default function DeviceInventoryDetailPage({
                 </Card>
 
                 {/* Network Identity */}
-                <Card title="Network Identity" color="cyan">
+                <Card title="Network Identity" color="blue">
                   <InfoRow label="Hostname" value={inventory?.hostname} mono />
                   <InfoRow label="Domain" value={inventory?.domain} mono />
                   <InfoRow label="Workgroup" value={inventory?.workgroup} />
@@ -560,17 +583,19 @@ export default function DeviceInventoryDetailPage({
                       {inventory.memoryModules.map((mem: any, i: number) => (
                         <div
                           key={i}
-                          className="border-l-2 border-purple-500/50 pl-3"
+                          className="p-3.5 rounded-xl bg-white/[0.02] border-l-2 border-purple-400 border border-white/[0.04] shadow-sm"
                         >
                           <p className="text-sm font-bold text-white">
                             {mem.manufacturer || "Unknown"}{" "}
-                            {mem.capacityGB
-                              ? `${mem.capacityGB} GB`
-                              : mem.capacityBytes
-                                ? bytes(mem.capacityBytes)
-                                : "? GB"}
+                            <span className="text-purple-300 font-mono">
+                              {mem.capacityGB
+                                ? `${mem.capacityGB} GB`
+                                : mem.capacityBytes
+                                  ? bytes(mem.capacityBytes)
+                                  : "? GB"}
+                            </span>
                           </p>
-                          <p className="text-xs text-slate-400 mt-0.5">
+                          <p className="text-xs text-zinc-300 mt-1 font-mono">
                             {mem.speedMHz ? `${mem.speedMHz} MHz` : ""}{" "}
                             {mem.partNumber ? `| PN: ${mem.partNumber}` : ""}{" "}
                             {mem.slot ? `| Slot: ${mem.slot}` : ""}
@@ -591,11 +616,11 @@ export default function DeviceInventoryDetailPage({
                     {inventory.diskDrives.map((disk: any, i: number) => (
                       <div
                         key={i}
-                        className="border-l-2 border-emerald-500/50 pl-3"
+                        className="p-3.5 rounded-xl bg-white/[0.02] border-l-2 border-emerald-400 border border-white/[0.04] shadow-sm"
                       >
                         <p className="text-sm font-bold text-white">
                           {disk.model || "Unknown Drive"}{" "}
-                          <span className="text-emerald-400">
+                          <span className="text-emerald-400 font-mono">
                             (
                             {disk.sizeGB
                               ? `${disk.sizeGB} GB`
@@ -605,7 +630,7 @@ export default function DeviceInventoryDetailPage({
                             )
                           </span>
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-zinc-300 mt-1 font-mono">
                           {disk.mediaType ? `Type: ${disk.mediaType}` : ""}{" "}
                           {disk.interfaceType
                             ? `| Interface: ${disk.interfaceType}`
@@ -630,12 +655,12 @@ export default function DeviceInventoryDetailPage({
                     {inventory.gpus.map((gpu: any, i: number) => (
                       <div
                         key={i}
-                        className="border-l-2 border-orange-500/50 pl-3"
+                        className="p-3.5 rounded-xl bg-white/[0.02] border-l-2 border-orange-500 border border-white/[0.04] shadow-sm"
                       >
                         <p className="text-sm font-bold text-white">
                           {gpu.name || "Unknown GPU"}
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-orange-300 mt-1 font-mono">
                           {gpu.vramMB
                             ? `VRAM: ${(gpu.vramMB / 1024).toFixed(1)} GB`
                             : gpu.vramBytes
@@ -691,41 +716,41 @@ export default function DeviceInventoryDetailPage({
 
           {/* ── ALERTS TAB ── */}
           {activeTab === "ALERTS" && (
-            <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="rounded-2xl border border-orange-500/20 bg-black/35 backdrop-blur-2xl overflow-hidden shadow-xl">
+              <div className="px-6 py-4 border-b border-orange-500/15 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
                   <Bell size={16} className="text-amber-400" />
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
                     Incident &amp; Failure History ({alerts.length})
                   </h3>
                 </div>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-orange-300/80 font-mono">
                   Timestamped Event Ledger
                 </span>
               </div>
               {alerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500">
+                <div className="p-14 text-center text-zinc-400">
                   <CheckCircle
-                    size={32}
-                    className="mx-auto mb-2 text-green-500/60"
+                    size={36}
+                    className="mx-auto mb-3 text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.5)]"
                   />
-                  <p className="text-sm font-medium text-slate-300">
+                  <p className="text-sm font-bold text-white">
                     No alert events recorded for this device
                   </p>
-                  <p className="text-xs text-slate-600 mt-1">
+                  <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
                     System threshold violations and hardware errors will be
-                    logged here with timestamps.
+                    logged here with live timestamps.
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-800/80">
+                <div className="divide-y divide-white/[0.06]">
                   {alerts.map((alert) => (
                     <div
                       key={alert.id}
-                      className="p-4 hover:bg-slate-900/50 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                      className="p-4 hover:bg-white/[0.03] transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-0.5">
+                        <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 mt-0.5">
                           <AlertTriangle size={16} />
                         </div>
                         <div>
@@ -733,23 +758,23 @@ export default function DeviceInventoryDetailPage({
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
                               {alert.severity || "WARNING"}
                             </span>
-                            <span className="text-xs font-semibold text-slate-200">
+                            <span className="text-xs font-semibold text-white">
                               {alert.title ||
                                 alert.message ||
                                 `Rule ${alert.ruleId || "Triggered"}`}
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
                               {alert.status || "OPEN"}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-xs text-zinc-300 mt-1">
                             {alert.description ||
                               alert.message ||
                               "Threshold breached"}
                           </p>
                         </div>
                       </div>
-                      <div className="text-xs text-slate-400 font-mono shrink-0">
+                      <div className="text-xs text-zinc-400 font-mono shrink-0">
                         {new Date(alert.createdAt).toLocaleString()}
                       </div>
                     </div>
@@ -768,9 +793,9 @@ export default function DeviceInventoryDetailPage({
                   <Card
                     key={i}
                     title={net.name || net.description || `Adapter ${i + 1}`}
-                    color="blue"
+                    color="cyan"
                   >
-                    <div className="grid grid-cols-2 gap-x-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                       <div>
                         <InfoRow
                           label="MAC Address"
@@ -816,9 +841,14 @@ export default function DeviceInventoryDetailPage({
                   </Card>
                 ))
               ) : (
-                <div className="text-center py-16 text-slate-500">
-                  <Wifi size={32} className="mx-auto mb-3 opacity-40" />
-                  <p>No network adapters found in inventory yet.</p>
+                <div className="text-center py-16 text-zinc-400">
+                  <Wifi
+                    size={36}
+                    className="mx-auto mb-3 text-cyan-400 opacity-60"
+                  />
+                  <p className="font-semibold text-sm">
+                    No network adapters found in inventory yet.
+                  </p>
                 </div>
               )}
             </div>
@@ -826,11 +856,11 @@ export default function DeviceInventoryDetailPage({
 
           {/* ── SECURITY TAB ── */}
           {activeTab === "SECURITY" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Defender */}
-              <Card title="Windows Defender / Antivirus" color="green">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">
+              <Card title="Windows Defender / Antivirus" color="emerald">
+                <div className="flex justify-between items-center py-2 border-b border-white/[0.06]">
+                  <span className="text-xs font-medium text-zinc-400">
                     Real-Time Protection
                   </span>
                   <StatusBool
@@ -840,8 +870,10 @@ export default function DeviceInventoryDetailPage({
                     }
                   />
                 </div>
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">Firewall</span>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-xs font-medium text-zinc-400">
+                    Firewall
+                  </span>
                   <StatusBool
                     value={
                       inventory?.firewallEnabled ??
@@ -853,8 +885,10 @@ export default function DeviceInventoryDetailPage({
 
               {/* TPM */}
               <Card title="TPM (Trusted Platform Module)" color="cyan">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">TPM Enabled</span>
+                <div className="flex justify-between items-center py-2 border-b border-white/[0.06]">
+                  <span className="text-xs font-medium text-zinc-400">
+                    TPM Enabled
+                  </span>
                   <StatusBool
                     value={
                       inventory?.tpmEnabled ?? inventory?.security?.tpmEnabled
@@ -872,8 +906,8 @@ export default function DeviceInventoryDetailPage({
 
               {/* BitLocker */}
               <Card title="BitLocker Encryption" color="amber">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">
+                <div className="flex justify-between items-center py-2 border-b border-white/[0.06]">
+                  <span className="text-xs font-medium text-zinc-400">
                     BitLocker Enabled
                   </span>
                   <StatusBool
@@ -894,8 +928,10 @@ export default function DeviceInventoryDetailPage({
 
               {/* Secure Boot */}
               <Card title="Secure Boot" color="green">
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-slate-400">Secure Boot</span>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-xs font-medium text-zinc-400">
+                    Secure Boot
+                  </span>
                   <StatusBool
                     value={
                       inventory?.secureBootEnabled ??
@@ -917,17 +953,17 @@ export default function DeviceInventoryDetailPage({
                     title={`Startup Applications — ${inventory.startupApplications.length} entries`}
                     color="amber"
                   >
-                    <div className="space-y-1 mt-1 max-h-64 overflow-y-auto">
+                    <div className="space-y-1 mt-1 max-h-64 overflow-y-auto scrollbar-thin">
                       {inventory.startupApplications.map(
                         (app: any, i: number) => (
                           <div
                             key={i}
-                            className="flex justify-between items-center text-xs py-1 border-b border-slate-800/40"
+                            className="flex justify-between items-center text-xs py-2 border-b border-white/[0.06] last:border-0"
                           >
-                            <span className="text-slate-200 font-semibold">
+                            <span className="text-zinc-100 font-semibold">
                               {app.name}
                             </span>
-                            <span className="text-slate-500 font-mono truncate max-w-[320px]">
+                            <span className="text-orange-300/80 font-mono truncate max-w-[320px]">
                               {app.command || app.executablePath}
                             </span>
                           </div>
@@ -940,23 +976,23 @@ export default function DeviceInventoryDetailPage({
               {/* USB Devices */}
               <Card title="Connected USB Devices" color="blue">
                 {inventory?.usbDevices && inventory.usbDevices.length > 0 ? (
-                  <div className="space-y-1 mt-1">
+                  <div className="space-y-1 mt-1 max-h-64 overflow-y-auto scrollbar-thin">
                     {inventory.usbDevices.map((usb: any, i: number) => (
                       <div
                         key={i}
-                        className="text-xs py-1 border-b border-slate-800/40 last:border-0"
+                        className="text-xs py-2 border-b border-white/[0.06] last:border-0 flex justify-between items-center"
                       >
-                        <span className="text-slate-200 font-semibold">
+                        <span className="text-zinc-100 font-semibold">
                           {usb.description || usb.name}
                         </span>{" "}
-                        <span className="text-slate-500 font-mono">
+                        <span className="text-orange-300/80 font-mono text-[11px]">
                           VID:{usb.vendorId} PID:{usb.productId}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-zinc-400 mt-1">
                     USB enumeration requires the agent to run with Administrator
                     privileges. Data will appear on next scan.
                   </p>
@@ -970,12 +1006,16 @@ export default function DeviceInventoryDetailPage({
                     title={`Windows Updates — ${inventory.windowsUpdates.length} KB patches`}
                     color="cyan"
                   >
-                    <div className="max-h-64 overflow-y-auto mt-1">
+                    <div className="max-h-64 overflow-y-auto scrollbar-thin mt-1">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="text-slate-500">
-                            <th className="text-left py-1">KB ID</th>
-                            <th className="text-left py-1">Installed On</th>
+                          <tr className="text-zinc-400 border-b border-white/[0.06]">
+                            <th className="text-left py-2 font-bold uppercase tracking-wider text-[11px]">
+                              KB ID
+                            </th>
+                            <th className="text-left py-2 font-bold uppercase tracking-wider text-[11px]">
+                              Installed On
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -983,12 +1023,12 @@ export default function DeviceInventoryDetailPage({
                             (kb: any, i: number) => (
                               <tr
                                 key={i}
-                                className="border-t border-slate-800/40"
+                                className="border-b border-white/[0.04] hover:bg-white/[0.02]"
                               >
-                                <td className="py-1 font-mono text-cyan-400">
+                                <td className="py-2 font-mono text-cyan-400 font-semibold">
                                   {kb.hotFixId || kb.kbId}
                                 </td>
-                                <td className="py-1 text-slate-400">
+                                <td className="py-2 text-zinc-300 font-mono">
                                   {kb.installedOn || kb.installedAt}
                                 </td>
                               </tr>
@@ -1000,15 +1040,15 @@ export default function DeviceInventoryDetailPage({
                   </Card>
                 )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* S.M.A.R.T Disk Health */}
                 <Card title="S.M.A.R.T Disk Health" color="emerald">
                   {inventory?.smartData && inventory.smartData.length > 0 ? (
-                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                    <pre className="text-xs font-mono text-zinc-200 bg-black/40 border border-white/[0.06] p-3 rounded-xl whitespace-pre-wrap max-h-48 overflow-y-auto scrollbar-thin">
                       {JSON.stringify(inventory.smartData, null, 2)}
                     </pre>
                   ) : (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-zinc-400">
                       S.M.A.R.T data requires elevated WMI access. Available on
                       next privileged scan.
                     </p>
@@ -1018,11 +1058,11 @@ export default function DeviceInventoryDetailPage({
                 {/* Event Logs */}
                 <Card title="Recent Critical Events" color="red">
                   {inventory?.eventLogs && inventory.eventLogs.length > 0 ? (
-                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                    <pre className="text-xs font-mono text-zinc-200 bg-black/40 border border-white/[0.06] p-3 rounded-xl whitespace-pre-wrap max-h-48 overflow-y-auto scrollbar-thin">
                       {JSON.stringify(inventory.eventLogs, null, 2)}
                     </pre>
                   ) : (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-zinc-400">
                       No critical Windows Event Viewer entries in the last 24
                       hours.
                     </p>

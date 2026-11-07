@@ -98,15 +98,15 @@ export function DataTable<T extends Record<string, unknown>>({
               setPage(1);
             }}
             placeholder={searchPlaceholder}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08]
-              shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-sm text-slate-200 placeholder-slate-500 outline-none
-              focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border border-orange-500/20
+              shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-sm text-zinc-100 placeholder-zinc-500 outline-none
+              focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
             aria-label="Search table"
           />
         </div>
       )}
 
-      <div className="rounded-2xl border border-white/[0.08] bg-slate-950/60 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_32px_-8px_rgba(0,0,0,0.5)] overflow-hidden">
+      <div className="rounded-2xl border border-orange-500/20 bg-black/30 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_32px_-8px_rgba(0,0,0,0.4)] overflow-hidden">
         <div className="overflow-x-auto">
           <table
             className="w-full text-sm"
@@ -114,13 +114,13 @@ export function DataTable<T extends Record<string, unknown>>({
             aria-label="Data table"
           >
             <thead>
-              <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+              <tr className="border-b border-orange-500/15 bg-white/[0.03]">
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     scope="col"
-                    className={`px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400
-                      ${col.sortable ? "cursor-pointer hover:text-slate-200 select-none" : ""}`}
+                    className={`px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-300
+                      ${col.sortable ? "cursor-pointer hover:text-white select-none" : ""}`}
                     style={col.width ? { width: col.width } : undefined}
                     onClick={
                       col.sortable ? () => toggleSort(col.key) : undefined
@@ -174,12 +174,12 @@ export function DataTable<T extends Record<string, unknown>>({
                 paginated.map((row, i) => (
                   <tr
                     key={String(row[keyField] ?? i)}
-                    className={`border-b border-white/[0.04] transition-[background-color] duration-140 ease-out
-                      ${onRowClick ? "cursor-pointer hover:bg-white/[0.04]" : "hover:bg-white/[0.02]"}`}
+                    className={`border-b border-white/[0.05] transition-[background-color] duration-140 ease-out
+                      ${onRowClick ? "cursor-pointer hover:bg-white/[0.05]" : "hover:bg-white/[0.03]"}`}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3.5 text-slate-300">
+                      <td key={col.key} className="px-4 py-3.5 text-zinc-200">
                         {col.render
                           ? col.render(row)
                           : String(row[col.key] ?? "—")}

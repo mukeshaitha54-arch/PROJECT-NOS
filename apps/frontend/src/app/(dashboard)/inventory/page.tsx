@@ -457,22 +457,22 @@ export default function GlobalInventoryExplorerPage() {
         </div>
 
         {/* Search, Filter & Bulk Actions Controls */}
-        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between glass-card p-4 rounded-2xl border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between dashboard-glass-card p-4 rounded-2xl border border-orange-500/20 bg-black/25 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_rgba(0,0,0,0.3)]">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
               <input
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${activeTab.toLowerCase()}...`}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
+                className="w-full pl-10 pr-4 py-2 rounded-xl bg-black/30 border border-orange-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
               />
             </div>
             {selectedIds.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#111217]/70 border border-white/[0.08] text-xs text-orange-400 hover:text-orange-300 font-semibold active:scale-[0.97] transition-[transform,background-color] duration-140"
+                className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-black/30 border border-orange-500/25 text-xs text-orange-400 hover:text-orange-300 font-semibold active:scale-[0.97] transition-[transform,background-color] duration-140"
               >
                 {selectedIds.length === items.length
                   ? "Deselect All"
@@ -482,13 +482,13 @@ export default function GlobalInventoryExplorerPage() {
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1">
+            <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider mr-1">
               Bulk:
             </span>
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
-              className="bg-slate-950/80 border border-white/[0.08] text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-orange-500/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-[border-color] duration-140"
+              className="bg-black/40 border border-orange-500/20 text-zinc-100 text-xs rounded-xl px-3 py-2 outline-none focus:border-orange-500/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-[border-color] duration-140"
             >
               <option value="">Select Action...</option>
               <option value="MAINTENANCE">Toggle Maintenance Mode</option>
