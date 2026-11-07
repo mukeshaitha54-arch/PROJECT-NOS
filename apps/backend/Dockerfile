@@ -26,6 +26,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+ENV CHECKPOINT_DISABLE=1
+ENV PRISMA_DISABLE_TELEMETRY=1
+
 RUN npm install -g pnpm@9
 
 # Copy workspace config + backend package.json
@@ -43,8 +46,11 @@ COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=builder /app/apps/backend/assets ./apps/backend/assets
 
-# Prisma client generation (runtime needs it; pin version to match project)
-RUN npx prisma@6.19.3 generate --schema=./apps/backend/prisma/schema.prisma
+# Copy generated Prisma Client from builder to avoid re-generating or external network hangs
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Prisma client generation with telemetry strictly disabled (prevents 10-minute network checkpoint hang)
+RUN CHECKPOINT_DISABLE=1 PRISMA_DISABLE_TELEMETRY=1 npx --yes prisma@6.19.3 generate --schema=./apps/backend/prisma/schema.prisma
 
 ENV NODE_ENV=production
 ENV PORT=3001
