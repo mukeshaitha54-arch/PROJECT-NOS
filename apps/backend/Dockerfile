@@ -16,8 +16,8 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY . .
-# Ensure assets dir exists (NOS-Agent.exe may not be in git; mkdir guarantees COPY won't fail)
-RUN mkdir -p apps/backend/assets
+# Ensure assets and local node_modules dirs exist to guarantee COPY never fails
+RUN mkdir -p apps/backend/assets apps/backend/node_modules
 RUN pnpm --filter shared-types build
 RUN pnpm --filter backend build
 
@@ -26,35 +26,25 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-ENV CHECKPOINT_DISABLE=1
-ENV PRISMA_DISABLE_TELEMETRY=1
-
-RUN npm install -g pnpm@9
-
-# Copy workspace config + backend package.json
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/apps/backend/package.json ./apps/backend/
-
-# Copy shared-types (including its built dist) so pnpm can symlink it
-COPY --from=builder /app/packages/shared-types ./packages/shared-types
-
-# Install production dependencies fresh
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy build artifacts, prisma schema, and static assets (NOS-Agent.exe etc.)
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
-COPY --from=builder /app/apps/backend/assets ./apps/backend/assets
-
-# Copy generated Prisma Client from builder to avoid re-generating or external network hangs
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-
-# Prisma client generation with telemetry strictly disabled (prevents 10-minute network checkpoint hang)
-RUN CHECKPOINT_DISABLE=1 PRISMA_DISABLE_TELEMETRY=1 npx --yes prisma@6.19.3 generate --schema=./apps/backend/prisma/schema.prisma
-
 ENV NODE_ENV=production
 ENV PORT=3001
 ENV NODE_PATH=/app/node_modules
+ENV CHECKPOINT_DISABLE=1
+ENV PRISMA_DISABLE_TELEMETRY=1
+
+# Copy workspace config
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/packages/shared-types ./packages/shared-types
+
+# Copy all node_modules from builder (already contains all dependencies and generated Prisma Client)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/backend/node_modules ./apps/backend/node_modules
+
+# Copy backend package.json, build artifacts, prisma schema, and static assets
+COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+COPY --from=builder /app/apps/backend/assets ./apps/backend/assets
 
 EXPOSE 3001
 
