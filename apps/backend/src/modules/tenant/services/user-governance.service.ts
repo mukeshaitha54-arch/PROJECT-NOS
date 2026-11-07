@@ -178,6 +178,7 @@ export class UserGovernanceService {
     context: TenantContext,
     teamIds?: string[],
     departmentIds?: string[],
+    originUrl?: string,
   ): Promise<{ invitation: OrganizationInvitationDto; inviteLink: string }> {
     await this.quotaService.checkQuotaConsumption(organizationId, "USERS");
 
@@ -198,10 +199,11 @@ export class UserGovernanceService {
     );
 
     const baseUrl =
+      originUrl ||
       process.env.APP_URL ||
       process.env.FRONTEND_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
-      "http://nos.is-local.org";
+      "http://x.nos.is-local.org";
     const inviteLink = `${baseUrl.replace(/\/$/, "")}/organization/invitations?token=${token}`;
 
     if (this.mailService) {

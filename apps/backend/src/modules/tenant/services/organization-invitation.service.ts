@@ -19,6 +19,7 @@ export interface CreateInvitationDto {
   teamIds?: string[];
   departmentIds?: string[];
   invitedByUserId: string;
+  originUrl?: string;
 }
 
 @Injectable()
@@ -58,9 +59,11 @@ export class OrganizationInvitationService {
     });
 
     const baseUrl =
+      dto.originUrl ||
+      process.env.APP_URL ||
       process.env.FRONTEND_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
-      "http://nos.is-local.org";
+      "http://x.nos.is-local.org";
     const inviteUrl = `${baseUrl.replace(/\/$/, "")}/organization/invitations?token=${token}`;
     await this.mailService.sendInvitationEmail(dto.email, org.name, inviteUrl);
 

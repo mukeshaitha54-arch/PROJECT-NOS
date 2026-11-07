@@ -26,17 +26,18 @@ export class SmtpMailService implements IMailService {
     // Derive reliable from and reply-to addresses to prevent SPF/DKIM/DMARC spoofing rejections
     const configuredFrom = this.configService.get<string>("SMTP_FROM");
     if (configuredFrom && !configuredFrom.includes("nos.local")) {
-      this.fromAddress = configuredFrom;
+      this.fromAddress = configuredFrom.includes("<")
+        ? configuredFrom
+        : `"NOS Platform" <${configuredFrom}>`;
     } else if (user && user.includes("@")) {
-      this.fromAddress = `"NOS Security Operations" <${user}>`;
+      this.fromAddress = `"NOS Platform" <${user}>`;
     } else {
-      this.fromAddress =
-        '"NOS Security Operations" <no-reply@nos.is-local.org>';
+      this.fromAddress = '"NOS Platform" <no-reply@x.nos.is-local.org>';
     }
 
-    // Domain for RFC-5322 Message-ID creation
+    // Domain for RFC-5322 Message-ID creation (matches SMTP sender domain)
     const domainMatch = this.fromAddress.match(/@([^>]+)/);
-    this.domain = domainMatch ? domainMatch[1] : "nos.is-local.org";
+    this.domain = domainMatch ? domainMatch[1] : "gmail.com";
     this.replyToAddress = user && user.includes("@") ? user : this.fromAddress;
 
     if (host && user && pass) {
@@ -75,10 +76,14 @@ export class SmtpMailService implements IMailService {
       messageId,
       date: new Date(),
       headers: {
-        "X-Mailer": "NOS Security Mailer v2.0",
-        "X-Auto-Response-Suppress": "All",
+        "X-Mailer": "NOS Platform Mailer",
+        "X-Priority": "3",
+        Importance: "Normal",
         "Auto-Submitted": "auto-generated",
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
         "X-Report-Abuse-To": this.replyToAddress,
+        "List-Unsubscribe": `<mailto:${this.replyToAddress}?subject=unsubscribe>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         ...(mailOptions.headers || {}),
       },
     };
@@ -122,45 +127,55 @@ export class SmtpMailService implements IMailService {
 
   /**
    * Generates clean, professional, high-deliverability transactional HTML.
-   * Avoids aggressive spam triggers (oversized red boxes, spam keywords, script tags).
+   * Adheres to strict anti-spam guidelines: balanced text/HTML ratio, semantic table structure,
+   * inline CSS, clear organizational attribution, and compliant CAN-SPAM/GDPR transactional footer.
    */
   private getHtmlTemplate(
     title: string,
     bodyHtml: string,
     recipientEmail: string,
     actionDisclaimer = "If you did not request this communication, please disregard it.",
+    preheaderText?: string,
   ): string {
+    const preview = preheaderText || title;
     return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no"/>
   <title>${title}</title>
   <style type="text/css">
-    body { margin: 0; padding: 0; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0; }
-    table { border-collapse: collapse; }
-    a { color: #38bdf8; text-decoration: none; }
-    .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #38bdf8; background: #0f172a; padding: 18px 28px; border-radius: 8px; border: 1px solid #1e293b; display: inline-block; margin: 16px 0; }
-    .btn-action { display: inline-block; background-color: #2563eb; color: #ffffff !important; padding: 12px 28px; font-size: 14px; font-weight: 600; border-radius: 6px; text-decoration: none; margin: 20px 0; }
+    body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; -webkit-font-smoothing: antialiased; }
+    table { border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; }
+    a { color: #f47b36; text-decoration: none; }
+    .otp-code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #f47b36; background: #fff8f2; padding: 16px 28px; border-radius: 8px; border: 1px solid #fed7aa; display: inline-block; margin: 16px 0; }
+    .btn-action { display: inline-block; background: #f47b36; color: #ffffff !important; padding: 13px 28px; font-size: 14px; font-weight: 700; border-radius: 8px; text-decoration: none; margin: 16px 0; }
     .footer-text { font-size: 12px; color: #64748b; line-height: 18px; text-align: center; }
   </style>
 </head>
-<body style="margin: 0; padding: 30px 10px; background-color: #0b0f19;">
+<body style="margin: 0; padding: 32px 12px; background-color: #f8fafc;">
+  <!-- Preheader text (inbox preview) -->
+  <span style="display:none !important;visibility:hidden;mso-hide:all;font-size:1px;color:#f8fafc;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    ${preview}
+  </span>
+
   <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
       <td align="center">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; overflow: hidden;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
           <!-- Header Bar -->
           <tr>
-            <td style="padding: 24px 32px; background-color: #0f172a; border-bottom: 1px solid #1e293b;">
+            <td style="padding: 24px 32px; background-color: #ffffff; border-bottom: 2px solid #fff1e6;">
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <span style="font-size: 18px; font-weight: 700; letter-spacing: 1px; color: #ffffff;">NOS</span>
-                    <span style="font-size: 13px; color: #94a3b8; margin-left: 8px;">SECURITY OPERATIONS</span>
+                    <span style="display: inline-block; width: 28px; height: 28px; background-color: #f47b36; color: #ffffff; font-weight: 900; font-size: 15px; line-height: 28px; text-align: center; border-radius: 6px; margin-right: 8px; vertical-align: middle;">N</span>
+                    <span style="font-size: 18px; font-weight: 800; letter-spacing: 0.5px; color: #0f172a; vertical-align: middle;">NOS</span>
+                    <span style="font-size: 11px; font-weight: 700; color: #f47b36; background-color: #fff7ed; border: 1px solid #ffedd5; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; text-transform: uppercase;">Zero-Trust Fleet</span>
                   </td>
                   <td align="right">
-                    <span style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Identity Protection</span>
+                    <span style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Security Notification</span>
                   </td>
                 </tr>
               </table>
@@ -169,23 +184,23 @@ export class SmtpMailService implements IMailService {
 
           <!-- Main Content -->
           <tr>
-            <td style="padding: 36px 32px; color: #cbd5e1; font-size: 15px; line-height: 24px;">
-              <h1 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #f8fafc;">${title}</h1>
+            <td style="padding: 32px; color: #334155; font-size: 15px; line-height: 24px;">
+              <h1 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a; line-height: 28px;">${title}</h1>
               ${bodyHtml}
-              <p style="margin: 24px 0 0 0; font-size: 13px; color: #94a3b8; line-height: 20px;">
-                ${actionDisclaimer}
-              </p>
+              <div style="margin: 24px 0 0 0; padding: 14px 16px; background-color: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; font-size: 12px; color: #64748b; line-height: 18px;">
+                <strong>Security Notice:</strong> ${actionDisclaimer} NOS will never ask for your account password or encryption keys in an email.
+              </div>
             </td>
           </tr>
 
           <!-- Security Footer -->
           <tr>
-            <td style="padding: 24px 32px; background-color: #090d16; border-top: 1px solid #1e293b;">
-              <p class="footer-text" style="margin: 0 0 8px 0;">
-                This security message was transmitted to <strong>${recipientEmail}</strong> for authorized session validation.
+            <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0;">
+              <p class="footer-text" style="margin: 0 0 6px 0;">
+                This message was sent to <strong>${recipientEmail}</strong> as an authorized transactional event.
               </p>
-              <p class="footer-text" style="margin: 0;">
-                &copy; ${new Date().getFullYear()} NOS Platform &bull; Real-time Operational Fleet Intelligence
+              <p class="footer-text" style="margin: 0; color: #94a3b8;">
+                &copy; ${new Date().getFullYear()} NOS Platform Operations &bull; Zero-Trust Fleet Monitoring &bull; All rights reserved.
               </p>
             </td>
           </tr>
@@ -268,36 +283,51 @@ NOS Security Operations - Real-time Fleet Telemetry`;
     orgName: string,
     inviteUrl: string,
   ): Promise<void> {
-    const text = `You have been invited to join ${orgName} on the NOS Fleet Management Platform.
+    const text = `Hello,
 
-Accept your invitation using the following link:
+You have been invited to join ${orgName} on the NOS Zero-Trust Fleet Platform.
+
+To accept this invitation and access the device monitoring fleet, open the following link in your browser:
 ${inviteUrl}
 
-Recipient: ${email}
-Organization: ${orgName}
-Timestamp: ${new Date().toUTCString()}
+Invitation Details:
+• Organization: ${orgName}
+• Recipient: ${email}
+• Expiration: 7 days
+• Security: Single-use cryptographic token
 
-If you were not expecting this invitation, you can ignore this email.
-NOS Security Operations`;
+If you were not expecting this invitation or do not recognize ${orgName}, you can safely disregard this message. No account will be created.
+
+Regards,
+NOS Platform Operations
+https://x.nos.is-local.org`;
 
     const html = this.getHtmlTemplate(
       `Invitation to join ${orgName}`,
-      `<p style="margin: 0 0 16px 0;">You have been invited to join the enterprise team for <strong>${orgName}</strong> on the NOS Platform.</p>
-       <p style="margin: 0 0 24px 0;">Click the button below to accept your invitation and access the command center:</p>
-       <div style="text-align: center; margin: 24px 0;">
-         <a href="${inviteUrl}" class="btn-action" target="_blank">Accept Invitation</a>
+      `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #334155;">Hello,</p>
+       <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #334155;">
+         An administrator at <strong>${orgName}</strong> has invited you to collaborate on their organization&apos;s devices using the <strong>NOS Zero-Trust Fleet Monitoring Platform</strong>.
+       </p>
+       <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #334155;">
+         Click the button below to accept your invitation and join the workspace:
+       </p>
+       <div style="text-align: center; margin: 28px 0;">
+         <a href="${inviteUrl}" class="btn-action" target="_blank" style="background-color: #f47b36; color: #ffffff !important; padding: 14px 32px; font-size: 14px; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-block;">
+           Accept Invitation &amp; Join Fleet &rarr;
+         </a>
        </div>
-       <p style="margin: 16px 0 0 0; font-size: 12px; color: #94a3b8; word-break: break-all;">
-         Alternative direct link: <a href="${inviteUrl}">${inviteUrl}</a>
+       <p style="margin: 24px 0 6px 0; font-size: 12px; color: #64748b; line-height: 18px;">
+         Direct link: <a href="${inviteUrl}" style="color: #f47b36; word-break: break-all;">${inviteUrl}</a>
        </p>`,
       email,
-      "If you do not recognize this organization, you can safely ignore this invitation.",
+      `This invitation was dispatched on behalf of ${orgName}. If you do not recognize this organization, no action is needed.`,
+      `You were invited to join ${orgName} on NOS Fleet Platform`,
     );
 
     await this.sendMailWithRetry({
       from: this.fromAddress,
       to: email,
-      subject: `Invitation: Join ${orgName} on NOS Platform`,
+      subject: `${orgName} invited you to join their fleet on NOS`,
       text,
       html,
     });
@@ -343,7 +373,7 @@ NOS Security Operations`;
 
 Your account is confirmed and fully active. You can now enroll agents, monitor node telemetry, and manage your fleet.
 
-Access the command center: http://nos.is-local.org/dashboard
+Access the command center: http://x.nos.is-local.org/dashboard
 
 Recipient: ${email}
 NOS Security Operations`;

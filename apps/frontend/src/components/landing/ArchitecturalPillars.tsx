@@ -139,17 +139,17 @@ export function ArchitecturalPillars() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="rounded-3xl border border-[#eadfd5] bg-[#0c0d10] overflow-hidden shadow-2xl"
+            className="rounded-3xl border border-[#eadfd5] bg-white/85 backdrop-blur-2xl overflow-hidden shadow-[0_16px_40px_-12px_rgba(244,123,54,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)]"
           >
             {/* Header row */}
-            <div className="grid grid-cols-3 bg-[#15161c]/90 border-b border-white/[0.08]">
-              <div className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <div className="grid grid-cols-3 bg-[#fff8f2] border-b border-[#eadfd5]">
+              <div className="px-6 py-4 text-xs font-bold text-[#64564c] uppercase tracking-widest">
                 Dimension
               </div>
-              <div className="px-6 py-4 text-xs font-bold text-rose-400 uppercase tracking-widest border-l border-white/[0.08]">
+              <div className="px-6 py-4 text-xs font-bold text-rose-600 uppercase tracking-widest border-l border-[#eadfd5]">
                 ❌ Legacy RMM
               </div>
-              <div className="px-6 py-4 text-xs font-bold text-orange-400 uppercase tracking-widest border-l border-white/[0.08]">
+              <div className="px-6 py-4 text-xs font-bold text-[#f47b36] uppercase tracking-widest border-l border-[#eadfd5]">
                 ✅ NOS Sentinel
               </div>
             </div>
@@ -161,18 +161,18 @@ export function ArchitecturalPillars() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, duration: 0.5 }}
-                className="grid grid-cols-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] transition-colors"
+                className="grid grid-cols-3 border-b border-[#eadfd5]/60 last:border-0 hover:bg-[#fff9f4]/60 transition-colors"
               >
-                <div className="px-6 py-4 text-sm font-semibold text-slate-300">
+                <div className="px-6 py-4 text-sm font-bold text-[#211a16]">
                   {row.dimension}
                 </div>
-                <div className="px-6 py-4 border-l border-white/[0.08]">
-                  <span className="text-sm text-rose-400/80 leading-relaxed">
+                <div className="px-6 py-4 border-l border-[#eadfd5]/60">
+                  <span className="text-sm text-rose-700/80 leading-relaxed font-medium">
                     {row.legacy.text}
                   </span>
                 </div>
-                <div className="px-6 py-4 border-l border-white/[0.08]">
-                  <span className="text-sm text-orange-300 leading-relaxed font-medium">
+                <div className="px-6 py-4 border-l border-[#eadfd5]/60">
+                  <span className="text-sm text-[#c25e1a] leading-relaxed font-semibold">
                     {row.nos.text}
                   </span>
                 </div>
@@ -217,9 +217,9 @@ export function ArchitecturalPillars() {
                 whileHover={{
                   y: -4,
                   boxShadow: `0 20px 60px ${pillar.glow}`,
-                  borderColor: "rgba(255,255,255,0.18)",
+                  borderColor: "rgba(244,123,54,0.35)",
                 }}
-                className="group rounded-3xl border border-white/10 bg-[#111217]/70 backdrop-blur-sm p-7 cursor-default transition-all duration-300 shadow-xl"
+                className="group rounded-3xl border border-[#eadfd5] bg-white/80 backdrop-blur-xl p-7 cursor-default transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)] hover:bg-white/95"
               >
                 {/* Icon */}
                 <div
@@ -229,10 +229,10 @@ export function ArchitecturalPillars() {
                   {pillar.icon}
                 </div>
 
-                <h3 className="text-xl font-black text-white mb-3">
+                <h3 className="text-xl font-black text-[#211a16] mb-3">
                   {pillar.title}
                 </h3>
-                <p className="text-slate-400 text-sm leading-relaxed mb-5">
+                <p className="text-[#64564c] text-sm leading-relaxed mb-5 font-normal">
                   {pillar.description}
                 </p>
 
@@ -241,8 +241,7 @@ export function ArchitecturalPillars() {
                   {pillar.badges.map((b) => (
                     <span
                       key={b}
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full text-white border border-white/10 font-mono`}
-                      style={{ background: `${pillar.glow}` }}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full text-[#c25e1a] bg-[#fff5ee] border border-[#f47b36]/25 font-mono shadow-sm`}
                     >
                       {b}
                     </span>

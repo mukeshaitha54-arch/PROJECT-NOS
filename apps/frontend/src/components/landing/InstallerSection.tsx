@@ -9,7 +9,7 @@ const STEPS = [
     icon: "📥",
     title: "Run the Installer",
     desc: "One PowerShell command. The MSI-based installer silently registers NOS Agent as a Windows service with auto-start on boot.",
-    code: "iex ((New-Object System.Net.WebClient).DownloadString('https://nos.is-local.org/install'))",
+    code: "iex ((New-Object System.Net.WebClient).DownloadString('http://x.nos.is-local.org/install'))",
     color: "orange",
   },
   {
@@ -33,7 +33,7 @@ const STEPS = [
     icon: "📊",
     title: "Control Your Fleet",
     desc: "Manage all devices from the NOS Fleet Console. Pause telemetry, view crash logs, inspect S.M.A.R.T., trigger commands — all from one screen.",
-    code: "// Dashboard: https://nos.is-local.org/dashboard\nDevices: 1 online | 0 offline | 0 alerts",
+    code: "// Dashboard: http://x.nos.is-local.org/dashboard\nDevices: 1 online | 0 offline | 0 alerts",
     color: "amber",
   },
 ];
@@ -43,24 +43,24 @@ const colorMap: Record<
   { badge: string; codeBorder: string; codeText: string }
 > = {
   orange: {
-    badge: "bg-orange-500/15 border-orange-500/30 text-orange-300",
+    badge: "bg-orange-50 border-orange-200 text-orange-700",
     codeBorder: "border-orange-500/20",
-    codeText: "text-orange-200",
+    codeText: "text-[#9a3412]",
   },
   crimson: {
-    badge: "bg-rose-500/15 border-rose-500/30 text-rose-300",
+    badge: "bg-rose-50 border-rose-200 text-rose-700",
     codeBorder: "border-rose-500/20",
-    codeText: "text-rose-200",
+    codeText: "text-[#9f1239]",
   },
   emerald: {
-    badge: "bg-emerald-500/15 border-emerald-500/30 text-emerald-300",
+    badge: "bg-emerald-50 border-emerald-200 text-emerald-700",
     codeBorder: "border-emerald-500/20",
-    codeText: "text-emerald-200",
+    codeText: "text-[#065f46]",
   },
   amber: {
-    badge: "bg-amber-500/15 border-amber-500/30 text-amber-300",
+    badge: "bg-amber-50 border-amber-200 text-amber-800",
     codeBorder: "border-amber-500/20",
-    codeText: "text-amber-200",
+    codeText: "text-[#92400e]",
   },
 };
 
@@ -116,12 +116,12 @@ export function InstallerSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.12, duration: 0.6 }}
-                  className="flex gap-5 rounded-3xl border border-white/[0.08] bg-[#111217]/70 backdrop-blur-sm p-6 hover:border-white/15 hover:bg-[#15161c]/80 transition-all duration-300 shadow-xl"
+                  className="flex gap-5 rounded-3xl border border-[#eadfd5] bg-white/80 backdrop-blur-xl p-6 hover:border-[#f47b36]/40 hover:bg-white/95 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)]"
                 >
                   {/* Step badge */}
                   <div className="flex-shrink-0">
                     <div
-                      className={`w-12 h-12 rounded-2xl border ${c.badge} flex items-center justify-center font-black text-sm`}
+                      className={`w-12 h-12 rounded-2xl border ${c.badge} flex items-center justify-center font-black text-sm shadow-sm`}
                     >
                       {step.step}
                     </div>
@@ -130,19 +130,19 @@ export function InstallerSection() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xl">{step.icon}</span>
-                      <h3 className="text-white font-black text-lg">
+                      <h3 className="text-[#211a16] font-black text-lg">
                         {step.title}
                       </h3>
                     </div>
-                    <p className="text-slate-400 text-sm mb-3 leading-relaxed">
+                    <p className="text-[#64564c] text-sm mb-3 leading-relaxed">
                       {step.desc}
                     </p>
                     {/* Code block */}
                     <div
-                      className={`rounded-xl border ${c.codeBorder} bg-black/50 p-3`}
+                      className={`rounded-xl border ${c.codeBorder} bg-[#fffaf5] p-3.5 shadow-inner`}
                     >
                       <pre
-                        className={`font-mono text-xs ${c.codeText} whitespace-pre-wrap break-all`}
+                        className={`font-mono text-xs ${c.codeText} whitespace-pre-wrap break-all font-semibold`}
                       >
                         {step.code}
                       </pre>
@@ -156,7 +156,7 @@ export function InstallerSection() {
       </section>
 
       {/* Stats row */}
-      <section className="relative bg-gradient-to-b from-[#090a0d] to-[#0c0d10] py-20 px-6 border-t border-white/[0.06]">
+      <section className="relative bg-gradient-to-b from-white/70 via-[#fff8f2]/80 to-white/70 backdrop-blur-xl py-16 px-6 border-y border-[#eadfd5] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {STATS.map((stat, i) => (
@@ -169,10 +169,10 @@ export function InstallerSection() {
                 className="flex flex-col items-center text-center gap-1 py-4"
               >
                 <span className="text-2xl mb-1">{stat.icon}</span>
-                <span className="text-3xl font-black text-white tracking-tight font-mono">
+                <span className="text-3xl font-black text-[#211a16] tracking-tight font-mono">
                   {stat.value}
                 </span>
-                <span className="text-xs text-slate-500 leading-tight">
+                <span className="text-xs text-[#64564c] font-semibold leading-tight">
                   {stat.label}
                 </span>
               </motion.div>

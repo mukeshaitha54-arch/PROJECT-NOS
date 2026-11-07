@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
   HttpCode,
   HttpStatus,
 } from "@nestjs/common";
@@ -50,7 +51,14 @@ export class OrganizationInvitationController {
     @Body("teamIds") teamIds?: string[],
     @Body("departmentIds") departmentIds?: string[],
     @CurrentUser() user?: any,
+    @Req() req?: any,
   ) {
+    const originUrl =
+      req?.headers?.origin ||
+      (req?.headers?.host
+        ? `${req?.protocol || "http"}://${req.headers.host}`
+        : null);
+
     const targetOrgId = organizationId || user?.organizationId || "default-org";
     const result = await this.invitationService.inviteMember({
       organizationId: targetOrgId,
@@ -59,6 +67,7 @@ export class OrganizationInvitationController {
       teamIds,
       departmentIds,
       invitedByUserId: user.id,
+      originUrl,
     });
 
     return {

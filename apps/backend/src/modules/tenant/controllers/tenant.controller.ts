@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
   HttpStatus,
 } from "@nestjs/common";
 import {
@@ -267,9 +268,16 @@ export class TenantController {
       departmentIds?: string[];
     },
     @CurrentTenant() tenant: TenantContext,
+    @Req() req?: any,
   ): Promise<
     ApiResponse<{ invitation: OrganizationInvitationDto; inviteLink: string }>
   > {
+    const originUrl =
+      req?.headers?.origin ||
+      (req?.headers?.host
+        ? `${req?.protocol || "http"}://${req.headers.host}`
+        : null);
+
     const data = await this.userService.inviteUser(
       tenant.organizationId,
       body.email,
@@ -277,6 +285,7 @@ export class TenantController {
       tenant,
       body.teamIds,
       body.departmentIds,
+      originUrl,
     );
     return { success: true, data, timestamp: new Date().toISOString() };
   }
