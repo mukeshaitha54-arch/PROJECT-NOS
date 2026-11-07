@@ -212,9 +212,9 @@ export default function RegistrationKeysPage() {
       )}
 
       {/* Table */}
-      <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="dashboard-glass-card rounded-2xl overflow-hidden">
         <table className="w-full text-sm text-left text-gray-400">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+          <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
             <tr>
               <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Key Prefix</th>
@@ -239,7 +239,7 @@ export default function RegistrationKeysPage() {
               keys.map((k) => (
                 <tr
                   key={k.id}
-                  className="border-b border-gray-800 hover:bg-gray-800/50"
+                  className="border-b border-orange-500/20 hover:bg-white/[0.05]/50"
                 >
                   <td className="px-6 py-4 font-medium text-gray-200">
                     {k.displayName}
@@ -300,14 +300,14 @@ export default function RegistrationKeysPage() {
                 type="text"
                 readOnly
                 value={newKey}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200 font-mono text-xs"
+                className="w-full bg-white/[0.04] border border-orange-500/20 rounded px-3 py-2 text-gray-200 font-mono text-xs"
               />
               <button
                 onClick={() => copyToClipboard(newKey)}
                 className={`shrink-0 flex items-center gap-1.5 p-2.5 rounded border text-xs font-bold transition-all ${
                   copiedKey
                     ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                    : "bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-300"
+                    : "bg-white/[0.05] hover:bg-gray-700 border-orange-500/20 text-gray-300"
                 }`}
                 title="Copy key"
               >
@@ -320,7 +320,7 @@ export default function RegistrationKeysPage() {
               <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
                 Select Installation Method:
               </p>
-              <div className="grid grid-cols-2 gap-2 bg-gray-900 p-1 rounded-lg border border-gray-700">
+              <div className="grid grid-cols-2 gap-2 bg-white/[0.04] p-1 rounded-lg border border-orange-500/20">
                 <button
                   type="button"
                   onClick={() => setDeployOption("automated")}
@@ -348,7 +348,7 @@ export default function RegistrationKeysPage() {
 
             {/* Option 1: Automated */}
             {deployOption === "automated" && (
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3 text-xs text-gray-300">
+              <div className="bg-white/[0.04] border border-orange-500/20 rounded-lg p-4 space-y-3 text-xs text-gray-300">
                 <p className="font-semibold text-white">
                   Automated Windows Service Installation (Recommended):
                 </p>
@@ -358,7 +358,7 @@ export default function RegistrationKeysPage() {
                   <li>
                     Open <strong>PowerShell as Administrator</strong> and run:
                     <div className="mt-1 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-gray-950 border border-gray-800 text-cyan-300 px-2.5 py-1.5 rounded">
+                      <code className="flex-1 font-mono text-[11px] bg-white/[0.03] border border-orange-500/20 text-cyan-300 px-2.5 py-1.5 rounded">
                         powershell -ExecutionPolicy Bypass -File
                         .\install-nos-agent.ps1
                       </code>
@@ -371,7 +371,7 @@ export default function RegistrationKeysPage() {
                           setCopiedCmd(true);
                           setTimeout(() => setCopiedCmd(false), 2000);
                         }}
-                        className="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-[11px]"
+                        className="px-2 py-1 bg-white/[0.05] hover:bg-gray-700 text-gray-300 rounded text-[11px]"
                       >
                         {copiedCmd ? "Copied!" : "Copy"}
                       </button>
@@ -379,7 +379,7 @@ export default function RegistrationKeysPage() {
                   </li>
                   <li>Paste the key above when prompted.</li>
                 </ol>
-                <p className="text-[11px] text-blue-400/90 pt-1 border-t border-gray-800">
+                <p className="text-[11px] text-blue-400/90 pt-1 border-t border-orange-500/20">
                   ⚡{" "}
                   <em>
                     Automatically downloads the agent and sets it up as a
@@ -400,7 +400,7 @@ export default function RegistrationKeysPage() {
 
             {/* Option 2: Manual */}
             {deployOption === "manual" && (
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3 text-xs text-gray-300">
+              <div className="bg-white/[0.04] border border-orange-500/20 rounded-lg p-4 space-y-3 text-xs text-gray-300">
                 <p className="font-semibold text-white">
                   Manual Standalone Executable (No Service):
                 </p>
@@ -412,7 +412,7 @@ export default function RegistrationKeysPage() {
                   <li>
                     Double-click or run from command line:
                     <div className="mt-1 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-gray-950 border border-gray-800 text-cyan-300 px-2.5 py-1.5 rounded">
+                      <code className="flex-1 font-mono text-[11px] bg-white/[0.03] border border-orange-500/20 text-cyan-300 px-2.5 py-1.5 rounded">
                         .\NOS-Agent.exe
                       </code>
                       <button
@@ -422,7 +422,7 @@ export default function RegistrationKeysPage() {
                           setCopiedCmd(true);
                           setTimeout(() => setCopiedCmd(false), 2000);
                         }}
-                        className="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-[11px]"
+                        className="px-2 py-1 bg-white/[0.05] hover:bg-gray-700 text-gray-300 rounded text-[11px]"
                       >
                         {copiedCmd ? "Copied!" : "Copy"}
                       </button>
@@ -433,7 +433,7 @@ export default function RegistrationKeysPage() {
                     Key.
                   </li>
                 </ol>
-                <p className="text-[11px] text-emerald-400/90 pt-1 border-t border-gray-800">
+                <p className="text-[11px] text-emerald-400/90 pt-1 border-t border-orange-500/20">
                   ⚡{" "}
                   <em>
                     Runs interactively. Config is saved to
@@ -473,7 +473,7 @@ export default function RegistrationKeysPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g., Office PCs — 2026"
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-[#C8A96E]"
+                className="w-full bg-white/[0.04] border border-orange-500/20 rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-[#C8A96E]"
               />
             </div>
             <div>
@@ -486,7 +486,7 @@ export default function RegistrationKeysPage() {
                 min="0"
                 value={maxUses}
                 onChange={(e) => setMaxUses(parseInt(e.target.value) || 0)}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-[#C8A96E]"
+                className="w-full bg-white/[0.04] border border-orange-500/20 rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-[#C8A96E]"
               />
             </div>
             <div>
@@ -499,14 +499,14 @@ export default function RegistrationKeysPage() {
                 max="3650"
                 value={expiresInDays}
                 onChange={(e) => setExpiresInDays(parseInt(e.target.value))}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-[#C8A96E]"
+                className="w-full bg-white/[0.04] border border-orange-500/20 rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-[#C8A96E]"
               />
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded text-gray-400 hover:bg-gray-800"
+                className="px-4 py-2 rounded text-gray-400 hover:bg-white/[0.05]"
               >
                 Cancel
               </button>

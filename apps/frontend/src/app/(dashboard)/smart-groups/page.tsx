@@ -78,25 +78,25 @@ export default function SmartGroupsPage() {
       </div>
 
       <div className="bg-[#111217]/70 border border-white/[0.08] rounded-xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-white/[0.08] flex flex-col sm:flex-row gap-4 justify-between items-center bg-gray-950/50">
+        <div className="p-4 border-b border-white/[0.08] flex flex-col sm:flex-row gap-4 justify-between items-center bg-white/[0.03]/50">
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="search"
               placeholder="Search smart groups..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-sm text-gray-200 focus:border-orange-500/60 outline-none"
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/[0.04] border border-orange-500/20 text-sm text-gray-200 focus:border-orange-500/60 outline-none"
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
-              className="border-gray-700 text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
+              className="border-orange-500/20 text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
             >
               <Filter className="w-4 h-4 mr-2" /> Filters
             </Button>
             <Button
               variant="outline"
-              className="border-gray-700 text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
+              className="border-orange-500/20 text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
             >
               <FileText className="w-4 h-4 mr-2" /> Export
             </Button>
@@ -141,7 +141,7 @@ export default function SmartGroupsPage() {
                   {g.description}
                 </p>
 
-                <div className="bg-gray-950 rounded-lg p-3 border border-gray-800">
+                <div className="bg-white/[0.03] rounded-lg p-3 border border-orange-500/20">
                   <div className="text-[10px] uppercase font-bold text-gray-500 mb-1">
                     Evaluation Rule
                   </div>

@@ -97,7 +97,7 @@ export default function AlertsCenterPage() {
           duration: isCritical ? Infinity : 5000,
           className: isCritical
             ? "bg-red-950 text-red-200 border-red-800 font-semibold"
-            : "bg-gray-900 text-gray-200 border-gray-800",
+            : "bg-white/[0.04] text-gray-200 border-orange-500/20",
         });
       }
     };
@@ -209,7 +209,7 @@ export default function AlertsCenterPage() {
           size="sm"
           onClick={fetchAlerts}
           disabled={loading}
-          className="border-gray-800 text-gray-300 text-xs"
+          className="border-orange-500/20 text-gray-300 text-xs"
         >
           <RefreshCw
             className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
@@ -266,7 +266,7 @@ export default function AlertsCenterPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search alert title or node..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-gray-950 border border-gray-800 text-xs text-gray-200 placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-xs text-gray-200 placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
             />
           </div>
 
@@ -274,7 +274,7 @@ export default function AlertsCenterPage() {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 outline-none shrink-0"
+            className="bg-white/[0.03] border border-orange-500/20 text-gray-200 text-xs rounded-lg px-3 py-2 outline-none shrink-0"
           >
             <option value="ALL">All Severities</option>
             <option value="CRITICAL">Critical</option>
@@ -287,7 +287,7 @@ export default function AlertsCenterPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-gray-950 border border-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 outline-none shrink-0"
+            className="bg-white/[0.03] border border-orange-500/20 text-gray-200 text-xs rounded-lg px-3 py-2 outline-none shrink-0"
           >
             <option value="ALL">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -298,7 +298,7 @@ export default function AlertsCenterPage() {
 
         {/* Time range selector & Select All */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-          <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-xs">
+          <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-lg border border-orange-500/20 text-xs">
             {[
               { id: "today", label: "Today" },
               { id: "7d", label: "7 Days" },
@@ -322,7 +322,7 @@ export default function AlertsCenterPage() {
             variant="outline"
             size="sm"
             onClick={handleSelectAll}
-            className="border-gray-800 text-gray-300 text-xs h-8"
+            className="border-orange-500/20 text-gray-300 text-xs h-8"
           >
             {selectedAlertIds.length === filteredAlerts.length &&
             filteredAlerts.length > 0
@@ -335,7 +335,7 @@ export default function AlertsCenterPage() {
       {/* Alert Cards Layout (1-2 columns responsive) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredAlerts.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-gray-500 text-xs bg-gray-900 border border-gray-800 rounded-xl">
+          <div className="col-span-full py-16 text-center text-gray-500 text-xs bg-white/[0.04] border border-orange-500/20 rounded-xl">
             <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
             <p className="font-semibold text-gray-300 text-sm">
               All clear! No matching alerts found.

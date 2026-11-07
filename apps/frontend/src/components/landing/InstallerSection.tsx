@@ -78,11 +78,9 @@ export function InstallerSection() {
     <>
       {/* How It Works */}
       <section
-        className="relative bg-[#090a0d] py-28 px-6 overflow-hidden"
+        className="relative bg-transparent py-28 px-6 overflow-hidden"
         id="installer"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,85,0,0.06)_0%,transparent_60%)] pointer-events-none" />
-
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -91,17 +89,17 @@ export function InstallerSection() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
-              🚀 Rapid Deployment
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-[#f47b36] tracking-widest uppercase bg-[#f47b36]/10 border border-[#f47b36]/20 rounded-full px-4 py-1.5 mb-5 shadow-sm">
+              <span className="mirror-text">🚀 Rapid Deployment</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-              Zero to{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+            <h2 className="text-4xl md:text-5xl font-black text-[#211a16] mb-4">
+              <span className="mirror-text">Zero to</span>{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 mirror-text">
                 Fleet Monitoring
               </span>{" "}
-              in 5 Minutes
+              <span className="mirror-text">in 5 Minutes</span>
             </h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
+            <p className="text-[#64564c] text-lg max-w-xl mx-auto mirror-text">
               No bloat. No reboots. No configuration hell. NOS is designed to be
               operational in under 5 minutes from first download.
             </p>
@@ -184,25 +182,7 @@ export function InstallerSection() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative bg-[#07080a] py-28 px-6 overflow-hidden border-t border-white/[0.06]">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 via-rose-600/5 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,85,0,0.12)_0%,transparent_70%)] pointer-events-none" />
-
-        {/* Glow rings */}
-        {[200, 350, 500].map((r, i) => (
-          <motion.div
-            key={r}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-orange-500/10 pointer-events-none"
-            style={{ width: r, height: r }}
-            animate={{ scale: [1, 1.04, 1], opacity: [0.2, 0.5, 0.2] }}
-            transition={{
-              duration: 4 + i * 1.5,
-              repeat: Infinity,
-              delay: i * 0.8,
-            }}
-          />
-        ))}
-
+      <section className="relative bg-transparent py-28 px-6 overflow-hidden border-t border-[#eadfd5]">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -210,20 +190,20 @@ export function InstallerSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-8">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Ready to Deploy
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-[#f47b36] tracking-widest uppercase bg-[#f47b36]/10 border border-[#f47b36]/20 rounded-full px-4 py-1.5 mb-8 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="mirror-text">Ready to Deploy</span>
             </div>
 
-            <h2 className="text-5xl md:text-7xl font-black text-white leading-[0.92] tracking-tight mb-6">
-              TAKE COMMAND OF
+            <h2 className="text-5xl md:text-7xl font-black text-[#211a16] leading-[0.92] tracking-tight mb-6">
+              <span className="mirror-text">TAKE COMMAND OF</span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 mirror-text">
                 YOUR ENTIRE FLEET
               </span>
             </h2>
 
-            <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
+            <p className="text-[#64564c] text-lg mb-10 max-w-xl mx-auto mirror-text">
               NOS turns every Windows machine into a transparent, observable,
               controllable node. Start with one device. Scale to thousands.
             </p>
@@ -233,21 +213,21 @@ export function InstallerSection() {
                 <motion.button
                   whileHover={{
                     scale: 1.04,
-                    boxShadow: "0 0 50px rgba(255,85,0,0.5)",
+                    boxShadow: "0 0 50px rgba(244,123,54,0.4)",
                   }}
                   whileTap={{ scale: 0.97 }}
                   className="px-10 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-black text-lg transition-all duration-300 shadow-2xl shadow-orange-500/30 active:scale-[0.97]"
                 >
-                  🚀 Launch Fleet Console →
+                  <span className="mirror-text">🚀 Launch Fleet Console →</span>
                 </motion.button>
               </Link>
               <Link href="/auth/login">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className="px-10 py-4 rounded-2xl border border-white/15 bg-white/5 text-white font-bold text-lg hover:bg-white/10 hover:border-white/25 transition-all duration-300 active:scale-[0.97]"
+                  className="px-10 py-4 rounded-2xl border border-[#eadfd5] bg-white text-[#211a16] font-bold text-lg hover:bg-[#fff7f0] hover:border-[#f47b36]/40 transition-all duration-300 active:scale-[0.97] shadow-sm"
                 >
-                  Sign In to Dashboard
+                  <span className="mirror-text">Sign In to Dashboard</span>
                 </motion.button>
               </Link>
             </div>

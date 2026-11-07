@@ -5,12 +5,10 @@ import {
   ScrollStream,
   LandingNavbar,
   HeroSection,
-  LogoStrip,
-  MechanismSection,
-  DaySection,
-  TestimonialSection,
-  CapacityEstimatorSection,
-  ClosingSection,
+  LiveTelemetryMockHud,
+  HurdleSimulatorSlider,
+  ArchitecturalPillars,
+  InstallerSection,
   LandingFooter,
 } from "@/components/landing";
 
@@ -23,33 +21,27 @@ export default function LandingPage() {
       {/* 2. Vertical Scroll Stream Rail with Tracking Orbit */}
       <ScrollStream />
 
-      {/* 3. Site Header Navigation with Animated Brand Glyph Ring */}
+      {/* 3. Site Header Navigation with Animated Brand Glyph */}
       <LandingNavbar />
 
-      <main>
-        {/* 4. Hero Section with 3D Flow Window & Animated Particle Spark */}
+      <main className="relative z-10">
+        {/* 4. NOS Hero Section with 3D Hardware Telemetry Cockpit & Sliding Rail */}
         <HeroSection />
 
-        {/* 5. Supported Runtimes & Infrastructure Strip */}
-        <LogoStrip />
+        {/* 5. Interactive Live Telemetry HUD Sandbox */}
+        <LiveTelemetryMockHud />
 
-        {/* 6. Mechanism Section — 01 Set it in Motion with Unfolding Plate */}
-        <MechanismSection />
+        {/* 6. Hurdle Simulator — 3-Stage Resilience Walkthrough */}
+        <HurdleSimulatorSlider />
 
-        {/* 7. Operational Cockpit — 02 Your Fleet in Motion with Live Events */}
-        <DaySection />
+        {/* 7. Comparison Table & 4 Core Pillars */}
+        <ArchitecturalPillars />
 
-        {/* 8. Verified Testimonial Quote */}
-        <TestimonialSection />
-
-        {/* 9. Fleet Capacity & Usage Estimator Slider */}
-        <CapacityEstimatorSection />
-
-        {/* 10. Closing Orbit CTA */}
-        <ClosingSection />
+        {/* 8. One-Click Installer & Deployment Terminal */}
+        <InstallerSection />
       </main>
 
-      {/* 11. Minimal Warm Footer */}
+      {/* 9. Minimal Warm Ivory & Solar Orange Footer */}
       <LandingFooter />
     </div>
   );

@@ -181,7 +181,7 @@ export default function SettingsPage() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-orange-500/60 text-xs"
+                className="w-full px-3.5 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white focus:outline-none focus:border-orange-500/60 text-xs"
               />
             </div>
 
@@ -193,12 +193,12 @@ export default function SettingsPage() {
                 type="email"
                 value={email}
                 disabled
-                className="w-full px-3.5 py-2 rounded-lg bg-gray-950/50 border border-gray-800 text-gray-500 cursor-not-allowed text-xs"
+                className="w-full px-3.5 py-2 rounded-lg bg-white/[0.03]/50 border border-orange-500/20 text-gray-500 cursor-not-allowed text-xs"
               />
             </div>
           </div>
 
-          <div className="pt-2 border-t border-gray-800/80">
+          <div className="pt-2 border-t border-orange-500/20/80">
             <span className="font-semibold text-gray-300 block mb-2">
               Update Password
             </span>
@@ -209,7 +209,7 @@ export default function SettingsPage() {
                   placeholder="Current Password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs"
                 />
               </div>
               <div>
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                   placeholder="New Password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs"
                 />
               </div>
               <div>
@@ -227,7 +227,7 @@ export default function SettingsPage() {
                   placeholder="Confirm New Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs"
                 />
               </div>
             </div>
@@ -245,8 +245,8 @@ export default function SettingsPage() {
       </Card>
 
       {/* SECTION 2: NOTIFICATIONS */}
-      <Card className="bg-gray-900/90 border-gray-800 p-6 shadow-xl space-y-5">
-        <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-gray-800 pb-3">
+      <Card className="bg-white/[0.04]/90 border-orange-500/20 p-6 shadow-xl space-y-5">
+        <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-orange-500/20 pb-3">
           <Bell className="w-5 h-5 text-amber-400" /> Incident Notifications
         </CardTitle>
 
@@ -265,7 +265,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={emailAlerts}
               onChange={(e) => setEmailAlerts(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-orange-500 focus:ring-0 accent-orange-500"
+              className="w-5 h-5 rounded bg-white/[0.03] border-orange-500/20 text-orange-500 focus:ring-0 accent-orange-500"
             />
           </div>
 
@@ -282,7 +282,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={pushAlerts}
               onChange={(e) => setPushAlerts(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-orange-500 focus:ring-0 accent-orange-500"
+              className="w-5 h-5 rounded bg-white/[0.03] border-orange-500/20 text-orange-500 focus:ring-0 accent-orange-500"
             />
           </div>
 
@@ -299,7 +299,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={criticalOnly}
               onChange={(e) => setCriticalOnly(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-orange-500 focus:ring-0 accent-orange-500"
+              className="w-5 h-5 rounded bg-white/[0.03] border-orange-500/20 text-orange-500 focus:ring-0 accent-orange-500"
             />
           </div>
 
@@ -307,7 +307,7 @@ export default function SettingsPage() {
             <Button
               onClick={handleSaveNotifications}
               variant="outline"
-              className="border-gray-700 hover:border-gray-600 text-gray-300 text-xs font-semibold"
+              className="border-orange-500/20 hover:border-gray-600 text-gray-300 text-xs font-semibold"
             >
               Update Notification Rules
             </Button>
@@ -316,8 +316,8 @@ export default function SettingsPage() {
       </Card>
 
       {/* SECTION 3: API KEYS */}
-      <Card className="bg-gray-900/90 border-gray-800 p-6 shadow-xl space-y-5">
-        <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+      <Card className="bg-white/[0.04]/90 border-orange-500/20 p-6 shadow-xl space-y-5">
+        <div className="flex justify-between items-center border-b border-orange-500/20 pb-3">
           <CardTitle className="text-base font-bold text-white flex items-center gap-2">
             <Key className="w-5 h-5 text-purple-400" /> Platform API Keys
           </CardTitle>
@@ -337,7 +337,7 @@ export default function SettingsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-gray-300">
-            <thead className="bg-gray-950/60 text-gray-400 uppercase text-[10px] font-semibold border-b border-gray-800">
+            <thead className="bg-white/[0.03]/60 text-gray-400 uppercase text-[10px] font-semibold border-b border-orange-500/20">
               <tr>
                 <th className="px-4 py-3">Key Name</th>
                 <th className="px-4 py-3">Token Prefix</th>
@@ -348,7 +348,7 @@ export default function SettingsPage() {
             </thead>
             <tbody className="divide-y divide-gray-800/80">
               {apiKeys.map((k) => (
-                <tr key={k.id} className="hover:bg-gray-800/30 transition">
+                <tr key={k.id} className="hover:bg-white/[0.05]/30 transition">
                   <td className="px-4 py-3 font-semibold text-white">
                     {k.name}
                   </td>
@@ -405,8 +405,8 @@ export default function SettingsPage() {
       {/* Generate API Key Modal */}
       {isGenerateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+          <div className="bg-white/[0.04] border border-orange-500/20 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-orange-500/20 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Key className="w-4 h-4 text-purple-400" />
                 {newlyCreatedKey ? "API Key Generated" : "Generate API Token"}
@@ -439,7 +439,7 @@ export default function SettingsPage() {
                   <label className="block text-gray-400 mb-1.5 font-semibold">
                     Generated API Key
                   </label>
-                  <div className="flex items-center gap-2 bg-gray-950 border border-gray-800 rounded-lg p-2.5">
+                  <div className="flex items-center gap-2 bg-white/[0.03] border border-orange-500/20 rounded-lg p-2.5">
                     <code className="flex-1 text-orange-300 font-mono text-xs break-all select-all">
                       {newlyCreatedKey}
                     </code>
@@ -476,7 +476,7 @@ export default function SettingsPage() {
                       setIsGenerateModalOpen(false);
                       setNewlyCreatedKey(null);
                     }}
-                    className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold px-5"
+                    className="bg-white/[0.05] hover:bg-gray-700 text-white text-xs font-semibold px-5"
                   >
                     Done
                   </Button>
@@ -494,7 +494,7 @@ export default function SettingsPage() {
                     placeholder="e.g. CI Telemetry Pipeline"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-orange-500/60"
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white focus:outline-none focus:border-orange-500/60"
                   />
                 </div>
 
@@ -503,7 +503,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsGenerateModalOpen(false)}
-                    className="border-gray-700 text-gray-300 text-xs"
+                    className="border-orange-500/20 text-gray-300 text-xs"
                   >
                     Cancel
                   </Button>
@@ -523,7 +523,7 @@ export default function SettingsPage() {
       {/* Delete Account Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-red-900/60 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white/[0.04] border border-red-900/60 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <h3 className="text-sm font-bold text-white">
               Confirm Account Deletion
             </h3>
@@ -537,7 +537,7 @@ export default function SettingsPage() {
               placeholder="Type DELETE"
               value={deleteConfirmationText}
               onChange={(e) => setDeleteConfirmationText(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs font-mono"
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs font-mono"
             />
 
             <div className="flex justify-end gap-2 pt-2">
@@ -547,7 +547,7 @@ export default function SettingsPage() {
                   setIsDeleteModalOpen(false);
                   setDeleteConfirmationText("");
                 }}
-                className="border-gray-700 text-gray-300 text-xs"
+                className="border-orange-500/20 text-gray-300 text-xs"
               >
                 Cancel
               </Button>

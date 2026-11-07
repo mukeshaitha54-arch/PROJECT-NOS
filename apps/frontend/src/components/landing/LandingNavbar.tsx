@@ -45,27 +45,37 @@ export function LandingNavbar() {
       </a>
 
       <nav className="main-nav" aria-label="Main navigation">
-        <a href="#how-it-works">How it works</a>
-        <a href="#operational-cockpit">Operational Cockpit</a>
-        <a href="#architecture">Architecture</a>
-        <a href="#estimator">Capacity Estimator</a>
+        <a href="#top" className="mirror-text">
+          Platform
+        </a>
+        <a href="#telemetry-engine" className="mirror-text">
+          Live Cockpit
+        </a>
+        <a href="#architecture" className="mirror-text">
+          Architecture
+        </a>
+        <a href="#installer" className="mirror-text">
+          Deploy Agent
+        </a>
       </nav>
 
       <div className="flex items-center gap-3">
         {hasSession ? (
           <Link href="/dashboard" className="header-cta">
-            <span>⚡</span> Open Dashboard <span aria-hidden="true">↗</span>
+            <span>⚡</span> <span className="mirror-text">Open Dashboard</span>{" "}
+            <span aria-hidden="true">↗</span>
           </Link>
         ) : (
           <>
             <Link
               href="/auth/login"
-              className="text-xs font-semibold text-[#66564d] hover:text-[#ca5724] px-3 py-2 transition-colors"
+              className="text-xs font-semibold text-[#66564d] hover:text-[#ca5724] px-3 py-2 transition-colors mirror-text"
             >
               Sign In
             </Link>
             <Link href="/auth/register" className="header-cta">
-              Get started <span aria-hidden="true">↗</span>
+              <span className="mirror-text">Deploy Agent</span>{" "}
+              <span aria-hidden="true">↗</span>
             </Link>
           </>
         )}

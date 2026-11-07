@@ -171,9 +171,7 @@ export function HurdleSimulatorSlider() {
   const c = colorMap[current.color];
 
   return (
-    <section className="relative bg-gradient-to-b from-[#090a0d] to-[#0d0e12] py-28 px-6 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(255,85,0,0.05)_0%,transparent_70%)] pointer-events-none" />
-
+    <section className="relative bg-transparent py-28 px-6 overflow-hidden">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -182,16 +180,16 @@ export function HurdleSimulatorSlider() {
           transition={{ duration: 0.7 }}
           className="text-center mb-14"
         >
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
-            🛡️ The Resilience Protocol
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-[#f47b36] tracking-widest uppercase bg-[#f47b36]/10 border border-[#f47b36]/20 rounded-full px-4 py-1.5 mb-5 shadow-sm">
+            <span className="mirror-text">🛡️ The Resilience Protocol</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-            When Networks Fail,{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+          <h2 className="text-4xl md:text-5xl font-black text-[#211a16] mb-4">
+            <span className="mirror-text">When Networks Fail,</span>{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 mirror-text">
               NOS Persists
             </span>
           </h2>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
+          <p className="text-[#64564c] text-lg max-w-xl mx-auto mirror-text">
             Toggle through the three operational states and see how NOS handles
             every hurdle — from peak performance to full network outage and
             seamless recovery.

@@ -10,6 +10,7 @@ import { RealtimeErrorBoundary } from "@/components/error/RealtimeErrorBoundary"
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/contexts/auth-context";
+import { AmbientFlow } from "@/components/landing/AmbientFlow";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -24,25 +25,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#fffdfa] text-[#211a16]">
+      <div className="flex h-screen w-full items-center justify-center bg-[#08090c] text-white">
         <Loader2 className="w-8 h-8 text-[#f47b36] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-[#fffdfa] text-[#211a16] overflow-hidden">
-      {/* Collapsible desktop and mobile drawer sidebar */}
-      <Sidebar
-        isMobileOpen={isMobileNavOpen}
-        onMobileClose={() => setIsMobileNavOpen(false)}
-      />
+    <div className="dashboard-scope relative flex h-screen bg-[#08090c] text-white overflow-hidden selection:bg-[#f47b36] selection:text-white">
+      {/* Dynamic Aurora Ambient Flow Background running behind entire dashboard */}
+      <div className="fixed inset-0 pointer-events-none opacity-85 z-0 overflow-hidden">
+        <AmbientFlow />
+      </div>
 
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      {/* Collapsible desktop and mobile drawer sidebar with frosted glass */}
+      <div className="relative z-20 flex-shrink-0 h-full">
+        <Sidebar
+          isMobileOpen={isMobileNavOpen}
+          onMobileClose={() => setIsMobileNavOpen(false)}
+        />
+      </div>
+
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-transparent">
         <TopBar onHamburgerClick={() => setIsMobileNavOpen(true)} />
 
         {/* Main content area with real-time providers */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scrollbar-thin">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scrollbar-thin bg-transparent">
           <RealtimeProvider>
             <RealtimeErrorBoundary>
               <AlertToast />

@@ -108,8 +108,7 @@ export function ArchitecturalPillars() {
   return (
     <>
       {/* Comparison Table */}
-      <section className="relative bg-[#0b0c0f] py-28 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,85,0,0.05)_0%,transparent_60%)] pointer-events-none" />
+      <section className="relative bg-transparent py-28 px-6 overflow-hidden">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -118,17 +117,17 @@ export function ArchitecturalPillars() {
             transition={{ duration: 0.7 }}
             className="text-center mb-14"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
-              ⚡ Architectural Benchmark
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-[#f47b36] tracking-widest uppercase bg-[#f47b36]/10 border border-[#f47b36]/20 rounded-full px-4 py-1.5 mb-5 shadow-sm">
+              <span className="mirror-text">⚡ Architectural Benchmark</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-              Why{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+            <h2 className="text-4xl md:text-5xl font-black text-[#211a16] mb-4">
+              <span className="mirror-text">Why</span>{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 mirror-text">
                 Every Other Tool
               </span>{" "}
-              Falls Short
+              <span className="mirror-text">Falls Short</span>
             </h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
+            <p className="text-[#64564c] text-lg max-w-xl mx-auto mirror-text">
               Side-by-side against traditional RMM tools — the gap is not
               incremental. It&apos;s architectural.
             </p>
@@ -140,7 +139,7 @@ export function ArchitecturalPillars() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="rounded-3xl border border-white/10 overflow-hidden shadow-2xl shadow-black/80"
+            className="rounded-3xl border border-[#eadfd5] bg-[#0c0d10] overflow-hidden shadow-2xl"
           >
             {/* Header row */}
             <div className="grid grid-cols-3 bg-[#15161c]/90 border-b border-white/[0.08]">
@@ -185,10 +184,9 @@ export function ArchitecturalPillars() {
 
       {/* Pillars */}
       <section
-        className="relative bg-gradient-to-b from-[#0b0c0f] to-[#090a0d] py-28 px-6 overflow-hidden"
+        className="relative bg-transparent py-28 px-6 overflow-hidden"
         id="architecture"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,85,0,0.05)_0%,transparent_70%)] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -197,12 +195,12 @@ export function ArchitecturalPillars() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
-              🏗️ Core Architecture
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-[#f47b36] tracking-widest uppercase bg-[#f47b36]/10 border border-[#f47b36]/20 rounded-full px-4 py-1.5 mb-5 shadow-sm">
+              <span className="mirror-text">🏗️ Core Architecture</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-              Four Pillars of{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+            <h2 className="text-4xl md:text-5xl font-black text-[#211a16] mb-4">
+              <span className="mirror-text">Four Pillars of</span>{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 mirror-text">
                 Absolute Fleet Precision
               </span>
             </h2>

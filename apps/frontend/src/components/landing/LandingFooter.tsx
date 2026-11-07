@@ -15,8 +15,12 @@ export function LandingFooter() {
           NOS<span className="brand-period">.</span>
         </span>
       </a>
-      <span>Built for resilience. Designed to never drop a datapoint.</span>
-      <span>© {currentYear} NOS Neural Operations System</span>
+      <span className="mirror-text">
+        Built for resilience. Designed to never drop a datapoint.
+      </span>
+      <span className="mirror-text">
+        © {currentYear} NOS Neural Operations Sentinel
+      </span>
     </footer>
   );
 }

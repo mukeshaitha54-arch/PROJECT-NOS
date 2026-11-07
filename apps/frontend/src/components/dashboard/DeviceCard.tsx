@@ -86,94 +86,103 @@ export function DeviceCard({
 
   return (
     <Link href={`/devices/${device.id}`}>
-      <Card className="hover:border-[#C8A96E]/50 transition-colors cursor-pointer bg-black/40 border-gray-800 h-full flex flex-col">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-lg font-medium text-gray-100 flex items-center gap-2">
-                {device.hostname || "Unknown Device"}
-              </CardTitle>
-              <div className="text-xs text-gray-500 mt-0.5 font-mono">
-                {ipAddress}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={isOnline ? "online" : "offline"}>
-                {device.status}
-              </Badge>
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onDelete(device);
-                  }}
-                  className="p-1 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                  title="Delete Device Permanently"
-                >
-                  <Trash2 size={15} />
-                </button>
-              )}
+      <div className="dashboard-glass-card hover:border-orange-500/60 transition-all duration-200 cursor-pointer rounded-2xl h-full flex flex-col p-5 shadow-xl hover:shadow-[0_0_24px_rgba(244,123,54,0.22)] relative overflow-hidden group">
+        {/* Specular Ambient Edge Sheen */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/[0.06] via-transparent to-transparent pointer-events-none" />
+
+        <div className="flex justify-between items-start pb-3 border-b border-orange-500/15">
+          <div>
+            <h3 className="text-lg font-bold text-white group-hover:text-orange-400 transition-colors flex items-center gap-2">
+              {device.hostname || "Unknown Device"}
+            </h3>
+            <div className="text-xs text-orange-300/90 mt-0.5 font-mono">
+              {ipAddress}
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3 mt-1">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Cpu size={12} />
+          <div className="flex items-center gap-2">
+            <Badge variant={isOnline ? "online" : "offline"}>
+              {device.status}
+            </Badge>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(device);
+                }}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/15 transition-colors"
+                title="Delete Device Permanently"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col gap-4 mt-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
+                <Cpu size={13} className="text-orange-400" />
                 <span>CPU</span>
               </div>
-              <div className="text-xl font-bold text-gray-100">
+              <div className="text-2xl font-black text-white font-mono drop-shadow-sm">
                 {cpuUsage.toFixed(1)}%
               </div>
             </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <MemoryStick size={12} />
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
+                <MemoryStick size={13} className="text-amber-400" />
                 <span>RAM</span>
               </div>
-              <div className="text-xl font-bold text-gray-100">
+              <div className="text-2xl font-black text-white font-mono drop-shadow-sm">
                 {memoryUsage.toFixed(1)}%
               </div>
             </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Network size={12} />
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
+                <Network size={13} className="text-cyan-400" />
                 <span>↓ Down</span>
               </div>
-              <div className="text-sm font-semibold text-cyan-400">
+              <div className="text-sm font-bold text-cyan-400 font-mono">
                 {fmtSpeed(netDownload)}
               </div>
             </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Network size={12} />
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
+                <Network size={13} className="text-purple-400" />
                 <span>↑ Up</span>
               </div>
-              <div className="text-sm font-semibold text-purple-400">
+              <div className="text-sm font-bold text-purple-400 font-mono">
                 {fmtSpeed(netUpload)}
               </div>
             </div>
           </div>
 
           <div className="mt-auto">
-            <div className="text-xs text-gray-400 mb-1">
-              CPU Activity (Live)
+            <div className="text-xs text-zinc-300 font-semibold mb-1 flex items-center justify-between">
+              <span>CPU Activity (Live)</span>
+              <span className="text-[10px] text-orange-400 font-mono">
+                30s Pulse
+              </span>
             </div>
             <TelemetrySparkline data={cpuHistory} height={40} />
           </div>
 
-          <div className="border-t border-gray-800 pt-3">
-            <div className="flex justify-between items-center text-xs mb-1">
-              <span className="text-gray-400">Heartbeat History</span>
-              <span className="text-gray-500">Last 50</span>
+          <div className="border-t border-orange-500/20 pt-3">
+            <div className="flex justify-between items-center text-xs mb-1.5">
+              <span className="text-zinc-300 font-semibold">
+                Heartbeat History
+              </span>
+              <span className="text-zinc-400 font-mono text-[11px]">
+                Last 50
+              </span>
             </div>
             <HeartbeatTimeline heartbeats={heartbeats} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }

@@ -174,21 +174,21 @@ export default function FleetOverviewPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-800 pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-orange-500/20 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
+            <div className="p-2.5 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-md shadow-orange-500/20">
               <Network className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
                 Device Command Center
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   {isConnected ? "Live Stream Active" : "Polling Active"}
                 </span>
               </h1>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-zinc-300 mt-1">
                 Real-time telemetry, device status, and health metrics across
                 personal nodes.
               </p>
@@ -200,16 +200,16 @@ export default function FleetOverviewPage() {
           <button
             onClick={fetchDevices}
             disabled={loading}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-gray-800 border border-gray-700 hover:border-gray-600 text-xs font-semibold text-gray-300 hover:text-white transition"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-orange-500/25 hover:border-orange-500/60 text-xs font-semibold text-white hover:bg-white/[0.08] transition shadow-sm active:scale-[0.98]"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin text-orange-400" : "text-orange-400"}`}
             />
             Refresh Devices
           </button>
           <button
             onClick={() => setIsClaimModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-xs font-semibold text-white shadow-lg shadow-orange-500/20 active:scale-[0.97] transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-xs font-semibold text-white shadow-lg shadow-orange-500/30 active:scale-[0.97] transition"
           >
             <Plus className="w-4 h-4" />
             Add Device
@@ -217,23 +217,25 @@ export default function FleetOverviewPage() {
         </div>
       </div>
 
-      {/* Metric Cards Grid */}
+      {/* Metric Cards Grid with Transparent Glossy Frosted Glass */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Devices */}
-        <div className="bg-[#111217]/70 border border-white/[0.08] rounded-xl p-5 backdrop-blur-sm relative overflow-hidden group hover:border-white/20 transition">
+        <div className="dashboard-glass-card rounded-2xl p-5 relative overflow-hidden group transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
               Total Monitored Devices
             </span>
-            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
+            <div className="p-2 rounded-lg bg-orange-500/15 border border-orange-500/30 text-orange-400">
               <Server className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-white font-mono">
+            <span className="text-3xl font-extrabold text-white font-mono drop-shadow-sm">
               {metrics.total}
             </span>
-            <span className="text-xs text-slate-400">nodes registered</span>
+            <span className="text-xs text-zinc-300 font-medium">
+              nodes registered
+            </span>
           </div>
           <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
             <div
@@ -244,24 +246,24 @@ export default function FleetOverviewPage() {
         </div>
 
         {/* Online Healthy */}
-        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden group hover:border-gray-700 transition">
+        <div className="dashboard-glass-card rounded-2xl p-5 relative overflow-hidden group transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
               Active & Online
             </span>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
               <CheckCircle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-emerald-400">
+            <span className="text-3xl font-extrabold text-emerald-400 font-mono drop-shadow-sm">
               {metrics.online}
             </span>
-            <span className="text-xs text-emerald-400/80 font-medium">
+            <span className="text-xs text-emerald-300 font-semibold">
               ({metrics.healthyPercentage}% operational)
             </span>
           </div>
-          <div className="mt-3 w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+          <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
               style={{ width: `${metrics.healthyPercentage}%` }}
@@ -270,22 +272,24 @@ export default function FleetOverviewPage() {
         </div>
 
         {/* Degraded / Warning */}
-        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden group hover:border-gray-700 transition">
+        <div className="dashboard-glass-card rounded-2xl p-5 relative overflow-hidden group transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-amber-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
               Degraded State
             </span>
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-amber-400">
+            <span className="text-3xl font-extrabold text-amber-400 font-mono drop-shadow-sm">
               {metrics.degraded}
             </span>
-            <span className="text-xs text-gray-400">high load / alerts</span>
+            <span className="text-xs text-zinc-300 font-medium">
+              high load / alerts
+            </span>
           </div>
-          <div className="mt-3 w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+          <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
               style={{
@@ -299,22 +303,24 @@ export default function FleetOverviewPage() {
         </div>
 
         {/* Offline / Unreachable */}
-        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden group hover:border-gray-700 transition">
+        <div className="dashboard-glass-card rounded-2xl p-5 relative overflow-hidden group transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-rose-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">
               Offline Nodes
             </span>
-            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400">
+            <div className="p-2 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400">
               <XCircle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-rose-400">
+            <span className="text-3xl font-extrabold text-rose-400 font-mono drop-shadow-sm">
               {metrics.offline}
             </span>
-            <span className="text-xs text-gray-400">unreachable</span>
+            <span className="text-xs text-zinc-300 font-medium">
+              unreachable
+            </span>
           </div>
-          <div className="mt-3 w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+          <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-rose-500 h-1.5 rounded-full transition-all duration-500"
               style={{
@@ -329,29 +335,29 @@ export default function FleetOverviewPage() {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-gray-900/40 p-3 rounded-xl border border-gray-800">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 dashboard-glass-card p-3 rounded-2xl shadow-lg">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
             placeholder="Search fleet by node name, hostname, OS version..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/60 transition"
+            className="w-full pl-10 pr-4 py-2 bg-white/[0.04] border border-orange-500/20 rounded-xl text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-orange-500/80 transition"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-1 text-xs">
+          <div className="flex items-center bg-white/[0.04] border border-orange-500/20 rounded-xl p-1 text-xs">
             {(["ALL", "ONLINE", "DEGRADED", "OFFLINE"] as const).map(
               (status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-3 py-1.5 rounded-md font-semibold transition ${
+                  className={`px-3 py-1.5 rounded-lg font-bold transition ${
                     statusFilter === status
-                      ? "bg-orange-500 text-white shadow-sm"
-                      : "text-gray-400 hover:text-gray-200"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30"
+                      : "text-zinc-300 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   {status}
@@ -363,73 +369,73 @@ export default function FleetOverviewPage() {
       </div>
 
       {/* Fleet Nodes Grid / Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-gray-900/80">
+      <div className="dashboard-glass-card rounded-2xl overflow-hidden shadow-2xl">
+        <div className="px-6 py-4 border-b border-orange-500/20 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-orange-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
               Monitored Nodes ({filteredDevices.length})
             </h2>
           </div>
-          <span className="text-xs text-gray-500 font-mono">
+          <span className="text-xs text-zinc-400 font-mono">
             {isMounted ? `Synced: ${lastRefreshed.toLocaleTimeString()}` : ""}
           </span>
         </div>
 
         {loading && filteredDevices.length === 0 ? (
-          <div className="divide-y divide-gray-800">
+          <div className="divide-y divide-orange-500/15">
             {[1, 2, 3, 4, 5].map((idx) => (
               <div
                 key={idx}
                 className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pulse"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gray-800/80" />
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.05]" />
                   <div className="space-y-2">
-                    <div className="h-5 w-44 bg-gray-800 rounded-md" />
-                    <div className="h-3.5 w-72 bg-gray-800/60 rounded" />
+                    <div className="h-5 w-44 bg-white/[0.06] rounded-md" />
+                    <div className="h-3.5 w-72 bg-white/[0.04] rounded" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-7 w-20 bg-gray-800 rounded-lg" />
-                  <div className="h-7 w-28 bg-gray-800 rounded-lg" />
+                  <div className="h-7 w-20 bg-white/[0.05] rounded-lg" />
+                  <div className="h-7 w-28 bg-white/[0.05] rounded-lg" />
                 </div>
               </div>
             ))}
           </div>
         ) : filteredDevices.length === 0 ? (
           <div className="py-16 text-center">
-            <Server className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-base font-semibold text-gray-300">
+            <Server className="w-12 h-12 text-zinc-500 mx-auto mb-3" />
+            <p className="text-base font-semibold text-zinc-200">
               No nodes match your filter
             </p>
-            <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
               Try adjusting your search criteria or onboard a new monitoring
               agent to your tenant.
             </p>
             <button
               onClick={() => setIsClaimModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 text-xs font-semibold text-white hover:from-orange-400 hover:to-rose-500 transition active:scale-[0.97]"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 text-xs font-semibold text-white hover:from-orange-400 hover:to-rose-500 transition active:scale-[0.97] shadow-lg shadow-orange-500/25"
             >
               <Plus className="w-4 h-4" />
               Onboard Agent Now
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-800">
+          <div className="divide-y divide-orange-500/15">
             {filteredDevices.map((device) => {
               const isOnline = device.status === DeviceStatus.ONLINE;
               return (
                 <div
                   key={device.id}
-                  className="p-5 hover:bg-gray-800/40 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+                  className="p-5 hover:bg-white/[0.06] transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
                 >
                   <div className="flex items-start gap-4">
                     <div
                       className={`p-3 rounded-xl border flex items-center justify-center ${
                         isOnline
-                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                          : "bg-gray-800/80 border-gray-700 text-gray-400"
+                          ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                          : "bg-white/[0.04] border-orange-500/20 text-zinc-400"
                       }`}
                     >
                       <Server className="w-6 h-6" />
@@ -448,44 +454,44 @@ export default function FleetOverviewPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                             isOnline
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-gray-800 text-gray-400 border border-gray-700"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : "bg-white/[0.05] text-zinc-400 border border-orange-500/20"
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
                               isOnline
                                 ? "bg-emerald-400 animate-pulse"
-                                : "bg-gray-500"
+                                : "bg-zinc-500"
                             }`}
                           />
                           {device.status}
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-gray-400">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-zinc-300">
                         <span>
                           Platform:{" "}
-                          <strong className="text-gray-300">
+                          <strong className="text-white font-semibold">
                             {device.os || "Windows"}
                           </strong>
                         </span>
                         <span>
                           Arch:{" "}
-                          <strong className="text-gray-300">
+                          <strong className="text-white font-semibold">
                             {device.architecture || "x64"}
                           </strong>
                         </span>
                         <span>
                           Agent:{" "}
-                          <strong className="text-gray-300">
+                          <strong className="text-white font-semibold">
                             v{device.agentVersion || "1.0.0"}
                           </strong>
                         </span>
                         {device.lastSeen && (
                           <span>
                             Last Heartbeat:{" "}
-                            <strong className="text-gray-300">
+                            <strong className="text-white font-semibold">
                               {new Date(device.lastSeen).toLocaleTimeString()}
                             </strong>
                           </span>
@@ -497,21 +503,21 @@ export default function FleetOverviewPage() {
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <Link
                       href={`/inventory/${device.id}`}
-                      className="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 hover:border-gray-600 text-xs font-semibold text-gray-300 hover:text-white transition flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-white/[0.05] border border-orange-500/20 hover:border-orange-500/50 hover:bg-white/[0.1] text-xs font-semibold text-white transition flex items-center gap-1"
                     >
                       <Layers className="w-3.5 h-3.5" />
                       Inventory
                     </Link>
                     <Link
                       href={`/devices/${device.id}`}
-                      className="px-3.5 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 text-xs font-semibold transition flex items-center gap-1 active:scale-[0.97]"
+                      className="px-3.5 py-1.5 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/35 hover:bg-orange-500/30 text-xs font-bold transition flex items-center gap-1 active:scale-[0.97]"
                     >
                       Inspect Node
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
                     <button
                       onClick={() => setConfirmDelete(device)}
-                      className="p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition flex items-center justify-center"
+                      className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition flex items-center justify-center"
                       title="Delete Device Permanently"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -526,48 +532,48 @@ export default function FleetOverviewPage() {
 
       {/* Delete Device Modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="bg-gray-900 border border-red-800/60 rounded-xl p-6 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#111217]/95 border border-red-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl backdrop-blur-2xl">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-900/40 flex items-center justify-center text-red-400">
+                <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400">
                   <Trash2 size={18} />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-lg">
+                  <h3 className="text-white font-bold text-lg">
                     Delete Device Permanently
                   </h3>
-                  <p className="text-gray-400 text-xs">Irreversible action</p>
+                  <p className="text-zinc-400 text-xs">Irreversible action</p>
                 </div>
               </div>
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="text-gray-500 hover:text-white transition-colors"
+                className="text-zinc-400 hover:text-white transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <p className="text-gray-300 text-sm mb-3">
+            <p className="text-zinc-300 text-sm mb-3">
               Are you sure you want to permanently delete this device and all
               its records?
             </p>
 
-            <div className="bg-red-950/30 border border-red-800/40 rounded-lg p-3 mb-4 space-y-1">
-              <p className="text-white font-mono font-semibold text-sm">
+            <div className="bg-red-950/30 border border-red-500/30 rounded-xl p-3 mb-4 space-y-1">
+              <p className="text-white font-mono font-bold text-sm">
                 {confirmDelete.hostname || confirmDelete.deviceName || "Device"}
               </p>
-              <p className="text-gray-400 text-xs font-mono truncate">
+              <p className="text-zinc-400 text-xs font-mono truncate">
                 ID: {confirmDelete.id}
               </p>
               {confirmDelete.uuid && (
-                <p className="text-gray-500 text-xs font-mono truncate">
+                <p className="text-zinc-400 text-xs font-mono truncate">
                   UUID: {confirmDelete.uuid}
                 </p>
               )}
             </div>
 
-            <div className="bg-red-950/20 border border-red-900/40 rounded-lg p-3 mb-5 flex items-start gap-2">
+            <div className="bg-red-950/20 border border-red-500/30 rounded-xl p-3 mb-5 flex items-start gap-2">
               <AlertTriangle
                 size={16}
                 className="text-red-400 shrink-0 mt-0.5"
@@ -575,30 +581,30 @@ export default function FleetOverviewPage() {
               <p className="text-red-300 text-xs leading-relaxed">
                 All telemetry snapshots, heartbeats, and discovered inventory
                 will be permanently deleted. If the agent is currently running,
-                it will automatically uninstall its service and shut down
-                permanently upon its next communication.
+                it will automatically uninstall its service upon its next
+                communication.
               </p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors text-sm font-medium"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-orange-500/20 text-zinc-300 hover:bg-white/[0.06] transition-colors text-sm font-semibold"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDeleteDevice(confirmDelete)}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 active:scale-[0.98] disabled:opacity-50"
               >
                 {isDeleting ? (
                   <>
-                    <Loader2 size={14} className="animate-spin" /> Deleting...
+                    <Loader2 size={15} className="animate-spin" /> Deleting...
                   </>
                 ) : (
                   <>
-                    <Trash2 size={14} /> Delete Permanently
+                    <Trash2 size={15} /> Delete Permanently
                   </>
                 )}
               </button>
@@ -759,17 +765,17 @@ function AddDeviceModal({
   const manualCommand = `.\\NOS-Agent.exe`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="bg-[#0f1015]/95 border border-orange-500/30 rounded-3xl max-w-2xl w-full p-6 shadow-2xl my-8 backdrop-blur-2xl text-white">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-5">
+        <div className="flex items-center justify-between border-b border-orange-500/20 pb-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <div className="p-2.5 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400">
               <Terminal className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-white">Add New Device</h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-zinc-400">
                 Step {step === "create" ? "1" : "2"} of 2 —{" "}
                 {step === "create"
                   ? "Generate enrollment key"
@@ -779,7 +785,7 @@ function AddDeviceModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white text-xl leading-none"
+            className="text-zinc-400 hover:text-white text-xl leading-none"
           >
             ✕
           </button>
@@ -787,24 +793,24 @@ function AddDeviceModal({
 
         {step === "create" && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-zinc-300">
               Create a <strong>Registration Key</strong> that the agent will use
               to authenticate with this server on first run.
             </p>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">
+              <label className="block text-xs text-zinc-400 mb-1.5">
                 Key Label (for your reference)
               </label>
               <input
                 value={keyName}
                 onChange={(e) => setKeyName(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-white/[0.04] border border-orange-500/25 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/80"
                 placeholder="e.g., Target PC Key"
               />
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-lg">
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-xl">
                 ⚠ {error}
               </div>
             )}
@@ -812,14 +818,14 @@ function AddDeviceModal({
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-300"
+                className="px-4 py-2 rounded-xl bg-white/[0.04] border border-orange-500/20 hover:bg-white/[0.08] text-xs font-semibold text-zinc-300"
               >
                 Cancel
               </button>
               <button
                 onClick={createKey}
                 disabled={creating || !keyName.trim()}
-                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold text-white flex items-center gap-2"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 disabled:opacity-50 text-xs font-bold text-white flex items-center gap-2 shadow-md shadow-orange-500/25"
               >
                 {creating && (
                   <svg
@@ -851,9 +857,9 @@ function AddDeviceModal({
         {step === "download" && generatedKey && (
           <div className="space-y-5">
             {/* Key display banner */}
-            <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-4 space-y-2">
+            <div className="bg-white/[0.04] border border-orange-500/25 rounded-2xl p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                   Your One-Time Registration Key
                 </span>
                 <span className="text-[11px] text-amber-400 font-medium">
@@ -861,12 +867,12 @@ function AddDeviceModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-orange-300 font-mono text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 break-all select-all">
+                <code className="flex-1 text-orange-300 font-mono text-sm bg-white/[0.06] border border-orange-500/20 rounded-xl px-3 py-2.5 break-all select-all">
                   {generatedKey}
                 </code>
                 <button
                   onClick={copyKey}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-xs font-bold transition-all ${
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all ${
                     copiedKey
                       ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
                       : "bg-orange-500/15 border-orange-500/30 text-orange-300 hover:bg-orange-500/25"
@@ -887,16 +893,16 @@ function AddDeviceModal({
 
             {/* Deployment Method Tabs */}
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
                 Select Installation Method for Target PC:
               </p>
-              <div className="grid grid-cols-2 gap-2 bg-gray-950 p-1 rounded-xl border border-gray-800">
+              <div className="grid grid-cols-2 gap-2 bg-white/[0.03] p-1.5 rounded-2xl border border-orange-500/20">
                 <button
                   onClick={() => setDeployOption("automated")}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     deployOption === "automated"
-                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                      : "text-gray-400 hover:text-gray-200"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30"
+                      : "text-zinc-400 hover:text-white"
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -904,10 +910,10 @@ function AddDeviceModal({
                 </button>
                 <button
                   onClick={() => setDeployOption("manual")}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     deployOption === "manual"
-                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                      : "text-gray-400 hover:text-gray-200"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30"
+                      : "text-zinc-400 hover:text-white"
                   }`}
                 >
                   <Terminal className="w-3.5 h-3.5" />
@@ -918,50 +924,50 @@ function AddDeviceModal({
 
             {/* OPTION 1 CONTENT */}
             {deployOption === "automated" && (
-              <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-4 space-y-3.5 text-xs">
+              <div className="bg-white/[0.03] border border-orange-500/20 rounded-2xl p-4 space-y-3.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white text-sm">
                     Automated Service Deployment
                   </span>
                   <button
                     onClick={downloadInstaller}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download Installer (.ps1)
                   </button>
                 </div>
 
-                <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
+                <ol className="space-y-2.5 text-zinc-300 list-decimal list-inside pl-1">
                   <li>
                     Move the downloaded{" "}
-                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">
                       install-nos-agent.ps1
                     </code>{" "}
                     to the target PC.
                   </li>
                   <li>
                     Open <strong>PowerShell as Administrator</strong> and{" "}
-                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px]">
                       cd
                     </code>{" "}
                     to the folder where you saved the script. Example:{" "}
-                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px]">
                       cd $env:USERPROFILE\Downloads
                     </code>
                   </li>
                   <li>
                     Run the following installation command:
                     <div className="mt-1.5 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-orange-300 px-3 py-2 rounded-lg break-all">
+                      <code className="flex-1 font-mono text-[11px] bg-white/[0.06] border border-orange-500/20 text-orange-300 px-3 py-2 rounded-xl break-all">
                         {installerCommand}
                       </code>
                       <button
                         onClick={() => copyCommand(installerCommand)}
-                        className={`px-2.5 py-2 rounded-lg border text-[11px] font-semibold transition ${
+                        className={`px-2.5 py-2 rounded-xl border text-[11px] font-semibold transition ${
                           copiedCmd
                             ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
-                            : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                            : "bg-white/[0.06] border-orange-500/20 text-zinc-300 hover:bg-white/[0.1]"
                         }`}
                       >
                         {copiedCmd ? "Copied!" : "Copy"}
@@ -970,7 +976,7 @@ function AddDeviceModal({
                   </li>
                 </ol>
 
-                <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] leading-relaxed">
+                <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] leading-relaxed">
                   <strong>What this does:</strong> It automatically downloads
                   the agent binary in the background, prompts you for the
                   Registration Key, registers the device with the platform, and
@@ -982,24 +988,24 @@ function AddDeviceModal({
 
             {/* OPTION 2 CONTENT */}
             {deployOption === "manual" && (
-              <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-4 space-y-3.5 text-xs">
+              <div className="bg-white/[0.03] border border-orange-500/20 rounded-2xl p-4 space-y-3.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white text-sm">
                     Manual Standalone Executable
                   </span>
                   <button
                     onClick={downloadExe}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download NOS-Agent.exe
                   </button>
                 </div>
 
-                <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
+                <ol className="space-y-2.5 text-zinc-300 list-decimal list-inside pl-1">
                   <li>
                     Move{" "}
-                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">
                       NOS-Agent.exe
                     </code>{" "}
                     to any directory on the target PC.
@@ -1008,15 +1014,15 @@ function AddDeviceModal({
                     Double-click the EXE, or run it in PowerShell / Command
                     Prompt:
                     <div className="mt-1.5 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-orange-300 px-3 py-2 rounded-lg">
+                      <code className="flex-1 font-mono text-[11px] bg-white/[0.06] border border-orange-500/20 text-orange-300 px-3 py-2 rounded-xl">
                         {manualCommand}
                       </code>
                       <button
                         onClick={() => copyCommand(manualCommand)}
-                        className={`px-2.5 py-2 rounded-lg border text-[11px] font-semibold transition ${
+                        className={`px-2.5 py-2 rounded-xl border text-[11px] font-semibold transition ${
                           copiedCmd
                             ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
-                            : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                            : "bg-white/[0.06] border-orange-500/20 text-zinc-300 hover:bg-white/[0.1]"
                         }`}
                       >
                         {copiedCmd ? "Copied!" : "Copy"}
@@ -1030,7 +1036,7 @@ function AddDeviceModal({
                   </li>
                 </ol>
 
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] leading-relaxed">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] leading-relaxed">
                   <strong>What this does:</strong> Runs directly without
                   installing system services. Once the key is entered, it
                   validates credentials, stores device config locally in{" "}
@@ -1043,7 +1049,7 @@ function AddDeviceModal({
             )}
 
             {/* Live Connection Listener Footer */}
-            <div className="pt-2 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="pt-2 border-t border-orange-500/20 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>Waiting for target PC to connect...</span>
@@ -1053,14 +1059,14 @@ function AddDeviceModal({
                   onClick={() => {
                     onRegistered();
                   }}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-[0.97]"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition active:scale-[0.97]"
                 >
                   <ArrowUpRight className="w-4 h-4" />
                   Check for New Devices
                 </button>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-300"
+                  className="px-4 py-2 rounded-xl bg-white/[0.06] border border-orange-500/20 hover:bg-white/[0.1] text-xs font-semibold text-zinc-300"
                 >
                   Close
                 </button>

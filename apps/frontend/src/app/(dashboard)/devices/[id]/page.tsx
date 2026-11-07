@@ -618,7 +618,7 @@ export default function DeviceDetailPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors text-sm font-medium"
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 hover:bg-white/[0.06] transition-colors text-sm font-medium"
               >
                 Cancel
               </button>
@@ -643,7 +643,7 @@ export default function DeviceDetailPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-orange-500/20 pb-6">
         <div>
           <div className="flex items-center gap-3">
             <Link
@@ -730,7 +730,7 @@ export default function DeviceDetailPage() {
             Delete Device
           </button>
 
-          <div className="bg-black/40 border border-gray-800 rounded-lg px-3.5 py-1.5 text-center min-w-[80px]">
+          <div className="dashboard-glass-card rounded-2xl px-3.5 py-1.5 text-center min-w-[80px]">
             <div className="text-[10px] text-gray-500 uppercase font-semibold">
               CPU
             </div>
@@ -739,7 +739,7 @@ export default function DeviceDetailPage() {
             </div>
           </div>
 
-          <div className="bg-black/40 border border-gray-800 rounded-lg px-3.5 py-1.5 text-center min-w-[80px]">
+          <div className="dashboard-glass-card rounded-2xl px-3.5 py-1.5 text-center min-w-[80px]">
             <div className="text-[10px] text-gray-500 uppercase font-semibold">
               RAM
             </div>
@@ -748,7 +748,7 @@ export default function DeviceDetailPage() {
             </div>
           </div>
 
-          <div className="bg-black/40 border border-gray-800 rounded-lg px-3.5 py-1.5 text-center min-w-[80px]">
+          <div className="dashboard-glass-card rounded-2xl px-3.5 py-1.5 text-center min-w-[80px]">
             <div className="text-[10px] text-gray-500 uppercase font-semibold">
               DISK
             </div>
@@ -797,7 +797,7 @@ export default function DeviceDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-800">
+      <div className="flex border-b border-orange-500/20">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -819,7 +819,7 @@ export default function DeviceDetailPage() {
           <div className="space-y-6">
             {/* Primary Networking Bar */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+              <div className="dashboard-glass-card rounded-2xl p-4">
                 <div className="text-xs text-gray-500 mb-1 font-semibold uppercase">
                   IP Address
                 </div>
@@ -827,7 +827,7 @@ export default function DeviceDetailPage() {
                   {ipAddress}
                 </div>
               </div>
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+              <div className="dashboard-glass-card rounded-2xl p-4">
                 <div className="text-xs text-gray-500 mb-1 font-semibold uppercase">
                   MAC Address
                 </div>
@@ -835,7 +835,7 @@ export default function DeviceDetailPage() {
                   {macAddress}
                 </div>
               </div>
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+              <div className="dashboard-glass-card rounded-2xl p-4">
                 <div className="text-xs text-gray-500 mb-1 font-semibold uppercase">
                   Uptime
                 </div>
@@ -843,7 +843,7 @@ export default function DeviceDetailPage() {
                   {(uptime / 3600).toFixed(1)} hrs
                 </div>
               </div>
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+              <div className="dashboard-glass-card rounded-2xl p-4">
                 <div className="text-xs text-gray-500 mb-1 font-semibold uppercase flex items-center gap-1">
                   <Wifi className="w-3 h-3 text-cyan-400" /> Download Speed
                 </div>
@@ -851,7 +851,7 @@ export default function DeviceDetailPage() {
                   {formatMbps(netDownload)}
                 </div>
               </div>
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4">
+              <div className="dashboard-glass-card rounded-2xl p-4">
                 <div className="text-xs text-gray-500 mb-1 font-semibold uppercase flex items-center gap-1">
                   <Wifi className="w-3 h-3 text-purple-400" /> Upload Speed
                 </div>
@@ -864,8 +864,8 @@ export default function DeviceDetailPage() {
             {/* Extended Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* CPU Specs */}
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2.5">
-                <h4 className="text-xs text-blue-400 font-semibold uppercase border-b border-gray-800 pb-2">
+              <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
+                <h4 className="text-xs text-blue-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
                   CPU Specifications
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -901,8 +901,8 @@ export default function DeviceDetailPage() {
               </div>
 
               {/* Memory Specs */}
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2.5">
-                <h4 className="text-xs text-purple-400 font-semibold uppercase border-b border-gray-800 pb-2">
+              <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
+                <h4 className="text-xs text-purple-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
                   RAM Memory
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -932,8 +932,8 @@ export default function DeviceDetailPage() {
               </div>
 
               {/* Disk I/O */}
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2.5">
-                <h4 className="text-xs text-emerald-400 font-semibold uppercase border-b border-gray-800 pb-2">
+              <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
+                <h4 className="text-xs text-emerald-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
                   Disk Storage & I/O
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -969,8 +969,8 @@ export default function DeviceDetailPage() {
               </div>
 
               {/* Network & Gateway */}
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2.5">
-                <h4 className="text-xs text-orange-400 font-semibold uppercase border-b border-gray-800 pb-2">
+              <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
+                <h4 className="text-xs text-orange-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
                   Network & Route
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -1012,8 +1012,8 @@ export default function DeviceDetailPage() {
               </div>
 
               {/* Running State Banner */}
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2 lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex flex-col border-r border-gray-800 pr-4">
+              <div className="dashboard-glass-card rounded-2xl p-4 space-y-2 lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col border-r border-orange-500/20 pr-4">
                   <span className="text-xs text-gray-500 uppercase font-semibold">
                     Running Processes
                   </span>
@@ -1021,7 +1021,7 @@ export default function DeviceDetailPage() {
                     {runningProcesses}
                   </span>
                 </div>
-                <div className="flex flex-col border-r border-gray-800 pr-4">
+                <div className="flex flex-col border-r border-orange-500/20 pr-4">
                   <span className="text-xs text-gray-500 uppercase font-semibold">
                     Running Services
                   </span>
@@ -1042,7 +1042,7 @@ export default function DeviceDetailPage() {
 
             {/* Sparklines */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
+              <div className="dashboard-glass-card rounded-2xl p-6">
                 <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center justify-between">
                   <span>Live CPU History</span>
                   <span className="text-xs text-gray-500 font-mono">
@@ -1056,7 +1056,7 @@ export default function DeviceDetailPage() {
                   color="#C8A96E"
                 />
               </div>
-              <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
+              <div className="dashboard-glass-card rounded-2xl p-6">
                 <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center justify-between">
                   <span>Live Memory History</span>
                   <span className="text-xs text-gray-500 font-mono">
@@ -1076,13 +1076,13 @@ export default function DeviceDetailPage() {
 
         {activeTab === "telemetry" && (
           <div className="space-y-6">
-            <div className="bg-black/40 border border-gray-800 rounded-lg p-6">
+            <div className="dashboard-glass-card rounded-2xl p-6">
               <h3 className="text-lg font-medium text-gray-200 mb-4">
                 Telemetry Log (Recent 60 Records)
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-400">
-                  <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+                  <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
                     <tr>
                       <th className="px-4 py-3">Timestamp</th>
                       <th className="px-4 py-3">CPU %</th>
@@ -1101,7 +1101,7 @@ export default function DeviceDetailPage() {
                       .map((t, idx) => (
                         <tr
                           key={idx}
-                          className="border-b border-gray-800 hover:bg-gray-800/50"
+                          className="border-b border-orange-500/20 hover:bg-white/[0.06]"
                         >
                           <td className="px-4 py-3 font-mono text-xs">
                             {new Date(
@@ -1156,7 +1156,7 @@ export default function DeviceDetailPage() {
             );
 
             return (
-              <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
+              <div className="dashboard-glass-card rounded-2xl overflow-hidden">
                 {validProcesses.length === 0 ? (
                   <div className="p-8 text-center text-gray-500 text-sm">
                     No process data yet. Running processes stream via live agent
@@ -1168,7 +1168,7 @@ export default function DeviceDetailPage() {
                   </div>
                 ) : (
                   <table className="w-full text-sm text-left text-gray-400">
-                    <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+                    <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
                       <tr>
                         <th className="px-6 py-3">PID</th>
                         <th className="px-6 py-3">Name</th>
@@ -1207,7 +1207,7 @@ export default function DeviceDetailPage() {
                         return (
                           <tr
                             key={pidVal !== "—" ? `${pidVal}-${idx}` : idx}
-                            className="border-b border-gray-800 hover:bg-gray-800/50"
+                            className="border-b border-orange-500/20 hover:bg-white/[0.06]"
                           >
                             <td className="px-6 py-3 font-mono text-xs text-cyan-400 font-semibold">
                               {pidVal}
@@ -1244,9 +1244,9 @@ export default function DeviceDetailPage() {
           })()}
 
         {activeTab === "services" && (
-          <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
+          <div className="dashboard-glass-card rounded-2xl overflow-hidden">
             <table className="w-full text-sm text-left text-gray-400">
-              <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+              <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
                 <tr>
                   <th className="px-6 py-3">Service Name</th>
                   <th className="px-6 py-3">Display Name</th>
@@ -1268,7 +1268,7 @@ export default function DeviceDetailPage() {
                   services.map((svc, idx) => (
                     <tr
                       key={idx}
-                      className="border-b border-gray-800 hover:bg-gray-800/50"
+                      className="border-b border-orange-500/20 hover:bg-white/[0.06]"
                     >
                       <td className="px-6 py-4 font-mono">{svc.serviceName}</td>
                       <td className="px-6 py-4">{svc.displayName}</td>
@@ -1289,9 +1289,9 @@ export default function DeviceDetailPage() {
         )}
 
         {activeTab === "software" && (
-          <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
+          <div className="dashboard-glass-card rounded-2xl overflow-hidden">
             <table className="w-full text-sm text-left text-gray-400">
-              <thead className="text-xs text-gray-500 uppercase bg-gray-900/50">
+              <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
                 <tr>
                   <th className="px-6 py-3">Application Name</th>
                   <th className="px-6 py-3">Publisher</th>
@@ -1314,7 +1314,7 @@ export default function DeviceDetailPage() {
                   software.map((sw, idx) => (
                     <tr
                       key={idx}
-                      className="border-b border-gray-800 hover:bg-gray-800/50"
+                      className="border-b border-orange-500/20 hover:bg-white/[0.06]"
                     >
                       <td className="px-6 py-4 font-medium text-gray-300">
                         {sw.name}
@@ -1339,8 +1339,8 @@ export default function DeviceDetailPage() {
         )}
 
         {activeTab === "alerts" && (
-          <div className="bg-black/40 border border-gray-800 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+          <div className="dashboard-glass-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-orange-500/20 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bell size={16} className="text-amber-400" />
                 <h3 className="text-base font-semibold text-gray-200">
@@ -1374,7 +1374,7 @@ export default function DeviceDetailPage() {
                   return (
                     <div
                       key={alert.id}
-                      className="p-5 hover:bg-gray-800/40 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                      className="p-5 hover:bg-white/[0.06]/40 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                     >
                       <div className="flex items-start gap-3">
                         <div

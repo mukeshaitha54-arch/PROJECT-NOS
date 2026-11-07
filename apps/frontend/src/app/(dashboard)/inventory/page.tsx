@@ -394,7 +394,7 @@ export default function GlobalInventoryExplorerPage() {
           },
         ];
     }
-  }, [activeTab, selectedIds, items]);
+  }, [activeTab, selectedIds]);
 
   return (
     <div className="min-h-screen bg-transparent text-slate-100 font-sans p-6 sm:p-8">
