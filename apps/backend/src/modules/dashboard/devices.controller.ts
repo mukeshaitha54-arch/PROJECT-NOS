@@ -163,15 +163,11 @@ export class DevicesController {
     const where =
       orgId && orgId !== "default-org"
         ? {
-            OR: [
-              { tenantId: orgId },
-              { organizationId: orgId },
-              { tenantId: null, organizationId: null },
-              { tenantId: "default-org" },
-              { organizationId: "default-org" },
-            ],
+            OR: [{ tenantId: orgId }, { organizationId: orgId }],
           }
-        : {};
+        : isSuperAdmin
+          ? {}
+          : { id: "none" };
 
     const devices = await this.prisma.device.findMany({
       where,

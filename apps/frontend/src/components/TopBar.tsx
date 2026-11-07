@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Shield,
   Command,
+  Building2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { CommandPalette } from "./layout/CommandPalette";
@@ -128,6 +129,58 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                     <p className="text-[11px] text-zinc-400 font-mono truncate mt-0.5">
                       {user?.email || "admin@nos.internal"}
                     </p>
+                  </div>
+
+                  {/* Active Workspace & Tenant Switcher */}
+                  <div className="px-3 py-2 border-b border-orange-500/20 bg-orange-500/[0.04] rounded-xl my-1">
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
+                      <span className="flex items-center gap-1 font-medium text-orange-400">
+                        <Building2 className="w-3 h-3" />
+                        WORKSPACE
+                      </span>
+                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
+                        {(user as any)?.memberRole || user?.role || "MEMBER"}
+                      </span>
+                    </div>
+                    <p className="font-semibold text-white truncate text-xs">
+                      {(user as any)?.activeOrganization?.name ||
+                        "Enterprise Workspace"}
+                    </p>
+                    {Array.isArray((user as any)?.organizations) &&
+                      (user as any).organizations.length > 1 && (
+                        <div className="mt-2 pt-1 border-t border-orange-500/10 space-y-1">
+                          <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">
+                            Switch Workspace
+                          </p>
+                          {(user as any).organizations.map((org: any) => (
+                            <button
+                              key={org.id}
+                              onClick={() => {
+                                if (typeof window !== "undefined") {
+                                  localStorage.setItem(
+                                    "nos_active_org_id",
+                                    org.id,
+                                  );
+                                  window.location.reload();
+                                }
+                              }}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-colors ${
+                                org.isCurrent
+                                  ? "bg-orange-500/20 text-orange-300 font-semibold"
+                                  : "hover:bg-white/[0.06] text-zinc-300"
+                              }`}
+                            >
+                              <span className="truncate max-w-[120px]">
+                                {org.name}
+                              </span>
+                              <span className="text-[10px] opacity-75 font-mono ml-1">
+                                {org.deviceCount}{" "}
+                                {org.deviceCount === 1 ? "device" : "devices"}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                   </div>
 
                   <Link

@@ -169,46 +169,44 @@ export class RealtimeGateway
       const requestedOrgId =
         client.handshake.query?.organizationId ||
         client.handshake.headers?.["x-organization-id"] ||
+        client.handshake.headers?.["x-tenant-id"] ||
         payload.org;
 
-      let orgId = "default-org";
-      if (requestedOrgId && requestedOrgId !== "default-org") {
-        if (user.role === UserRole.SUPER_ADMIN) {
-          orgId = requestedOrgId as string;
-        } else {
-          const membership = await this.prisma.organizationMember.findFirst({
-            where: {
-              userId: user.id,
-              organizationId: requestedOrgId as string,
-              isSuspended: false,
+      const userMemberships = await this.prisma.organizationMember.findMany({
+        where: { userId: user.id, isSuspended: false },
+        include: {
+          organization: {
+            include: {
+              _count: {
+                select: { devices: true },
+              },
             },
-          });
-          if (membership) {
-            orgId = requestedOrgId as string;
-          } else {
-            this.logger.warn(
-              `User [${user.id}] attempted unauthorized subscription to org room [${requestedOrgId}]. Defaulting to authorized tenant.`,
-            );
-            const userDefaultOrg =
-              await this.prisma.organizationMember.findFirst({
-                where: { userId: user.id, isSuspended: false },
-                orderBy: { joinedAt: "asc" },
-                select: { organizationId: true },
-              });
-            orgId = userDefaultOrg?.organizationId || "default-org";
-          }
-        }
+          },
+        },
+        orderBy: { joinedAt: "desc" },
+      });
+
+      let selectedMembership: any = null;
+      if (requestedOrgId && requestedOrgId !== "default-org") {
+        selectedMembership = userMemberships.find(
+          (m) => m.organizationId === requestedOrgId,
+        );
       }
 
-      // SUPER_ADMIN, ADMIN, and OWNER subscribe to global cross-tenant dashboard room
-      if (
-        user.role === UserRole.SUPER_ADMIN ||
-        user.role === UserRole.ADMIN ||
-        user.role === UserRole.OWNER
-      ) {
-        client.join(SocketRooms.DASHBOARD);
-        this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
+      if (!selectedMembership) {
+        selectedMembership =
+          userMemberships.find(
+            (m) => ((m.organization as any)?._count?.devices || 0) > 0,
+          ) ||
+          userMemberships[0] ||
+          null;
       }
+
+      const orgId = selectedMembership?.organizationId || "default-org";
+
+      // Allow all authenticated users with workspace memberships to join dashboard room
+      client.join(SocketRooms.DASHBOARD);
+      this.registry.addRoom(client.id, SocketRooms.DASHBOARD);
 
       const orgRoom = `org_${orgId}`;
       client.join(orgRoom);
@@ -401,15 +399,7 @@ export class RealtimeGateway
     }
 
     if (room === SocketRooms.DASHBOARD) {
-      if (
-        user.role !== UserRole.SUPER_ADMIN &&
-        user.role !== UserRole.ADMIN &&
-        user.role !== UserRole.OWNER
-      ) {
-        throw new ForbiddenException(
-          "Global dashboard room restricted to administrators.",
-        );
-      }
+      // Any authenticated user with active account is authorized to view the dashboard
       return;
     }
 

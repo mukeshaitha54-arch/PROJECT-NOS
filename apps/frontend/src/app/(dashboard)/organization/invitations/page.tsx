@@ -118,7 +118,14 @@ function InvitationsContent() {
     if (!token) return;
     try {
       setIsAccepting(true);
-      await apiClient.post("/tenant/invitations/accept", { token });
+      const res = await apiClient.post("/tenant/invitations/accept", { token });
+      const targetOrgId =
+        res.data?.data?.activeOrganizationId ||
+        res.data?.data?.organizationId ||
+        preview?.organizationId;
+      if (targetOrgId && typeof window !== "undefined") {
+        localStorage.setItem("nos_active_org_id", targetOrgId);
+      }
       toast.success(
         `Welcome! You have successfully joined ${preview?.organizationName || "the organization"}.`,
       );

@@ -68,6 +68,14 @@ rawApi.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    const activeOrgId =
+      typeof window !== "undefined"
+        ? localStorage.getItem("nos_active_org_id")
+        : null;
+    if (activeOrgId && config.headers && !config.headers["x-organization-id"]) {
+      config.headers["x-organization-id"] = activeOrgId;
+      config.headers["x-tenant-id"] = activeOrgId;
+    }
     return config;
   },
   (error) => Promise.reject(error),

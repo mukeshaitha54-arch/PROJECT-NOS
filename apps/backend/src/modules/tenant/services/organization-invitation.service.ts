@@ -157,9 +157,28 @@ export class OrganizationInvitationService {
     });
 
     if (existingMember) {
-      throw new BadRequestException(
-        "User is already a member of this organization",
-      );
+      await this.prisma.organizationInvitation
+        .update({
+          where: { id: invitation.id },
+          data: {
+            status: "ACCEPTED",
+            acceptedAt: new Date(),
+          },
+        })
+        .catch(() => null);
+
+      // Touch joinedAt to make this organization recently active
+      const touchedMember = await this.prisma.organizationMember
+        .update({
+          where: { id: existingMember.id },
+          data: { joinedAt: new Date() },
+        })
+        .catch(() => existingMember);
+
+      return {
+        ...touchedMember,
+        activeOrganizationId: invitation.organizationId,
+      };
     }
 
     // Add user as member and update invitation
@@ -171,6 +190,7 @@ export class OrganizationInvitationService {
           role: invitation.role,
           teamIds: invitation.teamIds,
           departmentIds: invitation.departmentIds,
+          joinedAt: new Date(),
         },
       });
 
@@ -185,6 +205,9 @@ export class OrganizationInvitationService {
       return newMember;
     });
 
-    return member;
+    return {
+      ...member,
+      activeOrganizationId: invitation.organizationId,
+    };
   }
 }

@@ -46,6 +46,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(userData);
         if (typeof window !== "undefined") {
           localStorage.setItem("nos_cached_user", JSON.stringify(userData));
+          if (
+            userData.organizationId &&
+            !localStorage.getItem("nos_active_org_id")
+          ) {
+            localStorage.setItem("nos_active_org_id", userData.organizationId);
+          }
         }
       }
     } catch (err: any) {
@@ -57,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           localStorage.removeItem("nos_access_token");
           localStorage.removeItem("nos_refresh_token");
           localStorage.removeItem("nos_cached_user");
+          localStorage.removeItem("nos_active_org_id");
         }
       }
     } finally {
@@ -151,6 +158,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem("nos_access_token");
         localStorage.removeItem("nos_refresh_token");
         localStorage.removeItem("nos_cached_user");
+        localStorage.removeItem("nos_active_org_id");
         setUser(null);
         // Use replace to avoid adding /auth/login to the browser history stack
         window.location.replace("/auth/login");

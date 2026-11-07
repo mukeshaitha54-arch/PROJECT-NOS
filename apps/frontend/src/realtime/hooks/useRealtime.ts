@@ -56,16 +56,25 @@ export function useRealtime() {
 
     setConnectionState("connecting");
 
+    const activeOrg =
+      (user as any)?.organizationId ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("nos_active_org_id")
+        : null);
+
     // Connect to backend Socket.IO with token authentication
     const socketInstance = io(SOCKET_URL + "/realtime", {
       path: "/socket.io",
       transports: ["websocket", "polling"],
       auth: {
         token: token ? `Bearer ${token}` : undefined,
+        organizationId: activeOrg || undefined,
       },
       query: {
         token: token ? `Bearer ${token}` : undefined,
+        organizationId: activeOrg || undefined,
       },
+      extraHeaders: activeOrg ? { "x-organization-id": activeOrg } : undefined,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,
