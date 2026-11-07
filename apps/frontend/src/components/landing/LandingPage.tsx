@@ -1,52 +1,56 @@
 "use client";
 
 import {
+  AmbientFlow,
+  ScrollStream,
   LandingNavbar,
   HeroSection,
-  LiveTelemetryMockHud,
-  HurdleSimulatorSlider,
-  ArchitecturalPillars,
-  InstallerSection,
+  LogoStrip,
+  MechanismSection,
+  DaySection,
+  TestimonialSection,
+  CapacityEstimatorSection,
+  ClosingSection,
+  LandingFooter,
 } from "@/components/landing";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[#090a0d] antialiased">
-      {/* Fixed navigation */}
+    <div className="relative min-h-screen bg-[#fffdfa] text-[#211a16] overflow-x-hidden selection:bg-[#f47b36] selection:text-[#fffdfa]">
+      {/* 1. Dynamic SVG Aurora Flow with Glowing Bands & Drifting Filaments */}
+      <AmbientFlow />
+
+      {/* 2. Vertical Scroll Stream Rail with Tracking Orbit */}
+      <ScrollStream />
+
+      {/* 3. Site Header Navigation with Animated Brand Glyph Ring */}
       <LandingNavbar />
 
-      {/* 1. Hero — above the fold */}
-      <HeroSection />
+      <main>
+        {/* 4. Hero Section with 3D Flow Window & Animated Particle Spark */}
+        <HeroSection />
 
-      {/* 2. Interactive live telemetry HUD sandbox */}
-      <LiveTelemetryMockHud />
+        {/* 5. Supported Runtimes & Infrastructure Strip */}
+        <LogoStrip />
 
-      {/* 3. Hurdle Simulator — resilience 3-stage walkthrough */}
-      <HurdleSimulatorSlider />
+        {/* 6. Mechanism Section — 01 Set it in Motion with Unfolding Plate */}
+        <MechanismSection />
 
-      {/* 4. Comparison table + 4 pillar cards */}
-      <ArchitecturalPillars />
+        {/* 7. Operational Cockpit — 02 Your Fleet in Motion with Live Events */}
+        <DaySection />
 
-      {/* 5. Installer steps + stats + CTA finale */}
-      <InstallerSection />
+        {/* 8. Verified Testimonial Quote */}
+        <TestimonialSection />
 
-      {/* Footer */}
-      <footer className="bg-[#07080a] border-t border-white/[0.06] py-10 px-6 text-center">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-orange-500/20">
-            N
-          </div>
-          <span className="text-white font-black text-base tracking-tight">
-            NOS
-          </span>
-          <span className="text-slate-500 text-xs font-mono">
-            Neural Operations Sentinel
-          </span>
-        </div>
-        <p className="text-slate-500 text-xs">
-          Built for resilience. Designed to never drop a datapoint.
-        </p>
-      </footer>
-    </main>
+        {/* 9. Fleet Capacity & Usage Estimator Slider */}
+        <CapacityEstimatorSection />
+
+        {/* 10. Closing Orbit CTA */}
+        <ClosingSection />
+      </main>
+
+      {/* 11. Minimal Warm Footer */}
+      <LandingFooter />
+    </div>
   );
 }

@@ -1,5 +1,14 @@
 export { LandingNavbar } from "./LandingNavbar";
 export { HeroSection } from "./HeroSection";
+export { LogoStrip } from "./LogoStrip";
+export { MechanismSection } from "./MechanismSection";
+export { DaySection } from "./DaySection";
+export { TestimonialSection } from "./TestimonialSection";
+export { CapacityEstimatorSection } from "./CapacityEstimatorSection";
+export { ClosingSection } from "./ClosingSection";
+export { LandingFooter } from "./LandingFooter";
+export { AmbientFlow } from "./AmbientFlow";
+export { ScrollStream } from "./ScrollStream";
 export { LiveTelemetryMockHud } from "./LiveTelemetryMockHud";
 export { HurdleSimulatorSlider } from "./HurdleSimulatorSlider";
 export { ArchitecturalPillars } from "./ArchitecturalPillars";

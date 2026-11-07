@@ -56,7 +56,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -64,34 +64,34 @@ export function Modal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`relative w-full ${SIZE_CLASSES[size]} rounded-2xl bg-[#111217] border border-white/10 shadow-2xl shadow-black/90 outline-none
+        className={`relative w-full ${SIZE_CLASSES[size]} rounded-2xl bg-[#ffffff] border border-[#eadfd5] shadow-2xl outline-none
           animate-in fade-in zoom-in-95 duration-200`}
       >
         {(title || description) && (
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/[0.08]">
+          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-[#eadfd5]">
             <div>
               {title && (
                 <h2
                   id="modal-title"
-                  className="text-base font-semibold text-slate-100"
+                  className="text-base font-semibold text-[#211a16]"
                 >
                   {title}
                 </h2>
               )}
               {description && (
-                <p className="mt-0.5 text-xs text-slate-400">{description}</p>
+                <p className="mt-0.5 text-xs text-[#75685f]">{description}</p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="ml-4 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+              className="ml-4 p-1.5 rounded-lg text-[#75685f] hover:text-[#211a16] hover:bg-[#fff7f0] transition-colors"
               aria-label="Close dialog"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-6 py-5 text-[#211a16]">{children}</div>
       </div>
     </div>
   );

@@ -14,8 +14,6 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Wifi,
-  WifiOff,
   Activity,
   X,
 } from "lucide-react";
@@ -58,22 +56,22 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   };
 
   const navContent = (
-    <div className="flex flex-col h-full bg-[#0d0e12]/95 backdrop-blur-2xl border-r border-white/[0.08] text-zinc-300 select-none shadow-[inset_-1px_0_0_0_rgba(255,255,255,0.04)]">
+    <div className="flex flex-col h-full bg-[#ffffff]/95 backdrop-blur-2xl border-r border-[#eadfd5] text-[#211a16] select-none shadow-sm">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-white/[0.08] bg-[#0d0e12]/80 backdrop-blur-md">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-[#eadfd5] bg-[#fffdfa]/90 backdrop-blur-md">
         <Link
           href="/dashboard"
           className="flex items-center gap-3 transition-transform duration-150 active:scale-[0.98]"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-500 via-rose-500 to-amber-500 flex items-center justify-center text-white font-black shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_4px_12px_rgba(255,85,0,0.4)]">
+          <div className="w-8 h-8 rounded-lg bg-[#f47b36] flex items-center justify-center text-white font-black shadow-sm">
             N
           </div>
           {!collapsed && (
             <div className="leading-tight">
-              <span className="font-extrabold text-sm tracking-wider text-white">
+              <span className="font-extrabold text-sm tracking-wider text-[#211a16]">
                 NOS
               </span>
-              <span className="text-[10px] block text-orange-400 font-mono font-medium tracking-wide">
+              <span className="text-[10px] block text-[#ca5724] font-mono font-medium tracking-wide">
                 NEURAL OS
               </span>
             </div>
@@ -83,7 +81,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         {/* Desktop Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden md:flex p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-[background-color,color,transform] duration-150 active:scale-[0.95]"
+          className="hidden md:flex p-1.5 rounded-lg text-[#75685f] hover:text-[#211a16] hover:bg-[#fff7f0] transition-colors"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
@@ -97,7 +95,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         {onMobileClose && (
           <button
             onClick={onMobileClose}
-            className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-[background-color,color,transform] duration-150 active:scale-[0.95]"
+            className="md:hidden p-1.5 rounded-lg text-[#75685f] hover:text-[#211a16] hover:bg-[#fff7f0]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -115,23 +113,21 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onMobileClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.98] relative ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.98] relative ${
                 active
-                  ? "bg-gradient-to-r from-orange-500/20 via-rose-500/10 to-transparent text-white border border-orange-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_2px_8px_rgba(255,85,0,0.25)]"
-                  : "text-zinc-400 hover:text-white hover:bg-white/[0.05] border border-transparent"
+                  ? "bg-[#fff7f0] text-[#ca5724] border border-[#eed4c2] shadow-sm"
+                  : "text-[#75685f] hover:text-[#211a16] hover:bg-[#fff7f0]/60 border border-transparent"
               } ${collapsed ? "justify-center px-0" : ""}`}
               title={collapsed ? item.name : undefined}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors duration-150 ${
-                  active
-                    ? "text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]"
-                    : "text-zinc-400"
+                  active ? "text-[#f47b36]" : "text-[#75685f]"
                 }`}
               />
               {!collapsed && <span>{item.name}</span>}
               {active && !collapsed && (
-                <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.9)]" />
+                <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-[#f47b36]" />
               )}
             </Link>
           );
@@ -139,21 +135,21 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       </div>
 
       {/* Socket.IO Real-time Connection Status Footer */}
-      <div className="p-3 border-t border-white/[0.08] bg-slate-950/70 backdrop-blur-md">
+      <div className="p-3 border-t border-[#eadfd5] bg-[#fffdfa]/90 backdrop-blur-md">
         <div
-          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs transition-[border-color,background-color] duration-150 ${
+          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs transition-colors duration-150 ${
             isConnected
-              ? "bg-emerald-950/30 text-emerald-300 border border-emerald-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
-              : "bg-red-950/30 text-red-300 border border-red-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+              ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]"
+              : "bg-[#fef2f2] text-[#991b1b] border border-[#fecaca]"
           } ${collapsed ? "justify-center px-0" : ""}`}
         >
           {isConnected ? (
             <div className="relative flex items-center justify-center shrink-0">
               <span className="absolute w-3 h-3 rounded-full bg-emerald-400/40 animate-ping" />
-              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
             </div>
           ) : (
-            <div className="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)] shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
           )}
 
           {!collapsed && (
@@ -183,7 +179,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
             onClick={onMobileClose}
           />
           <div className="relative w-64 h-full z-10 shadow-2xl animate-in slide-in-from-left duration-200">

@@ -24,14 +24,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#070709] text-white">
-        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+      <div className="flex h-screen w-full items-center justify-center bg-[#fffdfa] text-[#211a16]">
+        <Loader2 className="w-8 h-8 text-[#f47b36] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-[#070709] text-white overflow-hidden">
+    <div className="flex h-screen bg-[#fffdfa] text-[#211a16] overflow-hidden">
       {/* Collapsible desktop and mobile drawer sidebar */}
       <Sidebar
         isMobileOpen={isMobileNavOpen}
