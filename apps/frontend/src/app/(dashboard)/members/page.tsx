@@ -206,10 +206,10 @@ export default function MembersPage() {
             size="sm"
             onClick={fetchMembers}
             disabled={loading}
-            className="border-white/[0.08] bg-[#111217]/70 hover:bg-white/[0.06] text-slate-200 text-xs active:scale-[0.97] transition-[transform,background-color] duration-140 ease-out"
+            className="border-orange-500/30 bg-black/40 hover:bg-orange-500/20 text-orange-400 hover:text-white text-xs active:scale-[0.97] transition"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 mr-1.5 text-orange-400 ${loading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>

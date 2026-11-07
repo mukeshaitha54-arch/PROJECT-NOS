@@ -9,14 +9,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[#f47b36] hover:bg-[#fa9258] text-white shadow-sm font-semibold active:scale-[0.97]",
-        destructive: "bg-rose-600 text-white shadow-sm hover:bg-rose-500",
+          "bg-gradient-to-r from-[#f47b36] to-[#e66e39] hover:from-[#fa9258] hover:to-[#f47b36] text-white shadow-lg shadow-orange-500/25 font-semibold active:scale-[0.97]",
+        destructive:
+          "bg-rose-600 text-white shadow-sm hover:bg-rose-500 active:scale-[0.97]",
         outline:
-          "border border-[#eadfd5] bg-[#ffffff] hover:bg-[#fff7f0] hover:border-[#f47b36] text-[#211a16] shadow-sm",
+          "border border-orange-500/30 bg-black/40 hover:bg-orange-500/20 hover:border-orange-500/60 text-zinc-100 hover:text-white backdrop-blur-md shadow-sm active:scale-[0.97]",
         secondary:
-          "bg-[#fff7f0] text-[#211a16] border border-[#eadfd5] hover:bg-[#ffebd9]",
-        ghost: "hover:bg-[#fff7f0] text-[#75685f] hover:text-[#211a16]",
-        link: "text-[#f47b36] hover:text-[#ca5724] underline-offset-4 hover:underline",
+          "bg-white/[0.05] border border-orange-500/20 hover:bg-orange-500/15 hover:border-orange-500/50 text-zinc-200 hover:text-white backdrop-blur-md active:scale-[0.97]",
+        ghost:
+          "hover:bg-orange-500/15 text-zinc-300 hover:text-white active:scale-[0.97]",
+        link: "text-[#f47b36] hover:text-[#fa9258] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",

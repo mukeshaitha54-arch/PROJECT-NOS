@@ -39,22 +39,14 @@ export class DevicesController {
 
   private getDeviceQueryWhere(id: string, orgId?: string) {
     const idFilter = { OR: [{ id }, { uuid: id }] };
-    if (!orgId || orgId === "default-org") {
+    if (!orgId) {
       return idFilter;
     }
     return {
       AND: [
         idFilter,
         {
-          OR: [
-            { tenantId: orgId },
-            { organizationId: orgId },
-            { tenantId: null, organizationId: null },
-            { tenantId: "default-org" },
-            { organizationId: "default-org" },
-            { tenantId: null },
-            { organizationId: null },
-          ],
+          OR: [{ tenantId: orgId }, { organizationId: orgId }],
         },
       ],
     };
@@ -68,69 +60,28 @@ export class DevicesController {
   ) {
     const idFilter = { OR: [{ id }, { uuid: id }] };
 
-    if (!isSuperAdmin && orgId && orgId !== "default-org") {
-      const scoped = await this.prisma.device.findFirst({
+    if (!isSuperAdmin && orgId) {
+      return this.prisma.device.findFirst({
         where: {
           AND: [
             idFilter,
             {
-              OR: [
-                { tenantId: orgId },
-                { organizationId: orgId },
-                { tenantId: null, organizationId: null },
-                { tenantId: "default-org" },
-                { organizationId: "default-org" },
-                { tenantId: null },
-                { organizationId: null },
-              ],
+              OR: [{ tenantId: orgId }, { organizationId: orgId }],
             },
           ],
         },
         include,
       });
-      if (scoped) return scoped;
     }
 
-    // Direct fallback by id or uuid
-    const fallback = await this.prisma.device.findFirst({
-      where: idFilter,
-      include,
-    });
-
-    if (!fallback) return null;
-
-    // Check cross-tenant isolation: allow if SUPER_ADMIN or matches org or default-org
-    if (!isSuperAdmin && orgId && orgId !== "default-org") {
-      const devOrg = fallback.organizationId;
-      const devTenant = fallback.tenantId;
-      const isCrossTenant =
-        devOrg &&
-        devOrg !== "default-org" &&
-        devOrg !== orgId &&
-        devTenant &&
-        devTenant !== "default-org" &&
-        devTenant !== orgId;
-
-      if (isCrossTenant) {
-        return null;
-      }
+    if (isSuperAdmin) {
+      return this.prisma.device.findFirst({
+        where: idFilter,
+        include,
+      });
     }
 
-    // Auto-heal org mapping in background
-    if (
-      orgId &&
-      orgId !== "default-org" &&
-      (!fallback.organizationId || fallback.organizationId === "default-org")
-    ) {
-      this.prisma.device
-        .update({
-          where: { id: fallback.id },
-          data: { organizationId: orgId, tenantId: orgId },
-        })
-        .catch(() => {});
-    }
-
-    return fallback;
+    return null;
   }
 
   @Get()
@@ -143,31 +94,13 @@ export class DevicesController {
     const isSuperAdmin = user?.role === "SUPER_ADMIN";
     const orgId = isSuperAdmin ? undefined : tenant.organizationId;
 
-    // Fire-and-forget: sync tenantId for any legacy device that has organizationId but wrong tenantId
-    if (orgId && orgId !== "default-org") {
-      this.prisma.device
-        .updateMany({
-          where: {
-            organizationId: orgId,
-            OR: [{ tenantId: { not: orgId } }, { tenantId: null }],
-          },
-          data: { tenantId: orgId },
-        })
-        .catch(() => {});
-    }
-
-    const where =
-      orgId && orgId !== "default-org"
-        ? {
-            OR: [
-              { tenantId: orgId },
-              { organizationId: orgId },
-              { tenantId: null, organizationId: null },
-              { tenantId: "default-org" },
-              { organizationId: "default-org" },
-            ],
-          }
-        : {};
+    const where = orgId
+      ? {
+          OR: [{ tenantId: orgId }, { organizationId: orgId }],
+        }
+      : isSuperAdmin
+        ? {}
+        : { id: "none" };
 
     // Query by tenantId OR organizationId to catch all devices for this org
     const devices = await this.prisma.device.findMany({

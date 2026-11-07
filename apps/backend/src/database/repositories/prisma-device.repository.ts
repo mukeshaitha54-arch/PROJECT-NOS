@@ -26,18 +26,11 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   }
 
   async findAll(organizationId?: string): Promise<Device[]> {
-    const where =
-      organizationId && organizationId !== "default-org"
-        ? {
-            OR: [
-              { organizationId },
-              { tenantId: organizationId },
-              { organizationId: null, tenantId: null },
-              { organizationId: "default-org" },
-              { tenantId: "default-org" },
-            ],
-          }
-        : {};
+    const where = organizationId
+      ? {
+          OR: [{ organizationId }, { tenantId: organizationId }],
+        }
+      : {};
     return this.prisma.device.findMany({
       where,
       orderBy: { lastSeen: "desc" },
@@ -45,18 +38,11 @@ export class PrismaDeviceRepository implements IDeviceRepository {
   }
 
   async countByOrganization(organizationId?: string): Promise<number> {
-    const where =
-      organizationId && organizationId !== "default-org"
-        ? {
-            OR: [
-              { organizationId },
-              { tenantId: organizationId },
-              { organizationId: null, tenantId: null },
-              { organizationId: "default-org" },
-              { tenantId: "default-org" },
-            ],
-          }
-        : {};
+    const where = organizationId
+      ? {
+          OR: [{ organizationId }, { tenantId: organizationId }],
+        }
+      : {};
     return this.prisma.device.count({ where });
   }
 
@@ -69,27 +55,18 @@ export class PrismaDeviceRepository implements IDeviceRepository {
       if (orgExists) {
         resolvedOrgId = orgExists.id;
       } else {
-        const firstOrg = await this.prisma.organization.findFirst();
-        if (firstOrg) {
-          resolvedOrgId = firstOrg.id;
-        } else {
-          try {
-            const defaultOrg = await this.prisma.organization.create({
-              data: {
-                id:
-                  data.organizationId === "default-org"
-                    ? "default-org"
-                    : undefined,
-                name: "Personal Workspace",
-                slug: "personal",
-                status: "ACTIVE",
-              },
-            });
-            resolvedOrgId = defaultOrg.id;
-          } catch {
-            const fallback = await this.prisma.organization.findFirst();
-            resolvedOrgId = fallback?.id;
-          }
+        try {
+          const newOrg = await this.prisma.organization.create({
+            data: {
+              id: data.organizationId,
+              name: "Personal Workspace",
+              slug: `workspace-${data.organizationId.substring(0, 8)}`,
+              status: "ACTIVE",
+            },
+          });
+          resolvedOrgId = newOrg.id;
+        } catch {
+          resolvedOrgId = data.organizationId;
         }
       }
     }

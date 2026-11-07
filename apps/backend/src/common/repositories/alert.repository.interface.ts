@@ -8,6 +8,7 @@ import {
 import { AlertSeverity, AlertStatus, AlertCategory } from "@nos/shared-types";
 
 export interface AlertFindManyQuery {
+  organizationId?: string;
   status?: AlertStatus;
   severity?: AlertSeverity;
   category?: AlertCategory;

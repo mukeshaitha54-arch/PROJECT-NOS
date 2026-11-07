@@ -239,30 +239,23 @@ export default function DashboardPage() {
           }
         }
 
-        // Seed sparklineData if empty so telemetry chart renders real data immediately
+        // Append real current reading only if no historical points exist yet (no synthetic random jitter)
         setSparklineData((prev) => {
           if (prev.length > 0) return prev;
-          const now = Date.now();
-          const initialHistory = [];
-          for (let i = 5; i >= 0; i--) {
-            const timeStr = new Date(now - i * 30000).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            });
-            initialHistory.push({
-              time: timeStr,
-              cpu: Math.max(
-                1,
-                Math.round(calculatedCpu * (0.95 + Math.random() * 0.1)),
-              ),
-              ram: Math.max(
-                1,
-                Math.round(calculatedRam * (0.98 + Math.random() * 0.04)),
-              ),
-            });
+          if (calculatedCpu > 0 || calculatedRam > 0) {
+            return [
+              {
+                time: new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                }),
+                cpu: calculatedCpu,
+                ram: calculatedRam,
+              },
+            ];
           }
-          return initialHistory;
+          return [];
         });
       }
 
@@ -490,10 +483,10 @@ export default function DashboardPage() {
             size="sm"
             onClick={() => fetchDashboardData()}
             disabled={loading}
-            className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] text-xs text-zinc-200 active:scale-[0.97] transition-[transform,background-color,border-color] duration-140 ease-out"
+            className="border-orange-500/30 bg-black/40 hover:bg-orange-500/20 text-xs text-orange-400 hover:text-white active:scale-[0.97] transition"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 mr-1.5 text-orange-400 ${loading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>

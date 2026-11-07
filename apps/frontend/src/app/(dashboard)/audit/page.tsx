@@ -201,9 +201,9 @@ export default function OperationalAuditCenterPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111217]/70 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-semibold text-slate-300 hover:text-white active:scale-[0.97] transition-[transform,background-color] duration-140 ease-out"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/40 border border-orange-500/30 hover:bg-orange-500/15 hover:border-orange-500/60 shadow-sm text-xs font-semibold text-zinc-200 hover:text-white active:scale-[0.97] transition"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-orange-400" />
             Export CSV
           </button>
           <button

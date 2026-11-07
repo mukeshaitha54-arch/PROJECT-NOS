@@ -209,10 +209,10 @@ export default function AlertsCenterPage() {
           size="sm"
           onClick={fetchAlerts}
           disabled={loading}
-          className="border-orange-500/20 text-gray-300 text-xs"
+          className="border-orange-500/30 bg-black/40 hover:bg-orange-500/20 hover:border-orange-500/60 text-orange-400 hover:text-white text-xs h-8.5 px-3.5 rounded-xl shadow-sm transition active:scale-[0.97]"
         >
           <RefreshCw
-            className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
+            className={`w-3.5 h-3.5 mr-1.5 text-orange-400 ${loading ? "animate-spin" : ""}`}
           />
           Refresh
         </Button>
@@ -220,7 +220,7 @@ export default function AlertsCenterPage() {
 
       {/* Floating Bulk Action Bar (Appears when items are selected) */}
       {selectedAlertIds.length > 0 && (
-        <div className="bg-[#15161c]/90 border border-orange-500/30 p-3.5 px-5 rounded-xl shadow-xl flex items-center justify-between animate-in slide-in-from-top duration-150">
+        <div className="dashboard-glass-card border border-orange-500/40 p-3.5 px-5 rounded-2xl shadow-xl flex items-center justify-between animate-in slide-in-from-top duration-150">
           <div className="flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
             <span className="text-xs font-semibold text-white">
@@ -233,7 +233,7 @@ export default function AlertsCenterPage() {
               size="sm"
               variant="outline"
               onClick={handleBulkAcknowledge}
-              className="h-8 text-xs border-amber-800/60 bg-amber-950/20 text-amber-300 hover:bg-amber-900/40"
+              className="h-8 text-xs border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1 text-amber-400" />{" "}
               Acknowledge Selected
@@ -257,16 +257,16 @@ export default function AlertsCenterPage() {
       )}
 
       {/* Filter Bar */}
-      <div className="bg-[#111217]/70 border border-white/[0.08] p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="dashboard-glass-card p-4 rounded-2xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-1 items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400/80" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search alert title or node..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-xs text-gray-200 placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/[0.04] border border-orange-500/20 text-xs text-zinc-100 placeholder-zinc-500 focus:border-orange-500/70 focus:outline-none transition"
             />
           </div>
 
@@ -274,7 +274,7 @@ export default function AlertsCenterPage() {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="bg-white/[0.03] border border-orange-500/20 text-gray-200 text-xs rounded-lg px-3 py-2 outline-none shrink-0"
+            className="bg-[#0e0f14] border border-orange-500/25 text-zinc-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-orange-500/70 cursor-pointer shrink-0"
           >
             <option value="ALL">All Severities</option>
             <option value="CRITICAL">Critical</option>
@@ -287,7 +287,7 @@ export default function AlertsCenterPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-white/[0.03] border border-orange-500/20 text-gray-200 text-xs rounded-lg px-3 py-2 outline-none shrink-0"
+            className="bg-[#0e0f14] border border-orange-500/25 text-zinc-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-orange-500/70 cursor-pointer shrink-0"
           >
             <option value="ALL">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -298,7 +298,7 @@ export default function AlertsCenterPage() {
 
         {/* Time range selector & Select All */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-          <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-lg border border-orange-500/20 text-xs">
+          <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-orange-500/20 text-xs">
             {[
               { id: "today", label: "Today" },
               { id: "7d", label: "7 Days" },
@@ -307,10 +307,10 @@ export default function AlertsCenterPage() {
               <button
                 key={t.id}
                 onClick={() => setTimeFilter(t.id)}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
+                className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition active:scale-[0.97] ${
                   timeFilter === t.id
-                    ? "bg-orange-500 text-white shadow-sm"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25"
+                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                 }`}
               >
                 {t.label}
@@ -322,7 +322,12 @@ export default function AlertsCenterPage() {
             variant="outline"
             size="sm"
             onClick={handleSelectAll}
-            className="border-orange-500/20 text-gray-300 text-xs h-8"
+            className={`text-xs h-8 px-3.5 rounded-xl transition-all shadow-sm active:scale-[0.97] ${
+              selectedAlertIds.length === filteredAlerts.length &&
+              filteredAlerts.length > 0
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 border border-orange-400 text-white font-semibold shadow-orange-500/25"
+                : "border border-orange-500/30 bg-black/40 hover:bg-orange-500/20 hover:border-orange-500/60 text-zinc-200 hover:text-white"
+            }`}
           >
             {selectedAlertIds.length === filteredAlerts.length &&
             filteredAlerts.length > 0

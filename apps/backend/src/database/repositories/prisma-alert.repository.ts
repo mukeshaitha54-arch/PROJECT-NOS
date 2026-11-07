@@ -111,6 +111,14 @@ export class PrismaAlertRepository implements IAlertRepository {
 
   async findMany(query: AlertFindManyQuery): Promise<[Alert[], number]> {
     const where: Prisma.AlertWhereInput = {};
+    if (query.organizationId) {
+      where.device = {
+        OR: [
+          { organizationId: query.organizationId },
+          { tenantId: query.organizationId },
+        ],
+      };
+    }
     if (query.status) where.status = query.status as unknown as AlertStatus;
     if (query.severity)
       where.severity = query.severity as unknown as AlertSeverity;

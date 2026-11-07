@@ -98,9 +98,12 @@ export class AlertsController {
 
   @Get("active")
   async getActiveAlerts(@Request() req: any) {
-    const tenantId =
-      req.user?.organizationId || req.user?.tenantId || "default-org";
-    const [all] = await this.alertEngine.getAlerts({ take: 500 });
+    const isSuperAdmin = req.user?.role === "SUPER_ADMIN";
+    const organizationId = isSuperAdmin ? undefined : req.user?.organizationId;
+    const [all] = await this.alertEngine.getAlerts({
+      organizationId,
+      take: 500,
+    });
     const active = all.filter((a) =>
       ["NEW", "OPEN", "ACKNOWLEDGED"].includes(a.status as string),
     );
@@ -693,6 +696,7 @@ export class AlertsController {
 
   @Get()
   async getAlerts(
+    @Request() req: any,
     @Query("status") status?: AlertStatus,
     @Query("severity") severity?: AlertSeverity,
     @Query("category") category?: AlertCategory,
@@ -704,7 +708,10 @@ export class AlertsController {
     @Query("sortBy") sortBy?: "createdAt" | "severity" | "occurrenceCount",
     @Query("sortOrder") sortOrder?: "asc" | "desc",
   ) {
+    const isSuperAdmin = req.user?.role === "SUPER_ADMIN";
+    const organizationId = isSuperAdmin ? undefined : req.user?.organizationId;
     const [alerts, total] = await this.alertEngine.getAlerts({
+      organizationId,
       status,
       severity,
       category,
