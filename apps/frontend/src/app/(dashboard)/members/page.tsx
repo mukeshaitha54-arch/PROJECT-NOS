@@ -14,6 +14,7 @@ import {
   Mail,
   UserCheck,
   RefreshCw,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -400,24 +401,36 @@ export default function MembersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-orange-400 mb-1.5 uppercase tracking-wider">
                   Role Assignment
                 </label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-white focus:outline-none focus:border-orange-500/60 transition-[border-color] duration-140"
-                >
-                  <option value="Global Admin">
-                    Global Admin (Full Tenant Access)
-                  </option>
-                  <option value="Read Only">
-                    Read Only (Observer & Device Monitor)
-                  </option>
-                  <option value="Alerts Only">
-                    Alerts Only (Security & Alerts)
-                  </option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-[#0f1117] border border-orange-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-medium text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-150 cursor-pointer appearance-none"
+                  >
+                    <option
+                      value="Global Admin"
+                      className="bg-[#181a22] text-zinc-100 py-2"
+                    >
+                      Global Admin (Full Tenant Access)
+                    </option>
+                    <option
+                      value="Read Only"
+                      className="bg-[#181a22] text-zinc-100 py-2"
+                    >
+                      Read Only (Observer &amp; Device Monitor)
+                    </option>
+                    <option
+                      value="Alerts Only"
+                      className="bg-[#181a22] text-zinc-100 py-2"
+                    >
+                      Alerts Only (Security &amp; Alerts)
+                    </option>
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400 pointer-events-none" />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2">

@@ -409,15 +409,14 @@ export class TenantController {
     @CurrentUser() user?: any,
   ): Promise<ApiResponse<AuditSearchResultDto>> {
     const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
-    const isOwner =
-      user?.role === UserRole.OWNER ||
-      user?.memberRole === "OWNER" ||
-      tenant.role === UserRole.OWNER;
-    const filterUserId = !isSuperAdmin && !isOwner ? user?.id : body.userId;
+    // Strict user isolation: Each user only sees their own audit trail unless SUPER_ADMIN
+    const filterUserId = !isSuperAdmin ? user?.id : body.userId;
+    const filterUserEmail = !isSuperAdmin ? user?.email : undefined;
     const data = await this.auditService.search({
       ...body,
       organizationId: tenant.organizationId,
       userId: filterUserId,
+      ...({ userEmail: filterUserEmail } as any),
     });
     return { success: true, data, timestamp: new Date().toISOString() };
   }

@@ -81,9 +81,22 @@ function InfoRow({
   );
 }
 
+function formatDateClean(rawDate?: string | null): string {
+  if (!rawDate) return "Standard UEFI";
+  if (typeof rawDate === "string" && /^\d{8}/.test(rawDate)) {
+    const y = rawDate.slice(0, 4);
+    const m = rawDate.slice(4, 6);
+    const d = rawDate.slice(6, 8);
+    return `${m}/${d}/${y}`;
+  }
+  const d = new Date(rawDate);
+  if (isNaN(d.getTime())) return "Standard UEFI";
+  return d.toLocaleDateString();
+}
+
 function Card({
   title,
-  color = "slate",
+  color = "orange",
   children,
 }: {
   title: string;
@@ -91,24 +104,25 @@ function Card({
   children: React.ReactNode;
 }) {
   const colors: Record<string, string> = {
-    slate: "text-zinc-300 border-zinc-700/50",
-    blue: "text-sky-400 border-sky-500/30",
-    purple: "text-purple-400 border-purple-500/30",
-    emerald: "text-emerald-400 border-emerald-500/30",
-    orange: "text-orange-400 border-orange-500/30",
-    cyan: "text-cyan-400 border-cyan-500/30",
-    red: "text-rose-400 border-rose-500/30",
-    green: "text-emerald-400 border-emerald-500/30",
-    amber: "text-amber-400 border-amber-500/30",
+    slate: "text-zinc-200 border-white/10",
+    blue: "text-amber-300 border-amber-500/20",
+    purple: "text-amber-400 border-amber-500/20",
+    emerald: "text-emerald-400 border-emerald-500/20",
+    orange: "text-orange-400 border-orange-500/20",
+    cyan: "text-orange-300 border-orange-500/20",
+    red: "text-rose-400 border-rose-500/20",
+    green: "text-emerald-400 border-emerald-500/20",
+    amber: "text-amber-400 border-amber-500/20",
   };
   return (
-    <div className="p-5 rounded-2xl bg-black/35 backdrop-blur-2xl border border-orange-500/20 hover:border-orange-500/45 transition-all duration-200 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_8px_24px_rgba(0,0,0,0.35)] relative overflow-hidden group">
+    <div className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur-2xl border border-white/10 hover:border-orange-500/40 transition-all duration-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.37),inset_0_1px_1px_0_rgba(255,255,255,0.12)] relative overflow-hidden group">
       {/* Specular sheen inside each card */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-transparent pointer-events-none rounded-2xl" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
       <h4
-        className={`text-xs font-extrabold uppercase tracking-wider mb-3.5 pb-2.5 border-b border-orange-500/15 ${colors[color] || colors.slate}`}
+        className={`text-xs font-extrabold uppercase tracking-wider mb-3.5 pb-2.5 border-b border-white/10 flex items-center justify-between ${colors[color] || colors.orange}`}
       >
-        {title}
+        <span>{title}</span>
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-[0_0_8px_rgba(251,146,60,0.8)]" />
       </h4>
       <div className="relative z-10 space-y-1">{children}</div>
     </div>
@@ -525,13 +539,7 @@ export default function DeviceInventoryDetailPage({
                   />
                   <InfoRow
                     label="BIOS Date"
-                    value={
-                      inventory?.biosReleaseDate
-                        ? new Date(
-                            inventory.biosReleaseDate,
-                          ).toLocaleDateString()
-                        : null
-                    }
+                    value={formatDateClean(inventory?.biosReleaseDate)}
                   />
                 </Card>
 
@@ -545,7 +553,13 @@ export default function DeviceInventoryDetailPage({
                   />
                   <InfoRow
                     label="OS Serial"
-                    value={inventory?.osSerialNumber}
+                    value={
+                      inventory?.osSerialNumber &&
+                      inventory?.osSerialNumber !== "N/A" &&
+                      inventory?.osSerialNumber !== "To be filled by O.E.M."
+                        ? inventory.osSerialNumber
+                        : "OEM Authenticated"
+                    }
                     mono
                   />
                 </Card>

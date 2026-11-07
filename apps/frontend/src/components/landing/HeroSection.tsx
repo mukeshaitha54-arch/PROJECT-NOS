@@ -221,16 +221,26 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Cinematic Sliding Telemetry Capsule Rail */}
-      <div className="w-full mt-16 overflow-hidden py-3 border-y border-[#eadfd5] bg-[#fffdfa]/60 backdrop-blur-md select-none">
-        <div className="flex gap-6 animate-marquee whitespace-nowrap">
-          {[...SLIDING_ITEMS, ...SLIDING_ITEMS].map((item, idx) => (
+      {/* Full-width Cinematic Sliding Telemetry Capsule Marquee Rail */}
+      <div
+        className="w-full mt-14 overflow-hidden py-3.5 border-y border-[#eadfd5]/80 bg-white/40 backdrop-blur-md select-none rounded-2xl shadow-sm"
+        style={{ gridColumn: "1 / -1" }}
+      >
+        <div className="flex gap-5 animate-marquee whitespace-nowrap">
+          {[
+            ...SLIDING_ITEMS,
+            ...SLIDING_ITEMS,
+            ...SLIDING_ITEMS,
+            ...SLIDING_ITEMS,
+          ].map((item, idx) => (
             <div
               key={idx}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#eadfd5] shadow-sm text-xs font-mono font-medium text-[#443a32] hover:border-[#f47b36] hover:text-[#f47b36] transition-colors cursor-default"
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 border border-[#eadfd5] shadow-sm text-xs font-mono font-medium text-[#2d241d] hover:border-[#f47b36] hover:text-[#f47b36] hover:scale-105 transition-all duration-200 cursor-default"
             >
-              <span>{item.icon}</span>
-              <span className="mirror-text">{item.label}</span>
+              <span className="text-sm">{item.icon}</span>
+              <span className="mirror-text font-bold tracking-tight">
+                {item.label}
+              </span>
             </div>
           ))}
         </div>

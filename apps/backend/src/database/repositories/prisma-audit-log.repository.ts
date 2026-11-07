@@ -61,32 +61,48 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
     const limit = request.limit && request.limit > 0 ? request.limit : 20;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.AuditLogWhereInput = {};
+    const andClauses: Prisma.AuditLogWhereInput[] = [];
+
     if (request.organizationId) {
-      where.organizationId = request.organizationId;
-    }
-    if (request.userId) {
-      where.userId = request.userId;
+      andClauses.push({ organizationId: request.organizationId });
     }
     if (request.action) {
-      where.action = request.action;
+      andClauses.push({ action: request.action });
     }
     if (request.resourceType) {
-      where.resourceType = request.resourceType;
+      andClauses.push({ resourceType: request.resourceType });
     }
     if (request.from || request.to) {
-      where.timestamp = {};
-      if (request.from) where.timestamp.gte = new Date(request.from);
-      if (request.to) where.timestamp.lte = new Date(request.to);
+      const timeFilter: any = {};
+      if (request.from) timeFilter.gte = new Date(request.from);
+      if (request.to) timeFilter.lte = new Date(request.to);
+      andClauses.push({ timestamp: timeFilter });
     }
+
+    const userConditions: Prisma.AuditLogWhereInput[] = [];
+    if (request.userId) {
+      userConditions.push({ userId: request.userId });
+    }
+    if ((request as any).userEmail) {
+      userConditions.push({ userEmail: (request as any).userEmail });
+    }
+    if (userConditions.length > 0) {
+      andClauses.push({ OR: userConditions });
+    }
+
     if (request.search) {
-      where.OR = [
-        { action: { contains: request.search, mode: "insensitive" } },
-        { userEmail: { contains: request.search, mode: "insensitive" } },
-        { reason: { contains: request.search, mode: "insensitive" } },
-        { correlationId: { contains: request.search, mode: "insensitive" } },
-      ];
+      andClauses.push({
+        OR: [
+          { action: { contains: request.search, mode: "insensitive" } },
+          { userEmail: { contains: request.search, mode: "insensitive" } },
+          { reason: { contains: request.search, mode: "insensitive" } },
+          { correlationId: { contains: request.search, mode: "insensitive" } },
+        ],
+      });
     }
+
+    const where: Prisma.AuditLogWhereInput =
+      andClauses.length > 0 ? { AND: andClauses } : {};
 
     const [total, rows] = await Promise.all([
       this.prisma.auditLog.count({ where }),

@@ -96,9 +96,9 @@ function FlowDiagram({
                     ? "0 0 15px rgba(255,85,0,0.3)"
                     : "none",
             }}
-            className="w-16 h-14 rounded-xl border-2 bg-[#15161c]/70 flex flex-col items-center justify-center"
+            className="w-16 h-14 rounded-xl border-2 bg-white/95 border-[#eadfd5] shadow-sm flex flex-col items-center justify-center"
           >
-            <span className="text-[10px] font-bold text-white text-center leading-tight">
+            <span className="text-[10px] font-bold text-[#211a16] text-center leading-tight">
               {n.label}
             </span>
           </motion.div>
@@ -209,7 +209,7 @@ export function HurdleSimulatorSlider() {
                 className={`flex items-center gap-2 px-5 py-3 rounded-2xl border font-bold text-sm transition-all duration-300 ${
                   stateIdx === i
                     ? `${sc.bg} ${sc.border} ${sc.text} shadow-[0_0_20px_rgba(255,85,0,0.15)]`
-                    : "bg-white/5 border-white/10 text-slate-500 hover:text-slate-300"
+                    : "bg-white/80 border-[#eadfd5] text-[#64564c] hover:text-[#211a16] hover:bg-white"
                 }`}
               >
                 <span>{s.icon}</span>
@@ -227,7 +227,7 @@ export function HurdleSimulatorSlider() {
           <button
             onClick={() => setStateIdx((i) => Math.max(0, i - 1))}
             disabled={stateIdx === 0}
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold active:scale-[0.97]"
+            className="px-5 py-2.5 rounded-xl border border-[#eadfd5] bg-white text-[#64564c] hover:text-[#211a16] hover:border-[#f47b36]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold active:scale-[0.97] shadow-sm"
           >
             ← Previous
           </button>
@@ -236,7 +236,7 @@ export function HurdleSimulatorSlider() {
               <button
                 key={i}
                 onClick={() => setStateIdx(i)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${stateIdx === i ? "bg-orange-500 scale-125 shadow-[0_0_8px_#ff5500]" : "bg-white/15 hover:bg-white/30"}`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${stateIdx === i ? "bg-orange-500 scale-125 shadow-[0_0_8px_#ff5500]" : "bg-[#eadfd5] hover:bg-[#d8c8bc]"}`}
               />
             ))}
           </div>
@@ -245,7 +245,7 @@ export function HurdleSimulatorSlider() {
               setStateIdx((i) => Math.min(STATES.length - 1, i + 1))
             }
             disabled={stateIdx === STATES.length - 1}
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold active:scale-[0.97]"
+            className="px-5 py-2.5 rounded-xl border border-[#eadfd5] bg-white text-[#64564c] hover:text-[#211a16] hover:border-[#f47b36]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold active:scale-[0.97] shadow-sm"
           >
             Next →
           </button>
@@ -269,7 +269,7 @@ function AnimateStatePanel({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.45 }}
-      className={`rounded-3xl border ${colors.border} ${colors.bg} backdrop-blur-xl overflow-hidden`}
+      className="rounded-3xl border border-[#eadfd5] bg-white/90 backdrop-blur-xl overflow-hidden shadow-[0_16px_40px_-12px_rgba(244,123,54,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)]"
     >
       <div className="p-6 grid md:grid-cols-2 gap-6">
         {/* Left: Status details */}
@@ -280,21 +280,23 @@ function AnimateStatePanel({
               <div className={`text-lg font-black ${colors.text}`}>
                 {state.label}
               </div>
-              <div className="text-slate-500 text-sm">{state.sublabel}</div>
+              <div className="text-[#64564c] text-sm">{state.sublabel}</div>
             </div>
           </div>
-          <p className="text-slate-300 text-sm leading-relaxed mb-5">
+          <p className="text-[#64564c] text-sm leading-relaxed mb-5">
             {state.description}
           </p>
           <div className="space-y-2">
             {state.details.map((d) => (
               <div
                 key={d.key}
-                className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
+                className="flex items-center justify-between py-2 border-b border-[#eadfd5]/60 last:border-0"
               >
-                <span className="text-xs text-slate-500">{d.key}</span>
+                <span className="text-xs text-[#64564c] font-medium">
+                  {d.key}
+                </span>
                 <span
-                  className={`text-xs font-bold ${d.ok ? "text-emerald-400" : "text-red-400"}`}
+                  className={`text-xs font-bold ${d.ok ? "text-emerald-600" : "text-rose-600"}`}
                 >
                   {d.ok ? "✓" : "✕"} {d.value}
                 </span>
@@ -304,8 +306,8 @@ function AnimateStatePanel({
         </div>
 
         {/* Right: Flow diagram */}
-        <div className="bg-[#15161c]/60 rounded-2xl border border-white/[0.08] flex flex-col justify-center overflow-hidden">
-          <div className="px-4 pt-3 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+        <div className="bg-white/80 rounded-2xl border border-[#eadfd5] flex flex-col justify-center overflow-hidden shadow-sm">
+          <div className="px-4 pt-3 pb-1 text-[10px] font-bold text-[#64564c] uppercase tracking-widest font-mono">
             Data Flow Diagram
           </div>
           <FlowDiagram stateId={state.id} colorClass={colors.text} />

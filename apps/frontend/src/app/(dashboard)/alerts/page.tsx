@@ -204,18 +204,16 @@ export default function AlertsCenterPage() {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="border-orange-500/30 bg-black/40 hover:bg-orange-500/20 hover:border-orange-500/60 text-orange-400 hover:text-white text-xs h-8.5 px-3.5 rounded-xl shadow-sm transition active:scale-[0.97]"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-orange-500/25 active:scale-[0.97] transition-all disabled:opacity-50"
         >
           <RefreshCw
-            className={`w-3.5 h-3.5 mr-1.5 text-orange-400 ${loading ? "animate-spin" : ""}`}
+            className={`w-3.5 h-3.5 text-white ${loading ? "animate-spin" : ""}`}
           />
           Refresh
-        </Button>
+        </button>
       </div>
 
       {/* Floating Bulk Action Bar (Appears when items are selected) */}
@@ -318,22 +316,20 @@ export default function AlertsCenterPage() {
             ))}
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={handleSelectAll}
-            className={`text-xs h-8 px-3.5 rounded-xl transition-all shadow-sm active:scale-[0.97] ${
+            className={`text-xs h-8 px-3.5 rounded-xl font-bold transition-all shadow-sm active:scale-[0.97] ${
               selectedAlertIds.length === filteredAlerts.length &&
               filteredAlerts.length > 0
-                ? "bg-gradient-to-r from-orange-500 to-amber-500 border border-orange-400 text-white font-semibold shadow-orange-500/25"
-                : "border border-orange-500/30 bg-black/40 hover:bg-orange-500/20 hover:border-orange-500/60 text-zinc-200 hover:text-white"
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 border border-orange-400 text-white shadow-orange-500/25"
+                : "border border-orange-500/40 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-white"
             }`}
           >
             {selectedAlertIds.length === filteredAlerts.length &&
             filteredAlerts.length > 0
               ? "Deselect All"
               : "Select All"}
-          </Button>
+          </button>
         </div>
       </div>
 

@@ -38,19 +38,16 @@ export class AuditLogsController {
     @Query("limit") limit?: number,
   ) {
     const isSuperAdmin = user?.role === "SUPER_ADMIN";
-    const isOwner =
-      user?.role === "OWNER" ||
-      user?.memberRole === "OWNER" ||
-      (tenant as any)?.role === "OWNER";
     const tenantId = isSuperAdmin
       ? undefined
       : user?.organizationId || tenant?.organizationId;
     const pageNum = Number(page) && Number(page) > 0 ? Number(page) : 1;
     const limitNum = Number(limit) && Number(limit) > 0 ? Number(limit) : 20;
 
-    // Strict account data isolation: non-owners only see their own audit actions
-    const actorFilter =
-      !isSuperAdmin && !isOwner ? user?.email || user?.id || "unknown" : actor;
+    // Strict account data isolation: non-super-admins only see their own audit actions
+    const actorFilter = !isSuperAdmin
+      ? user?.email || user?.id || "unknown"
+      : actor;
 
     return this.auditService.getAuditLogs({
       tenantId: tenantId || "impossible-org",

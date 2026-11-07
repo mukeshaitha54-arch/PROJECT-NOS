@@ -227,6 +227,26 @@
     transform: translateX(95px);
   }
 }
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex !important;
+  width: max-content !important;
+  animation: marquee-scroll 35s linear infinite !important;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused !important;
+}
 .aurora-thread {
   fill: none;
   stroke-linecap: round;

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { MirrorText } from "@/components/ui/MirrorText";
 
 const STEPS = [
   {
@@ -155,8 +156,8 @@ export function InstallerSection() {
         </div>
       </section>
 
-      {/* Stats row */}
-      <section className="relative bg-gradient-to-b from-white/70 via-[#fff8f2]/80 to-white/70 backdrop-blur-xl py-16 px-6 border-y border-[#eadfd5] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]">
+      {/* Stats row - completely raw on background flow, no white strip */}
+      <section className="relative bg-transparent py-14 px-6 overflow-hidden">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {STATS.map((stat, i) => (
@@ -170,10 +171,10 @@ export function InstallerSection() {
               >
                 <span className="text-2xl mb-1">{stat.icon}</span>
                 <span className="text-3xl font-black text-[#211a16] tracking-tight font-mono">
-                  {stat.value}
+                  <MirrorText>{stat.value}</MirrorText>
                 </span>
                 <span className="text-xs text-[#64564c] font-semibold leading-tight">
-                  {stat.label}
+                  <MirrorText>{stat.label}</MirrorText>
                 </span>
               </motion.div>
             ))}
@@ -182,7 +183,7 @@ export function InstallerSection() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative bg-transparent py-28 px-6 overflow-hidden border-t border-[#eadfd5]">
+      <section className="relative bg-transparent py-28 px-6 overflow-hidden">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

@@ -22,6 +22,7 @@ import { DataTable, Column } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "@/components/ui/toast";
+import { useAuth } from "@/contexts/auth-context";
 
 interface AuditLogRow extends Record<string, unknown> {
   id: string;
@@ -37,6 +38,7 @@ interface AuditLogRow extends Record<string, unknown> {
 }
 
 export default function OperationalAuditCenterPage() {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
@@ -77,7 +79,33 @@ export default function OperationalAuditCenterPage() {
         total = fbRes?.data?.data?.total || fbRes?.data?.total || items.length;
       }
 
-      const formatted = items.map((r: any) => ({
+      // Strict account data isolation: filter out actions belonging to other users
+      const isolatedItems =
+        user?.role === "SUPER_ADMIN"
+          ? items
+          : items.filter((item: any) => {
+              const actor =
+                item.userName ||
+                item.userEmail ||
+                item.actor ||
+                item.userId ||
+                "";
+              if (!actor || actor === "System Action" || actor === "System") {
+                return true;
+              }
+              if (
+                user?.email &&
+                String(actor).toLowerCase().includes(user.email.toLowerCase())
+              ) {
+                return true;
+              }
+              if (user?.id && String(actor).includes(user.id)) {
+                return true;
+              }
+              return false;
+            });
+
+      const formatted = isolatedItems.map((r: any) => ({
         ...r,
         userName:
           r.userName ||
@@ -89,7 +117,9 @@ export default function OperationalAuditCenterPage() {
       }));
 
       setLogs(formatted);
-      setTotalRecords(total);
+      setTotalRecords(
+        isolatedItems.length < items.length ? isolatedItems.length : total,
+      );
     } catch (err: any) {
       toast.error(
         "Failed to load audit logs",
@@ -100,7 +130,7 @@ export default function OperationalAuditCenterPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, actionFilter, resourceFilter]);
+  }, [page, limit, search, actionFilter, resourceFilter, user]);
 
   useEffect(() => {
     loadAuditLogs();
