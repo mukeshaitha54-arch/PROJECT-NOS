@@ -33,8 +33,8 @@ const STATUS_CONFIG: Record<
     pulse: true,
   },
   maintenance: {
-    color: "bg-blue-400",
-    ring: "ring-blue-500/30",
+    color: "bg-orange-500",
+    ring: "ring-orange-500/30",
     label: "Maintenance",
     pulse: false,
   },

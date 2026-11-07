@@ -187,7 +187,7 @@ export default function OperationalAuditCenterPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
         <div>
           <div className="flex items-center gap-2.5">
-            <FileText className="w-6 h-6 text-cyan-400" />
+            <FileText className="w-6 h-6 text-orange-500" />
             <h1 className="text-2xl font-bold tracking-tight text-white">
               Operational Audit Center
             </h1>
@@ -201,7 +201,7 @@ export default function OperationalAuditCenterPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-semibold text-slate-300 hover:text-white active:scale-[0.97] transition-[transform,background-color] duration-140 ease-out"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111217]/70 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-semibold text-slate-300 hover:text-white active:scale-[0.97] transition-[transform,background-color] duration-140 ease-out"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV
@@ -209,7 +209,7 @@ export default function OperationalAuditCenterPage() {
           <button
             onClick={loadAuditLogs}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_16px_-4px_rgba(6,182,212,0.5)] text-white text-xs font-semibold active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 ease-out"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(255,85,0,0.5)] text-white text-xs font-semibold active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 ease-out"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
@@ -228,13 +228,13 @@ export default function OperationalAuditCenterPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search audit trail by user, action, resource..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-[border-color,box-shadow] duration-140"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
           />
         </div>
       </div>
 
       {/* Audit Log Table */}
-      <div className="rounded-2xl glass-card border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.6)] p-6">
+      <div className="rounded-2xl glass-card border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.7)] p-6">
         <DataTable
           columns={auditColumns}
           data={logs}

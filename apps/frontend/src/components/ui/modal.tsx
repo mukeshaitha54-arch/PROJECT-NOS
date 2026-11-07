@@ -56,7 +56,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -64,11 +64,11 @@ export function Modal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`relative w-full ${SIZE_CLASSES[size]} rounded-2xl bg-slate-900 border border-slate-700/60 shadow-2xl shadow-slate-950/80 outline-none
+        className={`relative w-full ${SIZE_CLASSES[size]} rounded-2xl bg-[#111217] border border-white/10 shadow-2xl shadow-black/90 outline-none
           animate-in fade-in zoom-in-95 duration-200`}
       >
         {(title || description) && (
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-slate-800">
+          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-white/[0.08]">
             <div>
               {title && (
                 <h2
@@ -84,7 +84,7 @@ export function Modal({
             </div>
             <button
               onClick={onClose}
-              className="ml-4 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+              className="ml-4 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
               aria-label="Close dialog"
             >
               <X className="w-4 h-4" />

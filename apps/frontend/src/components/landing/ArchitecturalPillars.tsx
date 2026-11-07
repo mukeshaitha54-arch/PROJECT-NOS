@@ -69,8 +69,8 @@ const PILLARS = [
   {
     icon: "⚡",
     title: "High-Frequency Telemetry",
-    color: "from-blue-500 to-cyan-500",
-    glow: "rgba(59,130,246,0.2)",
+    color: "from-orange-500 to-amber-500",
+    glow: "rgba(255,85,0,0.25)",
     description:
       "30-second multi-sample median-smoothed CPU, thermal, disk I/O, network Mbps, and process table — all streamed live via WebSocket.",
     badges: ["30s cycle", "WMI + PerfCounters", "WebSocket push", "0 polling"],
@@ -78,8 +78,8 @@ const PILLARS = [
   {
     icon: "🛡️",
     title: "Zero-Trust Multi-Tenant",
-    color: "from-violet-500 to-purple-600",
-    glow: "rgba(139,92,246,0.2)",
+    color: "from-rose-600 to-orange-500",
+    glow: "rgba(225,29,72,0.25)",
     description:
       "Cryptographic SHA-256 device token verification, organization-level data barriers, instant key revocation, and JWT-secured dashboard.",
     badges: ["SHA-256 tokens", "Org isolation", "Instant revoke", "JWT auth"],
@@ -96,7 +96,7 @@ const PILLARS = [
   {
     icon: "💽",
     title: "Predictive Hardware Reliability",
-    color: "from-amber-500 to-orange-500",
+    color: "from-amber-500 to-orange-600",
     glow: "rgba(245,158,11,0.2)",
     description:
       "NVMe SSD write wear %, S.M.A.R.T. predictive failure indicators, battery degradation health, thermal throttling detection — before failure strikes.",
@@ -108,8 +108,8 @@ export function ArchitecturalPillars() {
   return (
     <>
       {/* Comparison Table */}
-      <section className="relative bg-slate-900 py-28 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.04)_0%,transparent_60%)] pointer-events-none" />
+      <section className="relative bg-[#0b0c0f] py-28 px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,85,0,0.05)_0%,transparent_60%)] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -118,12 +118,12 @@ export function ArchitecturalPillars() {
             transition={{ duration: 0.7 }}
             className="text-center mb-14"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-400 tracking-widest uppercase bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-1.5 mb-5">
-              ⚡ NOS vs Legacy RMM
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
+              ⚡ Architectural Benchmark
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
               Why{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
                 Every Other Tool
               </span>{" "}
               Falls Short
@@ -140,17 +140,17 @@ export function ArchitecturalPillars() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="rounded-3xl border border-white/10 overflow-hidden"
+            className="rounded-3xl border border-white/10 overflow-hidden shadow-2xl shadow-black/80"
           >
             {/* Header row */}
-            <div className="grid grid-cols-3 bg-slate-800/80 border-b border-white/10">
+            <div className="grid grid-cols-3 bg-[#15161c]/90 border-b border-white/[0.08]">
               <div className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
                 Dimension
               </div>
-              <div className="px-6 py-4 text-xs font-bold text-red-400 uppercase tracking-widest border-l border-white/8">
+              <div className="px-6 py-4 text-xs font-bold text-rose-400 uppercase tracking-widest border-l border-white/[0.08]">
                 ❌ Legacy RMM
               </div>
-              <div className="px-6 py-4 text-xs font-bold text-emerald-400 uppercase tracking-widest border-l border-white/8">
+              <div className="px-6 py-4 text-xs font-bold text-orange-400 uppercase tracking-widest border-l border-white/[0.08]">
                 ✅ NOS Sentinel
               </div>
             </div>
@@ -162,18 +162,18 @@ export function ArchitecturalPillars() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, duration: 0.5 }}
-                className="grid grid-cols-3 border-b border-white/6 last:border-0 hover:bg-white/[0.02] transition-colors"
+                className="grid grid-cols-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] transition-colors"
               >
                 <div className="px-6 py-4 text-sm font-semibold text-slate-300">
                   {row.dimension}
                 </div>
-                <div className="px-6 py-4 border-l border-white/8">
-                  <span className="text-sm text-red-400/80 leading-relaxed">
+                <div className="px-6 py-4 border-l border-white/[0.08]">
+                  <span className="text-sm text-rose-400/80 leading-relaxed">
                     {row.legacy.text}
                   </span>
                 </div>
-                <div className="px-6 py-4 border-l border-white/8">
-                  <span className="text-sm text-emerald-300 leading-relaxed font-medium">
+                <div className="px-6 py-4 border-l border-white/[0.08]">
+                  <span className="text-sm text-orange-300 leading-relaxed font-medium">
                     {row.nos.text}
                   </span>
                 </div>
@@ -185,10 +185,10 @@ export function ArchitecturalPillars() {
 
       {/* Pillars */}
       <section
-        className="relative bg-gradient-to-b from-slate-900 to-slate-950 py-28 px-6 overflow-hidden"
+        className="relative bg-gradient-to-b from-[#0b0c0f] to-[#090a0d] py-28 px-6 overflow-hidden"
         id="architecture"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.05)_0%,transparent_70%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,85,0,0.05)_0%,transparent_70%)] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -197,13 +197,13 @@ export function ArchitecturalPillars() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-violet-400 tracking-widest uppercase bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-5">
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
               🏗️ Core Architecture
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
               Four Pillars of{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
-                Absolute Resilience
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+                Absolute Fleet Precision
               </span>
             </h2>
           </motion.div>
@@ -219,9 +219,9 @@ export function ArchitecturalPillars() {
                 whileHover={{
                   y: -4,
                   boxShadow: `0 20px 60px ${pillar.glow}`,
-                  borderColor: "rgba(255,255,255,0.15)",
+                  borderColor: "rgba(255,255,255,0.18)",
                 }}
-                className="group rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-sm p-7 cursor-default transition-all duration-300"
+                className="group rounded-3xl border border-white/10 bg-[#111217]/70 backdrop-blur-sm p-7 cursor-default transition-all duration-300 shadow-xl"
               >
                 {/* Icon */}
                 <div
@@ -243,7 +243,7 @@ export function ArchitecturalPillars() {
                   {pillar.badges.map((b) => (
                     <span
                       key={b}
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r ${pillar.color} bg-opacity-10 text-white border border-white/10`}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full text-white border border-white/10 font-mono`}
                       style={{ background: `${pillar.glow}` }}
                     >
                       {b}

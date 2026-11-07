@@ -220,9 +220,9 @@ export default function AlertsCenterPage() {
 
       {/* Floating Bulk Action Bar (Appears when items are selected) */}
       {selectedAlertIds.length > 0 && (
-        <div className="bg-blue-950/70 border border-blue-800/80 p-3.5 px-5 rounded-xl shadow-xl flex items-center justify-between animate-in slide-in-from-top duration-150">
+        <div className="bg-[#15161c]/90 border border-orange-500/30 p-3.5 px-5 rounded-xl shadow-xl flex items-center justify-between animate-in slide-in-from-top duration-150">
           <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
             <span className="text-xs font-semibold text-white">
               {selectedAlertIds.length} alerts selected
             </span>
@@ -257,7 +257,7 @@ export default function AlertsCenterPage() {
       )}
 
       {/* Filter Bar */}
-      <div className="bg-gray-900/90 border border-gray-800 p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-[#111217]/70 border border-white/[0.08] p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-1 items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -266,7 +266,7 @@ export default function AlertsCenterPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search alert title or node..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-gray-950 border border-gray-800 text-xs text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-gray-950 border border-gray-800 text-xs text-gray-200 placeholder-gray-500 focus:border-orange-500/60 focus:outline-none"
             />
           </div>
 
@@ -309,7 +309,7 @@ export default function AlertsCenterPage() {
                 onClick={() => setTimeFilter(t.id)}
                 className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                   timeFilter === t.id
-                    ? "bg-blue-600 text-white"
+                    ? "bg-orange-500 text-white shadow-sm"
                     : "text-gray-400 hover:text-white"
                 }`}
               >

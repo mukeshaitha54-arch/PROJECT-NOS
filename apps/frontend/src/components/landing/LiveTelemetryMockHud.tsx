@@ -119,12 +119,12 @@ function ProcessRow({
       <span className="text-slate-300 flex-1 font-mono truncate">{name}</span>
       <div className="w-14 h-1.5 bg-white/10 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-blue-500 rounded-full"
+          className="h-full bg-gradient-to-r from-orange-500 to-rose-500 rounded-full"
           animate={{ width: `${c}%` }}
           transition={{ duration: 1 }}
         />
       </div>
-      <span className="text-blue-300 w-10 text-right tabular-nums">
+      <span className="text-orange-400 w-10 text-right tabular-nums font-mono">
         {c.toFixed(0)}%
       </span>
       <span className="text-slate-500 w-12 text-right">{mem}</span>
@@ -179,17 +179,17 @@ export function LiveTelemetryMockHud() {
     return () => clearInterval(interval);
   }, [paused]);
 
-  const tempColor = temp < 60 ? "#34d399" : temp < 75 ? "#fbbf24" : "#f87171";
-  const cpuColor = cpu < 60 ? "#60a5fa" : cpu < 80 ? "#fbbf24" : "#f87171";
-  const ramColor = ram < 70 ? "#a78bfa" : ram < 85 ? "#fbbf24" : "#f87171";
+  const tempColor = temp < 60 ? "#34d399" : temp < 75 ? "#fbbf24" : "#f43f5e";
+  const cpuColor = cpu < 60 ? "#ff5500" : cpu < 80 ? "#fbbf24" : "#f43f5e";
+  const ramColor = ram < 70 ? "#ff8800" : ram < 85 ? "#fbbf24" : "#f43f5e";
 
   return (
     <section
-      className="relative bg-slate-950 py-28 px-6 overflow-hidden"
+      className="relative bg-[#090a0d] py-28 px-6 overflow-hidden"
       id="telemetry-engine"
     >
       {/* Background glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,85,0,0.06)_0%,transparent_70%)] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto">
         {/* Section header */}
@@ -200,13 +200,13 @@ export function LiveTelemetryMockHud() {
           transition={{ duration: 0.7 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-blue-400 tracking-widest uppercase bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-5">
-            ⚡ Live Telemetry Sandbox
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
+            ⚡ Live Telemetry Cockpit
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
             This Is What{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">
-              Real-Time Monitoring
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
+              Real-Time Fleet Precision
             </span>{" "}
             Feels Like
           </h2>
@@ -222,18 +222,18 @@ export function LiveTelemetryMockHud() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/60"
+          className="rounded-3xl border border-white/10 bg-[#111217]/70 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/80"
         >
           {/* HUD Top Bar */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/8 bg-slate-900/40">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0d10]/60">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+                <div className="w-3 h-3 rounded-full bg-rose-500/70" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/70" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
               </div>
               <span className="text-slate-400 text-xs font-mono">
-                NOS Fleet Monitor — SHIVA
+                NOS Fleet Telemetry Engine — SHIVA
               </span>
               <span
                 className={`text-xs font-bold px-2 py-0.5 rounded-full ${paused ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}
@@ -248,7 +248,7 @@ export function LiveTelemetryMockHud() {
               className={`text-xs font-black px-4 py-2 rounded-xl transition-all duration-300 ${
                 paused
                   ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30"
-                  : "bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30"
+                  : "bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:bg-orange-500/30"
               }`}
             >
               {paused ? "▶ Resume Telemetry" : "⏸ Pause Telemetry"}
@@ -257,7 +257,7 @@ export function LiveTelemetryMockHud() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
             {/* Left: Gauges */}
-            <div className="bg-slate-800/40 rounded-2xl border border-white/8 p-5">
+            <div className="bg-[#15161c]/50 rounded-2xl border border-white/[0.08] p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
               <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">
                 System Health
               </div>
@@ -304,12 +304,12 @@ export function LiveTelemetryMockHud() {
               </div>
 
               {/* CPU sparkline */}
-              <div className="border-t border-white/8 pt-4">
+              <div className="border-t border-white/[0.08] pt-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-slate-500">
                     CPU History (5 min)
                   </span>
-                  <span className="text-xs text-blue-400 font-bold">
+                  <span className="text-xs text-orange-400 font-bold font-mono">
                     {cpu.toFixed(1)}%
                   </span>
                 </div>
@@ -320,7 +320,7 @@ export function LiveTelemetryMockHud() {
             {/* Center: Disk & Network */}
             <div className="space-y-4">
               {/* Disk */}
-              <div className="bg-slate-800/40 rounded-2xl border border-white/8 p-4">
+              <div className="bg-[#15161c]/50 rounded-2xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                   💽 Disk I/O
                 </div>
@@ -330,14 +330,14 @@ export function LiveTelemetryMockHud() {
                       label: "Read",
                       value: readSpeed,
                       max: 2000,
-                      color: "#60a5fa",
+                      color: "#ff6b00",
                       unit: "MB/s",
                     },
                     {
                       label: "Write",
                       value: writeSpeed,
                       max: 500,
-                      color: "#a78bfa",
+                      color: "#e11d48",
                       unit: "MB/s",
                     },
                   ].map(({ label, value, max, color, unit }) => (
@@ -367,7 +367,7 @@ export function LiveTelemetryMockHud() {
               </div>
 
               {/* Network */}
-              <div className="bg-slate-800/40 rounded-2xl border border-white/8 p-4">
+              <div className="bg-[#15161c]/50 rounded-2xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                   🌐 Network
                 </div>
@@ -377,14 +377,14 @@ export function LiveTelemetryMockHud() {
                       label: "Upload ↑",
                       value: netUp,
                       max: 100,
-                      color: "#34d399",
+                      color: "#10b981",
                       unit: "Mbps",
                     },
                     {
                       label: "Download ↓",
                       value: netDown,
                       max: 1000,
-                      color: "#22d3ee",
+                      color: "#ff9900",
                       unit: "Mbps",
                     },
                   ].map(({ label, value, max, color, unit }) => (
@@ -415,12 +415,12 @@ export function LiveTelemetryMockHud() {
             </div>
 
             {/* Right: Live Processes */}
-            <div className="bg-slate-800/40 rounded-2xl border border-white/8 p-4">
+            <div className="bg-[#15161c]/50 rounded-2xl border border-white/[0.08] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                   ⚙️ Processes
                 </div>
-                <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+                <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full font-mono">
                   247 running
                 </span>
               </div>
@@ -441,8 +441,8 @@ export function LiveTelemetryMockHud() {
           </div>
 
           {/* HUD Bottom Bar */}
-          <div className="border-t border-white/8 px-6 py-3 bg-slate-900/30 flex items-center justify-between">
-            <div className="flex items-center gap-4 text-xs text-slate-600">
+          <div className="border-t border-white/[0.08] px-6 py-3 bg-[#0c0d10]/40 flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs text-slate-500 font-mono">
               <span>⚡ Heartbeat: 30s cycle</span>
               <span>•</span>
               <span>📡 WebSocket: ACTIVE</span>

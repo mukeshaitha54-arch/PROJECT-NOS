@@ -28,10 +28,10 @@ export default function EnterpriseAdminConsolePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-cyan-400" />
+            <Shield className="w-6 h-6 text-orange-500" />
             <h1 className="text-2xl font-bold tracking-tight text-white">
               Workspace Management & Settings
             </h1>
@@ -50,9 +50,9 @@ export default function EnterpriseAdminConsolePage() {
       </div>
 
       {/* Scope Info Card */}
-      <div className="p-4 rounded-xl bg-slate-900/80 border border-cyan-500/30 flex items-center justify-between">
+      <div className="p-4 rounded-xl bg-[#111217]/70 border border-orange-500/30 flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex items-center gap-3">
-          <Globe className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+          <Globe className="w-5 h-5 text-orange-400 flex-shrink-0" />
           <div>
             <p className="text-xs font-semibold text-slate-200">
               {isSuperAdmin
@@ -67,45 +67,45 @@ export default function EnterpriseAdminConsolePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link
           href="/admin/users"
-          className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 transition group"
+          className="p-6 rounded-2xl bg-[#111217]/70 border border-white/[0.08] hover:border-orange-500/50 transition group shadow-lg active:scale-[0.98]"
         >
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 mb-4 group-hover:scale-110 transition-transform">
             <Users className="w-5 h-5" />
           </div>
-          <h3 className="text-base font-bold text-white group-hover:text-cyan-300 transition">
+          <h3 className="text-base font-bold text-white group-hover:text-orange-300 transition">
             User Governance
           </h3>
           <p className="text-xs text-slate-400 mt-1">
             Manage team members, roles, permissions, and email verification
             status.
           </p>
-          <div className="mt-4 flex items-center text-xs font-semibold text-cyan-400 gap-1">
+          <div className="mt-4 flex items-center text-xs font-semibold text-orange-400 gap-1">
             Manage Users <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </Link>
 
         <Link
           href="/admin/api-keys"
-          className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 transition group"
+          className="p-6 rounded-2xl bg-[#111217]/70 border border-white/[0.08] hover:border-rose-500/50 transition group shadow-lg active:scale-[0.98]"
         >
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 mb-4 group-hover:scale-110 transition-transform">
             <Key className="w-5 h-5" />
           </div>
-          <h3 className="text-base font-bold text-white group-hover:text-purple-300 transition">
+          <h3 className="text-base font-bold text-white group-hover:text-rose-300 transition">
             API Key Manager
           </h3>
           <p className="text-xs text-slate-400 mt-1">
             Provision and revoke SHA-256 hashed API keys for programmatic
             automation.
           </p>
-          <div className="mt-4 flex items-center text-xs font-semibold text-purple-400 gap-1">
+          <div className="mt-4 flex items-center text-xs font-semibold text-rose-400 gap-1">
             Manage Keys <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </Link>
 
         <Link
           href="/admin/sessions"
-          className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 transition group"
+          className="p-6 rounded-2xl bg-[#111217]/70 border border-white/[0.08] hover:border-emerald-500/50 transition group shadow-lg active:scale-[0.98]"
         >
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
             <Activity className="w-5 h-5" />
@@ -124,7 +124,7 @@ export default function EnterpriseAdminConsolePage() {
 
         <Link
           href="/admin/security"
-          className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 transition group"
+          className="p-6 rounded-2xl bg-[#111217]/70 border border-white/[0.08] hover:border-amber-500/50 transition group shadow-lg active:scale-[0.98]"
         >
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
             <Lock className="w-5 h-5" />

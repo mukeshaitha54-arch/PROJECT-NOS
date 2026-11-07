@@ -29,14 +29,14 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   degraded:
     "bg-amber-500/15  text-amber-400  border-amber-500/30  ring-amber-500/20",
   maintenance:
-    "bg-blue-500/15   text-blue-400   border-blue-500/30   ring-blue-500/20",
+    "bg-orange-500/15 text-orange-400 border-orange-500/30 ring-orange-500/20",
   retired:
     "bg-slate-600/15  text-slate-500  border-slate-600/30  ring-slate-600/20",
   success:
     "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 ring-emerald-500/20",
   warning:
     "bg-amber-500/15  text-amber-400  border-amber-500/30  ring-amber-500/20",
-  info: "bg-cyan-500/15   text-cyan-400   border-cyan-500/30   ring-cyan-500/20",
+  info: "bg-orange-500/15 text-orange-300 border-orange-500/30 ring-orange-500/20",
   neutral:
     "bg-slate-700/40  text-slate-400  border-slate-600/40  ring-slate-600/20",
 };

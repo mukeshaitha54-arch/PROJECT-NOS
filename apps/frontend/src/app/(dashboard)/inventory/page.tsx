@@ -184,7 +184,7 @@ export default function GlobalInventoryExplorerPage() {
             render: (row) => (
               <Link
                 href={`/devices/${row.deviceId || row.id}`}
-                className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5"
+                className="font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1.5"
               >
                 <Server className="w-3.5 h-3.5 text-slate-400" />
                 {String(row.hostname || row.deviceId || "SHIVA")}
@@ -241,7 +241,7 @@ export default function GlobalInventoryExplorerPage() {
             render: (row) => (
               <Link
                 href={`/devices/${row.deviceId || row.id}`}
-                className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5"
+                className="font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1.5"
               >
                 <Server className="w-3.5 h-3.5 text-slate-400" />
                 {String(row.hostname || row.deviceId || "SHIVA")}
@@ -311,7 +311,7 @@ export default function GlobalInventoryExplorerPage() {
             render: (row) => (
               <Link
                 href={`/devices/${row.deviceId || row.id}`}
-                className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5"
+                className="font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1.5"
               >
                 <Server className="w-3.5 h-3.5 text-slate-400" />
                 {String(row.hostname || row.deviceId || "SHIVA")}
@@ -369,7 +369,7 @@ export default function GlobalInventoryExplorerPage() {
             render: (row) => (
               <Link
                 href={`/devices/${row.deviceId || row.id}`}
-                className="font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5"
+                className="font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1.5"
               >
                 <Server className="w-3.5 h-3.5 text-slate-400" />
                 {String(row.hostname || row.deviceId || "SHIVA")}
@@ -403,7 +403,7 @@ export default function GlobalInventoryExplorerPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
           <div>
             <div className="flex items-center gap-2.5">
-              <Layers className="w-6 h-6 text-cyan-400" />
+              <Layers className="w-6 h-6 text-orange-500" />
               <h1 className="text-2xl font-bold tracking-tight text-white">
                 Global Inventory Explorer
               </h1>
@@ -417,14 +417,14 @@ export default function GlobalInventoryExplorerPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/dashboard"
-              className="px-3.5 py-2 rounded-xl bg-slate-900/60 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-semibold text-slate-300 hover:text-white active:scale-[0.97] transition-[transform,background-color] duration-140 ease-out"
+              className="px-3.5 py-2 rounded-xl bg-[#111217]/70 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-semibold text-slate-300 hover:text-white active:scale-[0.97] transition-[transform,background-color] duration-140 ease-out"
             >
               NOC Dashboard
             </Link>
             <button
               onClick={loadInventoryData}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_16px_-4px_rgba(6,182,212,0.5)] text-white text-xs font-semibold active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 ease-out"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(255,85,0,0.5)] text-white text-xs font-semibold active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 ease-out"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
@@ -446,7 +446,7 @@ export default function GlobalInventoryExplorerPage() {
                 }}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-tight active:scale-[0.97] transition-[background-color,color,border-color,box-shadow,transform] duration-140 ease-out ${
                   activeTab === tab
-                    ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_2px_12px_-2px_rgba(6,182,212,0.4)]"
+                    ? "bg-orange-500/10 text-orange-400 border border-orange-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_2px_12px_-2px_rgba(255,85,0,0.4)]"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
                 }`}
               >
@@ -466,13 +466,13 @@ export default function GlobalInventoryExplorerPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${activeTab.toLowerCase()}...`}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-[border-color,box-shadow] duration-140"
+                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
               />
             </div>
             {selectedIds.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="w-full sm:w-auto px-3 py-2 rounded-xl bg-slate-900/60 border border-white/[0.08] text-xs text-cyan-400 hover:text-cyan-300 font-semibold active:scale-[0.97] transition-[transform,background-color] duration-140"
+                className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#111217]/70 border border-white/[0.08] text-xs text-orange-400 hover:text-orange-300 font-semibold active:scale-[0.97] transition-[transform,background-color] duration-140"
               >
                 {selectedIds.length === items.length
                   ? "Deselect All"
@@ -488,7 +488,7 @@ export default function GlobalInventoryExplorerPage() {
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
-              className="bg-slate-950/80 border border-white/[0.08] text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-cyan-500/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-[border-color] duration-140"
+              className="bg-slate-950/80 border border-white/[0.08] text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-orange-500/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-[border-color] duration-140"
             >
               <option value="">Select Action...</option>
               <option value="MAINTENANCE">Toggle Maintenance Mode</option>
@@ -502,8 +502,8 @@ export default function GlobalInventoryExplorerPage() {
               disabled={isApplyingBulk || selectedIds.length === 0}
               className={`px-3.5 py-2 text-white text-xs font-semibold rounded-xl active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 shrink-0 flex items-center gap-1.5 ${
                 selectedIds.length === 0
-                  ? "bg-slate-900/60 border border-white/[0.06] text-slate-500 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_16px_-4px_rgba(59,130,246,0.5)]"
+                  ? "bg-[#111217]/50 border border-white/[0.06] text-slate-600 cursor-not-allowed"
+                  : "bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(255,85,0,0.5)]"
               }`}
             >
               {isApplyingBulk && (
@@ -514,7 +514,7 @@ export default function GlobalInventoryExplorerPage() {
             <div className="w-px h-6 bg-white/[0.08] mx-1"></div>
             <button
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900/60 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-slate-300 hover:text-white text-xs font-semibold rounded-xl active:scale-[0.97] transition-[transform,background-color] duration-140 shrink-0"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#111217]/70 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-slate-300 hover:text-white text-xs font-semibold rounded-xl active:scale-[0.97] transition-[transform,background-color] duration-140 shrink-0"
             >
               <FileText className="w-3.5 h-3.5" /> Export CSV
             </button>
@@ -522,7 +522,7 @@ export default function GlobalInventoryExplorerPage() {
         </div>
 
         {/* Main Data Table */}
-        <div className="rounded-2xl glass-card border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.6)] p-6">
+        <div className="rounded-2xl glass-card border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.7)] p-6">
           <DataTable
             columns={columns}
             data={items}

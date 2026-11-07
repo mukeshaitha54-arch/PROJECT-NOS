@@ -9,15 +9,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-blue-600 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_2px_8px_rgba(37,99,235,0.35)] hover:bg-blue-500 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_12px_rgba(37,99,235,0.45)] border border-blue-500/50",
+          "bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_4px_16px_rgba(255,85,0,0.35)] hover:from-orange-400 hover:to-rose-500 border border-orange-400/40",
         destructive:
-          "bg-red-600 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_8px_rgba(239,68,68,0.3)] hover:bg-red-500 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_12px_rgba(239,68,68,0.4)] border border-red-500/50",
+          "bg-rose-600 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_16px_rgba(225,29,72,0.4)] hover:bg-rose-500 border border-rose-500/50",
         outline:
-          "border border-white/[0.1] bg-slate-900/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] hover:bg-slate-800/80 hover:text-white hover:border-white/[0.2] text-slate-300",
+          "border border-white/[0.1] bg-white/[0.03] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/[0.08] hover:border-orange-500/40 text-white",
         secondary:
-          "bg-slate-800/90 text-slate-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] hover:bg-slate-700/90 border border-slate-700/60",
-        ghost: "hover:bg-slate-800/60 hover:text-white text-slate-400",
-        link: "text-blue-400 underline-offset-4 hover:underline",
+          "bg-zinc-800/90 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] hover:bg-zinc-750 border border-white/[0.08]",
+        ghost: "hover:bg-white/[0.06] hover:text-white text-zinc-400",
+        link: "text-orange-400 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",

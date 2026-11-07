@@ -63,9 +63,9 @@ interface RecentAlert {
 
 const STATUS_COLORS: Record<string, string> = {
   Online: "#10b981", // emerald
-  Offline: "#64748b", // slate
+  Offline: "#71717a", // zinc
   Warning: "#f59e0b", // amber
-  Maintenance: "#3b82f6", // blue
+  Maintenance: "#ff5500", // solar orange
 };
 
 export default function DashboardPage() {
@@ -463,16 +463,16 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <Activity className="w-6 h-6 text-blue-500" />
+            <Activity className="w-6 h-6 text-orange-500" />
             Operational Command Center
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Real-time fleet telemetry, agent status, and live health metrics.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs bg-slate-900/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] px-3 py-1.5 rounded-xl text-slate-300">
+          <div className="flex items-center gap-2 text-xs bg-white/[0.03] border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] px-3 py-1.5 rounded-xl text-zinc-300">
             <Radio
               className={`w-3.5 h-3.5 ${
                 isConnected
@@ -490,7 +490,7 @@ export default function DashboardPage() {
             size="sm"
             onClick={() => fetchDashboardData()}
             disabled={loading}
-            className="border-white/[0.08] bg-slate-900/60 hover:bg-white/[0.06] text-xs text-slate-200 active:scale-[0.97] transition-[transform,background-color,border-color] duration-140 ease-out"
+            className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] text-xs text-zinc-200 active:scale-[0.97] transition-[transform,background-color,border-color] duration-140 ease-out"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
@@ -503,14 +503,14 @@ export default function DashboardPage() {
       {/* Top 4 Stats Cards (Responsive 1/2/4 cols) with Specular Rim & Ambient Light */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Devices */}
-        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
           {/* Ambient radial accent */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-blue-500/[0.08] blur-2xl pointer-events-none group-hover:bg-blue-500/[0.14] transition-[background-color] duration-200" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-orange-500/[0.09] blur-2xl pointer-events-none group-hover:bg-orange-500/[0.16] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Total Enrolled Nodes
             </span>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
+            <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
               <Server className="w-4 h-4" />
             </div>
           </div>
@@ -522,17 +522,17 @@ export default function DashboardPage() {
               <TrendingUp className="w-3.5 h-3.5 mr-1" /> +100% active
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 font-medium">
+          <div className="mt-2 text-[11px] text-zinc-500 font-medium">
             Cryptographic identity verified
           </div>
         </div>
 
         {/* Online Devices */}
-        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
           {/* Ambient radial accent */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/[0.08] blur-2xl pointer-events-none group-hover:bg-emerald-500/[0.14] transition-[background-color] duration-200" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/[0.09] blur-2xl pointer-events-none group-hover:bg-emerald-500/[0.16] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Online Agents
             </span>
             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
@@ -548,57 +548,57 @@ export default function DashboardPage() {
               Active Pulse
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 font-medium">
+          <div className="mt-2 text-[11px] text-zinc-500 font-medium">
             Heartbeat received &lt; 30s
           </div>
         </div>
 
         {/* Offline Devices */}
-        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
           {/* Ambient radial accent */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-slate-500/[0.05] blur-2xl pointer-events-none group-hover:bg-slate-500/[0.1] transition-[background-color] duration-200" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-zinc-600/[0.05] blur-2xl pointer-events-none group-hover:bg-zinc-600/[0.1] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Offline Nodes
             </span>
-            <div className="p-2.5 rounded-xl bg-slate-800/60 border border-white/[0.08] text-slate-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group-hover:scale-105 transition-[transform] duration-200">
+            <div className="p-2.5 rounded-xl bg-zinc-800/80 border border-white/[0.08] text-zinc-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group-hover:scale-105 transition-[transform] duration-200">
               <XCircle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between">
-            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-slate-300">
+            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-zinc-300">
               {stats.offlineDevices}
             </span>
-            <span className="text-xs font-medium text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded-full border border-white/[0.06]">
+            <span className="text-xs font-medium text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded-full border border-white/[0.06]">
               No signal
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 font-medium">
+          <div className="mt-2 text-[11px] text-zinc-500 font-medium">
             Heartbeat timeout &gt; 90s
           </div>
         </div>
 
         {/* Alerts Today */}
-        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_-8px_rgba(0,0,0,0.5)]">
+        <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
           {/* Ambient radial accent */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-red-500/[0.08] blur-2xl pointer-events-none group-hover:bg-red-500/[0.14] transition-[background-color] duration-200" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-rose-500/[0.09] blur-2xl pointer-events-none group-hover:bg-rose-500/[0.16] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Active Alerts
             </span>
-            <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
+            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
               <ShieldAlert className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between">
-            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-red-400">
+            <span className="text-3xl font-bold font-mono tracking-tight tabular-nums text-rose-400">
               {stats.alertsToday}
             </span>
             <span className="inline-flex items-center text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
               <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Needs Attention
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 font-medium">
+          <div className="mt-2 text-[11px] text-zinc-500 font-medium">
             Rule engine breach events
           </div>
         </div>
@@ -620,12 +620,12 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#ff5500" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#ff5500" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="ramGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#e11d48" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#e11d48" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
@@ -635,12 +635,12 @@ export default function DashboardPage() {
                 />
                 <XAxis
                   dataKey="time"
-                  stroke="#64748b"
+                  stroke="#71717a"
                   fontSize={10}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#64748b"
+                  stroke="#71717a"
                   fontSize={10}
                   domain={[0, 100]}
                   unit="%"
@@ -648,12 +648,12 @@ export default function DashboardPage() {
                 />
                 <RechartsTooltip
                   contentStyle={{
-                    backgroundColor: "rgba(13, 19, 33, 0.9)",
+                    backgroundColor: "rgba(18, 19, 23, 0.95)",
                     backdropFilter: "blur(16px)",
-                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderColor: "rgba(255, 255, 255, 0.12)",
                     borderRadius: "0.75rem",
                     boxShadow:
-                      "inset 0 1px 0 0 rgba(255,255,255,0.1), 0 16px 36px -4px rgba(0,0,0,0.7)",
+                      "inset 0 1px 0 0 rgba(255,255,255,0.12), 0 16px 36px -4px rgba(0,0,0,0.7)",
                     color: "#fff",
                     fontSize: "12px",
                   }}
@@ -662,7 +662,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="cpu"
                   name="CPU Load"
-                  stroke="#3b82f6"
+                  stroke="#ff6b00"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#cpuGradient)"
@@ -671,7 +671,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="ram"
                   name="Memory Usage"
-                  stroke="#8b5cf6"
+                  stroke="#f43f5e"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#ramGradient)"

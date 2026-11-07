@@ -106,23 +106,23 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-2xl transform overflow-hidden rounded-xl bg-gray-900 border border-gray-700 shadow-2xl ring-1 ring-white/10 transition-all mx-4">
-        <div className="flex items-center border-b border-gray-800 px-4">
-          <Search className="h-5 w-5 text-gray-400" />
+      <div className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-[#111217] border border-white/10 shadow-2xl shadow-black/90 ring-1 ring-white/10 mx-4">
+        <div className="flex items-center border-b border-white/[0.08] px-4">
+          <Search className="h-5 w-5 text-slate-400" />
           <input
             ref={inputRef}
             type="text"
-            className="h-14 w-full border-0 bg-transparent px-4 text-white placeholder-gray-400 focus:outline-none sm:text-sm"
+            className="h-14 w-full border-0 bg-transparent px-4 text-white placeholder-slate-500 focus:outline-none sm:text-sm font-sans"
             placeholder="Search Devices, Users, Alerts..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
           {isLoading && (
-            <div className="h-4 w-4 rounded-full border-2 border-t-blue-500 border-gray-600 animate-spin mr-3"></div>
+            <div className="h-4 w-4 rounded-full border-2 border-t-orange-500 border-white/20 animate-spin mr-3"></div>
           )}
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-gray-800"
+            className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-white/10"
           >
             <X className="h-4 w-4" />
           </button>
@@ -130,7 +130,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
         {query.length >= 2 && results.length > 0 && (
           <div className="max-h-96 overflow-y-auto p-2">
-            <div className="mb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="mb-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider font-mono">
               Search Results
             </div>
             <ul className="space-y-1">
@@ -140,20 +140,20 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   <li key={`${result.type}-${result.id}`}>
                     <button
                       onClick={() => handleSelect(result)}
-                      className="w-full flex items-center px-3 py-3 hover:bg-blue-900/30 rounded-lg text-left group transition-colors"
+                      className="w-full flex items-center px-3 py-3 hover:bg-orange-500/10 rounded-xl text-left group transition-colors"
                     >
-                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-gray-800 group-hover:bg-blue-900/50 text-gray-400 group-hover:text-blue-400 border border-gray-700 group-hover:border-blue-700/50">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/5 group-hover:bg-orange-500/20 text-slate-400 group-hover:text-orange-400 border border-white/10 group-hover:border-orange-500/30">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="ml-4 flex-auto">
-                        <p className="text-sm font-medium text-white group-hover:text-blue-100">
+                        <p className="text-sm font-medium text-white group-hover:text-orange-200">
                           {result.title}
                         </p>
-                        <p className="text-xs text-gray-400 group-hover:text-blue-300">
+                        <p className="text-xs text-slate-400 group-hover:text-orange-300">
                           {result.subtitle}
                         </p>
                       </div>
-                      <div className="text-xs font-mono text-gray-500 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-xs font-mono text-slate-500 group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity">
                         Enter ↵
                       </div>
                     </button>

@@ -41,8 +41,8 @@ const STATES = [
     id: "recovery",
     label: "RECOVERY",
     sublabel: "Auto-drain complete",
-    color: "blue",
-    icon: "🔵",
+    color: "orange",
+    icon: "🟠",
     description:
       "Connectivity restored. Outbox dispatcher auto-drains all buffered telemetry in FIFO order without flooding.",
     details: [
@@ -85,24 +85,24 @@ function FlowDiagram({
             animate={{
               borderColor:
                 stateId === "outage" && n.id === "server"
-                  ? "#f87171"
+                  ? "#f43f5e"
                   : stateId !== "optimal" && n.id === "outbox"
-                    ? "#60a5fa"
+                    ? "#ff5500"
                     : "rgba(255,255,255,0.12)",
               boxShadow:
                 stateId === "outage" && n.id === "server"
-                  ? "0 0 15px rgba(248,113,113,0.3)"
+                  ? "0 0 15px rgba(244,63,94,0.3)"
                   : stateId !== "optimal" && n.id === "outbox"
-                    ? "0 0 15px rgba(96,165,250,0.3)"
+                    ? "0 0 15px rgba(255,85,0,0.3)"
                     : "none",
             }}
-            className="w-16 h-14 rounded-xl border-2 bg-slate-800/60 flex flex-col items-center justify-center"
+            className="w-16 h-14 rounded-xl border-2 bg-[#15161c]/70 flex flex-col items-center justify-center"
           >
             <span className="text-[10px] font-bold text-white text-center leading-tight">
               {n.label}
             </span>
           </motion.div>
-          <span className="text-[9px] text-slate-600 text-center">
+          <span className="text-[9px] text-slate-500 text-center font-mono">
             {n.sublabel}
           </span>
         </div>
@@ -126,8 +126,8 @@ function FlowDiagram({
               stroke={
                 link.active
                   ? stateId === "outage" && link.to === 2
-                    ? "#f87171"
-                    : "#60a5fa"
+                    ? "#f43f5e"
+                    : "#ff5500"
                   : "rgba(255,255,255,0.06)"
               }
               strokeWidth={link.active ? "2" : "1"}
@@ -156,23 +156,23 @@ export function HurdleSimulatorSlider() {
       btn: "bg-emerald-500 hover:bg-emerald-400",
     },
     red: {
-      text: "text-red-400",
-      bg: "bg-red-500/10",
-      border: "border-red-500/30",
-      btn: "bg-red-500 hover:bg-red-400",
+      text: "text-rose-400",
+      bg: "bg-rose-500/10",
+      border: "border-rose-500/30",
+      btn: "bg-rose-600 hover:bg-rose-500",
     },
-    blue: {
-      text: "text-blue-400",
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/30",
-      btn: "bg-blue-500 hover:bg-blue-400",
+    orange: {
+      text: "text-orange-400",
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/30",
+      btn: "bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-400 hover:to-rose-500",
     },
   };
   const c = colorMap[current.color];
 
   return (
-    <section className="relative bg-gradient-to-b from-slate-950 to-slate-900 py-28 px-6 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(139,92,246,0.05)_0%,transparent_70%)] pointer-events-none" />
+    <section className="relative bg-gradient-to-b from-[#090a0d] to-[#0d0e12] py-28 px-6 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(255,85,0,0.05)_0%,transparent_70%)] pointer-events-none" />
 
       <div className="max-w-5xl mx-auto">
         <motion.div
@@ -182,17 +182,17 @@ export function HurdleSimulatorSlider() {
           transition={{ duration: 0.7 }}
           className="text-center mb-14"
         >
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-violet-400 tracking-widest uppercase bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-5">
-            🛡️ The Hurdle Engine
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
+            🛡️ The Resilience Protocol
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
             When Networks Fail,{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
               NOS Persists
             </span>
           </h2>
           <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            Drag through the three operational states and see how NOS handles
+            Toggle through the three operational states and see how NOS handles
             every hurdle — from peak performance to full network outage and
             seamless recovery.
           </p>
@@ -210,7 +210,7 @@ export function HurdleSimulatorSlider() {
                 whileTap={{ scale: 0.96 }}
                 className={`flex items-center gap-2 px-5 py-3 rounded-2xl border font-bold text-sm transition-all duration-300 ${
                   stateIdx === i
-                    ? `${sc.bg} ${sc.border} ${sc.text}`
+                    ? `${sc.bg} ${sc.border} ${sc.text} shadow-[0_0_20px_rgba(255,85,0,0.15)]`
                     : "bg-white/5 border-white/10 text-slate-500 hover:text-slate-300"
                 }`}
               >
@@ -229,7 +229,7 @@ export function HurdleSimulatorSlider() {
           <button
             onClick={() => setStateIdx((i) => Math.max(0, i - 1))}
             disabled={stateIdx === 0}
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold active:scale-[0.97]"
           >
             ← Previous
           </button>
@@ -238,7 +238,7 @@ export function HurdleSimulatorSlider() {
               <button
                 key={i}
                 onClick={() => setStateIdx(i)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${stateIdx === i ? "bg-blue-500 scale-125" : "bg-white/15 hover:bg-white/30"}`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${stateIdx === i ? "bg-orange-500 scale-125 shadow-[0_0_8px_#ff5500]" : "bg-white/15 hover:bg-white/30"}`}
               />
             ))}
           </div>
@@ -247,7 +247,7 @@ export function HurdleSimulatorSlider() {
               setStateIdx((i) => Math.min(STATES.length - 1, i + 1))
             }
             disabled={stateIdx === STATES.length - 1}
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold active:scale-[0.97]"
           >
             Next →
           </button>
@@ -306,8 +306,8 @@ function AnimateStatePanel({
         </div>
 
         {/* Right: Flow diagram */}
-        <div className="bg-slate-900/50 rounded-2xl border border-white/8 flex flex-col justify-center overflow-hidden">
-          <div className="px-4 pt-3 pb-1 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+        <div className="bg-[#15161c]/60 rounded-2xl border border-white/[0.08] flex flex-col justify-center overflow-hidden">
+          <div className="px-4 pt-3 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
             Data Flow Diagram
           </div>
           <FlowDiagram stateId={state.id} colorClass={colors.text} />

@@ -145,7 +145,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-          <Shield className="w-6 h-6 text-blue-500" /> Platform & Security
+          <Shield className="w-6 h-6 text-orange-500" /> Platform & Security
           Settings
         </h1>
         <p className="text-xs text-gray-400 mt-1">
@@ -155,14 +155,15 @@ export default function SettingsPage() {
       </div>
 
       {/* SECTION 1: PROFILE */}
-      <Card className="bg-gray-900/90 border-gray-800 p-6 shadow-xl space-y-6">
-        <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-gray-800 pb-3">
-          <User className="w-5 h-5 text-blue-400" /> User Profile & Credentials
+      <Card className="bg-[#111217]/70 border-white/[0.08] p-6 shadow-xl space-y-6">
+        <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-white/[0.08] pb-3">
+          <User className="w-5 h-5 text-orange-400" /> User Profile &
+          Credentials
         </CardTitle>
 
         <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
           <div className="flex items-center gap-4 pb-2">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold shadow-lg">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-orange-500/20">
               {displayName.charAt(0)}
             </div>
             <div>
@@ -180,7 +181,7 @@ export default function SettingsPage() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-blue-500 text-xs"
+                className="w-full px-3.5 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-orange-500/60 text-xs"
               />
             </div>
 
@@ -235,7 +236,7 @@ export default function SettingsPage() {
           <div className="pt-2 flex justify-end">
             <Button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold"
+              className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-semibold shadow-md shadow-orange-500/20 active:scale-[0.97]"
             >
               <Save className="w-3.5 h-3.5 mr-1.5" /> Save Profile
             </Button>
@@ -264,7 +265,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={emailAlerts}
               onChange={(e) => setEmailAlerts(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-blue-600 focus:ring-0"
+              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-orange-500 focus:ring-0 accent-orange-500"
             />
           </div>
 
@@ -281,7 +282,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={pushAlerts}
               onChange={(e) => setPushAlerts(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-blue-600 focus:ring-0"
+              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-orange-500 focus:ring-0 accent-orange-500"
             />
           </div>
 
@@ -298,7 +299,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={criticalOnly}
               onChange={(e) => setCriticalOnly(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-blue-600 focus:ring-0"
+              className="w-5 h-5 rounded bg-gray-950 border-gray-700 text-orange-500 focus:ring-0 accent-orange-500"
             />
           </div>
 
@@ -439,7 +440,7 @@ export default function SettingsPage() {
                     Generated API Key
                   </label>
                   <div className="flex items-center gap-2 bg-gray-950 border border-gray-800 rounded-lg p-2.5">
-                    <code className="flex-1 text-cyan-300 font-mono text-xs break-all select-all">
+                    <code className="flex-1 text-orange-300 font-mono text-xs break-all select-all">
                       {newlyCreatedKey}
                     </code>
                     <Button
@@ -493,7 +494,7 @@ export default function SettingsPage() {
                     placeholder="e.g. CI Telemetry Pipeline"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-950 border border-gray-800 text-white focus:outline-none focus:border-orange-500/60"
                   />
                 </div>
 

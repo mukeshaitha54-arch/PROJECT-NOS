@@ -177,7 +177,7 @@ export default function FleetOverviewPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-800 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
               <Network className="w-6 h-6" />
             </div>
             <div>
@@ -209,7 +209,7 @@ export default function FleetOverviewPage() {
           </button>
           <button
             onClick={() => setIsClaimModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-600/20 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-xs font-semibold text-white shadow-lg shadow-orange-500/20 active:scale-[0.97] transition"
           >
             <Plus className="w-4 h-4" />
             Add Device
@@ -220,24 +220,24 @@ export default function FleetOverviewPage() {
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Devices */}
-        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden group hover:border-gray-700 transition">
+        <div className="bg-[#111217]/70 border border-white/[0.08] rounded-xl p-5 backdrop-blur-sm relative overflow-hidden group hover:border-white/20 transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
               Total Monitored Devices
             </span>
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
               <Server className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-white">
+            <span className="text-3xl font-bold text-white font-mono">
               {metrics.total}
             </span>
-            <span className="text-xs text-gray-400">nodes registered</span>
+            <span className="text-xs text-slate-400">nodes registered</span>
           </div>
-          <div className="mt-3 w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+          <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 h-1.5 rounded-full transition-all duration-500"
               style={{ width: "100%" }}
             />
           </div>
@@ -337,7 +337,7 @@ export default function FleetOverviewPage() {
             placeholder="Search fleet by node name, hostname, OS version..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition"
+            className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/60 transition"
           />
         </div>
 
@@ -350,7 +350,7 @@ export default function FleetOverviewPage() {
                   onClick={() => setStatusFilter(status)}
                   className={`px-3 py-1.5 rounded-md font-semibold transition ${
                     statusFilter === status
-                      ? "bg-blue-600 text-white shadow-sm"
+                      ? "bg-orange-500 text-white shadow-sm"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
@@ -366,7 +366,7 @@ export default function FleetOverviewPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
         <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-gray-900/80">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-blue-400" />
+            <Activity className="w-4 h-4 text-orange-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
               Monitored Nodes ({filteredDevices.length})
             </h2>
@@ -409,7 +409,7 @@ export default function FleetOverviewPage() {
             </p>
             <button
               onClick={() => setIsClaimModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-xs font-semibold text-white hover:bg-blue-500 transition"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 text-xs font-semibold text-white hover:from-orange-400 hover:to-rose-500 transition active:scale-[0.97]"
             >
               <Plus className="w-4 h-4" />
               Onboard Agent Now
@@ -439,10 +439,10 @@ export default function FleetOverviewPage() {
                       <div className="flex items-center gap-2.5">
                         <Link
                           href={`/devices/${device.id}`}
-                          className="text-base font-bold text-white hover:text-blue-400 transition flex items-center gap-1.5"
+                          className="text-base font-bold text-white hover:text-orange-400 transition flex items-center gap-1.5"
                         >
                           {device.hostname || device.deviceName || device.id}
-                          <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-blue-400" />
+                          <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-400" />
                         </Link>
 
                         <span
@@ -504,7 +504,7 @@ export default function FleetOverviewPage() {
                     </Link>
                     <Link
                       href={`/devices/${device.id}`}
-                      className="px-3.5 py-1.5 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-semibold transition flex items-center gap-1"
+                      className="px-3.5 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 text-xs font-semibold transition flex items-center gap-1 active:scale-[0.97]"
                     >
                       Inspect Node
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -861,7 +861,7 @@ function AddDeviceModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-cyan-300 font-mono text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 break-all select-all">
+                <code className="flex-1 text-orange-300 font-mono text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 break-all select-all">
                   {generatedKey}
                 </code>
                 <button
@@ -869,7 +869,7 @@ function AddDeviceModal({
                   className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-xs font-bold transition-all ${
                     copiedKey
                       ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                      : "bg-blue-600/20 border-blue-500/40 text-blue-300 hover:bg-blue-600/30"
+                      : "bg-orange-500/15 border-orange-500/30 text-orange-300 hover:bg-orange-500/25"
                   }`}
                 >
                   {copiedKey ? (
@@ -895,7 +895,7 @@ function AddDeviceModal({
                   onClick={() => setDeployOption("automated")}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     deployOption === "automated"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
@@ -906,7 +906,7 @@ function AddDeviceModal({
                   onClick={() => setDeployOption("manual")}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     deployOption === "manual"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
@@ -925,7 +925,7 @@ function AddDeviceModal({
                   </span>
                   <button
                     onClick={downloadInstaller}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download Installer (.ps1)
@@ -935,25 +935,25 @@ function AddDeviceModal({
                 <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
                   <li>
                     Move the downloaded{" "}
-                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
                       install-nos-agent.ps1
                     </code>{" "}
                     to the target PC.
                   </li>
                   <li>
                     Open <strong>PowerShell as Administrator</strong> and{" "}
-                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
                       cd
                     </code>{" "}
                     to the folder where you saved the script. Example:{" "}
-                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
+                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded text-[10px]">
                       cd $env:USERPROFILE\Downloads
                     </code>
                   </li>
                   <li>
                     Run the following installation command:
                     <div className="mt-1.5 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-cyan-300 px-3 py-2 rounded-lg break-all">
+                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-orange-300 px-3 py-2 rounded-lg break-all">
                         {installerCommand}
                       </code>
                       <button
@@ -970,7 +970,7 @@ function AddDeviceModal({
                   </li>
                 </ol>
 
-                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] leading-relaxed">
+                <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] leading-relaxed">
                   <strong>What this does:</strong> It automatically downloads
                   the agent binary in the background, prompts you for the
                   Registration Key, registers the device with the platform, and
@@ -989,7 +989,7 @@ function AddDeviceModal({
                   </span>
                   <button
                     onClick={downloadExe}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download NOS-Agent.exe
@@ -999,7 +999,7 @@ function AddDeviceModal({
                 <ol className="space-y-2.5 text-gray-300 list-decimal list-inside pl-1">
                   <li>
                     Move{" "}
-                    <code className="text-cyan-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
+                    <code className="text-orange-400 font-mono bg-gray-900 px-1.5 py-0.5 rounded">
                       NOS-Agent.exe
                     </code>{" "}
                     to any directory on the target PC.
@@ -1008,7 +1008,7 @@ function AddDeviceModal({
                     Double-click the EXE, or run it in PowerShell / Command
                     Prompt:
                     <div className="mt-1.5 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-cyan-300 px-3 py-2 rounded-lg">
+                      <code className="flex-1 font-mono text-[11px] bg-gray-900 border border-gray-800 text-orange-300 px-3 py-2 rounded-lg">
                         {manualCommand}
                       </code>
                       <button
@@ -1053,7 +1053,7 @@ function AddDeviceModal({
                   onClick={() => {
                     onRegistered();
                   }}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-[0.97]"
                 >
                   <ArrowUpRight className="w-4 h-4" />
                   Check for New Devices

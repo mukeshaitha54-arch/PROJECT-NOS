@@ -58,14 +58,14 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   };
 
   const navContent = (
-    <div className="flex flex-col h-full bg-slate-950/90 backdrop-blur-2xl border-r border-white/[0.08] text-gray-300 select-none shadow-[inset_-1px_0_0_0_rgba(255,255,255,0.04)]">
+    <div className="flex flex-col h-full bg-[#0d0e12]/95 backdrop-blur-2xl border-r border-white/[0.08] text-zinc-300 select-none shadow-[inset_-1px_0_0_0_rgba(255,255,255,0.04)]">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-white/[0.08] bg-slate-950/60 backdrop-blur-md">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-white/[0.08] bg-[#0d0e12]/80 backdrop-blur-md">
         <Link
           href="/dashboard"
           className="flex items-center gap-3 transition-transform duration-150 active:scale-[0.98]"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_4px_12px_rgba(37,99,235,0.4)]">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-500 via-rose-500 to-amber-500 flex items-center justify-center text-white font-black shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_4px_12px_rgba(255,85,0,0.4)]">
             N
           </div>
           {!collapsed && (
@@ -73,7 +73,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               <span className="font-extrabold text-sm tracking-wider text-white">
                 NOS
               </span>
-              <span className="text-[10px] block text-blue-400 font-mono font-medium tracking-wide">
+              <span className="text-[10px] block text-orange-400 font-mono font-medium tracking-wide">
                 NEURAL OS
               </span>
             </div>
@@ -117,21 +117,21 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               onClick={onMobileClose}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.98] relative ${
                 active
-                  ? "bg-gradient-to-r from-blue-600/20 via-blue-500/10 to-transparent text-white border border-blue-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_2px_8px_rgba(37,99,235,0.2)]"
-                  : "text-gray-400 hover:text-gray-100 hover:bg-white/[0.05] border border-transparent"
+                  ? "bg-gradient-to-r from-orange-500/20 via-rose-500/10 to-transparent text-white border border-orange-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_2px_8px_rgba(255,85,0,0.25)]"
+                  : "text-zinc-400 hover:text-white hover:bg-white/[0.05] border border-transparent"
               } ${collapsed ? "justify-center px-0" : ""}`}
               title={collapsed ? item.name : undefined}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors duration-150 ${
                   active
-                    ? "text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]"
-                    : "text-gray-400"
+                    ? "text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]"
+                    : "text-zinc-400"
                 }`}
               />
               {!collapsed && <span>{item.name}</span>}
               {active && !collapsed && (
-                <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.9)]" />
               )}
             </Link>
           );

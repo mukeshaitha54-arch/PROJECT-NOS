@@ -10,7 +10,7 @@ const STEPS = [
     title: "Run the Installer",
     desc: "One PowerShell command. The MSI-based installer silently registers NOS Agent as a Windows service with auto-start on boot.",
     code: "iex ((New-Object System.Net.WebClient).DownloadString('https://nos.is-local.org/install'))",
-    color: "blue",
+    color: "orange",
   },
   {
     step: "02",
@@ -18,7 +18,7 @@ const STEPS = [
     title: "Authenticate Agent",
     desc: "The agent receives a cryptographically unique SHA-256 token. It registers to your organization's fleet instantly.",
     code: "NOS-Agent.exe --register --key <your-fleet-key>",
-    color: "violet",
+    color: "crimson",
   },
   {
     step: "03",
@@ -34,7 +34,7 @@ const STEPS = [
     title: "Control Your Fleet",
     desc: "Manage all devices from the NOS Fleet Console. Pause telemetry, view crash logs, inspect S.M.A.R.T., trigger commands — all from one screen.",
     code: "// Dashboard: https://nos.is-local.org/dashboard\nDevices: 1 online | 0 offline | 0 alerts",
-    color: "cyan",
+    color: "amber",
   },
 ];
 
@@ -42,25 +42,25 @@ const colorMap: Record<
   string,
   { badge: string; codeBorder: string; codeText: string }
 > = {
-  blue: {
-    badge: "bg-blue-500/15 border-blue-500/30 text-blue-300",
-    codeBorder: "border-blue-500/20",
-    codeText: "text-blue-200",
+  orange: {
+    badge: "bg-orange-500/15 border-orange-500/30 text-orange-300",
+    codeBorder: "border-orange-500/20",
+    codeText: "text-orange-200",
   },
-  violet: {
-    badge: "bg-violet-500/15 border-violet-500/30 text-violet-300",
-    codeBorder: "border-violet-500/20",
-    codeText: "text-violet-200",
+  crimson: {
+    badge: "bg-rose-500/15 border-rose-500/30 text-rose-300",
+    codeBorder: "border-rose-500/20",
+    codeText: "text-rose-200",
   },
   emerald: {
     badge: "bg-emerald-500/15 border-emerald-500/30 text-emerald-300",
     codeBorder: "border-emerald-500/20",
     codeText: "text-emerald-200",
   },
-  cyan: {
-    badge: "bg-cyan-500/15 border-cyan-500/30 text-cyan-300",
-    codeBorder: "border-cyan-500/20",
-    codeText: "text-cyan-200",
+  amber: {
+    badge: "bg-amber-500/15 border-amber-500/30 text-amber-300",
+    codeBorder: "border-amber-500/20",
+    codeText: "text-amber-200",
   },
 };
 
@@ -78,10 +78,10 @@ export function InstallerSection() {
     <>
       {/* How It Works */}
       <section
-        className="relative bg-slate-950 py-28 px-6 overflow-hidden"
+        className="relative bg-[#090a0d] py-28 px-6 overflow-hidden"
         id="installer"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.06)_0%,transparent_60%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,85,0,0.06)_0%,transparent_60%)] pointer-events-none" />
 
         <div className="max-w-5xl mx-auto">
           <motion.div
@@ -91,12 +91,12 @@ export function InstallerSection() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-cyan-400 tracking-widest uppercase bg-cyan-500/10 border border-cyan-500/20 rounded-full px-4 py-1.5 mb-5">
-              🚀 Get Started in 4 Steps
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-5">
+              🚀 Rapid Deployment
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
               Zero to{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
                 Fleet Monitoring
               </span>{" "}
               in 5 Minutes
@@ -118,7 +118,7 @@ export function InstallerSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.12, duration: 0.6 }}
-                  className="flex gap-5 rounded-3xl border border-white/8 bg-slate-900/50 backdrop-blur-sm p-6 hover:border-white/15 hover:bg-slate-900/70 transition-all duration-300"
+                  className="flex gap-5 rounded-3xl border border-white/[0.08] bg-[#111217]/70 backdrop-blur-sm p-6 hover:border-white/15 hover:bg-[#15161c]/80 transition-all duration-300 shadow-xl"
                 >
                   {/* Step badge */}
                   <div className="flex-shrink-0">
@@ -141,7 +141,7 @@ export function InstallerSection() {
                     </p>
                     {/* Code block */}
                     <div
-                      className={`rounded-xl border ${c.codeBorder} bg-black/40 p-3`}
+                      className={`rounded-xl border ${c.codeBorder} bg-black/50 p-3`}
                     >
                       <pre
                         className={`font-mono text-xs ${c.codeText} whitespace-pre-wrap break-all`}
@@ -158,7 +158,7 @@ export function InstallerSection() {
       </section>
 
       {/* Stats row */}
-      <section className="relative bg-gradient-to-b from-slate-950 to-slate-900 py-20 px-6 border-t border-white/5">
+      <section className="relative bg-gradient-to-b from-[#090a0d] to-[#0c0d10] py-20 px-6 border-t border-white/[0.06]">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {STATS.map((stat, i) => (
@@ -171,7 +171,7 @@ export function InstallerSection() {
                 className="flex flex-col items-center text-center gap-1 py-4"
               >
                 <span className="text-2xl mb-1">{stat.icon}</span>
-                <span className="text-3xl font-black text-white tracking-tight">
+                <span className="text-3xl font-black text-white tracking-tight font-mono">
                   {stat.value}
                 </span>
                 <span className="text-xs text-slate-500 leading-tight">
@@ -184,15 +184,15 @@ export function InstallerSection() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative bg-slate-900 py-28 px-6 overflow-hidden border-t border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-violet-600/5 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
+      <section className="relative bg-[#07080a] py-28 px-6 overflow-hidden border-t border-white/[0.06]">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 via-rose-600/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,85,0,0.12)_0%,transparent_70%)] pointer-events-none" />
 
         {/* Glow rings */}
         {[200, 350, 500].map((r, i) => (
           <motion.div
             key={r}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-500/10 pointer-events-none"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-orange-500/10 pointer-events-none"
             style={{ width: r, height: r }}
             animate={{ scale: [1, 1.04, 1], opacity: [0.2, 0.5, 0.2] }}
             transition={{
@@ -210,7 +210,7 @@ export function InstallerSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-blue-400 tracking-widest uppercase bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-8">
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 tracking-widest uppercase bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Ready to Deploy
             </div>
@@ -218,7 +218,7 @@ export function InstallerSection() {
             <h2 className="text-5xl md:text-7xl font-black text-white leading-[0.92] tracking-tight mb-6">
               TAKE COMMAND OF
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-violet-400 to-cyan-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-rose-400">
                 YOUR ENTIRE FLEET
               </span>
             </h2>
@@ -232,20 +232,20 @@ export function InstallerSection() {
               <Link href="/auth/register">
                 <motion.button
                   whileHover={{
-                    scale: 1.06,
-                    boxShadow: "0 0 60px rgba(59,130,246,0.6)",
+                    scale: 1.04,
+                    boxShadow: "0 0 50px rgba(255,85,0,0.5)",
                   }}
                   whileTap={{ scale: 0.97 }}
-                  className="px-10 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-black text-lg transition-all duration-300 shadow-2xl shadow-blue-500/30"
+                  className="px-10 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-black text-lg transition-all duration-300 shadow-2xl shadow-orange-500/30 active:scale-[0.97]"
                 >
                   🚀 Launch Fleet Console →
                 </motion.button>
               </Link>
               <Link href="/auth/login">
                 <motion.button
-                  whileHover={{ scale: 1.04 }}
+                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className="px-10 py-4 rounded-2xl border border-white/15 bg-white/5 text-white font-bold text-lg hover:bg-white/10 hover:border-white/25 transition-all duration-300"
+                  className="px-10 py-4 rounded-2xl border border-white/15 bg-white/5 text-white font-bold text-lg hover:bg-white/10 hover:border-white/25 transition-all duration-300 active:scale-[0.97]"
                 >
                   Sign In to Dashboard
                 </motion.button>

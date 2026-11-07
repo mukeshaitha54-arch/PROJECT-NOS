@@ -22,16 +22,16 @@ const TOAST_CONFIG: Record<
     classes: "border-emerald-500/30 bg-emerald-500/10",
   },
   error: {
-    icon: <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />,
-    classes: "border-red-500/30 bg-red-500/10",
+    icon: <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />,
+    classes: "border-rose-500/30 bg-rose-500/10",
   },
   warning: {
     icon: <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />,
     classes: "border-amber-500/30 bg-amber-500/10",
   },
   info: {
-    icon: <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />,
-    classes: "border-cyan-500/30 bg-cyan-500/10",
+    icon: <Info className="w-4 h-4 text-orange-400 flex-shrink-0" />,
+    classes: "border-orange-500/30 bg-orange-500/10",
   },
 };
 
@@ -90,7 +90,7 @@ export function ToastContainer() {
             role="alert"
             className={`pointer-events-auto w-80 max-w-[calc(100vw-2rem)] flex items-start gap-3 px-4 py-3
               rounded-xl border ${cfg.classes}
-              bg-slate-900 shadow-xl shadow-slate-950/60
+              bg-[#111217] shadow-xl shadow-black/80
               animate-in slide-in-from-right-4 fade-in duration-300`}
           >
             {cfg.icon}

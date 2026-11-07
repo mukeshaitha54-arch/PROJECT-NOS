@@ -100,7 +100,7 @@ export function DataTable<T extends Record<string, unknown>>({
             placeholder={searchPlaceholder}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08]
               shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-sm text-slate-200 placeholder-slate-500 outline-none
-              focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
+              focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
             aria-label="Search table"
           />
         </div>
@@ -138,10 +138,10 @@ export function DataTable<T extends Record<string, unknown>>({
                       {col.sortable && (
                         <span className="flex flex-col opacity-40">
                           <ChevronUp
-                            className={`w-2.5 h-2.5 -mb-0.5 ${sortKey === col.key && sortDir === "asc" ? "opacity-100 text-cyan-400" : ""}`}
+                            className={`w-2.5 h-2.5 -mb-0.5 ${sortKey === col.key && sortDir === "asc" ? "opacity-100 text-orange-400" : ""}`}
                           />
                           <ChevronDown
-                            className={`w-2.5 h-2.5 ${sortKey === col.key && sortDir === "desc" ? "opacity-100 text-cyan-400" : ""}`}
+                            className={`w-2.5 h-2.5 ${sortKey === col.key && sortDir === "desc" ? "opacity-100 text-orange-400" : ""}`}
                           />
                         </span>
                       )}
