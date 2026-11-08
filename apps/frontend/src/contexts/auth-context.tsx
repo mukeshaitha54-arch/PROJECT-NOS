@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { api, rawApi } from "../lib/api-client";
+import { clearScopedDeviceCache } from "../lib/cache";
 import { User, ApiResponse } from "../types/api";
 
 interface RegisterPayload {
@@ -155,6 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Logout API failed", err);
     } finally {
       if (typeof window !== "undefined") {
+        clearScopedDeviceCache();
         localStorage.removeItem("nos_access_token");
         localStorage.removeItem("nos_refresh_token");
         localStorage.removeItem("nos_cached_user");

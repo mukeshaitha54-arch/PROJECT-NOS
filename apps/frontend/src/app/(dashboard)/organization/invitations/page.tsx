@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { clearScopedDeviceCache } from "@/lib/cache";
 
 interface InvitationPreview {
   id: string;
@@ -124,6 +125,7 @@ function InvitationsContent() {
         res.data?.data?.organizationId ||
         preview?.organizationId;
       if (targetOrgId && typeof window !== "undefined") {
+        clearScopedDeviceCache();
         localStorage.setItem("nos_active_org_id", targetOrgId);
       }
       toast.success(

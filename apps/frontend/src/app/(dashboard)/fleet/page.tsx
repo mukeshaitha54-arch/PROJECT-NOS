@@ -34,24 +34,19 @@ import { apiClient } from "@/lib/api-client";
 import { Device, DeviceStatus } from "@nos/shared-types";
 import { safeCopyToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/auth-context";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
+import { getScopedDeviceCacheKey } from "@/lib/cache";
 
 export default function FleetOverviewPage() {
-  const [devices, setDevices] = useState<Device[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("nos_cached_devices");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return !sessionStorage.getItem("nos_cached_devices");
-    }
-    return true;
-  });
+  const { user } = useAuth();
+  const deviceCacheKey = getScopedDeviceCacheKey(
+    user?.id,
+    user?.organizationId,
+  );
+
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -61,6 +56,12 @@ export default function FleetOverviewPage() {
 
   const [confirmDelete, setConfirmDelete] = useState<Device | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Keep a ref to the latest devices list for pure event handler checks
+  const devicesRef = React.useRef<Device[]>(devices);
+  useEffect(() => {
+    devicesRef.current = devices;
+  }, [devices]);
 
   const handleDeleteDevice = async (device: Device) => {
     setIsDeleting(true);
@@ -78,49 +79,93 @@ export default function FleetOverviewPage() {
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(deviceCacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setDevices(parsed);
+            setLoading(false);
+          }
+        }
+      } catch {}
+    }
+  }, [deviceCacheKey]);
 
   const { isConnected, lastEvent } = useRealtimeContext();
 
-  const fetchDevices = useCallback(async (silent = false) => {
-    try {
-      if (!silent) setLoading(true);
-      setError(null);
-      let list: Device[] = [];
+  const isFetchingRef = React.useRef<boolean>(false);
+  const lastFetchTimestampRef = React.useRef<number>(0);
+
+  const fetchDevices = useCallback(
+    async (silent = false) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+      const requestTimestamp = Date.now();
       try {
-        const res = await deviceApi.getStatus();
-        const payload = (res as any).data || res;
-        list = payload.devices || [];
-      } catch {
-        // Fallback to /devices
-      }
+        if (!silent) setLoading(true);
+        setError(null);
+        let fetchSuccess = false;
+        let list: Device[] = [];
 
-      if (list.length === 0) {
-        const fallbackRes = await apiClient
-          .get<any>("/devices")
-          .catch(() => null);
-        const fbPayload = fallbackRes?.data?.data || fallbackRes?.data || [];
-        if (Array.isArray(fbPayload) && fbPayload.length > 0) {
-          list = fbPayload;
-        }
-      }
-
-      setDevices(list);
-      if (typeof window !== "undefined" && list.length > 0) {
         try {
-          sessionStorage.setItem("nos_cached_devices", JSON.stringify(list));
-        } catch {}
+          const res = await deviceApi.getStatus();
+          const payload = (res as any).data || res;
+          if (payload && Array.isArray(payload.devices)) {
+            list = payload.devices;
+            fetchSuccess = true;
+          }
+        } catch {
+          // Fallback to /devices
+        }
+
+        if (!fetchSuccess) {
+          try {
+            const fallbackRes = await apiClient.get<any>("/devices");
+            const fbPayload = fallbackRes?.data?.data || fallbackRes?.data;
+            if (Array.isArray(fbPayload)) {
+              list = fbPayload;
+              fetchSuccess = true;
+            }
+          } catch {
+            // Request failed
+          }
+        }
+
+        if (!fetchSuccess) {
+          if (!silent) {
+            setError("Failed to load devices. Please check your connection.");
+          }
+          return;
+        }
+
+        if (requestTimestamp >= lastFetchTimestampRef.current) {
+          lastFetchTimestampRef.current = requestTimestamp;
+          setDevices(list);
+          if (typeof window !== "undefined") {
+            try {
+              if (list.length > 0) {
+                sessionStorage.setItem(deviceCacheKey, JSON.stringify(list));
+              } else {
+                sessionStorage.removeItem(deviceCacheKey);
+              }
+            } catch {}
+          }
+          setLastRefreshed(new Date());
+        }
+      } catch (err: any) {
+        console.error("Fleet fetch failed:", err);
+        if (!silent) {
+          setError("Failed to load devices. Please check your connection.");
+        }
+      } finally {
+        isFetchingRef.current = false;
+        setLoading(false);
       }
-      setLastRefreshed(new Date());
-    } catch (err: any) {
-      console.error("Fleet fetch failed:", err);
-      setError("Failed to load devices. Please check your connection.");
-      // Do not clear already-loaded devices on transient background errors
-      setDevices((prev) => (prev.length > 0 ? prev : []));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [deviceCacheKey],
+  );
 
   useEffect(() => {
     fetchDevices(false);
@@ -141,22 +186,34 @@ export default function FleetOverviewPage() {
       type === "device.online" ||
       type === "device.offline" ||
       type === "device.connected" ||
-      type === "device.reconnected" ||
       type === "device.registered" ||
       type === "heartbeat.received"
     ) {
-      setDevices((prev) => {
-        const targetId = payload?.deviceId || payload?.id;
-        const exists = prev.some(
-          (d) => d.id === targetId || d.hostname === payload?.hostname,
-        );
-        if (!exists) {
-          // New device discovered in real time — immediately fetch silently to show it!
-          fetchDevices(true);
-          return prev;
-        }
-        return prev.map((d) => {
-          if (d.id === targetId || d.hostname === payload?.hostname) {
+      const targetId = payload?.deviceId || payload?.id;
+      const targetHostname = payload?.hostname;
+      const currentDevices = devicesRef.current;
+      const exists = currentDevices.some(
+        (d) =>
+          (targetId && (d.id === targetId || (d as any).uuid === targetId)) ||
+          (targetHostname &&
+            d.hostname &&
+            d.hostname.toLowerCase() === targetHostname.toLowerCase()),
+      );
+
+      if (!exists) {
+        // New device discovered in real time — immediately fetch silently to show it!
+        fetchDevices(true);
+        return;
+      }
+
+      setDevices((prev) =>
+        prev.map((d) => {
+          const isMatch =
+            (targetId && (d.id === targetId || (d as any).uuid === targetId)) ||
+            (targetHostname &&
+              d.hostname &&
+              d.hostname.toLowerCase() === targetHostname.toLowerCase());
+          if (isMatch) {
             return {
               ...d,
               status:
@@ -168,8 +225,8 @@ export default function FleetOverviewPage() {
             };
           }
           return d;
-        });
-      });
+        }),
+      );
       setLastRefreshed(new Date());
     }
   }, [lastEvent, fetchDevices]);

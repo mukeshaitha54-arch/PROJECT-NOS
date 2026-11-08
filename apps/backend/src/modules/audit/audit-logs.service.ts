@@ -5,6 +5,7 @@ export interface AuditLogQueryParams {
   tenantId: string;
   action?: string;
   actor?: string;
+  userId?: string;
   startDate?: string;
   endDate?: string;
   page: number;
@@ -18,7 +19,8 @@ export class AuditLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAuditLogs(params: AuditLogQueryParams) {
-    const { tenantId, action, actor, startDate, endDate, page, limit } = params;
+    const { tenantId, action, actor, userId, startDate, endDate, page, limit } =
+      params;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -30,7 +32,14 @@ export class AuditLogsService {
       where.action = { contains: action, mode: "insensitive" };
     }
 
-    if (actor) {
+    if (userId) {
+      if (where.organizationId) {
+        where.AND = [{ organizationId: where.organizationId }, { userId }];
+        delete where.organizationId;
+      } else {
+        where.userId = userId;
+      }
+    } else if (actor) {
       const actorConditions = [
         { userId: { contains: actor, mode: "insensitive" } },
         { userEmail: { contains: actor, mode: "insensitive" } },

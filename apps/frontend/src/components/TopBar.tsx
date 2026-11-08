@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { CommandPalette } from "./layout/CommandPalette";
+import { clearScopedDeviceCache } from "@/lib/cache";
 
 interface TopBarProps {
   onHamburgerClick?: () => void;
@@ -157,6 +158,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                               key={org.id}
                               onClick={() => {
                                 if (typeof window !== "undefined") {
+                                  clearScopedDeviceCache();
                                   localStorage.setItem(
                                     "nos_active_org_id",
                                     org.id,

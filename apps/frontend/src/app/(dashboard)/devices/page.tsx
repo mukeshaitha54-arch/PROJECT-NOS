@@ -1,77 +1,110 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 import { apiClient } from "@/lib/api-client";
 import { DeviceCard } from "@/components/dashboard/DeviceCard";
 import { Loader2, Trash2, X } from "lucide-react";
+import { getScopedDeviceCacheKey, getScopedStatsCacheKey } from "@/lib/cache";
 
 export default function FleetDashboardPage() {
   const { user } = useAuth();
   const { on, lastEvent } = useRealtimeContext();
-  const [devices, setDevices] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("nos_cached_devices");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return [];
-  });
-  const [stats, setStats] = useState<any>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("nos_cached_devices_stats");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return null;
-  });
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return !sessionStorage.getItem("nos_cached_devices");
-    }
-    return true;
-  });
+
+  const deviceCacheKey = getScopedDeviceCacheKey(
+    user?.id,
+    user?.organizationId,
+  );
+  const statsCacheKey = getScopedStatsCacheKey(user?.id, user?.organizationId);
+
+  const [devices, setDevices] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
+
+  // Keep a ref to the latest devices list for pure event handler checks
+  const devicesRef = useRef<any[]>(devices);
+  useEffect(() => {
+    devicesRef.current = devices;
+  }, [devices]);
+
+  // Read scoped sessionStorage on mount effect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cachedDevs = sessionStorage.getItem(deviceCacheKey);
+        const cachedStats = sessionStorage.getItem(statsCacheKey);
+        let hasCache = false;
+        if (cachedDevs) {
+          const parsed = JSON.parse(cachedDevs);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setDevices(parsed);
+            hasCache = true;
+          }
+        }
+        if (cachedStats) {
+          const parsedStats = JSON.parse(cachedStats);
+          if (parsedStats) {
+            setStats(parsedStats);
+          }
+        }
+        if (hasCache) {
+          setLoading(false);
+        }
+      } catch {}
+    }
+  }, [deviceCacheKey, statsCacheKey]);
 
   // Realtime overrides
   const [realtimeData, setRealtimeData] = useState<Record<string, any>>({});
 
-  const fetchDevices = React.useCallback(async (silent = false) => {
-    try {
-      if (!silent) setLoading(true);
-      const res = await apiClient.get<any, any>("/devices").catch(() => null);
-      if (res?.data) {
-        const deviceList: any[] = res.data.data || res.data || [];
-        setDevices(deviceList);
-        const computedStats = {
-          total: deviceList.length,
-          online: deviceList.filter((d) => d.status === "ONLINE").length,
-          offline: deviceList.filter((d) => d.status !== "ONLINE").length,
-        };
-        setStats(computedStats);
-        if (typeof window !== "undefined") {
-          try {
-            sessionStorage.setItem(
-              "nos_cached_devices",
-              JSON.stringify(deviceList),
-            );
-            sessionStorage.setItem(
-              "nos_cached_devices_stats",
-              JSON.stringify(computedStats),
-            );
-          } catch {}
+  const isFetchingRef = useRef<boolean>(false);
+  const lastFetchTimestampRef = useRef<number>(0);
+
+  const fetchDevices = useCallback(
+    async (silent = false) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+      const requestTimestamp = Date.now();
+      try {
+        if (!silent) setLoading(true);
+        const res = await apiClient.get<any, any>("/devices").catch(() => null);
+        if (res?.data) {
+          const deviceList: any[] = res.data.data || res.data || [];
+          if (requestTimestamp >= lastFetchTimestampRef.current) {
+            lastFetchTimestampRef.current = requestTimestamp;
+            setDevices(deviceList);
+            const computedStats = {
+              total: deviceList.length,
+              online: deviceList.filter((d) => d.status === "ONLINE").length,
+              offline: deviceList.filter((d) => d.status !== "ONLINE").length,
+            };
+            setStats(computedStats);
+            if (typeof window !== "undefined") {
+              try {
+                sessionStorage.setItem(
+                  deviceCacheKey,
+                  JSON.stringify(deviceList),
+                );
+                sessionStorage.setItem(
+                  statsCacheKey,
+                  JSON.stringify(computedStats),
+                );
+              } catch {}
+            }
+          }
         }
+      } catch (err) {
+        console.error("Failed to load devices", err);
+      } finally {
+        isFetchingRef.current = false;
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to load devices", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [deviceCacheKey, statsCacheKey],
+  );
 
   useEffect(() => {
     fetchDevices(false);
@@ -100,16 +133,17 @@ export default function FleetDashboardPage() {
           ipAddress: payload.ipAddress,
         },
       }));
-      setDevices((prev) => {
-        const targetId = payload?.deviceId || payload?.id;
-        const exists = prev.some(
-          (d) => d.id === targetId || d.uuid === targetId,
-        );
-        if (!exists) {
-          fetchDevices(true);
-          return prev;
-        }
-        return prev.map((d) =>
+      const targetId = payload?.deviceId || payload?.id;
+      if (!targetId) return;
+      const exists = devicesRef.current.some(
+        (d) => d.id === targetId || d.uuid === targetId,
+      );
+      if (!exists) {
+        fetchDevices(true);
+        return;
+      }
+      setDevices((prev) =>
+        prev.map((d) =>
           d.id === targetId || d.uuid === targetId
             ? {
                 ...d,
@@ -117,21 +151,22 @@ export default function FleetDashboardPage() {
                 lastSeen: payload.timestamp || new Date().toISOString(),
               }
             : d,
-        );
-      });
+        ),
+      );
     });
 
     const cleanupOnline = on("device.online", (payload: any) => {
-      setDevices((prev) => {
-        const targetId = payload?.deviceId || payload?.id;
-        const exists = prev.some(
-          (d) => d.id === targetId || d.uuid === targetId,
-        );
-        if (!exists) {
-          fetchDevices(true);
-          return prev;
-        }
-        return prev.map((d) =>
+      const targetId = payload?.deviceId || payload?.id;
+      if (!targetId) return;
+      const exists = devicesRef.current.some(
+        (d) => d.id === targetId || d.uuid === targetId,
+      );
+      if (!exists) {
+        fetchDevices(true);
+        return;
+      }
+      setDevices((prev) =>
+        prev.map((d) =>
           d.id === targetId || d.uuid === targetId
             ? {
                 ...d,
@@ -139,33 +174,30 @@ export default function FleetDashboardPage() {
                 lastSeen: payload.timestamp || new Date().toISOString(),
               }
             : d,
-        );
-      });
+        ),
+      );
     });
 
     const cleanupConnected = on("device.connected", (payload: any) => {
-      setDevices((prev) => {
-        const targetId = payload?.deviceId || payload?.id;
-        const exists = prev.some(
-          (d) => d.id === targetId || d.uuid === targetId,
-        );
-        if (!exists) {
-          fetchDevices(true);
-          return prev;
-        }
-        return prev.map((d) =>
+      const targetId = payload?.deviceId || payload?.id;
+      if (!targetId) return;
+      const exists = devicesRef.current.some(
+        (d) => d.id === targetId || d.uuid === targetId,
+      );
+      if (!exists) {
+        fetchDevices(true);
+        return;
+      }
+      setDevices((prev) =>
+        prev.map((d) =>
           d.id === targetId || d.uuid === targetId
             ? { ...d, status: "ONLINE" }
             : d,
-        );
-      });
+        ),
+      );
     });
 
     const cleanupRegistered = on("device.registered", () => {
-      fetchDevices(true);
-    });
-
-    const cleanupReconnected = on("device.reconnected", () => {
       fetchDevices(true);
     });
 
@@ -183,7 +215,6 @@ export default function FleetDashboardPage() {
       cleanupOnline();
       cleanupConnected();
       cleanupRegistered();
-      cleanupReconnected();
       cleanupOffline();
     };
   }, [on, fetchDevices]);
