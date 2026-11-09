@@ -47,11 +47,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(userData);
         if (typeof window !== "undefined") {
           localStorage.setItem("nos_cached_user", JSON.stringify(userData));
-          if (
-            userData.organizationId &&
-            !localStorage.getItem("nos_active_org_id")
+          const storedOrg = localStorage.getItem("nos_active_org_id");
+          const userOrgs: any[] = userData.organizations || [];
+          const isValidStoredOrg = userOrgs.some(
+            (o: any) => o.id === storedOrg,
+          );
+          const currentStoredOrg = userOrgs.find(
+            (o: any) => o.id === storedOrg,
+          );
+          const orgWithDevices = userOrgs.find(
+            (o: any) => (o.deviceCount || 0) > 0,
+          );
+
+          if (!storedOrg || !isValidStoredOrg) {
+            const bestOrg = orgWithDevices?.id || userData.organizationId;
+            if (bestOrg) {
+              localStorage.setItem("nos_active_org_id", bestOrg);
+            }
+          } else if (
+            orgWithDevices &&
+            (!currentStoredOrg?.deviceCount ||
+              currentStoredOrg.deviceCount === 0)
           ) {
-            localStorage.setItem("nos_active_org_id", userData.organizationId);
+            // Seamless multi-tenant sync: if stored workspace has 0 devices but user was invited to a fleet with active devices, auto-focus fleet
+            localStorage.setItem("nos_active_org_id", orgWithDevices.id);
           }
         }
       }

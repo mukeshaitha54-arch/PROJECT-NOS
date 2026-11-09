@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
 import { apiClient } from "@/lib/api-client";
+import { deviceApi } from "@/features/device/services/device.api";
 import { DeviceCard } from "@/components/dashboard/DeviceCard";
 import { Loader2, Trash2, X } from "lucide-react";
 import { getScopedDeviceCacheKey, getScopedStatsCacheKey } from "@/lib/cache";
@@ -70,30 +71,50 @@ export default function FleetDashboardPage() {
       const requestTimestamp = Date.now();
       try {
         if (!silent) setLoading(true);
-        const res = await apiClient.get<any, any>("/devices").catch(() => null);
-        if (res?.data) {
-          const deviceList: any[] = res.data.data || res.data || [];
-          if (requestTimestamp >= lastFetchTimestampRef.current) {
-            lastFetchTimestampRef.current = requestTimestamp;
-            setDevices(deviceList);
-            const computedStats = {
-              total: deviceList.length,
-              online: deviceList.filter((d) => d.status === "ONLINE").length,
-              offline: deviceList.filter((d) => d.status !== "ONLINE").length,
-            };
-            setStats(computedStats);
-            if (typeof window !== "undefined") {
-              try {
-                sessionStorage.setItem(
-                  deviceCacheKey,
-                  JSON.stringify(deviceList),
-                );
-                sessionStorage.setItem(
-                  statsCacheKey,
-                  JSON.stringify(computedStats),
-                );
-              } catch {}
-            }
+        let deviceList: any[] = [];
+        let success = false;
+
+        try {
+          const statusRes = await deviceApi.getStatus();
+          const payload = (statusRes as any)?.data || statusRes;
+          if (Array.isArray(payload)) {
+            deviceList = payload;
+            success = true;
+          }
+        } catch {
+          // Fall back to /devices
+        }
+
+        if (!success) {
+          const res = await apiClient
+            .get<any, any>("/devices")
+            .catch(() => null);
+          if (res?.data) {
+            deviceList = res.data.data || res.data || [];
+            success = true;
+          }
+        }
+
+        if (success && requestTimestamp >= lastFetchTimestampRef.current) {
+          lastFetchTimestampRef.current = requestTimestamp;
+          setDevices(deviceList);
+          const computedStats = {
+            total: deviceList.length,
+            online: deviceList.filter((d) => d.status === "ONLINE").length,
+            offline: deviceList.filter((d) => d.status !== "ONLINE").length,
+          };
+          setStats(computedStats);
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem(
+                deviceCacheKey,
+                JSON.stringify(deviceList),
+              );
+              sessionStorage.setItem(
+                statsCacheKey,
+                JSON.stringify(computedStats),
+              );
+            } catch {}
           }
         }
       } catch (err) {

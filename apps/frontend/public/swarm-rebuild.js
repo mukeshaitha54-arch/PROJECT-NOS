@@ -12,6 +12,78 @@
     "(prefers-reduced-motion: reduce)",
   );
   const noop = () => {};
+  let pagePointer = null;
+  let nosShine = null;
+  let nosText = null;
+  let nosAgents = [];
+  let lastNosPosition = "";
+
+  function updateNosShine(agents = []) {
+    nosShine ||= document.querySelector(".nos-shine");
+    nosText ||= document.querySelector(".nos-glass");
+    if (!nosShine || !nosText) return;
+
+    const textNode = nosText.firstChild;
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+    const rects = [];
+    for (let index = 0; index < textNode.length; index += 1) {
+      const range = document.createRange();
+      range.setStart(textNode, index);
+      range.setEnd(textNode, index + 1);
+      rects.push(range.getBoundingClientRect());
+    }
+
+    let nearestDistance = 58;
+    let nearestPoint = null;
+    const inspectPoint = (x, y) => {
+      for (const rect of rects) {
+        const dx = Math.max(rect.left - x, 0, x - rect.right);
+        const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+        const distance = Math.hypot(dx, dy);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestPoint = { x, y };
+        }
+      }
+    };
+
+    for (const agent of agents) inspectPoint(agent.x, agent.y);
+    if (pagePointer) inspectPoint(pagePointer.x, pagePointer.y);
+    if (!nearestPoint) {
+      nosShine.removeAttribute("data-active");
+      lastNosPosition = "";
+      return;
+    }
+
+    const bounds = nosShine.getBoundingClientRect();
+    const x = `${nearestPoint.x - bounds.left}px`;
+    const y = `${nearestPoint.y - bounds.top}px`;
+    const position = `${x},${y}`;
+    if (position !== lastNosPosition) {
+      nosShine.style.setProperty("--nos-x", x);
+      nosShine.style.setProperty("--nos-y", y);
+      lastNosPosition = position;
+    }
+    nosShine.setAttribute("data-active", "");
+  }
+
+  window.addEventListener(
+    "pointermove",
+    (event) => {
+      if (event.pointerType !== "mouse") return;
+      pagePointer = { x: event.clientX, y: event.clientY };
+      updateNosShine(nosAgents);
+    },
+    { passive: true },
+  );
+
+  function clearNosPointer() {
+    pagePointer = null;
+    if (motionPreference.matches) updateNosShine();
+  }
+
+  document.documentElement.addEventListener("mouseleave", clearNosPointer);
+  window.addEventListener("blur", clearNosPointer);
 
   if (motionPreference.matches) {
     window.SwarmRebuild = {
@@ -314,6 +386,7 @@
     };
   });
   let agents = allAgents.slice(0, agentCount);
+  nosAgents = agents;
 
   const guideContext = context;
   let viewportWidth = window.innerWidth;
@@ -1428,6 +1501,7 @@
       if (!agent.task) agent.targetAngle = agent.targetAngle || -135;
       updateAgentPosition(agent, dt);
     }
+    updateNosShine(agents);
     updateHud();
     requestAnimationFrame(animate);
   }
@@ -1458,6 +1532,7 @@
     }
     agentCount = nextAgentCount;
     agents = allAgents.slice(0, agentCount);
+    nosAgents = agents;
     if (layersCollected) {
       const statLayer = pageLayers.find((layer) =>
         layer.element.matches('[data-sr-stat="agents"]'),

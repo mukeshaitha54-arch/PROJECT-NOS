@@ -62,25 +62,18 @@
     box-sizing: border-box;
   }
   html {
+    min-width: 320px;
+    background: var(--bg);
     scroll-behavior: smooth;
-    scroll-padding-top: 24px;
+    scroll-padding-top: 30px;
   }
   body {
     margin: 0;
     min-width: 320px;
     overflow-x: hidden;
-    background:
-      radial-gradient(
-        ellipse at 80% 10%,
-        rgb(244 123 54 / 8%),
-        transparent 29rem
-      ),
-      radial-gradient(
-        ellipse at 20% 62%,
-        rgb(244 123 54 / 5%),
-        transparent 30rem
-      ),
-      #fffdfa;
+    position: relative;
+    z-index: 1;
+    background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
     font-synthesis: none;
@@ -88,11 +81,11 @@
   }
 
   ::selection {
-    color: var(--bg);
-    background: var(--accent);
+    color: #fff;
+    background: #f47b36;
   }
 
-  /* Custom Slim Warm Scrollbar */
+  /* Custom Slim Dark Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -101,32 +94,32 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #eadfd5;
+    background: #232733;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #f47b36;
+    background: #3d8bff;
   }
 }
 
 @layer utilities {
-  /* Transparent Glossy Frosted Glass for Dashboard & Fleet (No solid black, no solid white) */
+  /* Transparent Glossy Frosted Glass for Dashboard & Fleet (Swarm Rebuild Cyber Palette) */
   .dashboard-glass-card {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(17, 19, 24, 0.75);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(244, 123, 54, 0.22);
+    border: 1px solid rgba(61, 139, 255, 0.22);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-      0 12px 32px -4px rgba(0, 0, 0, 0.45);
-    color: #ffffff;
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+      0 12px 32px -4px rgba(0, 0, 0, 0.5);
+    color: #eceef4;
   }
 
   .dashboard-glass-card:hover {
-    border-color: rgba(244, 123, 54, 0.55);
+    border-color: rgba(61, 139, 255, 0.55);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
-      0 16px 36px -4px rgba(244, 123, 54, 0.25);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.16),
+      0 16px 36px -4px rgba(61, 139, 255, 0.2);
   }
 
   /* Landing Page Text transition */
@@ -135,19 +128,19 @@
     transition: color 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   }
   .mirror-text:hover {
-    color: #f47b36;
+    color: #3d8bff;
   }
 
-  /* High-craft warm alabaster white card with crisp warm borders */
+  /* High-craft dark glass card with crisp cyber borders */
   .glass-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(17, 19, 24, 0.8);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(244, 123, 54, 0.2);
+    border: 1px solid rgba(50, 56, 72, 0.7);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-      0 12px 32px -4px rgba(0, 0, 0, 0.4);
-    color: #ffffff;
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 12px 32px -4px rgba(0, 0, 0, 0.5);
+    color: #eceef4;
   }
 
   .glass-card-hover {
@@ -159,10 +152,10 @@
 
   .glass-card-hover:hover {
     transform: translateY(-2px);
-    border-color: #f47b36;
+    border-color: #3d8bff;
     box-shadow:
-      0 12px 28px -4px rgba(244, 123, 54, 0.12),
-      0 0 0 1px rgba(244, 123, 54, 0.2);
+      0 12px 28px -4px rgba(61, 139, 255, 0.15),
+      0 0 0 1px rgba(61, 139, 255, 0.3);
   }
 
   .perspective-1000 {
@@ -254,7 +247,7 @@
   stroke-width: 2;
   stroke-dasharray: 210 140;
   opacity: 0.56;
-  filter: drop-shadow(0 0 5px rgb(224 112 49 / 45%));
+  filter: drop-shadow(0 0 8px rgba(61, 139, 255, 0.45));
   animation: aurora-current 15s linear infinite;
 }
 .aurora-thread-0 {
@@ -287,6 +280,57 @@
   to {
     stroke-dashoffset: -700;
   }
+}
+
+/* ─── Global Glassy NOS Specular Sheen Watermark ─── */
+.nos-watermark {
+  position: fixed;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  max-width: 100vw;
+  color: transparent;
+  font: 700 clamp(140px, 34vw, 500px)/0.8 var(--display);
+  letter-spacing: -0.105em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  user-select: none;
+}
+.nos-glass,
+.nos-shine {
+  display: block;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+.nos-glass {
+  background-image: linear-gradient(
+    145deg,
+    rgba(220, 232, 255, 0.22),
+    rgba(92, 113, 151, 0.1) 48%,
+    rgba(201, 222, 255, 0.21)
+  );
+  -webkit-text-stroke: 1px rgba(205, 225, 255, 0.12);
+  filter: drop-shadow(0 10px 34px rgba(75, 135, 222, 0.08));
+}
+.nos-shine {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle 145px at var(--nos-x, 50%) var(--nos-y, 50%),
+    rgba(255, 255, 255, 0.96),
+    rgba(153, 202, 255, 0.72) 24%,
+    rgba(61, 139, 255, 0.25) 48%,
+    transparent 76%
+  );
+  opacity: 0;
+  filter: drop-shadow(0 0 15px rgba(115, 177, 255, 0.48));
+  transition: opacity 160ms ease;
+}
+.nos-shine[data-active] {
+  opacity: 0.9;
 }
 
 /* ─── Scroll Stream Vertical Rail ─── */
