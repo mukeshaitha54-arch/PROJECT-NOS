@@ -304,11 +304,11 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Ultra-low latency auto-refresh polling fallback (5s cadence, zero F5 required)
+  // FIXED: 30-second auto-refresh polling fallback (works even without WebSocket)
   useEffect(() => {
     pollTimerRef.current = setInterval(() => {
       fetchDashboardData();
-    }, 5000);
+    }, 30000);
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     };

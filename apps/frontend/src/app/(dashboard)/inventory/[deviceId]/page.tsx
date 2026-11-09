@@ -122,7 +122,7 @@ function Card({
         className={`text-xs font-extrabold uppercase tracking-wider mb-3.5 pb-2.5 border-b border-white/10 flex items-center justify-between ${colors[color] || colors.orange}`}
       >
         <span>{title}</span>
-        <span className="w-1.5 h-1.5 rounded-full bg-[#3D8BFF] shadow-[0_0_8px_rgba(61,139,255,0.8)]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-[0_0_8px_rgba(61,139,255,0.8)]" />
       </h4>
       <div className="relative z-10 space-y-1">{children}</div>
     </div>

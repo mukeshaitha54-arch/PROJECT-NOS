@@ -169,10 +169,10 @@ export default function FleetOverviewPage() {
 
   useEffect(() => {
     fetchDevices(false);
-    // Ultra-low latency background sync every 4 seconds ensures instantaneous freshness with zero user F5 needed
+    // Background sync every 8 seconds ensures freshness with zero user F5 needed
     const interval = setInterval(() => {
       fetchDevices(true);
-    }, 4000);
+    }, 8000);
     return () => clearInterval(interval);
   }, [fetchDevices]);
 

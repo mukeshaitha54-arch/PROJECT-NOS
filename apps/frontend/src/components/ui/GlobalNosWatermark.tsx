@@ -103,20 +103,7 @@ export function GlobalNosWatermark() {
   }, []);
 
   return (
-    <div
-      className="nos-watermark"
-      data-sr-skip
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        zIndex: 0,
-        pointerEvents: "none",
-        userSelect: "none",
-      }}
-    >
+    <div className="nos-watermark" data-sr-skip aria-hidden="true">
       <span ref={glassRef} className="nos-glass">
         NOS
       </span>

@@ -90,6 +90,9 @@ export default function OperationalAuditCenterPage() {
                 item.actor ||
                 item.userId ||
                 "";
+              if (!actor || actor === "System Action" || actor === "System") {
+                return true;
+              }
               if (
                 user?.email &&
                 String(actor).toLowerCase().includes(user.email.toLowerCase())
@@ -97,13 +100,6 @@ export default function OperationalAuditCenterPage() {
                 return true;
               }
               if (user?.id && String(actor).includes(user.id)) {
-                return true;
-              }
-              if (
-                user?.organizationId &&
-                item.organizationId === user.organizationId &&
-                (!item.userEmail || item.userEmail === user?.email)
-              ) {
                 return true;
               }
               return false;
