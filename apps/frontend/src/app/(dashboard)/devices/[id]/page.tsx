@@ -643,7 +643,7 @@ export default function DeviceDetailPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-orange-500/20 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.08] pb-6">
         <div>
           <div className="flex items-center gap-3">
             <Link
@@ -797,7 +797,7 @@ export default function DeviceDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-orange-500/20">
+      <div className="flex border-b border-white/[0.08]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -865,7 +865,7 @@ export default function DeviceDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* CPU Specs */}
               <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
-                <h4 className="text-xs text-blue-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
+                <h4 className="text-xs text-blue-400 font-semibold uppercase border-b border-white/[0.08] pb-2">
                   CPU Specifications
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -902,7 +902,7 @@ export default function DeviceDetailPage() {
 
               {/* Memory Specs */}
               <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
-                <h4 className="text-xs text-purple-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
+                <h4 className="text-xs text-purple-400 font-semibold uppercase border-b border-white/[0.08] pb-2">
                   RAM Memory
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -933,7 +933,7 @@ export default function DeviceDetailPage() {
 
               {/* Disk I/O */}
               <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
-                <h4 className="text-xs text-emerald-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
+                <h4 className="text-xs text-emerald-400 font-semibold uppercase border-b border-white/[0.08] pb-2">
                   Disk Storage & I/O
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -970,7 +970,7 @@ export default function DeviceDetailPage() {
 
               {/* Network & Gateway */}
               <div className="dashboard-glass-card rounded-2xl p-4 space-y-2.5">
-                <h4 className="text-xs text-orange-400 font-semibold uppercase border-b border-orange-500/20 pb-2">
+                <h4 className="text-xs text-[#3D8BFF] font-semibold uppercase border-b border-white/[0.08] pb-2">
                   Network & Route
                 </h4>
                 <div className="flex justify-between text-sm">
@@ -1013,7 +1013,7 @@ export default function DeviceDetailPage() {
 
               {/* Running State Banner */}
               <div className="dashboard-glass-card rounded-2xl p-4 space-y-2 lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex flex-col border-r border-orange-500/20 pr-4">
+                <div className="flex flex-col border-r border-white/[0.08] pr-4">
                   <span className="text-xs text-gray-500 uppercase font-semibold">
                     Running Processes
                   </span>
@@ -1021,7 +1021,7 @@ export default function DeviceDetailPage() {
                     {runningProcesses}
                   </span>
                 </div>
-                <div className="flex flex-col border-r border-orange-500/20 pr-4">
+                <div className="flex flex-col border-r border-white/[0.08] pr-4">
                   <span className="text-xs text-gray-500 uppercase font-semibold">
                     Running Services
                   </span>
@@ -1101,7 +1101,7 @@ export default function DeviceDetailPage() {
                       .map((t, idx) => (
                         <tr
                           key={idx}
-                          className="border-b border-orange-500/20 hover:bg-white/[0.06]"
+                          className="border-b border-white/[0.08] hover:bg-white/[0.06]"
                         >
                           <td className="px-4 py-3 font-mono text-xs">
                             {new Date(
@@ -1207,7 +1207,7 @@ export default function DeviceDetailPage() {
                         return (
                           <tr
                             key={pidVal !== "—" ? `${pidVal}-${idx}` : idx}
-                            className="border-b border-orange-500/20 hover:bg-white/[0.06]"
+                            className="border-b border-white/[0.08] hover:bg-white/[0.06]"
                           >
                             <td className="px-6 py-3 font-mono text-xs text-cyan-400 font-semibold">
                               {pidVal}
@@ -1268,7 +1268,7 @@ export default function DeviceDetailPage() {
                   services.map((svc, idx) => (
                     <tr
                       key={idx}
-                      className="border-b border-orange-500/20 hover:bg-white/[0.06]"
+                      className="border-b border-white/[0.08] hover:bg-white/[0.06]"
                     >
                       <td className="px-6 py-4 font-mono">{svc.serviceName}</td>
                       <td className="px-6 py-4">{svc.displayName}</td>
@@ -1314,7 +1314,7 @@ export default function DeviceDetailPage() {
                   software.map((sw, idx) => (
                     <tr
                       key={idx}
-                      className="border-b border-orange-500/20 hover:bg-white/[0.06]"
+                      className="border-b border-white/[0.08] hover:bg-white/[0.06]"
                     >
                       <td className="px-6 py-4 font-medium text-gray-300">
                         {sw.name}
@@ -1340,7 +1340,7 @@ export default function DeviceDetailPage() {
 
         {activeTab === "alerts" && (
           <div className="dashboard-glass-card rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-orange-500/20 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bell size={16} className="text-amber-400" />
                 <h3 className="text-base font-semibold text-gray-200">

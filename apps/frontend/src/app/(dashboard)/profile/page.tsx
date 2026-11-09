@@ -52,7 +52,7 @@ export default function ProfilePage() {
   if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-[#090a0d] flex items-center justify-center text-slate-400 font-sans">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#3D8BFF]" />
       </div>
     );
   }
@@ -92,7 +92,7 @@ export default function ProfilePage() {
         {/* Header navigation */}
         <div className="flex items-center justify-between p-4 rounded-2xl bg-[#111217]/70 border border-white/[0.08] backdrop-blur-xl">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
               N
             </div>
             <div>
@@ -108,7 +108,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/devices"
-              className="px-4 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-xs font-semibold text-orange-400 border border-orange-500/30 transition-colors flex items-center gap-1.5 active:scale-[0.97]"
+              className="px-4 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-xs font-semibold text-[#3D8BFF] border border-blue-500/30 transition-colors flex items-center gap-1.5 active:scale-[0.97]"
             >
               <span>Devices (/devices)</span>
             </Link>
@@ -134,8 +134,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Notice: Open Source Personal Platform Banner */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-950/40 via-amber-950/30 to-rose-950/40 border border-orange-500/30 text-xs sm:text-sm text-orange-200 flex items-center gap-3">
-          <Server className="w-5 h-5 flex-shrink-0 text-orange-400" />
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-slate-950/30 to-blue-950/40 border border-blue-500/30 text-xs sm:text-sm text-blue-200 flex items-center gap-3">
+          <Server className="w-5 h-5 flex-shrink-0 text-[#3D8BFF]" />
           <div>
             <span className="font-semibold text-white">
               Open-Source Personal Workspace Platform Active.
@@ -150,7 +150,7 @@ export default function ProfilePage() {
           {/* User Details Card */}
           <div className="md:col-span-1 p-6 rounded-2xl bg-[#111217]/70 border border-white/[0.08] backdrop-blur-xl space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-white/[0.08] flex items-center justify-center text-[#3D8BFF]">
                 <UserIcon className="w-7 h-7" />
               </div>
               <div>
@@ -165,7 +165,7 @@ export default function ProfilePage() {
               <div className="pt-4 border-t border-white/[0.08] space-y-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">RBAC Role</span>
-                  <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300 font-semibold border border-orange-500/30 font-mono">
+                  <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30 font-mono">
                     {user.role}
                   </span>
                 </div>

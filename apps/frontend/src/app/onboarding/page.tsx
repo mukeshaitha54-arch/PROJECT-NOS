@@ -99,7 +99,7 @@ export default function OnboardingWizard() {
       <div className="bg-gray-900 border-b border-gray-800 p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Server className="h-6 w-6 text-orange-500" />
+            <Server className="h-6 w-6 text-[#3D8BFF]" />
             <span className="font-bold text-white tracking-wider">
               NOS Enterprise
             </span>
@@ -110,7 +110,7 @@ export default function OnboardingWizard() {
                 <span
                   className={
                     step === s.id
-                      ? "text-orange-400 font-semibold"
+                      ? "text-[#3D8BFF] font-semibold"
                       : step > s.id
                         ? "text-gray-300"
                         : ""
@@ -132,8 +132,8 @@ export default function OnboardingWizard() {
             {/* Step 1: Welcome */}
             {step === 1 && (
               <div className="text-center space-y-6">
-                <div className="mx-auto w-16 h-16 bg-orange-500/10 border border-orange-500/20 rounded-full flex items-center justify-center mb-6">
-                  <ShieldCheck className="h-8 w-8 text-orange-400" />
+                <div className="mx-auto w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center mb-6">
+                  <ShieldCheck className="h-8 w-8 text-[#3D8BFF]" />
                 </div>
                 <h1 className="text-3xl font-bold text-white">
                   Welcome to NOS Platform
@@ -146,7 +146,7 @@ export default function OnboardingWizard() {
                 <div className="pt-6">
                   <Button
                     onClick={nextStep}
-                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/20 active:scale-[0.97]"
+                    className="w-full sm:w-auto bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-blue-500/20 active:scale-[0.97]"
                   >
                     Get Started <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -158,7 +158,7 @@ export default function OnboardingWizard() {
             {step === 2 && (
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 border-b border-gray-800 pb-4">
-                  <Building2 className="h-6 w-6 text-orange-400" />
+                  <Building2 className="h-6 w-6 text-[#3D8BFF]" />
                   <h2 className="text-xl font-bold text-white">
                     Organization Details
                   </h2>
@@ -170,7 +170,7 @@ export default function OnboardingWizard() {
                     </label>
                     <input
                       type="text"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60 focus:ring-1 focus:ring-orange-500/20"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20"
                       value={orgData.companyName}
                       onChange={(e) =>
                         setOrgData({ ...orgData, companyName: e.target.value })
@@ -185,7 +185,7 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         type="text"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60 focus:ring-1 focus:ring-orange-500/20"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20"
                         value={orgData.industry}
                         onChange={(e) =>
                           setOrgData({ ...orgData, industry: e.target.value })
@@ -197,7 +197,7 @@ export default function OnboardingWizard() {
                         Timezone
                       </label>
                       <select
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60"
                         value={orgData.timezone}
                         onChange={(e) =>
                           setOrgData({ ...orgData, timezone: e.target.value })
@@ -217,7 +217,7 @@ export default function OnboardingWizard() {
                   <Button
                     onClick={nextStep}
                     disabled={!orgData.companyName}
-                    className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97]"
+                    className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
                   >
                     Continue
                   </Button>
@@ -229,7 +229,7 @@ export default function OnboardingWizard() {
             {step === 3 && (
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 border-b border-gray-800 pb-4">
-                  <User className="h-6 w-6 text-orange-400" />
+                  <User className="h-6 w-6 text-[#3D8BFF]" />
                   <h2 className="text-xl font-bold text-white">
                     Owner Profile
                   </h2>
@@ -242,7 +242,7 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         type="text"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60"
                         value={ownerData.firstName}
                         onChange={(e) =>
                           setOwnerData({
@@ -258,7 +258,7 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         type="text"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60"
                         value={ownerData.lastName}
                         onChange={(e) =>
                           setOwnerData({
@@ -276,7 +276,7 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         type="text"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60"
                         value={ownerData.role}
                         onChange={(e) =>
                           setOwnerData({ ...ownerData, role: e.target.value })
@@ -290,7 +290,7 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         type="email"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500/60"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500/60"
                         value={ownerData.email}
                         onChange={(e) =>
                           setOwnerData({ ...ownerData, email: e.target.value })
@@ -310,7 +310,7 @@ export default function OnboardingWizard() {
                   <Button
                     onClick={nextStep}
                     disabled={!ownerData.firstName || !ownerData.email}
-                    className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97]"
+                    className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
                   >
                     Continue
                   </Button>
@@ -322,7 +322,7 @@ export default function OnboardingWizard() {
             {step === 4 && (
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 border-b border-gray-800 pb-4">
-                  <Key className="h-6 w-6 text-orange-400" />
+                  <Key className="h-6 w-6 text-[#3D8BFF]" />
                   <h2 className="text-xl font-bold text-white">
                     Initial Registration Key
                   </h2>
@@ -337,7 +337,7 @@ export default function OnboardingWizard() {
                     <Button
                       onClick={generateKey}
                       disabled={isGenerating}
-                      className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97]"
+                      className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
                     >
                       {isGenerating ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -349,7 +349,7 @@ export default function OnboardingWizard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 font-mono text-center text-lg text-orange-400 tracking-wider">
+                    <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 font-mono text-center text-lg text-[#3D8BFF] tracking-wider">
                       {keyData.key}
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
@@ -380,7 +380,7 @@ export default function OnboardingWizard() {
                   <Button
                     onClick={nextStep}
                     disabled={!keyData.generated}
-                    className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97]"
+                    className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
                   >
                     Continue
                   </Button>
@@ -392,7 +392,7 @@ export default function OnboardingWizard() {
             {step === 5 && (
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 border-b border-gray-800 pb-4">
-                  <Download className="h-6 w-6 text-orange-400" />
+                  <Download className="h-6 w-6 text-[#3D8BFF]" />
                   <h2 className="text-xl font-bold text-white">Deploy Agent</h2>
                 </div>
                 <p className="text-gray-400 text-sm">
@@ -420,11 +420,11 @@ export default function OnboardingWizard() {
                 <div className="flex justify-between items-center pt-4 border-t border-gray-800 mt-6">
                   <div className="text-xs text-gray-500">
                     Also available:{" "}
-                    <a href="#" className="text-orange-400 hover:underline">
+                    <a href="#" className="text-[#3D8BFF] hover:underline">
                       MSI Installer
                     </a>{" "}
                     or{" "}
-                    <a href="#" className="text-orange-400 hover:underline">
+                    <a href="#" className="text-[#3D8BFF] hover:underline">
                       Linux sh
                     </a>
                   </div>
@@ -440,7 +440,7 @@ export default function OnboardingWizard() {
                   </Button>
                   <Button
                     onClick={nextStep}
-                    className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97]"
+                    className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
                   >
                     I&apos;ve Run the Installer
                   </Button>
@@ -453,7 +453,7 @@ export default function OnboardingWizard() {
               <div className="space-y-8 py-8 text-center">
                 {!deviceFound ? (
                   <>
-                    <div className="mx-auto w-16 h-16 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin mb-6"></div>
+                    <div className="mx-auto w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-[#3D8BFF] animate-spin mb-6"></div>
                     <h2 className="text-2xl font-bold text-white mb-2">
                       Waiting for First Device...
                     </h2>

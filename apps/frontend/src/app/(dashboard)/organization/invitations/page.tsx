@@ -211,11 +211,11 @@ function InvitationsContent() {
           ) : preview ? (
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#f47b36]/20 to-orange-500/10 border border-[#f47b36]/30 flex items-center justify-center text-[#f47b36]">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center text-[#3D8BFF]">
                   <Building2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-mono tracking-wider uppercase text-[#f47b36]">
+                  <span className="text-[11px] font-mono tracking-wider uppercase text-[#3D8BFF]">
                     Zero-Trust Fleet Invitation
                   </span>
                   <h1 className="text-xl font-bold text-white">
@@ -237,7 +237,7 @@ function InvitationsContent() {
                   <span className="text-zinc-400 flex items-center gap-1.5">
                     <Shield className="w-3.5 h-3.5" /> Assigned Access
                   </span>
-                  <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-orange-500/15 text-[#fb9858] border border-orange-500/25">
+                  <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-500/15 text-[#3D8BFF] border border-white/[0.08]">
                     {formatRole(preview.role)}
                   </span>
                 </div>
@@ -259,7 +259,7 @@ function InvitationsContent() {
                   </div>
                   <Link
                     href="/fleet"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 text-white text-xs font-bold shadow-[0_4px_16px_-4px_rgba(255,85,0,0.5)] hover:from-orange-400 hover:to-rose-500 transition"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white text-xs font-bold shadow-[0_4px_16px_-4px_rgba(61,139,255,0.5)] transition"
                   >
                     Open Fleet Command <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -276,7 +276,7 @@ function InvitationsContent() {
                   <Button
                     onClick={handleAccept}
                     disabled={isAccepting}
-                    className="w-full bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-semibold text-xs py-3 rounded-xl shadow-[0_4px_20px_-4px_rgba(255,85,0,0.5)] transition active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-semibold text-xs py-3 rounded-xl shadow-[0_4px_20px_-4px_rgba(61,139,255,0.5)] transition active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     {isAccepting ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -294,7 +294,7 @@ function InvitationsContent() {
                   </p>
                   <Link
                     href={`/auth/login?redirect=${encodeURIComponent(`/organization/invitations?token=${token}`)}`}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-semibold text-xs shadow-[0_4px_20px_-4px_rgba(255,85,0,0.5)] transition"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-semibold text-xs shadow-[0_4px_20px_-4px_rgba(61,139,255,0.5)] transition"
                   >
                     Sign In to Accept <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -321,7 +321,7 @@ function InvitationsContent() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <Mail className="w-6 h-6 text-[#f47b36]" /> Pending & Historical
+            <Mail className="w-6 h-6 text-[#3D8BFF]" /> Pending & Historical
             Invitations
           </h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -329,7 +329,7 @@ function InvitationsContent() {
           </p>
         </div>
         <Link href="/members">
-          <Button className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-[0_4px_16px_-4px_rgba(255,85,0,0.4)]">
+          <Button className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-[0_4px_16px_-4px_rgba(61,139,255,0.4)]">
             <Send className="w-3.5 h-3.5 mr-2" /> Invite New Member
           </Button>
         </Link>
@@ -344,12 +344,12 @@ function InvitationsContent() {
               placeholder="Filter by email address..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <button
             onClick={() => fetchInvitations()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-zinc-300 hover:border-orange-500/40 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-zinc-300 hover:border-blue-500/40 hover:text-white transition"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${isListLoading ? "animate-spin" : ""}`}
@@ -377,7 +377,7 @@ function InvitationsContent() {
                     colSpan={6}
                     className="px-6 py-10 text-center text-zinc-500"
                   >
-                    <RefreshCw className="w-5 h-5 mx-auto animate-spin text-[#f47b36] mb-2" />
+                    <RefreshCw className="w-5 h-5 mx-auto animate-spin text-[#3D8BFF] mb-2" />
                     Loading invitations...
                   </td>
                 </tr>
@@ -400,7 +400,7 @@ function InvitationsContent() {
                       {i.email}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-orange-500/10 text-[#fb9858] border border-orange-500/20">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-500/10 text-[#fb9858] border border-white/[0.08]">
                         {formatRole(i.role)}
                       </span>
                     </td>

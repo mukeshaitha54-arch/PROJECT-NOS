@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { CustomCursor } from "@/components/ui/CustomCursor";
+import { GlobalNosWatermark } from "@/components/ui/GlobalNosWatermark";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
+        <GlobalNosWatermark />
         <Providers>
           <main className="min-h-screen flex flex-col justify-between">
             {children}

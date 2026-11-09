@@ -169,10 +169,10 @@ export default function FleetOverviewPage() {
 
   useEffect(() => {
     fetchDevices(false);
-    // Background sync every 8 seconds ensures freshness with zero user F5 needed
+    // Ultra-low latency background sync every 4 seconds ensures instantaneous freshness with zero user F5 needed
     const interval = setInterval(() => {
       fetchDevices(true);
-    }, 8000);
+    }, 4000);
     return () => clearInterval(interval);
   }, [fetchDevices]);
 
@@ -267,10 +267,10 @@ export default function FleetOverviewPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-orange-500/20 pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-md shadow-orange-500/20">
+            <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-[#3D8BFF] shadow-md shadow-blue-500/20">
               <Network className="w-6 h-6" />
             </div>
             <div>
@@ -293,16 +293,16 @@ export default function FleetOverviewPage() {
           <button
             onClick={() => fetchDevices(false)}
             disabled={loading}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-orange-500/25 hover:border-orange-500/60 text-xs font-semibold text-white hover:bg-white/[0.08] transition shadow-sm active:scale-[0.98]"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:border-[#3D8BFF]/60 text-xs font-semibold text-white hover:bg-white/[0.08] transition shadow-sm active:scale-[0.98]"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${loading ? "animate-spin text-orange-400" : "text-orange-400"}`}
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#3D8BFF]" : "text-[#3D8BFF]"}`}
             />
             Refresh Devices
           </button>
           <button
             onClick={() => setIsClaimModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-xs font-semibold text-white shadow-lg shadow-orange-500/30 active:scale-[0.97] transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-xs font-semibold text-white shadow-lg shadow-blue-500/30 active:scale-[0.97] transition"
           >
             <Plus className="w-4 h-4" />
             Add Device
@@ -318,7 +318,7 @@ export default function FleetOverviewPage() {
             <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
               Total Monitored Devices
             </span>
-            <div className="p-2 rounded-lg bg-orange-500/15 border border-orange-500/30 text-orange-400">
+            <div className="p-2 rounded-lg bg-blue-500/15 border border-blue-500/30 text-[#3D8BFF]">
               <Server className="w-4 h-4" />
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function FleetOverviewPage() {
           </div>
           <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-orange-500 to-amber-500 h-1.5 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] h-1.5 rounded-full transition-all duration-500"
               style={{ width: "100%" }}
             />
           </div>
@@ -436,12 +436,12 @@ export default function FleetOverviewPage() {
             placeholder="Search fleet by node name, hostname, OS version..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white/[0.04] border border-orange-500/20 rounded-xl text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-orange-500/80 transition"
+            className="w-full pl-10 pr-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-[#3D8BFF]/80 transition"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white/[0.04] border border-orange-500/20 rounded-xl p-1 text-xs">
+          <div className="flex items-center bg-white/[0.04] border border-white/[0.08] rounded-xl p-1 text-xs">
             {(["ALL", "ONLINE", "DEGRADED", "OFFLINE"] as const).map(
               (status) => (
                 <button
@@ -449,7 +449,7 @@ export default function FleetOverviewPage() {
                   onClick={() => setStatusFilter(status)}
                   className={`px-3 py-1.5 rounded-lg font-bold transition ${
                     statusFilter === status
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30"
+                      ? "bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] text-white shadow-md shadow-blue-500/30"
                       : "text-zinc-300 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
@@ -463,9 +463,9 @@ export default function FleetOverviewPage() {
 
       {/* Fleet Nodes Grid / Table */}
       <div className="dashboard-glass-card rounded-2xl overflow-hidden shadow-2xl">
-        <div className="px-6 py-4 border-b border-orange-500/20 flex items-center justify-between bg-white/[0.02]">
+        <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-orange-400" />
+            <Activity className="w-4 h-4 text-[#3D8BFF]" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
               Monitored Nodes ({filteredDevices.length})
             </h2>
@@ -476,7 +476,7 @@ export default function FleetOverviewPage() {
         </div>
 
         {loading && filteredDevices.length === 0 ? (
-          <div className="divide-y divide-orange-500/15">
+          <div className="divide-y divide-white/[0.06]">
             {[1, 2, 3, 4, 5].map((idx) => (
               <div
                 key={idx}
@@ -508,14 +508,14 @@ export default function FleetOverviewPage() {
             </p>
             <button
               onClick={() => setIsClaimModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 text-xs font-semibold text-white hover:from-orange-400 hover:to-rose-500 transition active:scale-[0.97] shadow-lg shadow-orange-500/25"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] text-xs font-semibold text-white hover:from-[#60A5FA] hover:to-[#3D8BFF] transition active:scale-[0.97] shadow-lg shadow-blue-500/25"
             >
               <Plus className="w-4 h-4" />
               Onboard Agent Now
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-orange-500/15">
+          <div className="divide-y divide-white/[0.06]">
             {filteredDevices.map((device) => {
               const isOnline = device.status === DeviceStatus.ONLINE;
               return (
@@ -528,7 +528,7 @@ export default function FleetOverviewPage() {
                       className={`p-3 rounded-xl border flex items-center justify-center ${
                         isOnline
                           ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
-                          : "bg-white/[0.04] border-orange-500/20 text-zinc-400"
+                          : "bg-white/[0.04] border-white/[0.08] text-zinc-400"
                       }`}
                     >
                       <Server className="w-6 h-6" />
@@ -538,17 +538,17 @@ export default function FleetOverviewPage() {
                       <div className="flex items-center gap-2.5">
                         <Link
                           href={`/devices/${device.id}`}
-                          className="text-base font-bold text-white hover:text-orange-400 transition flex items-center gap-1.5"
+                          className="text-base font-bold text-white hover:text-[#3D8BFF] transition flex items-center gap-1.5"
                         >
                           {device.hostname || device.deviceName || device.id}
-                          <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-400" />
+                          <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-[#3D8BFF]" />
                         </Link>
 
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                             isOnline
                               ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                              : "bg-white/[0.05] text-zinc-400 border border-orange-500/20"
+                              : "bg-white/[0.05] text-zinc-400 border border-white/[0.08]"
                           }`}
                         >
                           <span
@@ -596,14 +596,14 @@ export default function FleetOverviewPage() {
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <Link
                       href={`/inventory/${device.id}`}
-                      className="px-3 py-1.5 rounded-xl bg-white/[0.05] border border-orange-500/20 hover:border-orange-500/50 hover:bg-white/[0.1] text-xs font-semibold text-white transition flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.08] hover:border-[#3D8BFF]/50 hover:bg-white/[0.1] text-xs font-semibold text-white transition flex items-center gap-1"
                     >
                       <Layers className="w-3.5 h-3.5" />
                       Inventory
                     </Link>
                     <Link
                       href={`/devices/${device.id}`}
-                      className="px-3.5 py-1.5 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/35 hover:bg-orange-500/30 text-xs font-bold transition flex items-center gap-1 active:scale-[0.97]"
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-500/20 text-[#3D8BFF] border border-blue-500/35 hover:bg-blue-500/30 text-xs font-bold transition flex items-center gap-1 active:scale-[0.97]"
                     >
                       Inspect Node
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -682,7 +682,7 @@ export default function FleetOverviewPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-orange-500/20 text-zinc-300 hover:bg-white/[0.06] transition-colors text-sm font-semibold"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-white/[0.08] text-zinc-300 hover:bg-white/[0.06] transition-colors text-sm font-semibold"
               >
                 Cancel
               </button>
@@ -859,11 +859,11 @@ function AddDeviceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-[#0f1015]/95 border border-orange-500/30 rounded-3xl max-w-2xl w-full p-6 shadow-2xl my-8 backdrop-blur-2xl text-white">
+      <div className="bg-[#0f1015]/95 border border-blue-500/30 rounded-3xl max-w-2xl w-full p-6 shadow-2xl my-8 backdrop-blur-2xl text-white">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-orange-500/20 pb-4 mb-5">
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400">
+            <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-[#3D8BFF]">
               <Terminal className="w-5 h-5" />
             </div>
             <div>
@@ -897,7 +897,7 @@ function AddDeviceModal({
               <input
                 value={keyName}
                 onChange={(e) => setKeyName(e.target.value)}
-                className="w-full bg-white/[0.04] border border-orange-500/25 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500/80"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#3D8BFF]/80"
                 placeholder="e.g., Target PC Key"
               />
             </div>
@@ -911,14 +911,14 @@ function AddDeviceModal({
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-white/[0.04] border border-orange-500/20 hover:bg-white/[0.08] text-xs font-semibold text-zinc-300"
+                className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-semibold text-zinc-300"
               >
                 Cancel
               </button>
               <button
                 onClick={createKey}
                 disabled={creating || !keyName.trim()}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 disabled:opacity-50 text-xs font-bold text-white flex items-center gap-2 shadow-md shadow-orange-500/25"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] disabled:opacity-50 text-xs font-bold text-white flex items-center gap-2 shadow-md shadow-blue-500/25"
               >
                 {creating && (
                   <svg
@@ -950,7 +950,7 @@ function AddDeviceModal({
         {step === "download" && generatedKey && (
           <div className="space-y-5">
             {/* Key display banner */}
-            <div className="bg-white/[0.04] border border-orange-500/25 rounded-2xl p-4 space-y-2">
+            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                   Your One-Time Registration Key
@@ -960,7 +960,7 @@ function AddDeviceModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-orange-300 font-mono text-sm bg-white/[0.06] border border-orange-500/20 rounded-xl px-3 py-2.5 break-all select-all">
+                <code className="flex-1 text-blue-300 font-mono text-sm bg-white/[0.06] border border-white/[0.08] rounded-xl px-3 py-2.5 break-all select-all">
                   {generatedKey}
                 </code>
                 <button
@@ -968,7 +968,7 @@ function AddDeviceModal({
                   className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all ${
                     copiedKey
                       ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                      : "bg-orange-500/15 border-orange-500/30 text-orange-300 hover:bg-orange-500/25"
+                      : "bg-blue-500/15 border-blue-500/30 text-blue-300 hover:bg-blue-500/20"
                   }`}
                 >
                   {copiedKey ? (
@@ -989,12 +989,12 @@ function AddDeviceModal({
               <p className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
                 Select Installation Method for Target PC:
               </p>
-              <div className="grid grid-cols-2 gap-2 bg-white/[0.03] p-1.5 rounded-2xl border border-orange-500/20">
+              <div className="grid grid-cols-2 gap-2 bg-white/[0.03] p-1.5 rounded-2xl border border-white/[0.08]">
                 <button
                   onClick={() => setDeployOption("automated")}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     deployOption === "automated"
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30"
+                      ? "bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] text-white shadow-md shadow-blue-500/30"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -1005,7 +1005,7 @@ function AddDeviceModal({
                   onClick={() => setDeployOption("manual")}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     deployOption === "manual"
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30"
+                      ? "bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] text-white shadow-md shadow-blue-500/30"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -1017,14 +1017,14 @@ function AddDeviceModal({
 
             {/* OPTION 1 CONTENT */}
             {deployOption === "automated" && (
-              <div className="bg-white/[0.03] border border-orange-500/20 rounded-2xl p-4 space-y-3.5 text-xs">
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white text-sm">
                     Automated Service Deployment
                   </span>
                   <button
                     onClick={downloadInstaller}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-bold transition shadow-md shadow-blue-500/20 active:scale-[0.97]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download Installer (.ps1)
@@ -1034,25 +1034,25 @@ function AddDeviceModal({
                 <ol className="space-y-2.5 text-zinc-300 list-decimal list-inside pl-1">
                   <li>
                     Move the downloaded{" "}
-                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">
+                    <code className="text-[#3D8BFF] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">
                       install-nos-agent.ps1
                     </code>{" "}
                     to the target PC.
                   </li>
                   <li>
                     Open <strong>PowerShell as Administrator</strong> and{" "}
-                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px]">
+                    <code className="text-[#3D8BFF] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px]">
                       cd
                     </code>{" "}
                     to the folder where you saved the script. Example:{" "}
-                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px]">
+                    <code className="text-[#3D8BFF] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-[10px]">
                       cd $env:USERPROFILE\Downloads
                     </code>
                   </li>
                   <li>
                     Run the following installation command:
                     <div className="mt-1.5 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-white/[0.06] border border-orange-500/20 text-orange-300 px-3 py-2 rounded-xl break-all">
+                      <code className="flex-1 font-mono text-[11px] bg-white/[0.06] border border-white/[0.08] text-blue-300 px-3 py-2 rounded-xl break-all">
                         {installerCommand}
                       </code>
                       <button
@@ -1060,7 +1060,7 @@ function AddDeviceModal({
                         className={`px-2.5 py-2 rounded-xl border text-[11px] font-semibold transition ${
                           copiedCmd
                             ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
-                            : "bg-white/[0.06] border-orange-500/20 text-zinc-300 hover:bg-white/[0.1]"
+                            : "bg-white/[0.06] border-white/[0.08] text-zinc-300 hover:bg-white/[0.1]"
                         }`}
                       >
                         {copiedCmd ? "Copied!" : "Copy"}
@@ -1069,7 +1069,7 @@ function AddDeviceModal({
                   </li>
                 </ol>
 
-                <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] leading-relaxed">
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-white/[0.08] text-blue-300 text-[11px] leading-relaxed">
                   <strong>What this does:</strong> It automatically downloads
                   the agent binary in the background, prompts you for the
                   Registration Key, registers the device with the platform, and
@@ -1081,14 +1081,14 @@ function AddDeviceModal({
 
             {/* OPTION 2 CONTENT */}
             {deployOption === "manual" && (
-              <div className="bg-white/[0.03] border border-orange-500/20 rounded-2xl p-4 space-y-3.5 text-xs">
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white text-sm">
                     Manual Standalone Executable
                   </span>
                   <button
                     onClick={downloadExe}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-bold transition shadow-md shadow-orange-500/20 active:scale-[0.97]"
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-bold transition shadow-md shadow-blue-500/20 active:scale-[0.97]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download NOS-Agent.exe
@@ -1098,7 +1098,7 @@ function AddDeviceModal({
                 <ol className="space-y-2.5 text-zinc-300 list-decimal list-inside pl-1">
                   <li>
                     Move{" "}
-                    <code className="text-orange-400 font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">
+                    <code className="text-[#3D8BFF] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">
                       NOS-Agent.exe
                     </code>{" "}
                     to any directory on the target PC.
@@ -1107,7 +1107,7 @@ function AddDeviceModal({
                     Double-click the EXE, or run it in PowerShell / Command
                     Prompt:
                     <div className="mt-1.5 flex items-center gap-2">
-                      <code className="flex-1 font-mono text-[11px] bg-white/[0.06] border border-orange-500/20 text-orange-300 px-3 py-2 rounded-xl">
+                      <code className="flex-1 font-mono text-[11px] bg-white/[0.06] border border-white/[0.08] text-blue-300 px-3 py-2 rounded-xl">
                         {manualCommand}
                       </code>
                       <button
@@ -1115,7 +1115,7 @@ function AddDeviceModal({
                         className={`px-2.5 py-2 rounded-xl border text-[11px] font-semibold transition ${
                           copiedCmd
                             ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
-                            : "bg-white/[0.06] border-orange-500/20 text-zinc-300 hover:bg-white/[0.1]"
+                            : "bg-white/[0.06] border-white/[0.08] text-zinc-300 hover:bg-white/[0.1]"
                         }`}
                       >
                         {copiedCmd ? "Copied!" : "Copy"}
@@ -1142,7 +1142,7 @@ function AddDeviceModal({
             )}
 
             {/* Live Connection Listener Footer */}
-            <div className="pt-2 border-t border-orange-500/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="pt-2 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>Waiting for target PC to connect...</span>
@@ -1152,14 +1152,14 @@ function AddDeviceModal({
                   onClick={() => {
                     onRegistered();
                   }}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition active:scale-[0.97]"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white text-xs font-bold px-4 py-2 rounded-xl transition active:scale-[0.97]"
                 >
                   <ArrowUpRight className="w-4 h-4" />
                   Check for New Devices
                 </button>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/[0.06] border border-orange-500/20 hover:bg-white/[0.1] text-xs font-semibold text-zinc-300"
+                  className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] text-xs font-semibold text-zinc-300"
                 >
                   Close
                 </button>

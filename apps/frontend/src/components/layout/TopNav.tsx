@@ -33,7 +33,7 @@ export function TopNav() {
           <div className="max-w-xl w-full relative group">
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="w-full flex items-center px-4 py-2 bg-[#15161c]/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] rounded-xl text-sm text-slate-400 hover:border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 active:scale-[0.99]"
+              className="w-full flex items-center px-4 py-2 bg-[#15161c]/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] rounded-xl text-sm text-slate-400 hover:border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 active:scale-[0.99]"
             >
               <Search className="h-4 w-4 mr-3 text-slate-500" />
               <span className="flex-1 text-left text-xs">
@@ -52,7 +52,7 @@ export function TopNav() {
             <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[#0e0f14]"></span>
           </button>
 
-          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center text-sm font-medium text-white shadow-md shadow-orange-500/20 cursor-pointer">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center text-sm font-medium text-white shadow-md shadow-blue-500/20 cursor-pointer">
             <User className="h-4 w-4" />
           </div>
         </div>

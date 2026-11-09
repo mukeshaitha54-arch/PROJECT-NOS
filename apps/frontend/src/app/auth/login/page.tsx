@@ -59,14 +59,14 @@ export default function AuthLoginPage() {
       <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative z-10">
         {/* NOS wordmark */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/30">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/30">
             N
           </div>
           <div>
             <span className="text-white font-extrabold text-xl tracking-tight">
               NOS
             </span>
-            <div className="text-[10px] text-orange-400 font-mono font-medium tracking-widest uppercase leading-none">
+            <div className="text-[10px] text-[#3D8BFF] font-mono font-medium tracking-widest uppercase leading-none">
               NEURAL OS
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function AuthLoginPage() {
           <h1 className="text-5xl font-black text-white leading-[0.95] tracking-tight">
             FLEET
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-rose-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#60A5FA] via-[#3D8BFF] to-[#2563EB]">
               CONTROL
             </span>
             <br />
@@ -103,7 +103,7 @@ export default function AuthLoginPage() {
             ].map((s) => (
               <div
                 key={s.l}
-                className="dashboard-glass-card rounded-2xl px-4 py-3 bg-black/25 backdrop-blur-xl border border-orange-500/20 shadow-md"
+                className="dashboard-glass-card rounded-2xl px-4 py-3 bg-black/25 backdrop-blur-xl border border-white/[0.08] shadow-md"
               >
                 <div className="text-xl font-black text-white font-mono drop-shadow-sm">
                   {s.v}
@@ -119,7 +119,7 @@ export default function AuthLoginPage() {
         {/* Bottom back-to-home */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-zinc-400 hover:text-orange-400 text-xs font-medium transition-colors group"
+          className="flex items-center gap-2 text-zinc-400 hover:text-[#3D8BFF] text-xs font-medium transition-colors group"
         >
           <span className="group-hover:-translate-x-1 transition-transform">
             ←
@@ -133,23 +133,23 @@ export default function AuthLoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/30">
               N
             </div>
             <div>
               <span className="text-white font-extrabold text-xl tracking-tight block">
                 NOS
               </span>
-              <span className="text-[10px] text-orange-400 font-mono tracking-widest uppercase block leading-none">
+              <span className="text-[10px] text-[#3D8BFF] font-mono tracking-widest uppercase block leading-none">
                 NEURAL OS
               </span>
             </div>
           </div>
 
           {/* Card in Transparent Frosted Glass */}
-          <div className="dashboard-glass-card bg-black/30 border border-orange-500/25 rounded-3xl p-8 shadow-2xl backdrop-blur-3xl space-y-6 relative overflow-hidden">
+          <div className="dashboard-glass-card bg-black/30 border border-white/[0.1] rounded-3xl p-8 shadow-2xl backdrop-blur-3xl space-y-6 relative overflow-hidden">
             {/* Specular sheen inside card */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-blue-500/[0.02] pointer-events-none rounded-3xl" />
 
             {/* Header */}
             <div className="space-y-1 relative z-10">
@@ -169,14 +169,14 @@ export default function AuthLoginPage() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF]" />
                   <input
                     type="email"
                     required
                     placeholder="demo@nos.local"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all duration-200"
                   />
                 </div>
               </div>
@@ -189,20 +189,20 @@ export default function AuthLoginPage() {
                   </label>
                   <Link
                     href="/auth/forgot-password"
-                    className="text-[11px] text-orange-400 hover:text-orange-300 transition-colors font-semibold"
+                    className="text-[11px] text-[#3D8BFF] hover:text-blue-300 transition-colors font-semibold"
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF]" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all duration-200"
                   />
                   <button
                     type="button"
@@ -225,7 +225,7 @@ export default function AuthLoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded bg-black/40 border-orange-500/30 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
+                  className="w-4 h-4 rounded bg-black/40 border-white/[0.2] text-[#3D8BFF] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#3D8BFF]"
                 />
                 <label
                   htmlFor="remember"
@@ -249,7 +249,7 @@ export default function AuthLoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 h-12 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-extrabold rounded-xl shadow-lg shadow-orange-500/30 text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-orange-500/45 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
+                className="w-full py-3 h-12 bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/30 text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-blue-500/45 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
               >
                 {loading ? (
                   <>
@@ -270,7 +270,7 @@ export default function AuthLoginPage() {
               Don&apos;t have an account?{" "}
               <Link
                 href="/auth/register"
-                className="text-orange-400 font-bold hover:text-orange-300 transition-colors"
+                className="text-[#3D8BFF] font-bold hover:text-blue-300 transition-colors"
               >
                 Create one →
               </Link>

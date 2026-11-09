@@ -145,7 +145,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-          <Shield className="w-6 h-6 text-orange-500" /> Platform & Security
+          <Shield className="w-6 h-6 text-[#3D8BFF]" /> Platform & Security
           Settings
         </h1>
         <p className="text-xs text-gray-400 mt-1">
@@ -157,13 +157,12 @@ export default function SettingsPage() {
       {/* SECTION 1: PROFILE */}
       <Card className="bg-[#111217]/70 border-white/[0.08] p-6 shadow-xl space-y-6">
         <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-white/[0.08] pb-3">
-          <User className="w-5 h-5 text-orange-400" /> User Profile &
-          Credentials
+          <User className="w-5 h-5 text-[#3D8BFF]" /> User Profile & Credentials
         </CardTitle>
 
         <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
           <div className="flex items-center gap-4 pb-2">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-orange-500/20">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-blue-500/20">
               {displayName.charAt(0)}
             </div>
             <div>
@@ -181,7 +180,7 @@ export default function SettingsPage() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white focus:outline-none focus:border-orange-500/60 text-xs"
+                className="w-full px-3.5 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white focus:outline-none focus:border-[#3D8BFF]/60 text-xs"
               />
             </div>
 
@@ -193,12 +192,12 @@ export default function SettingsPage() {
                 type="email"
                 value={email}
                 disabled
-                className="w-full px-3.5 py-2 rounded-lg bg-white/[0.03]/50 border border-orange-500/20 text-gray-500 cursor-not-allowed text-xs"
+                className="w-full px-3.5 py-2 rounded-lg bg-white/[0.03]/50 border border-white/[0.08] text-gray-500 cursor-not-allowed text-xs"
               />
             </div>
           </div>
 
-          <div className="pt-2 border-t border-orange-500/20/80">
+          <div className="pt-2 border-t border-white/[0.08]/80">
             <span className="font-semibold text-gray-300 block mb-2">
               Update Password
             </span>
@@ -209,7 +208,7 @@ export default function SettingsPage() {
                   placeholder="Current Password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white text-xs"
                 />
               </div>
               <div>
@@ -218,7 +217,7 @@ export default function SettingsPage() {
                   placeholder="New Password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white text-xs"
                 />
               </div>
               <div>
@@ -227,7 +226,7 @@ export default function SettingsPage() {
                   placeholder="Confirm New Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white text-xs"
                 />
               </div>
             </div>
@@ -236,7 +235,7 @@ export default function SettingsPage() {
           <div className="pt-2 flex justify-end">
             <Button
               type="submit"
-              className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-semibold shadow-md shadow-orange-500/20 active:scale-[0.97]"
+              className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white text-xs font-semibold shadow-md shadow-blue-500/20 active:scale-[0.97]"
             >
               <Save className="w-3.5 h-3.5 mr-1.5" /> Save Profile
             </Button>
@@ -245,8 +244,8 @@ export default function SettingsPage() {
       </Card>
 
       {/* SECTION 2: NOTIFICATIONS */}
-      <Card className="bg-white/[0.04]/90 border-orange-500/20 p-6 shadow-xl space-y-5">
-        <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-orange-500/20 pb-3">
+      <Card className="bg-white/[0.04]/90 border-white/[0.08] p-6 shadow-xl space-y-5">
+        <CardTitle className="text-base font-bold text-white flex items-center gap-2 border-b border-white/[0.08] pb-3">
           <Bell className="w-5 h-5 text-amber-400" /> Incident Notifications
         </CardTitle>
 
@@ -265,7 +264,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={emailAlerts}
               onChange={(e) => setEmailAlerts(e.target.checked)}
-              className="w-5 h-5 rounded bg-white/[0.03] border-orange-500/20 text-orange-500 focus:ring-0 accent-orange-500"
+              className="w-5 h-5 rounded bg-white/[0.03] border-white/[0.08] text-[#3D8BFF] focus:ring-0 accent-[#3D8BFF]"
             />
           </div>
 
@@ -282,7 +281,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={pushAlerts}
               onChange={(e) => setPushAlerts(e.target.checked)}
-              className="w-5 h-5 rounded bg-white/[0.03] border-orange-500/20 text-orange-500 focus:ring-0 accent-orange-500"
+              className="w-5 h-5 rounded bg-white/[0.03] border-white/[0.08] text-[#3D8BFF] focus:ring-0 accent-[#3D8BFF]"
             />
           </div>
 
@@ -299,7 +298,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={criticalOnly}
               onChange={(e) => setCriticalOnly(e.target.checked)}
-              className="w-5 h-5 rounded bg-white/[0.03] border-orange-500/20 text-orange-500 focus:ring-0 accent-orange-500"
+              className="w-5 h-5 rounded bg-white/[0.03] border-white/[0.08] text-[#3D8BFF] focus:ring-0 accent-[#3D8BFF]"
             />
           </div>
 
@@ -307,7 +306,7 @@ export default function SettingsPage() {
             <Button
               onClick={handleSaveNotifications}
               variant="outline"
-              className="border-orange-500/20 hover:border-gray-600 text-gray-300 text-xs font-semibold"
+              className="border-white/[0.08] hover:border-gray-600 text-gray-300 text-xs font-semibold"
             >
               Update Notification Rules
             </Button>
@@ -316,8 +315,8 @@ export default function SettingsPage() {
       </Card>
 
       {/* SECTION 3: API KEYS */}
-      <Card className="bg-white/[0.04]/90 border-orange-500/20 p-6 shadow-xl space-y-5">
-        <div className="flex justify-between items-center border-b border-orange-500/20 pb-3">
+      <Card className="bg-white/[0.04]/90 border-white/[0.08] p-6 shadow-xl space-y-5">
+        <div className="flex justify-between items-center border-b border-white/[0.08] pb-3">
           <CardTitle className="text-base font-bold text-white flex items-center gap-2">
             <Key className="w-5 h-5 text-purple-400" /> Platform API Keys
           </CardTitle>
@@ -337,7 +336,7 @@ export default function SettingsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-gray-300">
-            <thead className="bg-white/[0.03]/60 text-gray-400 uppercase text-[10px] font-semibold border-b border-orange-500/20">
+            <thead className="bg-white/[0.03]/60 text-gray-400 uppercase text-[10px] font-semibold border-b border-white/[0.08]">
               <tr>
                 <th className="px-4 py-3">Key Name</th>
                 <th className="px-4 py-3">Token Prefix</th>
@@ -405,8 +404,8 @@ export default function SettingsPage() {
       {/* Generate API Key Modal */}
       {isGenerateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-white/[0.04] border border-orange-500/20 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-orange-500/20 pb-3">
+          <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Key className="w-4 h-4 text-purple-400" />
                 {newlyCreatedKey ? "API Key Generated" : "Generate API Token"}
@@ -439,8 +438,8 @@ export default function SettingsPage() {
                   <label className="block text-gray-400 mb-1.5 font-semibold">
                     Generated API Key
                   </label>
-                  <div className="flex items-center gap-2 bg-white/[0.03] border border-orange-500/20 rounded-lg p-2.5">
-                    <code className="flex-1 text-orange-300 font-mono text-xs break-all select-all">
+                  <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] rounded-lg p-2.5">
+                    <code className="flex-1 text-blue-300 font-mono text-xs break-all select-all">
                       {newlyCreatedKey}
                     </code>
                     <Button
@@ -494,7 +493,7 @@ export default function SettingsPage() {
                     placeholder="e.g. CI Telemetry Pipeline"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white focus:outline-none focus:border-orange-500/60"
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white focus:outline-none focus:border-[#3D8BFF]/60"
                   />
                 </div>
 
@@ -503,7 +502,7 @@ export default function SettingsPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsGenerateModalOpen(false)}
-                    className="border-orange-500/20 text-gray-300 text-xs"
+                    className="border-white/[0.08] text-gray-300 text-xs"
                   >
                     Cancel
                   </Button>
@@ -537,7 +536,7 @@ export default function SettingsPage() {
               placeholder="Type DELETE"
               value={deleteConfirmationText}
               onChange={(e) => setDeleteConfirmationText(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-orange-500/20 text-white text-xs font-mono"
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white text-xs font-mono"
             />
 
             <div className="flex justify-end gap-2 pt-2">
@@ -547,7 +546,7 @@ export default function SettingsPage() {
                   setIsDeleteModalOpen(false);
                   setDeleteConfirmationText("");
                 }}
-                className="border-orange-500/20 text-gray-300 text-xs"
+                className="border-white/[0.08] text-gray-300 text-xs"
               >
                 Cancel
               </Button>

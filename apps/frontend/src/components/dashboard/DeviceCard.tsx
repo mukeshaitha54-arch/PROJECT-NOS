@@ -86,16 +86,16 @@ export function DeviceCard({
 
   return (
     <Link href={`/devices/${device.id}`}>
-      <div className="dashboard-glass-card hover:border-orange-500/60 transition-all duration-200 cursor-pointer rounded-2xl h-full flex flex-col p-5 shadow-xl hover:shadow-[0_0_24px_rgba(244,123,54,0.22)] relative overflow-hidden group">
+      <div className="dashboard-glass-card hover:border-[#3D8BFF]/60 transition-all duration-200 cursor-pointer rounded-2xl h-full flex flex-col p-5 shadow-xl hover:shadow-[0_0_24px_rgba(244,123,54,0.22)] relative overflow-hidden group">
         {/* Specular Ambient Edge Sheen */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/[0.06] via-transparent to-transparent pointer-events-none" />
 
-        <div className="flex justify-between items-start pb-3 border-b border-orange-500/15">
+        <div className="flex justify-between items-start pb-3 border-b border-white/[0.06]">
           <div>
-            <h3 className="text-lg font-bold text-white group-hover:text-orange-400 transition-colors flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white group-hover:text-[#3D8BFF] transition-colors flex items-center gap-2">
               {device.hostname || "Unknown Device"}
             </h3>
-            <div className="text-xs text-orange-300/90 mt-0.5 font-mono">
+            <div className="text-xs text-blue-300/90 mt-0.5 font-mono">
               {ipAddress}
             </div>
           </div>
@@ -122,16 +122,16 @@ export function DeviceCard({
 
         <div className="flex-1 flex flex-col gap-4 mt-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.06]">
               <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
-                <Cpu size={13} className="text-orange-400" />
+                <Cpu size={13} className="text-[#3D8BFF]" />
                 <span>CPU</span>
               </div>
               <div className="text-2xl font-black text-white font-mono drop-shadow-sm">
                 {cpuUsage.toFixed(1)}%
               </div>
             </div>
-            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.06]">
               <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
                 <MemoryStick size={13} className="text-amber-400" />
                 <span>RAM</span>
@@ -140,7 +140,7 @@ export function DeviceCard({
                 {memoryUsage.toFixed(1)}%
               </div>
             </div>
-            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.06]">
               <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
                 <Network size={13} className="text-cyan-400" />
                 <span>↓ Down</span>
@@ -149,7 +149,7 @@ export function DeviceCard({
                 {fmtSpeed(netDownload)}
               </div>
             </div>
-            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-orange-500/15">
+            <div className="space-y-1 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.06]">
               <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
                 <Network size={13} className="text-purple-400" />
                 <span>↑ Up</span>
@@ -163,14 +163,14 @@ export function DeviceCard({
           <div className="mt-auto">
             <div className="text-xs text-zinc-300 font-semibold mb-1 flex items-center justify-between">
               <span>CPU Activity (Live)</span>
-              <span className="text-[10px] text-orange-400 font-mono">
+              <span className="text-[10px] text-[#3D8BFF] font-mono">
                 30s Pulse
               </span>
             </div>
             <TelemetrySparkline data={cpuHistory} height={40} />
           </div>
 
-          <div className="border-t border-orange-500/20 pt-3">
+          <div className="border-t border-white/[0.08] pt-3">
             <div className="flex justify-between items-center text-xs mb-1.5">
               <span className="text-zinc-300 font-semibold">
                 Heartbeat History

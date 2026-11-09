@@ -65,7 +65,7 @@ const STATUS_COLORS: Record<string, string> = {
   Online: "#10b981", // emerald
   Offline: "#71717a", // zinc
   Warning: "#f59e0b", // amber
-  Maintenance: "#ff5500", // solar orange
+  Maintenance: "#3D8BFF", // cyber blue
 };
 
 export default function DashboardPage() {
@@ -304,11 +304,11 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // FIXED: 30-second auto-refresh polling fallback (works even without WebSocket)
+  // Ultra-low latency auto-refresh polling fallback (5s cadence, zero F5 required)
   useEffect(() => {
     pollTimerRef.current = setInterval(() => {
       fetchDashboardData();
-    }, 30000);
+    }, 5000);
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     };
@@ -456,7 +456,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <Activity className="w-6 h-6 text-orange-500" />
+            <Activity className="w-6 h-6 text-[#3D8BFF]" />
             Operational Command Center
           </h1>
           <p className="text-xs text-zinc-400 mt-1">
@@ -483,10 +483,10 @@ export default function DashboardPage() {
             size="sm"
             onClick={() => fetchDashboardData()}
             disabled={loading}
-            className="border-orange-500/30 bg-black/40 hover:bg-orange-500/20 text-xs text-orange-400 hover:text-white active:scale-[0.97] transition"
+            className="border-blue-500/30 bg-black/40 hover:bg-blue-500/20 text-xs text-[#3D8BFF] hover:text-white active:scale-[0.97] transition"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 mr-1.5 text-orange-400 ${loading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 mr-1.5 text-[#3D8BFF] ${loading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
@@ -498,12 +498,12 @@ export default function DashboardPage() {
         {/* Total Devices */}
         <div className="glass-card glass-card-hover group relative overflow-hidden rounded-2xl p-5 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
           {/* Ambient radial accent */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-orange-500/[0.09] blur-2xl pointer-events-none group-hover:bg-orange-500/[0.16] transition-[background-color] duration-200" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#3D8BFF]/[0.09] blur-2xl pointer-events-none group-hover:bg-[#3D8BFF]/[0.16] transition-[background-color] duration-200" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Total Enrolled Nodes
             </span>
-            <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-white/[0.08] text-[#3D8BFF] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] group-hover:scale-105 transition-[transform] duration-200">
               <Server className="w-4 h-4" />
             </div>
           </div>
@@ -613,8 +613,8 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ff5500" stopOpacity={0.45} />
-                    <stop offset="95%" stopColor="#ff5500" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#3D8BFF" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#3D8BFF" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="ramGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#e11d48" stopOpacity={0.4} />
@@ -655,7 +655,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="cpu"
                   name="CPU Load"
-                  stroke="#ff6b00"
+                  stroke="#3D8BFF"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#cpuGradient)"
@@ -797,7 +797,7 @@ export default function DashboardPage() {
                           alert.severity === "CRITICAL"
                             ? "bg-red-500/20 text-red-400 border border-red-500/30"
                             : alert.severity === "HIGH"
-                              ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                              ? "bg-blue-500/20 text-[#3D8BFF] border border-blue-500/30"
                               : alert.severity === "WARNING"
                                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                 : "bg-blue-500/20 text-blue-400 border border-blue-500/30"

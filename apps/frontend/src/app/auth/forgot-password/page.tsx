@@ -52,12 +52,12 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen w-full flex bg-transparent text-white font-sans items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-      <div className="dashboard-glass-card w-full max-w-md space-y-6 relative z-10 bg-black/30 border border-orange-500/25 rounded-3xl p-8 shadow-2xl backdrop-blur-3xl overflow-hidden">
+      <div className="dashboard-glass-card w-full max-w-md space-y-6 relative z-10 bg-black/30 border border-white/[0.1] rounded-3xl p-8 shadow-2xl backdrop-blur-3xl overflow-hidden">
         {/* Specular sheen inside card */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-blue-500/[0.02] pointer-events-none rounded-3xl" />
 
         <div className="flex items-center justify-center space-x-2 mb-4 relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-orange-500/30">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-blue-500/30">
             N
           </div>
           <span className="text-2xl font-extrabold tracking-tight text-white">
@@ -98,12 +98,12 @@ export default function ForgotPasswordPage() {
               Corporate Email
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-orange-400 pointer-events-none" />
+              <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-[#3D8BFF] pointer-events-none" />
               <input
                 type="email"
                 {...register("email")}
                 placeholder="alex.mercer@nos.internal"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/60 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#3D8BFF]/60 transition-all"
               />
             </div>
             {errors.email && (
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={isSubmitting || !!successMsg}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-extrabold shadow-lg shadow-orange-500/30 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-extrabold shadow-lg shadow-blue-500/30 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -130,7 +130,7 @@ export default function ForgotPasswordPage() {
         <div className="pt-6 border-t border-white/[0.08] text-center text-xs text-zinc-400 relative z-10">
           <Link
             href="/auth/login"
-            className="flex items-center justify-center gap-1.5 font-bold text-orange-400 hover:text-orange-300 transition-colors"
+            className="flex items-center justify-center gap-1.5 font-bold text-[#3D8BFF] hover:text-blue-300 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to sign in</span>

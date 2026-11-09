@@ -14,7 +14,7 @@ export default function RegisterLoading() {
           <div className="h-9 w-full bg-gray-800/80 rounded-xl" />
           <div className="h-9 w-full bg-gray-800/80 rounded-xl" />
           <div className="h-9 w-full bg-gray-800/80 rounded-xl" />
-          <div className="h-10 w-full bg-gradient-to-r from-orange-500/40 to-rose-500/40 rounded-xl" />
+          <div className="h-10 w-full bg-gradient-to-r from-[#3D8BFF]/40 to-[#2563EB]/40 rounded-xl" />
         </div>
       </div>
     </div>

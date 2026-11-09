@@ -63,8 +63,8 @@ export default function AuthRegisterPage() {
     return {
       label: "Fair",
       percent: 50,
-      color: "bg-orange-500",
-      text: "text-orange-400",
+      color: "bg-blue-500",
+      text: "text-[#3D8BFF]",
     };
   }, [password]);
 
@@ -123,23 +123,23 @@ export default function AuthRegisterPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/30">
               N
             </div>
             <div>
               <span className="text-white font-extrabold text-xl tracking-tight block">
                 NOS
               </span>
-              <span className="text-[10px] text-orange-400 font-mono tracking-widest uppercase block leading-none">
+              <span className="text-[10px] text-[#3D8BFF] font-mono tracking-widest uppercase block leading-none">
                 NEURAL OS
               </span>
             </div>
           </div>
 
           {/* Card in Transparent Frosted Glass */}
-          <div className="dashboard-glass-card bg-black/30 border border-orange-500/25 rounded-3xl p-8 shadow-2xl backdrop-blur-3xl space-y-5 relative overflow-hidden">
+          <div className="dashboard-glass-card bg-black/30 border border-white/[0.1] rounded-3xl p-8 shadow-2xl backdrop-blur-3xl space-y-5 relative overflow-hidden">
             {/* Specular sheen inside card */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-blue-500/[0.02] pointer-events-none rounded-3xl" />
 
             {/* Header */}
             <div className="space-y-1 relative z-10">
@@ -159,14 +159,14 @@ export default function AuthRegisterPage() {
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF]" />
                   <input
                     type="text"
                     required
                     placeholder="Alex Morgan"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all duration-200"
                   />
                 </div>
               </div>
@@ -177,14 +177,14 @@ export default function AuthRegisterPage() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF]" />
                   <input
                     type="email"
                     required
                     placeholder="alex@nos.local"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all duration-200"
                   />
                 </div>
               </div>
@@ -195,14 +195,14 @@ export default function AuthRegisterPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF]" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:bg-black/50 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all duration-200"
                   />
                   <button
                     type="button"
@@ -241,7 +241,7 @@ export default function AuthRegisterPage() {
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF]" />
                   <input
                     type={showPassword ? "text" : "password"}
                     required
@@ -253,7 +253,7 @@ export default function AuthRegisterPage() {
                         ? "border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20"
                         : passwordsMatch
                           ? "border-emerald-500/60 focus:border-emerald-500 focus:ring-emerald-500/20"
-                          : "border-orange-500/20 focus:border-orange-500/60 focus:ring-orange-500/20"
+                          : "border-white/[0.1] focus:border-[#3D8BFF]/60 focus:ring-blue-500/20"
                     }`}
                   />
                   {/* Match indicator icon */}
@@ -275,14 +275,14 @@ export default function AuthRegisterPage() {
                   type="checkbox"
                   checked={termsAgreed}
                   onChange={(e) => setTermsAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded bg-black/40 border-orange-500/30 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 accent-orange-500"
+                  className="mt-0.5 w-4 h-4 rounded bg-black/40 border-white/[0.2] text-[#3D8BFF] focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 accent-[#3D8BFF]"
                 />
                 <label
                   htmlFor="terms"
                   className="text-xs text-zinc-300 cursor-pointer leading-relaxed"
                 >
                   I agree to the{" "}
-                  <span className="text-orange-400 hover:text-orange-300 transition-colors font-semibold">
+                  <span className="text-[#3D8BFF] hover:text-blue-300 transition-colors font-semibold">
                     Terms of Use &amp; Privacy Governance
                   </span>
                 </label>
@@ -302,7 +302,7 @@ export default function AuthRegisterPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 h-12 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-extrabold rounded-xl shadow-lg shadow-orange-500/30 text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-orange-500/45 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
+                className="w-full py-3 h-12 bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/30 text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-blue-500/45 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
               >
                 {loading ? (
                   <>
@@ -323,7 +323,7 @@ export default function AuthRegisterPage() {
               Already have an account?{" "}
               <Link
                 href="/auth/login"
-                className="text-orange-400 font-bold hover:text-orange-300 transition-colors"
+                className="text-[#3D8BFF] font-bold hover:text-blue-300 transition-colors"
               >
                 Sign In →
               </Link>
@@ -336,14 +336,14 @@ export default function AuthRegisterPage() {
       <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative z-10">
         {/* NOS wordmark */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/30">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/30">
             N
           </div>
           <div>
             <span className="text-white font-extrabold text-xl tracking-tight">
               NOS
             </span>
-            <div className="text-[10px] text-orange-400 font-mono font-medium tracking-widest uppercase leading-none">
+            <div className="text-[10px] text-[#3D8BFF] font-mono font-medium tracking-widest uppercase leading-none">
               NEURAL OS
             </div>
           </div>
@@ -351,16 +351,16 @@ export default function AuthRegisterPage() {
 
         {/* Central brand copy */}
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-full px-3.5 py-1 backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_8px_rgba(251,146,60,0.8)]" />
-            <span className="text-orange-400 text-xs font-bold tracking-widest uppercase">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-3.5 py-1 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-[#3D8BFF] animate-pulse shadow-[0_0_8px_rgba(61,139,255,0.8)]" />
+            <span className="text-[#3D8BFF] text-xs font-bold tracking-widest uppercase">
               Enroll your fleet today
             </span>
           </div>
           <h1 className="text-5xl font-black text-white leading-[0.95] tracking-tight">
             ZERO
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-rose-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#60A5FA] via-[#3D8BFF] to-[#2563EB]">
               BLINDSPOTS.
             </span>
             <br />
@@ -383,8 +383,8 @@ export default function AuthRegisterPage() {
                 key={feat}
                 className="flex items-center gap-3 text-xs text-zinc-300"
               >
-                <div className="w-4 h-4 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-2.5 h-2.5 text-orange-400" />
+                <div className="w-4 h-4 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-2.5 h-2.5 text-[#3D8BFF]" />
                 </div>
                 <span>{feat}</span>
               </div>
@@ -395,7 +395,7 @@ export default function AuthRegisterPage() {
         {/* Bottom back-to-home */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-zinc-400 hover:text-orange-400 text-xs font-medium transition-colors group"
+          className="flex items-center gap-2 text-zinc-400 hover:text-[#3D8BFF] text-xs font-medium transition-colors group"
         >
           <span className="group-hover:-translate-x-1 transition-transform">
             ←

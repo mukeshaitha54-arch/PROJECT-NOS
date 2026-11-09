@@ -54,7 +54,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
 
   return (
     <>
-      <header className="h-16 border-b border-orange-500/20 bg-black/20 backdrop-blur-3xl backdrop-saturate-150 bg-gradient-to-r from-white/[0.04] via-transparent to-orange-500/[0.03] sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between gap-4 text-white shadow-lg">
+      <header className="h-16 border-b border-white/[0.08] bg-black/20 backdrop-blur-3xl backdrop-saturate-150 bg-gradient-to-r from-white/[0.04] via-transparent to-blue-500/[0.03] sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between gap-4 text-white shadow-lg">
         {/* Left: Mobile hamburger + Title */}
         <div className="flex items-center gap-3">
           <button
@@ -76,13 +76,13 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
         <div className="flex-1 max-w-md mx-2 sm:mx-4">
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white/[0.04] border border-orange-500/25 hover:border-orange-500/60 text-xs text-zinc-300 hover:text-white transition-colors group shadow-inner"
+            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.1] hover:border-[#3D8BFF]/50 text-xs text-zinc-300 hover:text-white transition-colors group shadow-inner"
           >
             <span className="flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-orange-400 transition-colors" />
+              <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#3D8BFF] transition-colors" />
               <span>Search devices, telemetry, alerts...</span>
             </span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-orange-500/20 text-[10px] text-orange-300 font-mono shadow-sm">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-[10px] text-blue-300 font-mono shadow-sm">
               <Command className="w-3 h-3" /> K
             </kbd>
           </button>
@@ -97,16 +97,16 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
             title="View alerts"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-[#0d0e12] animate-pulse" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#3D8BFF] ring-2 ring-[#0d0e12] animate-pulse" />
           </Link>
 
           {/* User Profile Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/[0.06] border border-transparent hover:border-orange-500/30 transition-colors"
+              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/[0.06] border border-transparent hover:border-[#3D8BFF]/30 transition-colors"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-blue-500/20">
                 {initials}
               </div>
               <span className="text-xs font-medium text-white hidden sm:block max-w-[100px] truncate">
@@ -122,8 +122,8 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                   className="fixed inset-0 z-40"
                   onClick={() => setIsDropdownOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#111217]/95 border border-orange-500/30 backdrop-blur-2xl shadow-2xl p-1.5 z-50 text-xs text-white space-y-1 origin-top-right animate-in fade-in-50 zoom-in-95 duration-150 ease-out">
-                  <div className="px-3.5 py-2.5 border-b border-orange-500/20">
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#111217]/95 border border-white/[0.1] backdrop-blur-2xl shadow-2xl p-1.5 z-50 text-xs text-white space-y-1 origin-top-right animate-in fade-in-50 zoom-in-95 duration-150 ease-out">
+                  <div className="px-3.5 py-2.5 border-b border-white/[0.08]">
                     <p className="font-semibold text-white truncate">
                       {displayName}
                     </p>
@@ -133,13 +133,13 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                   </div>
 
                   {/* Active Workspace & Tenant Switcher */}
-                  <div className="px-3 py-2 border-b border-orange-500/20 bg-orange-500/[0.04] rounded-xl my-1">
+                  <div className="px-3 py-2 border-b border-white/[0.08] bg-blue-500/[0.04] rounded-xl my-1">
                     <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
-                      <span className="flex items-center gap-1 font-medium text-orange-400">
+                      <span className="flex items-center gap-1 font-medium text-[#3D8BFF]">
                         <Building2 className="w-3 h-3" />
                         WORKSPACE
                       </span>
-                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
+                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">
                         {(user as any)?.memberRole || user?.role || "MEMBER"}
                       </span>
                     </div>
@@ -149,7 +149,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                     </p>
                     {Array.isArray((user as any)?.organizations) &&
                       (user as any).organizations.length > 1 && (
-                        <div className="mt-2 pt-1 border-t border-orange-500/10 space-y-1">
+                        <div className="mt-2 pt-1 border-t border-white/[0.08] space-y-1">
                           <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">
                             Switch Workspace
                           </p>
@@ -168,7 +168,7 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                               }}
                               className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-colors ${
                                 org.isCurrent
-                                  ? "bg-orange-500/20 text-orange-300 font-semibold"
+                                  ? "bg-blue-500/20 text-blue-300 font-semibold"
                                   : "hover:bg-white/[0.06] text-zinc-300"
                               }`}
                             >
@@ -188,31 +188,31 @@ export function TopBar({ onHamburgerClick, title }: TopBarProps) {
                   <Link
                     href="/profile"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-orange-500/10 text-zinc-200 hover:text-white transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-500/10 text-zinc-200 hover:text-white transition-colors"
                   >
-                    <User className="w-4 h-4 text-orange-400" />
+                    <User className="w-4 h-4 text-[#3D8BFF]" />
                     <span>User Profile</span>
                   </Link>
 
                   <Link
                     href="/settings"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-orange-500/10 text-zinc-200 hover:text-white transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-500/10 text-zinc-200 hover:text-white transition-colors"
                   >
-                    <Settings className="w-4 h-4 text-amber-400" />
+                    <Settings className="w-4 h-4 text-blue-400" />
                     <span>Workspace Settings</span>
                   </Link>
 
                   <Link
                     href="/admin"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-orange-500/10 text-zinc-200 hover:text-white transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-500/10 text-zinc-200 hover:text-white transition-colors"
                   >
                     <Shield className="w-4 h-4 text-emerald-400" />
                     <span>Admin Console</span>
                   </Link>
 
-                  <div className="border-t border-orange-500/20 my-1 pt-1" />
+                  <div className="border-t border-white/[0.08] my-1 pt-1" />
 
                   <button
                     onClick={() => {

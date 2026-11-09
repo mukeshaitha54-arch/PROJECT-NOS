@@ -118,7 +118,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             onChange={(e) => setQuery(e.target.value)}
           />
           {isLoading && (
-            <div className="h-4 w-4 rounded-full border-2 border-t-orange-500 border-white/20 animate-spin mr-3"></div>
+            <div className="h-4 w-4 rounded-full border-2 border-t-[#3D8BFF] border-white/20 animate-spin mr-3"></div>
           )}
           <button
             onClick={onClose}
@@ -140,20 +140,20 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   <li key={`${result.type}-${result.id}`}>
                     <button
                       onClick={() => handleSelect(result)}
-                      className="w-full flex items-center px-3 py-3 hover:bg-orange-500/10 rounded-xl text-left group transition-colors"
+                      className="w-full flex items-center px-3 py-3 hover:bg-blue-500/10 rounded-xl text-left group transition-colors"
                     >
-                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/5 group-hover:bg-orange-500/20 text-slate-400 group-hover:text-orange-400 border border-white/10 group-hover:border-orange-500/30">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/5 group-hover:bg-blue-500/20 text-slate-400 group-hover:text-[#3D8BFF] border border-white/10 group-hover:border-blue-500/30">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="ml-4 flex-auto">
-                        <p className="text-sm font-medium text-white group-hover:text-orange-200">
+                        <p className="text-sm font-medium text-white group-hover:text-blue-200">
                           {result.title}
                         </p>
-                        <p className="text-xs text-slate-400 group-hover:text-orange-300">
+                        <p className="text-xs text-slate-400 group-hover:text-blue-300">
                           {result.subtitle}
                         </p>
                       </div>
-                      <div className="text-xs font-mono text-slate-500 group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-xs font-mono text-slate-500 group-hover:text-[#3D8BFF] opacity-0 group-hover:opacity-100 transition-opacity">
                         Enter ↵
                       </div>
                     </button>

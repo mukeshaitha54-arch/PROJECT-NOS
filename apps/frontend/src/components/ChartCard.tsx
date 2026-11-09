@@ -56,7 +56,7 @@ export function ChartCard({
                   onClick={() => onTimeRangeChange(opt)}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-medium tracking-tight active:scale-[0.96] transition-[background-color,color,transform,box-shadow] duration-140 ease-out ${
                     timeRange === opt
-                      ? "bg-gradient-to-r from-orange-500 to-rose-600 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_2px_8px_-2px_rgba(255,85,0,0.5)]"
+                      ? "bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_2px_8px_-2px_rgba(61,139,255,0.5)]"
                       : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >

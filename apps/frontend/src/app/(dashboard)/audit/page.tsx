@@ -90,9 +90,6 @@ export default function OperationalAuditCenterPage() {
                 item.actor ||
                 item.userId ||
                 "";
-              if (!actor || actor === "System Action" || actor === "System") {
-                return true;
-              }
               if (
                 user?.email &&
                 String(actor).toLowerCase().includes(user.email.toLowerCase())
@@ -100,6 +97,13 @@ export default function OperationalAuditCenterPage() {
                 return true;
               }
               if (user?.id && String(actor).includes(user.id)) {
+                return true;
+              }
+              if (
+                user?.organizationId &&
+                item.organizationId === user.organizationId &&
+                (!item.userEmail || item.userEmail === user?.email)
+              ) {
                 return true;
               }
               return false;
@@ -217,7 +221,7 @@ export default function OperationalAuditCenterPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
         <div>
           <div className="flex items-center gap-2.5">
-            <FileText className="w-6 h-6 text-orange-500" />
+            <FileText className="w-6 h-6 text-[#3D8BFF]" />
             <h1 className="text-2xl font-bold tracking-tight text-white">
               Operational Audit Center
             </h1>
@@ -231,15 +235,15 @@ export default function OperationalAuditCenterPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/40 border border-orange-500/30 hover:bg-orange-500/15 hover:border-orange-500/60 shadow-sm text-xs font-semibold text-zinc-200 hover:text-white active:scale-[0.97] transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/40 border border-blue-500/30 hover:bg-blue-500/15 hover:border-blue-500/60 shadow-sm text-xs font-semibold text-zinc-200 hover:text-white active:scale-[0.97] transition"
           >
-            <Download className="w-3.5 h-3.5 text-orange-400" />
+            <Download className="w-3.5 h-3.5 text-[#3D8BFF]" />
             Export CSV
           </button>
           <button
             onClick={loadAuditLogs}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(255,85,0,0.5)] text-white text-xs font-semibold active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 ease-out"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(61,139,255,0.5)] text-white text-xs font-semibold active:scale-[0.97] transition-[transform,background-color,box-shadow] duration-140 ease-out"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
@@ -258,7 +262,7 @@ export default function OperationalAuditCenterPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search audit trail by user, action, resource..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 transition-[border-color,box-shadow] duration-140"
           />
         </div>
       </div>

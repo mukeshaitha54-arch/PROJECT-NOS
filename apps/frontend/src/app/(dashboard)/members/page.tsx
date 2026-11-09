@@ -195,7 +195,7 @@ export default function MembersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-orange-500" /> Workspace Members
+            <Users className="w-6 h-6 text-[#3D8BFF]" /> Workspace Members
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             Manage user access, roles, and permissions across your workspace.
@@ -207,16 +207,16 @@ export default function MembersPage() {
             size="sm"
             onClick={fetchMembers}
             disabled={loading}
-            className="border-orange-500/30 bg-black/40 hover:bg-orange-500/20 text-orange-400 hover:text-white text-xs active:scale-[0.97] transition"
+            className="border-blue-500/30 bg-black/40 hover:bg-blue-500/20 text-[#3D8BFF] hover:text-white text-xs active:scale-[0.97] transition"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 mr-1.5 text-orange-400 ${loading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 mr-1.5 text-[#3D8BFF] ${loading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
           <Button
             onClick={() => setIsInviteModalOpen(true)}
-            className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(255,85,0,0.5)] transition-[transform,background-color,box-shadow] duration-140 ease-out"
+            className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white active:scale-[0.97] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(61,139,255,0.5)] transition-[transform,background-color,box-shadow] duration-140 ease-out"
           >
             <UserPlus className="w-4 h-4 mr-2" /> Invite Member
           </Button>
@@ -233,13 +233,13 @@ export default function MembersPage() {
                 placeholder="Search members by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 outline-none transition-[border-color,box-shadow] duration-140"
+                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-slate-200 placeholder-slate-500 focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 outline-none transition-[border-color,box-shadow] duration-140"
               />
             </div>
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-slate-300 text-xs rounded-xl px-3 py-2 outline-none w-full sm:w-auto shrink-0 focus:border-orange-500/60 transition-[border-color] duration-140"
+              className="bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-slate-300 text-xs rounded-xl px-3 py-2 outline-none w-full sm:w-auto shrink-0 focus:border-[#3D8BFF]/60 transition-[border-color] duration-140"
             >
               <option value="ALL">All Roles</option>
               <option value="Global Admin">Global Admin</option>
@@ -267,7 +267,7 @@ export default function MembersPage() {
                     colSpan={5}
                     className="px-6 py-12 text-center text-slate-500"
                   >
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-500" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#3D8BFF]" />
                     Loading members...
                   </td>
                 </tr>
@@ -290,7 +290,7 @@ export default function MembersPage() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-orange-500/10 border border-orange-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] flex items-center justify-center text-orange-400 font-bold text-xs font-mono">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] flex items-center justify-center text-[#3D8BFF] font-bold text-xs font-mono">
                           {m.name.charAt(0)}
                         </div>
                         <div>
@@ -360,7 +360,7 @@ export default function MembersPage() {
           <div className="glass-card rounded-2xl border border-white/[0.1] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_24px_48px_-12px_rgba(0,0,0,0.8)] max-w-md w-full p-6 space-y-4 bg-[#111217]">
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
               <h3 className="text-base font-semibold tracking-tight text-white flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-orange-400" />
+                <UserPlus className="w-4 h-4 text-[#3D8BFF]" />
                 Invite New Team Member
               </h3>
               <button
@@ -382,7 +382,7 @@ export default function MembersPage() {
                   placeholder="e.g. Alex Morgan"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-white focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-white focus:outline-none focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 transition-[border-color,box-shadow] duration-140"
                 />
               </div>
 
@@ -396,19 +396,19 @@ export default function MembersPage() {
                   placeholder="alex@enterprise.internal"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-white focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140"
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950/80 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs text-white focus:outline-none focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 transition-[border-color,box-shadow] duration-140"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-orange-400 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[#3D8BFF] mb-1.5 uppercase tracking-wider">
                   Role Assignment
                 </label>
                 <div className="relative">
                   <select
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
-                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-[#0f1117] border border-orange-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-medium text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-150 cursor-pointer appearance-none"
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-[#0f1117] border border-white/[0.1] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-xs font-medium text-white focus:outline-none focus:border-[#3D8BFF] focus:ring-2 focus:ring-blue-500/20 transition-all duration-150 cursor-pointer appearance-none"
                   >
                     <option
                       value="Global Admin"
@@ -429,7 +429,7 @@ export default function MembersPage() {
                       Alerts Only (Security &amp; Alerts)
                     </option>
                   </select>
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D8BFF] pointer-events-none" />
                 </div>
               </div>
 
@@ -445,7 +445,7 @@ export default function MembersPage() {
                 <Button
                   type="submit"
                   disabled={isSubmittingInvite}
-                  className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 active:scale-[0.97] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(255,85,0,0.5)] text-white text-xs flex items-center gap-2 transition-[transform,background-color,box-shadow] duration-140"
+                  className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_16px_-4px_rgba(61,139,255,0.5)] text-white text-xs flex items-center gap-2 transition-[transform,background-color,box-shadow] duration-140"
                 >
                   {isSubmittingInvite && (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />

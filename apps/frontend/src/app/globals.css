@@ -1532,8 +1532,8 @@
   color: #8b5a43;
 }
 .icon-orange {
-  background: #fff0df;
-  color: #b66b32;
+  background: rgba(61, 139, 255, 0.15);
+  color: #3d8bff;
 }
 .activity-text {
   display: flex;

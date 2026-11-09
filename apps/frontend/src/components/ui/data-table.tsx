@@ -98,15 +98,15 @@ export function DataTable<T extends Record<string, unknown>>({
               setPage(1);
             }}
             placeholder={searchPlaceholder}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border border-orange-500/20
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border border-white/[0.08]
               shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] text-sm text-zinc-100 placeholder-zinc-500 outline-none
-              focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
+              focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 transition-[border-color,box-shadow] duration-140 ease-out"
             aria-label="Search table"
           />
         </div>
       )}
 
-      <div className="rounded-2xl border border-orange-500/20 bg-black/30 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_32px_-8px_rgba(0,0,0,0.4)] overflow-hidden">
+      <div className="rounded-2xl border border-white/[0.08] bg-black/30 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_32px_-8px_rgba(0,0,0,0.4)] overflow-hidden">
         <div className="overflow-x-auto">
           <table
             className="w-full text-sm"
@@ -114,7 +114,7 @@ export function DataTable<T extends Record<string, unknown>>({
             aria-label="Data table"
           >
             <thead>
-              <tr className="border-b border-orange-500/15 bg-white/[0.03]">
+              <tr className="border-b border-white/[0.08] bg-white/[0.03]">
                 {columns.map((col) => (
                   <th
                     key={col.key}
@@ -138,10 +138,10 @@ export function DataTable<T extends Record<string, unknown>>({
                       {col.sortable && (
                         <span className="flex flex-col opacity-40">
                           <ChevronUp
-                            className={`w-2.5 h-2.5 -mb-0.5 ${sortKey === col.key && sortDir === "asc" ? "opacity-100 text-orange-400" : ""}`}
+                            className={`w-2.5 h-2.5 -mb-0.5 ${sortKey === col.key && sortDir === "asc" ? "opacity-100 text-[#3D8BFF]" : ""}`}
                           />
                           <ChevronDown
-                            className={`w-2.5 h-2.5 ${sortKey === col.key && sortDir === "desc" ? "opacity-100 text-orange-400" : ""}`}
+                            className={`w-2.5 h-2.5 ${sortKey === col.key && sortDir === "desc" ? "opacity-100 text-[#3D8BFF]" : ""}`}
                           />
                         </span>
                       )}

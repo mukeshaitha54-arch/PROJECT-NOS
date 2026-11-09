@@ -56,14 +56,14 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   };
 
   const navContent = (
-    <div className="flex flex-col h-full bg-black/20 backdrop-blur-3xl backdrop-saturate-150 border-r border-orange-500/20 text-white select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_rgba(0,0,0,0.3)] bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.03]">
+    <div className="flex flex-col h-full bg-black/20 backdrop-blur-3xl backdrop-saturate-150 border-r border-white/[0.08] text-white select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_12px_32px_rgba(0,0,0,0.3)] bg-gradient-to-b from-white/[0.04] via-transparent to-blue-500/[0.03]">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-orange-500/20 bg-transparent">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-white/[0.08] bg-transparent">
         <Link
           href="/dashboard"
           className="flex items-center gap-3 transition-transform duration-150 active:scale-[0.98]"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-amber-500 to-rose-600 flex items-center justify-center text-white font-black shadow-md shadow-orange-500/25">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3D8BFF] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25">
             N
           </div>
           {!collapsed && (
@@ -71,7 +71,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               <span className="font-extrabold text-sm tracking-wider text-white">
                 NOS
               </span>
-              <span className="text-[10px] block text-orange-400 font-mono font-medium tracking-wide">
+              <span className="text-[10px] block text-[#3D8BFF] font-mono font-medium tracking-wide">
                 NEURAL OS
               </span>
             </div>
@@ -115,19 +115,19 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               onClick={onMobileClose}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.98] relative ${
                 active
-                  ? "bg-gradient-to-r from-orange-500/25 to-orange-500/5 text-orange-400 border border-orange-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_16px_rgba(244,123,54,0.18)]"
+                  ? "bg-gradient-to-r from-[#3D8BFF]/20 to-[#3D8BFF]/5 text-[#3D8BFF] border border-[#3D8BFF]/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_16px_rgba(61,139,255,0.2)]"
                   : "text-zinc-300 hover:text-white hover:bg-white/[0.06] border border-transparent"
               } ${collapsed ? "justify-center px-0" : ""}`}
               title={collapsed ? item.name : undefined}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors duration-150 ${
-                  active ? "text-orange-400" : "text-zinc-400"
+                  active ? "text-[#3D8BFF]" : "text-zinc-400"
                 }`}
               />
               {!collapsed && <span>{item.name}</span>}
               {active && !collapsed && (
-                <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.9)]" />
+                <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-[#3D8BFF] shadow-[0_0_8px_rgba(61,139,255,0.9)]" />
               )}
             </Link>
           );
@@ -135,7 +135,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       </div>
 
       {/* Socket.IO Real-time Connection Status Footer */}
-      <div className="p-3 border-t border-orange-500/20 bg-transparent">
+      <div className="p-3 border-t border-white/[0.08] bg-transparent">
         <div
           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs transition-colors duration-150 ${
             isConnected

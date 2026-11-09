@@ -114,13 +114,13 @@ function VerifyEmailForm() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-transparent relative overflow-hidden">
-      <div className="dashboard-glass-card w-full max-w-md bg-black/30 border border-orange-500/25 rounded-3xl p-8 shadow-2xl space-y-6 relative z-10 backdrop-blur-3xl overflow-hidden">
+      <div className="dashboard-glass-card w-full max-w-md bg-black/30 border border-white/[0.1] rounded-3xl p-8 shadow-2xl space-y-6 relative z-10 backdrop-blur-3xl overflow-hidden">
         {/* Specular sheen inside card */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-blue-500/[0.02] pointer-events-none rounded-3xl" />
 
         {/* Header */}
         <div className="text-center space-y-2 relative z-10">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-orange-500/15 border border-orange-500/30 items-center justify-center text-orange-400 font-bold mb-2 shadow-lg shadow-orange-500/20">
+          <div className="inline-flex w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 items-center justify-center text-[#3D8BFF] font-bold mb-2 shadow-lg shadow-blue-500/20">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">
@@ -128,7 +128,7 @@ function VerifyEmailForm() {
           </h2>
           <p className="text-xs text-zinc-300">
             Enter the 6-digit OTP code sent via SMTP to{" "}
-            <span className="text-orange-400 font-mono font-semibold">
+            <span className="text-[#3D8BFF] font-mono font-semibold">
               {currentEmail || "your email"}
             </span>
           </p>
@@ -150,14 +150,14 @@ function VerifyEmailForm() {
 
         {/* Dev Mode OTP Banner */}
         {devOtp && (
-          <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/30 space-y-1 relative z-10">
-            <p className="text-orange-400 text-[10px] font-bold uppercase tracking-widest">
+          <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 space-y-1 relative z-10">
+            <p className="text-[#3D8BFF] text-[10px] font-bold uppercase tracking-widest">
               🔧 Dev Mode — OTP Generated
             </p>
-            <p className="text-orange-200/90 text-[11px]">
+            <p className="text-blue-200/90 text-[11px]">
               Your OTP has been auto-filled below:
             </p>
-            <p className="text-center font-mono text-2xl font-black tracking-[0.4em] text-orange-400">
+            <p className="text-center font-mono text-2xl font-black tracking-[0.4em] text-[#3D8BFF]">
               {devOtp}
             </p>
           </div>
@@ -174,7 +174,7 @@ function VerifyEmailForm() {
             <input
               type="email"
               {...register("email")}
-              className="w-full px-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 text-xs transition"
+              className="w-full px-4 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-white placeholder-zinc-500 focus:outline-none focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 text-xs transition"
             />
             {errors.email && (
               <p className="text-[11px] text-rose-400">
@@ -192,7 +192,7 @@ function VerifyEmailForm() {
               maxLength={6}
               {...register("otp")}
               placeholder="••••••"
-              className="w-full text-center tracking-[0.5em] font-mono font-bold text-lg px-4 py-3 rounded-xl bg-black/35 border border-orange-500/20 text-orange-400 placeholder-zinc-600 focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition"
+              className="w-full text-center tracking-[0.5em] font-mono font-bold text-lg px-4 py-3 rounded-xl bg-black/35 border border-white/[0.1] text-[#3D8BFF] placeholder-zinc-600 focus:outline-none focus:border-[#3D8BFF]/60 focus:ring-2 focus:ring-blue-500/20 transition"
             />
             {errors.otp && (
               <p className="text-[11px] text-rose-400">{errors.otp.message}</p>
@@ -202,7 +202,7 @@ function VerifyEmailForm() {
           <button
             type="submit"
             disabled={isSubmitting || !!successMsg}
-            className="w-full py-3 h-12 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white font-extrabold shadow-lg shadow-orange-500/30 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2 text-sm"
+            className="w-full py-3 h-12 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white font-extrabold shadow-lg shadow-blue-500/30 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2 text-sm"
           >
             {isSubmitting ? (
               <>
@@ -228,7 +228,7 @@ function VerifyEmailForm() {
             type="button"
             onClick={handleResendOtp}
             disabled={resending || countdown > 0}
-            className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-300 disabled:text-zinc-500 transition-colors cursor-pointer font-semibold"
+            className="inline-flex items-center gap-1 text-[#3D8BFF] hover:text-blue-300 disabled:text-zinc-500 transition-colors cursor-pointer font-semibold"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`}

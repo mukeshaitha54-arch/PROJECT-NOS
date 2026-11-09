@@ -6,6 +6,7 @@ export interface AuditLogQueryParams {
   action?: string;
   actor?: string;
   userId?: string;
+  userEmail?: string;
   startDate?: string;
   endDate?: string;
   page: number;
@@ -19,8 +20,17 @@ export class AuditLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAuditLogs(params: AuditLogQueryParams) {
-    const { tenantId, action, actor, userId, startDate, endDate, page, limit } =
-      params;
+    const {
+      tenantId,
+      action,
+      actor,
+      userId,
+      userEmail,
+      startDate,
+      endDate,
+      page,
+      limit,
+    } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -32,12 +42,24 @@ export class AuditLogsService {
       where.action = { contains: action, mode: "insensitive" };
     }
 
-    if (userId) {
+    if (userId || userEmail) {
+      const userMatchConditions: any[] = [];
+      if (userId) userMatchConditions.push({ userId });
+      if (userEmail) {
+        userMatchConditions.push({
+          userEmail: { equals: userEmail, mode: "insensitive" },
+        });
+      }
+      const userFilter =
+        userMatchConditions.length === 1
+          ? userMatchConditions[0]
+          : { OR: userMatchConditions };
+
       if (where.organizationId) {
-        where.AND = [{ organizationId: where.organizationId }, { userId }];
+        where.AND = [{ organizationId: where.organizationId }, userFilter];
         delete where.organizationId;
       } else {
-        where.userId = userId;
+        Object.assign(where, userFilter);
       }
     } else if (actor) {
       const actorConditions = [

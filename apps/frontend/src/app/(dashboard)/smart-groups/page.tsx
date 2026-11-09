@@ -65,14 +65,14 @@ export default function SmartGroupsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Tag className="w-6 h-6 text-orange-500" /> Smart Groups
+            <Tag className="w-6 h-6 text-[#3D8BFF]" /> Smart Groups
           </h1>
           <p className="text-sm text-gray-400 mt-1">
             Dynamically group devices based on metadata, telemetry, and security
             posture rules.
           </p>
         </div>
-        <Button className="bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 shadow-md shadow-orange-500/20 active:scale-[0.97]">
+        <Button className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] shadow-md shadow-blue-500/20 active:scale-[0.97]">
           <Plus className="w-4 h-4 mr-2" /> Create Smart Group
         </Button>
       </div>
@@ -84,19 +84,19 @@ export default function SmartGroupsPage() {
             <input
               type="search"
               placeholder="Search smart groups..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/[0.04] border border-orange-500/20 text-sm text-gray-200 focus:border-orange-500/60 outline-none"
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-sm text-gray-200 focus:border-[#3D8BFF]/60 outline-none"
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
-              className="border-orange-500/20 text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
+              className="border-white/[0.08] text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
             >
               <Filter className="w-4 h-4 mr-2" /> Filters
             </Button>
             <Button
               variant="outline"
-              className="border-orange-500/20 text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
+              className="border-white/[0.08] text-gray-300 w-full sm:w-auto shrink-0 active:scale-[0.97]"
             >
               <FileText className="w-4 h-4 mr-2" /> Export
             </Button>
@@ -115,12 +115,12 @@ export default function SmartGroupsPage() {
                   <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
                 )}
                 {!g.alert && (
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-amber-500"></div>
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#3D8BFF] to-[#2563EB]"></div>
                 )}
 
                 <div className="flex justify-between items-start mb-4 mt-2">
                   <div
-                    className={`p-2 rounded-lg ${g.alert ? "bg-rose-500/20 text-rose-400" : "bg-orange-500/20 text-orange-400"}`}
+                    className={`p-2 rounded-lg ${g.alert ? "bg-rose-500/20 text-rose-400" : "bg-blue-500/20 text-[#3D8BFF]"}`}
                   >
                     <Icon className="w-6 h-6" />
                   </div>
@@ -134,14 +134,14 @@ export default function SmartGroupsPage() {
                   </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">
+                <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#3D8BFF] transition-colors">
                   {g.name}
                 </h3>
                 <p className="text-sm text-gray-400 mb-4 line-clamp-1">
                   {g.description}
                 </p>
 
-                <div className="bg-white/[0.03] rounded-lg p-3 border border-orange-500/20">
+                <div className="bg-white/[0.03] rounded-lg p-3 border border-white/[0.08]">
                   <div className="text-[10px] uppercase font-bold text-gray-500 mb-1">
                     Evaluation Rule
                   </div>

@@ -30,8 +30,8 @@ const TOAST_CONFIG: Record<
     classes: "border-amber-500/30 bg-amber-500/10",
   },
   info: {
-    icon: <Info className="w-4 h-4 text-orange-400 flex-shrink-0" />,
-    classes: "border-orange-500/30 bg-orange-500/10",
+    icon: <Info className="w-4 h-4 text-[#3D8BFF] flex-shrink-0" />,
+    classes: "border-blue-500/30 bg-blue-500/10",
   },
 };
 

@@ -71,7 +71,7 @@ function InfoRow({
       </span>
       <span
         className={`text-xs font-semibold text-zinc-100 text-right break-words max-w-[70%] ${
-          mono ? "font-mono text-orange-300" : ""
+          mono ? "font-mono text-blue-300" : ""
         }`}
         title={displayVal}
       >
@@ -108,21 +108,21 @@ function Card({
     blue: "text-amber-300 border-amber-500/20",
     purple: "text-amber-400 border-amber-500/20",
     emerald: "text-emerald-400 border-emerald-500/20",
-    orange: "text-orange-400 border-orange-500/20",
-    cyan: "text-orange-300 border-orange-500/20",
+    orange: "text-[#3D8BFF] border-white/[0.08]",
+    cyan: "text-blue-300 border-white/[0.08]",
     red: "text-rose-400 border-rose-500/20",
     green: "text-emerald-400 border-emerald-500/20",
     amber: "text-amber-400 border-amber-500/20",
   };
   return (
-    <div className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur-2xl border border-white/10 hover:border-orange-500/40 transition-all duration-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.37),inset_0_1px_1px_0_rgba(255,255,255,0.12)] relative overflow-hidden group">
+    <div className="p-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur-2xl border border-white/10 hover:border-blue-500/40 transition-all duration-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.37),inset_0_1px_1px_0_rgba(255,255,255,0.12)] relative overflow-hidden group">
       {/* Specular sheen inside each card */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
       <h4
         className={`text-xs font-extrabold uppercase tracking-wider mb-3.5 pb-2.5 border-b border-white/10 flex items-center justify-between ${colors[color] || colors.orange}`}
       >
         <span>{title}</span>
-        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-[0_0_8px_rgba(251,146,60,0.8)]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#3D8BFF] shadow-[0_0_8px_rgba(61,139,255,0.8)]" />
       </h4>
       <div className="relative z-10 space-y-1">{children}</div>
     </div>
@@ -321,7 +321,7 @@ export default function DeviceInventoryDetailPage({
       header: "PID",
       sortable: true,
       render: (r) => (
-        <span className="font-mono text-xs text-orange-300">
+        <span className="font-mono text-xs text-blue-300">
           {r.pid ?? r.Pid ?? "—"}
         </span>
       ),
@@ -388,23 +388,23 @@ export default function DeviceInventoryDetailPage({
   return (
     <div className="min-h-screen bg-transparent text-white font-sans space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-orange-500/20 pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
         <div className="flex items-center gap-4">
           <Link
             href={`/devices/${deviceId}`}
-            className="inline-flex items-center px-4 py-2 rounded-xl bg-black/30 backdrop-blur-xl border border-orange-500/25 hover:border-orange-500/50 text-xs font-semibold text-zinc-200 hover:text-white transition shadow-sm active:scale-[0.98]"
+            className="inline-flex items-center px-4 py-2 rounded-xl bg-black/30 backdrop-blur-xl border border-white/[0.08] hover:border-[#3D8BFF]/50 text-xs font-semibold text-zinc-200 hover:text-white transition shadow-sm active:scale-[0.98]"
           >
-            <ArrowLeft className="w-4 h-4 mr-2 text-orange-400" />
+            <ArrowLeft className="w-4 h-4 mr-2 text-[#3D8BFF]" />
             Device Profile
           </Link>
           <div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-              <Layers className="w-6 h-6 text-orange-400 drop-shadow-[0_0_10px_rgba(244,123,54,0.4)]" />
+              <Layers className="w-6 h-6 text-[#3D8BFF] drop-shadow-[0_0_10px_rgba(244,123,54,0.4)]" />
               Device Asset &amp; Inventory Explorer
             </h1>
             <p className="text-xs font-mono text-zinc-400 mt-1">
               Device ID:{" "}
-              <span className="text-orange-300 font-medium">{deviceId}</span>
+              <span className="text-blue-300 font-medium">{deviceId}</span>
             </p>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function DeviceInventoryDetailPage({
         <button
           onClick={triggerRescan}
           disabled={loading || rescanLoading}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 text-white text-xs font-bold transition shadow-lg shadow-orange-500/25 active:scale-[0.98] disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] text-white text-xs font-bold transition shadow-lg shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50"
         >
           <RefreshCw
             className={`w-3.5 h-3.5 ${loading || rescanLoading ? "animate-spin" : ""}`}
@@ -461,9 +461,9 @@ export default function DeviceInventoryDetailPage({
           ].map((item) => (
             <div
               key={item.label}
-              className="dashboard-glass-card rounded-2xl p-3.5 relative overflow-hidden group border border-orange-500/20 bg-black/25 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.3)] transition-all hover:border-orange-500/45"
+              className="dashboard-glass-card rounded-2xl p-3.5 relative overflow-hidden group border border-white/[0.08] bg-black/25 backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.3)] transition-all hover:border-[#3D8BFF]/45"
             >
-              <div className="text-[10px] text-orange-400/90 uppercase font-bold tracking-wider">
+              <div className="text-[10px] text-[#3D8BFF]/90 uppercase font-bold tracking-wider">
                 {item.label}
               </div>
               <div
@@ -478,14 +478,14 @@ export default function DeviceInventoryDetailPage({
       )}
 
       {/* Tab Bar */}
-      <div className="flex items-center gap-2 border-b border-orange-500/20 pb-2.5 overflow-x-auto scrollbar-thin">
+      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2.5 overflow-x-auto scrollbar-thin">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap active:scale-[0.98] ${
               activeTab === tab.id
-                ? "bg-gradient-to-r from-orange-500/25 to-orange-500/10 text-orange-400 border border-orange-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_16px_rgba(244,123,54,0.2)]"
+                ? "bg-gradient-to-r from-blue-500/20 to-blue-500/5 text-[#3D8BFF] border border-blue-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_16px_rgba(61,139,255,0.2)]"
                 : "text-zinc-400 hover:text-white hover:bg-white/[0.05] border border-transparent"
             }`}
           >
@@ -496,14 +496,14 @@ export default function DeviceInventoryDetailPage({
       </div>
 
       {/* Main Tab Content Card (Transparent Frosted Glass with Specular Sheen) */}
-      <div className="dashboard-glass-card rounded-3xl p-6 sm:p-8 bg-black/25 backdrop-blur-3xl backdrop-saturate-150 border border-orange-500/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_16px_40px_rgba(0,0,0,0.4)] relative overflow-hidden">
+      <div className="dashboard-glass-card rounded-3xl p-6 sm:p-8 bg-black/25 backdrop-blur-3xl backdrop-saturate-150 border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_16px_40px_rgba(0,0,0,0.4)] relative overflow-hidden">
         {/* Specular sheen inside main container */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-orange-500/[0.02] pointer-events-none rounded-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-blue-500/[0.02] pointer-events-none rounded-3xl" />
 
         <div className="relative z-10">
           {loading && !inventory && (
             <div className="text-center py-20 text-zinc-400">
-              <RefreshCw className="animate-spin w-8 h-8 mx-auto mb-4 text-orange-400" />
+              <RefreshCw className="animate-spin w-8 h-8 mx-auto mb-4 text-[#3D8BFF]" />
               <p className="font-semibold text-sm">
                 Running asset discovery scan…
               </p>
@@ -669,12 +669,12 @@ export default function DeviceInventoryDetailPage({
                     {inventory.gpus.map((gpu: any, i: number) => (
                       <div
                         key={i}
-                        className="p-3.5 rounded-xl bg-white/[0.02] border-l-2 border-orange-500 border border-white/[0.04] shadow-sm"
+                        className="p-3.5 rounded-xl bg-white/[0.02] border-l-2 border-[#3D8BFF] border border-white/[0.04] shadow-sm"
                       >
                         <p className="text-sm font-bold text-white">
                           {gpu.name || "Unknown GPU"}
                         </p>
-                        <p className="text-xs text-orange-300 mt-1 font-mono">
+                        <p className="text-xs text-blue-300 mt-1 font-mono">
                           {gpu.vramMB
                             ? `VRAM: ${(gpu.vramMB / 1024).toFixed(1)} GB`
                             : gpu.vramBytes
@@ -730,15 +730,15 @@ export default function DeviceInventoryDetailPage({
 
           {/* ── ALERTS TAB ── */}
           {activeTab === "ALERTS" && (
-            <div className="rounded-2xl border border-orange-500/20 bg-black/35 backdrop-blur-2xl overflow-hidden shadow-xl">
-              <div className="px-6 py-4 border-b border-orange-500/15 flex items-center justify-between">
+            <div className="rounded-2xl border border-white/[0.08] bg-black/35 backdrop-blur-2xl overflow-hidden shadow-xl">
+              <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Bell size={16} className="text-amber-400" />
                   <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
                     Incident &amp; Failure History ({alerts.length})
                   </h3>
                 </div>
-                <span className="text-xs text-orange-300/80 font-mono">
+                <span className="text-xs text-blue-300/80 font-mono">
                   Timestamped Event Ledger
                 </span>
               </div>
@@ -977,7 +977,7 @@ export default function DeviceInventoryDetailPage({
                             <span className="text-zinc-100 font-semibold">
                               {app.name}
                             </span>
-                            <span className="text-orange-300/80 font-mono truncate max-w-[320px]">
+                            <span className="text-blue-300/80 font-mono truncate max-w-[320px]">
                               {app.command || app.executablePath}
                             </span>
                           </div>
@@ -999,7 +999,7 @@ export default function DeviceInventoryDetailPage({
                         <span className="text-zinc-100 font-semibold">
                           {usb.description || usb.name}
                         </span>{" "}
-                        <span className="text-orange-300/80 font-mono text-[11px]">
+                        <span className="text-blue-300/80 font-mono text-[11px]">
                           VID:{usb.vendorId} PID:{usb.productId}
                         </span>
                       </div>
