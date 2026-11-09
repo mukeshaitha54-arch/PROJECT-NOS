@@ -13,3 +13,4 @@ export { LiveTelemetryMockHud } from "./LiveTelemetryMockHud";
 export { HurdleSimulatorSlider } from "./HurdleSimulatorSlider";
 export { ArchitecturalPillars } from "./ArchitecturalPillars";
 export { InstallerSection } from "./InstallerSection";
+export { default as LandingPage } from "./LandingPage";

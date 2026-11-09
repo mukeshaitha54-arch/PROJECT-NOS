@@ -101,8 +101,8 @@ export function CustomCursor() {
     };
   }, [mouseX, mouseY, isVisible]);
 
-  // If on dashboard or internal pages, or not mounted, don't show any custom cursor
-  if (!mounted || !isLandingPage) return null;
+  // Swarm Rebuild provides its own interactive multi-cursor swarm on the landing page
+  if (!mounted || isLandingPage) return null;
 
   const isMagnified = isOverText || isDwelling;
   const targetSize = isDwelling ? 92 : isOverText ? 66 : 26;
