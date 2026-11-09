@@ -103,10 +103,10 @@ export default function LandingPage() {
           <span>NOS Sentinel</span>
         </Link>
         <nav className="main-nav" aria-label="Main navigation">
-          <a href="#how-it-works">Architecture</a>
-          <a href="#this-page">Performance</a>
-          <a href="#what-gets-built">Telemetry Deck</a>
-          <a href="#install">Deploy Agent</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#this-page">What it monitors</a>
+          <a href="#what-gets-built">What gets built</a>
+          <a href="#install">Install</a>
         </nav>
         <Link
           className="button button-light header-button"
@@ -125,16 +125,15 @@ export default function LandingPage() {
           aria-labelledby="hero-title"
         >
           <p className="eyebrow" data-sr-eyebrow>
-            Enterprise Fleet Telemetry &amp; Hardware Reliability
+            /nos-sentinel
           </p>
           <h1 id="hero-title">
-            High-performance Windows fleet telemetry engineered in native C#
-            with zero-loss SQLite outbox failover.
+            Your entire Windows fleet, watched live by a sentinel.
           </h1>
           <p className="lead">
-            Sub-second WebSocket dispatch, multi-sample hardware
-            instrumentation, S.M.A.R.T. NVMe predictive wear analytics, and
-            kernel crash watchdog across every endpoint.
+            NOS Sentinel reads every hardware signal the moment a device boots,
+            then streams CPU, RAM, storage wear, and crash events to your
+            command console in real time. One PowerShell line. No extension.
           </p>
           <div className="hero-actions">
             <Link
@@ -144,7 +143,7 @@ export default function LandingPage() {
               Open Command Deck
             </Link>
             <a className="button button-ghost" href="#install">
-              Deploy Silent Agent
+              Deploy Silent Agent ↓
             </a>
           </div>
 
@@ -280,164 +279,188 @@ export default function LandingPage() {
           aria-labelledby="how-title"
         >
           <p className="eyebrow" data-sr-eyebrow>
-            End-to-End Architectural Pipeline
+            /how-it-works
           </p>
-          <h2 id="how-title">
-            Engineered from hardware counters to central cockpit without a
-            single dropped packet.
-          </h2>
+          <h2 id="how-title">Three passes, every heartbeat.</h2>
+          <p className="lead" style={{ maxWidth: "32ch" }}>
+            One tiny native agent turns every Windows boot into a live,
+            continuously-streamed telemetry pipeline.
+          </p>
           <div className="how-grid">
             <article className="step-card">
               <span className="step-number" aria-hidden="true">
-                01
+                🔍
               </span>
-              <h3>Native C# AOT Hardware Instrumentation</h3>
+              <h3>Scan the hardware</h3>
               <p>
-                Compiled directly into standalone native machine code via .NET
-                Native AOT. Zero CLR runtime overhead, sub-40MB resident memory
-                footprint, and negligible 0.2% CPU utilization across
-                high-concurrency enterprise workloads.
+                On startup the agent walks every kernel subsystem and sorts each
+                signal into a typed telemetry layer — CPU counters, RAM pages,
+                NVMe SMART attributes, and Windows Event Log entries. Nothing is
+                sent until the first full snapshot is ready.
               </p>
             </article>
 
             <article className="step-card">
               <span className="step-number" aria-hidden="true">
-                02
+                📡
               </span>
-              <h3>Encrypted SQLite Outbox &amp; Offline Buffering</h3>
+              <h3>Stream on schedule</h3>
               <p>
-                When network connectivity or VPN links drop, telemetry events
-                are atomically staged into a local SQLite database in WAL
-                journal mode. Zero dropped metrics, zero memory leaks, and
-                seamless sub-second drain upon reconnect.
+                A telemetry packet is dispatched once it crosses the 30-second
+                rolling window. When the network is unavailable, metrics are
+                staged atomically into the local encrypted SQLite outbox in WAL
+                mode — parents before children, oldest first. Nothing is ever
+                lost.
               </p>
             </article>
 
             <article className="step-card">
               <span className="step-number" aria-hidden="true">
-                03
+                🛡️
               </span>
-              <h3>Sub-Second WebSocket Dispatch &amp; Fleet Analytics</h3>
+              <h3>Stay out of the way</h3>
               <p>
-                Bidirectional WebSocket multiplexing transmits multi-sample CPU,
-                RAM, thermal metrics, and storage telemetry directly to your
-                command console with zero polling latency.
+                The agent compiles to a standalone native binary with no CLR
+                runtime. Under 40 MB resident RAM, 0.2% CPU. Registers as a
+                silent Windows NT service and self-heals if killed. Anyone who
+                wants to pause it can — telemetry resumes seamlessly on next
+                boot.
               </p>
             </article>
           </div>
         </section>
 
-        {/* This Page / Enterprise Performance Audit Section (Raw on background, no white bar, no orange) */}
+        {/* This Page / What the agent monitors Section */}
         <section
           id="this-page"
           className="this-page page-width section-shell"
           aria-labelledby="stats-title"
         >
           <p className="eyebrow" data-sr-eyebrow>
-            Enterprise Performance Audit
+            /this-page
           </p>
-          <h2 id="stats-title">
-            Lightweight by design. Uncompromising on reliability.
-          </h2>
-          <p className="lead">
-            Every metric below is backed by native kernel performance benchmarks
-            and production stress testing.
+          <h2 id="stats-title">How it decides what to monitor.</h2>
+          <p className="lead" style={{ maxWidth: "32ch" }}>
+            A small set of rules keeps telemetry fast, faithful, and completely
+            local to each device.
           </p>
 
           <dl className="stats-list">
             <div className="stat">
-              <dt className="stat-label">Agent RAM Footprint</dt>
+              <dt className="stat-label">cpu</dt>
               <dd className="stat-value">&lt; 40MB</dd>
               <p className="stat-note">
-                Native AOT resident memory working set
+                CPU load &amp; thermal counters are sampled across all cores,
+                averaged over 30 seconds, and pushed as a single compact packet
+                — never raw streams.
               </p>
             </div>
             <div className="stat">
-              <dt className="stat-label">Average CPU Impact</dt>
+              <dt className="stat-label">ram</dt>
               <dd className="stat-value">0.2%</dd>
               <p className="stat-note">
-                Multi-core performance counter aggregation
+                Physical pages, commit charge, and paged-pool pressure are
+                measured live. The agent itself stays under 40 MB resident so it
+                never shows up in your own charts.
               </p>
             </div>
             <div className="stat">
-              <dt className="stat-label">Telemetry Cycle Period</dt>
+              <dt className="stat-label">storage</dt>
               <dd className="stat-value">30s</dd>
               <p className="stat-note">
-                Multi-sample rolling average heartbeats
+                S.M.A.R.T. attributes — spare blocks, media errors, wear-level
+                indicators, temperature — are read once per heartbeat cycle and
+                flagged when thresholds breach.
               </p>
             </div>
             <div className="stat">
-              <dt className="stat-label">Offline Buffer Capacity</dt>
+              <dt className="stat-label">outbox</dt>
               <dd className="stat-value">∞</dd>
               <p className="stat-note">
-                Local encrypted SQLite database in WAL mode
+                Add <code>offline</code> to any network drop and the agent
+                stages every pending metric into the local encrypted SQLite WAL
+                outbox — drained in order the moment connectivity returns.
               </p>
             </div>
             <div className="stat">
-              <dt className="stat-label">Data Integrity on Reconnect</dt>
+              <dt className="stat-label">crash</dt>
               <dd className="stat-value">100%</dd>
               <p className="stat-note">
-                Ordered transaction drain with checksum ACK
+                Windows Event IDs 41 &amp; 1001 are watched in real time.
+                Unexpected shutdowns and BSODs surface to your fleet console
+                within seconds of the next boot.
               </p>
             </div>
             <div className="stat">
-              <dt className="stat-label">Pause/Resume Latency</dt>
+              <dt className="stat-label">skip</dt>
               <dd className="stat-value">&lt; 1s</dd>
               <p className="stat-note">
-                Dynamic non-destructive telemetry throttling
+                Mark any device <code>maintenance</code> from the console and
+                telemetry pauses non-destructively — WAL outbox stays armed,
+                data integrity is 100% on resume.
               </p>
             </div>
           </dl>
         </section>
 
-        {/* What Gets Built / Hardware Sentry Capabilities Section */}
+        {/* What Gets Built / Telemetry Cockpit Capabilities Section */}
         <section
           id="what-gets-built"
           className="built page-width section-shell"
           aria-labelledby="built-title"
         >
           <p className="eyebrow" data-sr-eyebrow>
-            Hardware Sentry Capabilities
+            /what-gets-built
           </p>
-          <h2 id="built-title">
-            Deep hardware visibility that standard device managers miss.
-          </h2>
+          <h2 id="built-title">What the sentinel found on this fleet.</h2>
+          <p className="lead" style={{ maxWidth: "32ch" }}>
+            Every layer gets its own live feed. Here&apos;s the view you get the
+            moment the agent phones home.
+          </p>
           <div className="built-grid">
             <article className="built-card">
               <div className="built-badge">Storage Sentry</div>
-              <h3>S.M.A.R.T. Predictive Hardware Wear &amp; NVMe Life</h3>
+              <h3>S.M.A.R.T. Predictive Wear &amp; NVMe Life</h3>
               <p>
-                Continuously tracks SSD spare blocks, media degradation,
-                temperature thresholds, and warns you before drive failure
-                occurs.
+                Visible spare blocks, media errors, and write amplification
+                factors get sampled, trended, and surfaced before a drive fails.
+                Temperature thresholds trigger fleet-wide heat alerts
+                automatically.
               </p>
             </article>
 
             <article className="built-card">
               <div className="built-badge">Crash Watchdog</div>
-              <h3>Kernel Crash &amp; BSOD Watchdog (Event ID 41 &amp; 1001)</h3>
+              <h3>
+                Kernel Crash &amp; BSOD Detection (Event ID 41 &amp; 1001)
+              </h3>
               <p>
-                Instant detection of abnormal shutdowns, power loss, and
-                blue-screen crash events with automatic mini-dump stack trace
-                capture.
+                Unexpected shutdowns, power-loss events, and blue-screen crashes
+                stay in their original Windows Event Log order while the agent
+                parses them into your console. Mini-dump stack traces are
+                captured and linked to the affected device node.
               </p>
             </article>
 
             <article className="built-card">
               <div className="built-badge">Zero-Trust</div>
-              <h3>Zero-Trust SHA-256 Node Tokens &amp; Mutual Auth</h3>
+              <h3>SHA-256 Node Tokens &amp; TLS 1.3 Mutual Auth</h3>
               <p>
-                Every agent instance is cryptographically registered with signed
-                SHA-256 hardware fingerprinted credentials over TLS v1.3.
+                Every agent instance is cryptographically fingerprinted at
+                registration time. Tokens are hardware-bound, rotated on demand,
+                and verified over TLS 1.3 AES-GCM — impersonation is
+                structurally impossible.
               </p>
             </article>
 
             <article className="built-card">
               <div className="built-badge">Live Control</div>
-              <h3>Instant Sub-Second Fleet Control Deck</h3>
+              <h3>Sub-Second Fleet Console &amp; Remote Ops</h3>
               <p>
-                Execute remote diagnostics, manage telemetry intervals, assign
-                organizational tags, and push remediation scripts in real time.
+                Images, remote diagnostics, telemetry interval changes, tag
+                assignments, and remediation scripts are framed as a single
+                bidirectional WebSocket layer — dispatched and confirmed in
+                under a second, fleet-wide.
               </p>
             </article>
           </div>
@@ -450,16 +473,15 @@ export default function LandingPage() {
           aria-labelledby="install-title"
         >
           <p className="eyebrow" data-sr-eyebrow>
-            Silent Fleet Onboarding
+            /install
           </p>
-          <h2 id="install-title">
-            Deploy across your enterprise fleet with a single PowerShell
-            command.
-          </h2>
+          <h2 id="install-title">One command.</h2>
           <p className="lead">
-            Install silently across thousands of Windows workstations via Active
-            Directory GPO, Microsoft Intune, or a single administrative
-            terminal.
+            Paste one PowerShell line as Administrator on any Windows device.
+            The agent installs silently, registers itself as an NT service, arms
+            the outbox, connects to your console, and disappears into the
+            background — all in under 30 seconds. Deploy via Active Directory
+            GPO or Microsoft Intune and cover your entire fleet at once.
           </p>
 
           <div className="install-snippet">
@@ -487,7 +509,7 @@ export default function LandingPage() {
                 <tr>
                   <th scope="col">Parameter</th>
                   <th scope="col">Default</th>
-                  <th scope="col">Description</th>
+                  <th scope="col">What it does</th>
                 </tr>
               </thead>
               <tbody>
@@ -499,8 +521,9 @@ export default function LandingPage() {
                     <code>Required</code>
                   </td>
                   <td>
-                    Cryptographic tenant registration token for your
-                    organization
+                    Cryptographic tenant registration token generated in your
+                    NOS console — ties the device to your organization&apos;s
+                    isolated database
                   </td>
                 </tr>
                 <tr>
@@ -511,7 +534,9 @@ export default function LandingPage() {
                     <code>30s</code>
                   </td>
                   <td>
-                    Rolling average sampling and dispatch cadence (10s – 300s)
+                    Multi-sample rolling-average heartbeat cadence. Lower for
+                    high-frequency monitoring (10s), raise for bandwidth
+                    conservation (300s)
                   </td>
                 </tr>
                 <tr>
@@ -522,8 +547,9 @@ export default function LandingPage() {
                     <code>true</code>
                   </td>
                   <td>
-                    Registers automatically as a silent Windows NT background
-                    service (NOS-Sentinel)
+                    Registers the agent as a silent Windows NT background
+                    service (NOS-Sentinel). Survives reboots and auto-heals if
+                    the process is killed
                   </td>
                 </tr>
                 <tr>
@@ -531,11 +557,12 @@ export default function LandingPage() {
                     <code>--outbox-max</code>
                   </td>
                   <td>
-                    <code>500MB</code>
+                    <code>500 MB</code>
                   </td>
                   <td>
-                    Maximum encrypted SQLite WAL failover disk buffer before
-                    rolling purge
+                    Maximum encrypted SQLite WAL failover disk buffer before a
+                    rolling purge — protects data integrity through extended
+                    offline periods
                   </td>
                 </tr>
               </tbody>
@@ -548,20 +575,25 @@ export default function LandingPage() {
           className="closing page-width section-shell"
           aria-labelledby="closing-title"
         >
-          <h2 id="closing-title">
-            Take command of your entire Windows fleet in seconds.
-          </h2>
+          <p className="eyebrow" data-sr-eyebrow>
+            /one-more-thing
+          </p>
+          <h2 id="closing-title">Give every device a pulse.</h2>
           <p className="lead">
-            Launch your dedicated telemetry cockpit and stream real-time metrics
-            with zero configuration friction.
+            A few kernel counters. A tiny native service. Your entire Windows
+            fleet — visible, alive, and streaming — the moment you scroll into
+            the console.
           </p>
           <div className="closing-actions">
             <Link
               className="button button-primary"
               href={isAuthenticated ? "/dashboard" : "/auth/login"}
             >
-              Launch Command Deck
+              Launch Command Deck ↗
             </Link>
+            <a className="button button-ghost" href="#install">
+              Back to install ↑
+            </a>
           </div>
         </section>
       </main>
@@ -594,8 +626,8 @@ export default function LandingPage() {
           <span>NOS Sentinel</span>
         </div>
         <p className="footer-credit">
-          &copy; 2026 NOS — Neural Operations System. Sub-second telemetry
-          engineered in Native C#.
+          &copy; 2026 NOS Sentinel — Native C# fleet telemetry. Zero data loss.
+          Sub-second dispatch.
         </p>
       </footer>
     </div>
