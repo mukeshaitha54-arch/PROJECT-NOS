@@ -16,9 +16,19 @@ export default function LandingPage() {
   useEffect(() => {
     document.documentElement.classList.add("landing-active");
     document.body.classList.add("landing-page");
+
+    // Dynamic glossy mouse pointer lighting
+    const handlePointerMove = (e: MouseEvent) => {
+      document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
+      document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
+    };
+
+    window.addEventListener("mousemove", handlePointerMove, { passive: true });
+
     return () => {
       document.documentElement.classList.remove("landing-active");
       document.body.classList.remove("landing-page");
+      window.removeEventListener("mousemove", handlePointerMove);
       if (
         typeof window !== "undefined" &&
         (window as any).SwarmRebuild?.destroy
@@ -61,7 +71,7 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* Autonomous Swarm Rebuild Engine */}
+      {/* Autonomous Sentinel Rebuild Engine */}
       <Script
         src="/swarm-rebuild.js"
         data-agents="14"
@@ -76,24 +86,84 @@ export default function LandingPage() {
           <svg
             className="brand-mark"
             data-sr-logo
-            viewBox="0 0 26 26"
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
             role="img"
-            aria-label="NOS Sentinel logo"
+            aria-label="NOS Sentinel insignia"
           >
+            <defs>
+              <linearGradient
+                id="nos-logo-grad"
+                x1="0"
+                y1="0"
+                x2="32"
+                y2="32"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#3D8BFF" />
+                <stop offset="50%" stopColor="#00E5FF" />
+                <stop offset="100%" stopColor="#6366F1" />
+              </linearGradient>
+              <linearGradient
+                id="nos-logo-fill"
+                x1="8"
+                y1="8"
+                x2="24"
+                y2="24"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#3D8BFF" stopOpacity="0.05" />
+              </linearGradient>
+              <filter
+                id="nos-glow-filter"
+                x="-20%"
+                y="-20%"
+                width="140%"
+                height="140%"
+              >
+                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
             <rect
               x="2.5"
               y="2.5"
-              width="21"
-              height="21"
-              rx="6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="3 2"
+              width="27"
+              height="27"
+              rx="7.5"
+              stroke="url(#nos-logo-grad)"
+              strokeWidth="1.75"
+              fill="url(#nos-logo-fill)"
             />
             <path
-              d="M9 7.5v9l2.8-2.8 2.1 4.5 2-1-2.1-4.4h3.8L9 7.5Z"
-              fill="currentColor"
+              d="M10 22V10L22 22V10"
+              stroke="url(#nos-logo-grad)"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle
+              cx="10"
+              cy="10"
+              r="2"
+              fill="#3D8BFF"
+              filter="url(#nos-glow-filter)"
+            />
+            <circle
+              cx="16"
+              cy="16"
+              r="2.2"
+              fill="#00E5FF"
+              filter="url(#nos-glow-filter)"
+            />
+            <circle
+              cx="22"
+              cy="22"
+              r="2"
+              fill="#6366F1"
+              filter="url(#nos-glow-filter)"
             />
           </svg>
           <span>NOS Sentinel</span>
@@ -121,7 +191,7 @@ export default function LandingPage() {
           aria-labelledby="hero-title"
         >
           <p className="eyebrow">
-            /hero <span>1200 × auto</span>
+            /hero <span>1560 × auto</span>
           </p>
           <div className="hero-copy">
             <h1 id="hero-title">
@@ -163,7 +233,7 @@ export default function LandingPage() {
             </div>
             <p className="hero-hint">
               <span>Scroll to build</span>
-              <i></i> Stop and the swarm comes to your cursor <i></i> Esc skips
+              <i></i> Stop and the agents come to your cursor <i></i> Esc skips
             </p>
           </div>
 
@@ -584,7 +654,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="options">
-            <h3>Deployment &amp; Swarm Parameters</h3>
+            <h3>Deployment &amp; Engine Parameters</h3>
             <div className="table-scroll">
               <table>
                 <thead>
@@ -641,8 +711,8 @@ export default function LandingPage() {
                     </td>
                     <td>14</td>
                     <td>
-                      Swarm Rebuild cursor agent count rebuilding each layer of
-                      the telemetry deck.
+                      Autonomous cursor agent count rebuilding each layer of the
+                      telemetry deck.
                     </td>
                   </tr>
                   <tr>
@@ -720,22 +790,34 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="site-footer page-width">
         <a className="brand footer-brand" href="#top">
-          <svg className="brand-mark" viewBox="0 0 26 26" aria-hidden="true">
+          <svg
+            className="brand-mark"
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="NOS Sentinel insignia"
+          >
             <rect
               x="2.5"
               y="2.5"
-              width="21"
-              height="21"
-              rx="6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="3 2"
+              width="27"
+              height="27"
+              rx="7.5"
+              stroke="url(#nos-logo-grad)"
+              strokeWidth="1.75"
+              fill="url(#nos-logo-fill)"
             />
             <path
-              d="M9 7.5v9l2.8-2.8 2.1 4.5 2-1-2.1-4.4h3.8L9 7.5Z"
-              fill="currentColor"
+              d="M10 22V10L22 22V10"
+              stroke="url(#nos-logo-grad)"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
+            <circle cx="10" cy="10" r="2" fill="#3D8BFF" />
+            <circle cx="16" cy="16" r="2.2" fill="#00E5FF" />
+            <circle cx="22" cy="22" r="2" fill="#6366F1" />
           </svg>
           <span>NOS Sentinel</span>
         </a>

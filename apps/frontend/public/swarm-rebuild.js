@@ -796,7 +796,7 @@
     tourActive = false;
     tourButton.textContent = "Replay";
     tourButton.setAttribute("aria-label", "Replay the page build");
-    closeButton.setAttribute("aria-label", "Hide the cursor swarm");
+    closeButton.setAttribute("aria-label", "Hide cursor agents");
     progressTrack.style.display = "none";
     agentCountLabel.textContent = "";
     setHudStatus(

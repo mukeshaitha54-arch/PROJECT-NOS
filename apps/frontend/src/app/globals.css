@@ -587,13 +587,11 @@
 
 /* ─── Hero Section ─── */
 .hero {
-  min-height: 640px;
-  padding-top: 80px;
+  min-height: auto;
+  padding-top: 46px;
   padding-bottom: 70px;
-  display: grid;
-  grid-template-columns: 0.95fr 1.05fr;
-  align-items: center;
-  gap: 36px;
+  display: block;
+  width: 100%;
 }
 .hero-copy {
   position: relative;
@@ -1920,8 +1918,8 @@
     width: min(100% - 76px, 1000px);
   }
   .hero {
-    grid-template-columns: 0.9fr 1.1fr;
-    gap: 16px;
+    display: block;
+    width: 100%;
   }
   .hero h1 {
     font-size: clamp(48px, 6vw, 68px);
@@ -1963,7 +1961,8 @@
   }
   .hero {
     min-height: auto;
-    grid-template-columns: 1fr;
+    display: block;
+    width: 100%;
     gap: 28px;
     padding-top: 60px;
     padding-bottom: 50px;
