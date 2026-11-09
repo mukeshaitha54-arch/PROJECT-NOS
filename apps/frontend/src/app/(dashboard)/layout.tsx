@@ -25,14 +25,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#08090c] text-white">
-        <Loader2 className="w-8 h-8 text-[#f47b36] animate-spin" />
+      <div className="flex h-screen w-full items-center justify-center bg-[#0A0B0E] text-[#ECEEF4]">
+        <Loader2 className="w-8 h-8 text-[#3D8BFF] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-scope relative flex h-screen bg-[#08090c] text-white overflow-hidden selection:bg-[#f47b36] selection:text-white">
+    <div className="dashboard-scope relative flex h-screen bg-[#0A0B0E] text-[#ECEEF4] overflow-hidden selection:bg-[#3D8BFF] selection:text-white">
       {/* Dynamic Aurora Ambient Flow Background running behind entire dashboard */}
       <div className="fixed inset-0 pointer-events-none opacity-85 z-0 overflow-hidden">
         <AmbientFlow />

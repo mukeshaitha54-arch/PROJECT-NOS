@@ -6,51 +6,53 @@
 
 @layer base {
   :root {
-    color-scheme: light;
-    --bg: #fffdfa;
-    --panel: #ffffff;
-    --panel-raised: #fff7f0;
-    --line: #eadfd5;
-    --line-soft: #f3ebe4;
-    --text: #211a16;
-    --muted: #75685f;
-    --quiet: #9b8a7f;
-    --accent: #f47b36;
-    --accent-dark: #ca5724;
-    --mono: "DM Mono", "SFMono-Regular", Consolas, monospace;
-    --sans: "DM Sans", "Segoe UI", sans-serif;
-    --display: "Manrope", "DM Sans", sans-serif;
+    color-scheme: dark;
+    --bg: #0a0b0e;
+    --panel: #111318;
+    --panel-2: #171a21;
+    --line: #232733;
+    --line-2: #323848;
+    --fg: #eceef4;
+    --text: #eceef4;
+    --muted: #8b92a5;
+    --quiet: #626a7b;
+    --accent: #3d8bff;
+    --accent-dark: #2a6ece;
+    --dot: rgba(236, 238, 244, 0.05);
+    --display: "Bricolage Grotesque", "Segoe UI", sans-serif;
+    --sans: "Geist", "Segoe UI", sans-serif;
+    --mono: "Geist Mono", Consolas, monospace;
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
-    /* Tailwind HSL Mapping for Warm Alabaster White & Solar Orange */
-    --background: 40 50% 99%; /* #fffdfa */
-    --foreground: 24 19% 11%; /* #211a16 */
+    /* Tailwind HSL Mapping for Swarm Rebuild Dark Aesthetic */
+    --background: 225 20% 5%; /* #0A0B0E */
+    --foreground: 225 27% 94%; /* #ECEEF4 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 24 19% 11%;
+    --card: 223 17% 8%; /* #111318 */
+    --card-foreground: 225 27% 94%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 24 19% 11%;
+    --popover: 222 18% 11%; /* #171A21 */
+    --popover-foreground: 225 27% 94%;
 
-    --primary: 22 90% 59%; /* #f47b36 */
-    --primary-foreground: 40 50% 99%;
+    --primary: 216 100% 62%; /* #3D8BFF */
+    --primary-foreground: 225 20% 5%;
 
-    --secondary: 27 100% 97%; /* #fff7f0 */
-    --secondary-foreground: 24 19% 11%;
+    --secondary: 222 18% 11%; /* #171A21 */
+    --secondary-foreground: 225 27% 94%;
 
-    --muted: 27 40% 95%;
-    --muted-foreground: 24 10% 42%; /* #75685f */
+    --muted: 224 13% 14%;
+    --muted-foreground: 224 13% 60%; /* #8B92A5 */
 
-    --accent: 19 69% 46%; /* #ca5724 */
-    --accent-foreground: 40 50% 99%;
+    --accent: 216 100% 62%; /* #3D8BFF */
+    --accent-foreground: 225 20% 5%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 27 27% 88%; /* #eadfd5 */
-    --input: 27 27% 88%;
-    --ring: 22 90% 59%;
+    --border: 225 18% 17%; /* #232733 */
+    --input: 225 18% 17%;
+    --ring: 216 100% 62%;
 
     --radius: 0.75rem;
   }
@@ -64,6 +66,7 @@
   html {
     min-width: 320px;
     background: var(--bg);
+    color-scheme: dark;
     scroll-behavior: smooth;
     scroll-padding-top: 30px;
   }
@@ -74,7 +77,7 @@
     position: relative;
     z-index: 1;
     background: var(--bg);
-    color: var(--text);
+    color: var(--fg);
     font-family: var(--sans);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -82,7 +85,7 @@
 
   ::selection {
     color: #fff;
-    background: #f47b36;
+    background: #286ac7;
   }
 
   /* Custom Slim Dark Scrollbar */

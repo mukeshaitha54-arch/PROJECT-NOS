@@ -155,13 +155,13 @@ export function AmbientFlow() {
     >
       <defs>
         <linearGradient id="aurora-gradient" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#f47b36" stopOpacity="0" />
-          <stop offset=".14" stopColor="#f47b36" stopOpacity=".22" />
-          <stop offset=".37" stopColor="#fb9858" stopOpacity=".66" />
-          <stop offset=".56" stopColor="#ffc38f" stopOpacity=".84" />
-          <stop offset=".72" stopColor="#f28a52" stopOpacity=".58" />
-          <stop offset=".88" stopColor="#e66e39" stopOpacity=".26" />
-          <stop offset="1" stopColor="#e66e39" stopOpacity="0" />
+          <stop offset="0" stopColor="#3D8BFF" stopOpacity="0" />
+          <stop offset=".14" stopColor="#3D8BFF" stopOpacity=".2" />
+          <stop offset=".37" stopColor="#60A5FA" stopOpacity=".55" />
+          <stop offset=".56" stopColor="#93C5FD" stopOpacity=".75" />
+          <stop offset=".72" stopColor="#38BDF8" stopOpacity=".5" />
+          <stop offset=".88" stopColor="#2563EB" stopOpacity=".22" />
+          <stop offset="1" stopColor="#2563EB" stopOpacity="0" />
         </linearGradient>
       </defs>
       {paths.map((p) => (
