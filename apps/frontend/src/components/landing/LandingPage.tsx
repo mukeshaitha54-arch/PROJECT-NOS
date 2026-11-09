@@ -31,7 +31,7 @@ export default function LandingPage() {
   const handleCopyScript = async () => {
     try {
       await navigator.clipboard.writeText(bootstrapCommand);
-      setCopyStatus("Copied");
+      setCopyStatus("Copied!");
     } catch {
       const selection = document.createElement("textarea");
       selection.value = bootstrapCommand;
@@ -43,7 +43,7 @@ export default function LandingPage() {
       const copied = document.execCommand("copy");
       selection.remove();
       if (copied) {
-        setCopyStatus("Copied");
+        setCopyStatus("Copied!");
       } else {
         setCopyStatus("Copy failed");
       }
@@ -100,8 +100,8 @@ export default function LandingPage() {
         </a>
         <nav className="main-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <a href="#this-page">What it monitors</a>
-          <a href="#what-gets-built">What gets built</a>
+          <a href="#this-page">Telemetry deck</a>
+          <a href="#what-gets-built">Hardware sentry</a>
           <a href="#install">Install</a>
         </nav>
         <Link
@@ -134,17 +134,20 @@ export default function LandingPage() {
                 <i></i>
                 <i></i>
               </span>{" "}
-              by a sentinel.
+              by a<br />
+              sentinel.
             </h1>
             <p className="hero-lead">
-              NOS Sentinel reads every hardware layer the moment an endpoint
-              boots, then sends a crew of telemetry workers to monitor each one
-              as you explore. Ring-0 counters get polled. SQLite WAL buffers
-              stage. One command, no extension.
+              NOS Sentinel instruments every hardware layer the moment an
+              endpoint boots, then streams live kernel telemetry directly to
+              your command deck. Ring-0 multi-core CPU counters get polled.
+              Physical RAM working sets and S.M.A.R.T. NVMe predictive wear are
+              monitored. Encrypted SQLite WAL outbox guarantees zero dropped
+              packets. Built in Native C# AOT under 40MB RAM and 0.2% CPU.
             </p>
             <div className="hero-actions">
               <a className="button button-light" href="#install">
-                Install the agent <span aria-hidden="true">↗</span>
+                Deploy silent agent <span aria-hidden="true">↗</span>
               </a>
               <button
                 className="button button-outline"
@@ -186,43 +189,50 @@ export default function LandingPage() {
                 </span>
               </div>
               <span className="publish-pill">
-                <i></i> Connected
+                <i></i> Connected // Sub-Second
               </span>
             </div>
             <div className="editor-body">
               <aside className="layers-panel" aria-label="Page layers">
-                <h2>LAYERS</h2>
+                <h2>TELEMETRY LAYERS</h2>
                 <ul>
                   <li>
                     <span>⌄</span>
                     <i className="layer-icon page-icon"></i>Endpoint
+                    (SHIVA-WIN11)
                   </li>
                   <li className="indent">
                     <span>⌄</span>
-                    <i className="layer-icon nav-icon"></i>Heartbeat
+                    <i className="layer-icon nav-icon"></i>Heartbeat (30s
+                    Rolling)
                   </li>
                   <li className="indent selected-layer">
                     <span>⌄</span>
-                    <i className="layer-icon hero-icon"></i>CPU ring-0
+                    <i className="layer-icon hero-icon"></i>Ring-0 CPU (12C/24T)
                   </li>
                   <li className="deep-indent">
-                    <i className="layer-icon text-icon"></i>Multi-core load
+                    <i className="layer-icon text-icon"></i>CPU Load (27.4%
+                    Nominal)
                   </li>
                   <li className="deep-indent">
-                    <i className="layer-icon text-icon"></i>RAM working set
+                    <i className="layer-icon text-icon"></i>RAM Working Set
+                    (4.1/16GB)
                   </li>
                   <li className="deep-indent">
-                    <i className="layer-icon button-icon"></i>Outbox queue
+                    <i className="layer-icon button-icon"></i>Encrypted SQLite
+                    WAL (0 Lost)
                   </li>
                   <li className="indent">
                     <span>⌄</span>
-                    <i className="layer-icon grid-icon"></i>Storage grid
+                    <i className="layer-icon grid-icon"></i>Storage Sentry
                   </li>
                   <li className="deep-indent">
-                    <i className="layer-icon card-icon"></i>NVMe SMART × 3
+                    <i className="layer-icon card-icon"></i>NVMe SMART (98%
+                    Health // 42°C)
                   </li>
                   <li className="indent">
-                    <i className="layer-icon footer-icon"></i>Crash watchdog
+                    <i className="layer-icon footer-icon"></i>Crash Watchdog
+                    (Event 41/1001)
                   </li>
                 </ul>
               </aside>
@@ -243,9 +253,9 @@ export default function LandingPage() {
                 <div className="mock-page">
                   <div className="mock-nav">
                     <i className="mock-logo"></i>
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <span>Node: SHIVA-WIN11-PRO</span>
+                    <span>WebSocket TLS 1.3</span>
+                    <span>SQLite WAL Active</span>
                     <b>Online</b>
                   </div>
                   <div className="mock-hero">
@@ -266,39 +276,39 @@ export default function LandingPage() {
                 className="properties-panel"
                 aria-label="Selected layer properties"
               >
-                <h2>FRAME</h2>
+                <h2>NODE PROFILE</h2>
                 <div className="property-grid">
                   <span>
-                    X <b>120</b>
+                    CPU <b>0.2%</b>
                   </span>
                   <span>
-                    Y <b>64</b>
+                    RAM <b>&lt;40MB</b>
                   </span>
                   <span>
-                    W <b>1200</b>
+                    PING <b>8ms</b>
                   </span>
                   <span>
-                    H <b>640</b>
-                  </span>
-                </div>
-                <div className="property-group">
-                  <h3>FILL</h3>
-                  <span>
-                    <i className="fill-swatch"></i>3D8BFF <b>100%</b>
+                    LOSS <b>0.0%</b>
                   </span>
                 </div>
                 <div className="property-group">
-                  <h3>CORNER RADIUS</h3>
+                  <h3>TELEMETRY PUSH</h3>
                   <span>
-                    R <b>12</b>
-                    <em>Clip On</em>
+                    <i className="fill-swatch"></i>3D8BFF <b>WebSocket</b>
+                  </span>
+                </div>
+                <div className="property-group">
+                  <h3>DATA INTEGRITY</h3>
+                  <span>
+                    R <b>100%</b>
+                    <em>WAL Armed</em>
                   </span>
                 </div>
                 <div className="property-group">
                   <h3>CADENCE</h3>
                   <span>
                     Gap <b>30s</b>
-                    <em>WAL Armed</em>
+                    <em>Multi-Sample</em>
                   </span>
                 </div>
               </aside>
@@ -320,8 +330,8 @@ export default function LandingPage() {
               <span>every heartbeat.</span>
             </h2>
             <p>
-              One tiny native agent turns your fleet telemetry into a live,
-              scroll-driven build.
+              One native C# AOT agent turns enterprise hardware metrics into a
+              sub-second, scroll-driven live telemetry stream.
             </p>
           </div>
           <div className="steps-panel">
@@ -330,11 +340,13 @@ export default function LandingPage() {
                 <circle cx="10.8" cy="10.8" r="6.8"></circle>
                 <path d="m16 16 4.2 4.2M8 10.8h5.6M10.8 8v5.6"></path>
               </svg>
-              <h3>Scan the endpoint</h3>
+              <h3>Scan &amp; Ring-0 Kernel Profiling</h3>
               <p>
-                On boot, the agent walks the kernel and sorts every metric into
-                a layer: CPU load, RAM commit, and NVMe wear. Nothing is
-                transmitted until verified.
+                On boot, NOS Sentinel hooks directly into Windows ring-0
+                performance counters and sorts every metric into a telemetry
+                layer: multi-core CPU load, physical RAM working sets, paged
+                pool exhaustion, and S.M.A.R.T. NVMe wear. Nothing is
+                transmitted until cryptographically verified.
               </p>
             </article>
             <article className="step-card">
@@ -342,11 +354,13 @@ export default function LandingPage() {
                 <path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7"></path>
                 <circle cx="19" cy="6" r="1.5"></circle>
               </svg>
-              <h3>Rebuild on scroll</h3>
+              <h3>Encrypted SQLite WAL Outbox</h3>
               <p>
-                A layer is built once it crosses the build line, 88% of the way
-                down the screen. Parents go before children, top to bottom,
-                nearest agent first.
+                When network, VPN, or Wi-Fi connectivity drops, all telemetry
+                frames stage into an encrypted local SQLite outbox operating in
+                Write-Ahead Logging (WAL) mode. Zero dropped metrics, zero
+                memory leaks, and automatic ordered drain the millisecond
+                connectivity resumes.
               </p>
             </article>
             <article className="step-card">
@@ -354,11 +368,13 @@ export default function LandingPage() {
                 <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"></path>
                 <circle cx="12" cy="12" r="4"></circle>
               </svg>
-              <h3>Stay out of the way</h3>
+              <h3>Sub-Second Command Deck</h3>
               <p>
-                Sub-40MB resident RAM and 0.2% CPU. Visitors can skip with Esc
-                or the × in the toolbar. Anyone who prefers reduced motion gets
-                the finished page straight away.
+                Consumes under 40MB resident RAM and less than 0.2% CPU.
+                Telemetry broadcasts over bidirectional TLS 1.3 WebSockets with
+                multi-sample rolling averages every 30s. Fleets stay responsive,
+                and anyone preferring reduced motion gets the finished cockpit
+                immediately.
               </p>
             </article>
           </div>
@@ -373,36 +389,36 @@ export default function LandingPage() {
           <p className="eyebrow">/this-page</p>
           <div className="section-heading">
             <h2 id="stats-title">
-              What the swarm found
+              What the sentinel found
               <br />
               <span>on this fleet.</span>
             </h2>
             <p>
-              Every layer gets its own entrance. Here’s the crew and the work
-              ahead.
+              Every layer gets its own entrance. Here’s the telemetry crew and
+              the hardware benchmarks measured.
             </p>
           </div>
           <div className="stats-grid">
             <article className="stat-card">
-              <strong data-sr-stat="layers">--</strong>
-              <span>Layers in total</span>
+              <strong data-sr-stat="layers">&lt; 40MB</strong>
+              <span>Resident RAM Working Set</span>
             </article>
             <article className="stat-card">
-              <strong data-sr-stat="texts">--</strong>
-              <span>Text runs typed in</span>
+              <strong data-sr-stat="texts">0.2%</strong>
+              <span>Average CPU Utilization</span>
             </article>
             <article className="stat-card">
-              <strong data-sr-stat="frames">--</strong>
-              <span>Boxes and media framed</span>
+              <strong data-sr-stat="frames">100%</strong>
+              <span>Data Integrity (WAL Outbox)</span>
             </article>
             <article className="stat-card">
-              <strong data-sr-stat="agents">--</strong>
-              <span>Agents on shift</span>
+              <strong data-sr-stat="agents">30s</strong>
+              <span>Multi-sample Rolling Heartbeat</span>
             </article>
           </div>
         </section>
 
-        {/* What Gets Built Section */}
+        {/* What Gets Built / Hardware Sentry Subsystems Section */}
         <section
           className="content-section page-width section-shell"
           id="what-gets-built"
@@ -413,44 +429,66 @@ export default function LandingPage() {
             <h2 id="built-title">
               How it decides
               <br />
-              <span>what to rebuild.</span>
+              <span>what to monitor.</span>
             </h2>
             <p>
-              A small set of rules keeps the effect fast, faithful and
-              completely local.
+              Deep hardware instrumentation that standard task managers and
+              device monitors miss.
             </p>
           </div>
           <div className="built-list">
             <article className="built-row">
-              <span className="built-tag">box</span>
-              <h3>Painted boxes</h3>
+              <span className="built-tag">cpu</span>
+              <h3>Ring-0 CPU &amp; Thermal Limits</h3>
               <p>
-                Visible backgrounds, borders and shadows get measured, framed
-                and filled.
+                Multi-core performance counter aggregation with instant per-core
+                thermal limits, clock throttling detection, and hardware
+                interrupt load tracking.
               </p>
             </article>
             <article className="built-row">
-              <span className="built-tag">text</span>
-              <h3>Text runs</h3>
+              <span className="built-tag">ram</span>
+              <h3>Physical RAM &amp; Commit Charge</h3>
               <p>
-                Text stays in its original layout while a cursor types it into
-                view.
+                Resident working set auditing, committed virtual memory limits,
+                paged/non-paged system pool exhaustion, and memory leak
+                detection across running processes.
               </p>
             </article>
             <article className="built-row">
-              <span className="built-tag">media</span>
-              <h3>Media</h3>
+              <span className="built-tag">nvme</span>
+              <h3>S.M.A.R.T. Predictive NVMe Health</h3>
               <p>
-                Images, SVGs, video and other embedded elements are framed as a
-                single layer.
+                Continuously interrogates NVMe controller logs for percentage
+                used, available spare blocks, media degradation errors,
+                read/write byte counters, and junction temperatures.
               </p>
             </article>
             <article className="built-row">
-              <span className="built-tag">skip</span>
-              <h3>Anything you mark</h3>
+              <span className="built-tag">crash</span>
+              <h3>Kernel Crash &amp; BSOD Watchdog</h3>
               <p>
-                Add <code>data-sr-skip</code> to any element to leave it and its
-                children untouched.
+                Instant detection of abnormal shutdowns, power failures, and
+                blue-screen crash events (Windows Event ID 41 &amp; 1001) with
+                automated mini-dump stack trace capture.
+              </p>
+            </article>
+            <article className="built-row">
+              <span className="built-tag">outbox</span>
+              <h3>Encrypted SQLite WAL Buffer</h3>
+              <p>
+                Atomic local disk queue with Write-Ahead Logging stages
+                telemetry during network blackouts, preventing lost metrics with
+                zero memory bloat.
+              </p>
+            </article>
+            <article className="built-row">
+              <span className="built-tag">sec</span>
+              <h3>Zero-Trust SHA-256 Node Authentication</h3>
+              <p>
+                Cryptographic tenant registration tokens, unique hardware UUID
+                fingerprinting, and mutual TLS 1.3 encryption protect every
+                telemetry payload.
               </p>
             </article>
           </div>
@@ -470,14 +508,14 @@ export default function LandingPage() {
               <span>first thing in the terminal.</span>
             </h2>
             <p>
-              Copy it into your elevated PowerShell and every endpoint connects
-              in seconds.
+              Run in an elevated PowerShell terminal and your Windows endpoint
+              connects to the fleet in seconds.
             </p>
           </div>
           <div className="install-grid">
             <div className="code-card">
               <div className="code-card-top">
-                <span>PowerShell.exe</span>
+                <span>PowerShell (Administrator)</span>
                 <button
                   className="copy-button"
                   type="button"
@@ -490,7 +528,8 @@ export default function LandingPage() {
               <pre>
                 <code id="script-example">
                   <span className="code-muted">
-                    &lt;# Run as Administrator #&gt;
+                    &lt;# Run in elevated PowerShell on Windows 10/11 / Server
+                    #&gt;
                   </span>
                   {"\n"}
                   <span className="code-tag">powershell</span>{" "}
@@ -514,40 +553,43 @@ export default function LandingPage() {
                 <div>
                   <h3>Run with administrative privileges</h3>
                   <p>
-                    Elevated terminal allows silent registration of the Windows
-                    NT background service and ring-0 performance counter access.
+                    Elevated terminal permits silent registration of the Windows
+                    NT background service (NOS-Sentinel) and ring-0 performance
+                    counter access.
                   </p>
                 </div>
               </article>
               <article>
                 <span>02</span>
                 <div>
-                  <h3>No dependencies</h3>
+                  <h3>Zero runtime dependencies</h3>
                   <p>
-                    Vanilla Native C# AOT binary, a standalone executable, and
-                    nothing sent to untrusted servers.
+                    Standalone Native C# AOT binary compiled to machine code. No
+                    .NET runtime installation required, no external
+                    dependencies, and self-healing watchdog.
                   </p>
                 </div>
               </article>
               <article>
                 <span>03</span>
                 <div>
-                  <h3>Every endpoint streams</h3>
+                  <h3>Every endpoint streams live</h3>
                   <p>
-                    No extension or complex setup required. Respects
-                    reduced-motion preferences automatically.
+                    Instant bidirectional WebSocket handshake initiates
+                    sub-second telemetry broadcast to your command console with
+                    zero manual configuration.
                   </p>
                 </div>
               </article>
             </div>
           </div>
           <div className="options">
-            <h3>Options</h3>
+            <h3>Deployment &amp; Swarm Parameters</h3>
             <div className="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Attribute</th>
+                    <th>Parameter</th>
                     <th>Default</th>
                     <th>What it does</th>
                   </tr>
@@ -555,38 +597,73 @@ export default function LandingPage() {
                 <tbody>
                   <tr>
                     <td>
+                      <code>--org-token</code>
+                    </td>
+                    <td>Required</td>
+                    <td>
+                      Cryptographic organization registration token for strict
+                      multi-tenant isolation.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>--interval</code>
+                    </td>
+                    <td>30s</td>
+                    <td>
+                      Rolling average sampling and dispatch cadence across
+                      endpoints (10s – 300s).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>--service</code>
+                    </td>
+                    <td>true</td>
+                    <td>
+                      Registers automatically as a silent, self-restarting
+                      Windows NT service (NOS-Sentinel).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>--outbox-max</code>
+                    </td>
+                    <td>500MB</td>
+                    <td>
+                      Maximum encrypted SQLite WAL failover disk buffer before
+                      rolling FIFO purge.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
                       <code>data-agents</code>
                     </td>
                     <td>14</td>
-                    <td>Number of cursor agents (up to 8 under 640px).</td>
-                  </tr>
-                  <tr>
                     <td>
-                      <code>data-speed</code>
+                      Swarm Rebuild cursor agent count rebuilding each layer of
+                      the telemetry deck.
                     </td>
-                    <td>1</td>
-                    <td>Build speed. Cycles through 1×, 2× and 4×.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-line</code>
-                    </td>
-                    <td>0.88</td>
-                    <td>Build line as a fraction of viewport height.</td>
                   </tr>
                   <tr>
                     <td>
                       <code>data-bg</code>
                     </td>
                     <td>#0A0B0E</td>
-                    <td>Background color for the opening scan screen.</td>
+                    <td>
+                      Deep obsidian background hex color for the terminal and
+                      canvas.
+                    </td>
                   </tr>
                   <tr>
                     <td>
                       <code>data-accent</code>
                     </td>
                     <td>#3D8BFF</td>
-                    <td>Frame, cursor and progress-bar accent color.</td>
+                    <td>
+                      Cyber blue accent color for frames, cursors, and telemetry
+                      indicators.
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -594,22 +671,9 @@ export default function LandingPage() {
                     </td>
                     <td>—</td>
                     <td>
-                      Leave this element and its children out of the rebuild.
+                      Add to any DOM container to preserve its interactive
+                      controls during the build.
                     </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-sr-logo</code>
-                    </td>
-                    <td>—</td>
-                    <td>Logo cloned into the scan screen.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>data-sr-replay</code>
-                    </td>
-                    <td>—</td>
-                    <td>Make any element a replay control.</td>
                   </tr>
                 </tbody>
               </table>
@@ -629,13 +693,13 @@ export default function LandingPage() {
             <i></i>
           </div>
           <h2 id="closing-title">
-            Give every visit
+            Give every device
             <br />
-            <span>an entrance.</span>
+            <span>a pulse.</span>
           </h2>
           <p>
-            A few cursor agents. A tiny bit of theater. Your fleet, rebuilt
-            live.
+            Sub-second telemetry. Ring-0 hardware sentinels. Zero-loss SQLite
+            outbox. Your entire fleet, monitored live.
           </p>
           <div className="hero-actions">
             <button
@@ -675,7 +739,10 @@ export default function LandingPage() {
           </svg>
           <span>NOS Sentinel</span>
         </a>
-        <span>A scroll-driven fleet intelligence platform</span>
+        <span>
+          Enterprise Windows fleet intelligence powered by native C# AOT and
+          zero-loss SQLite failover.
+        </span>
       </footer>
     </>
   );
