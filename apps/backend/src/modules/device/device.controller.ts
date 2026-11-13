@@ -254,6 +254,32 @@ export class DeviceController {
         "publish",
         "NOS.Installer.exe",
       ),
+      path.join(
+        process.cwd(),
+        "..",
+        "installer",
+        "NOS.Installer",
+        "bin",
+        "Release",
+        "net8.0-windows",
+        "win-x64",
+        "publish",
+        "NOS.Installer.exe",
+      ),
+      path.join(
+        process.cwd(),
+        "..",
+        "..",
+        "apps",
+        "installer",
+        "NOS.Installer",
+        "bin",
+        "Release",
+        "net8.0-windows",
+        "win-x64",
+        "publish",
+        "NOS.Installer.exe",
+      ),
       path.join(process.cwd(), "apps", "backend", "assets", "NOS-Agent.exe"),
       path.join(process.cwd(), "assets", "NOS-Agent.exe"),
       path.join(__dirname, "..", "..", "..", "..", "assets", "NOS-Agent.exe"),
@@ -288,12 +314,10 @@ export class DeviceController {
       return res.send(stream);
     }
 
-    return res
-      .status(404)
-      .send({
-        success: false,
-        message: "Installer or agent executable not found.",
-      });
+    return res.status(404).send({
+      success: false,
+      message: "Installer or agent executable not found.",
+    });
   }
 
   @Get(":id")

@@ -47,7 +47,10 @@ import {
   DeviceBulkStatusEvent,
   DeviceTelemetryStatusEvent,
 } from "../../common/events/domain-events";
-import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
+import {
+  deviceLiveProcessesStore,
+  setDeviceLiveProcesses,
+} from "../../common/stores/device-processes.store";
 import { deviceTelemetryPausedStore } from "../../common/stores/device-telemetry-paused.store";
 
 @Injectable()
@@ -327,10 +330,10 @@ export class DeviceService {
           (p.name || p.Name || p.processName || p.ProcessName),
       );
       if (validProcs.length > 0) {
-        deviceLiveProcessesStore.set(device.id, validProcs);
-        if (device.uuid) {
-          deviceLiveProcessesStore.set(device.uuid, validProcs);
-        }
+        setDeviceLiveProcesses(
+          [device.id, device.uuid, dto.deviceId],
+          validProcs,
+        );
       }
     }
 

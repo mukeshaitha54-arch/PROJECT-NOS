@@ -23,7 +23,10 @@ import { CurrentTenant } from "../../common/decorators/current-tenant.decorator"
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { TenantContext } from "@nos/shared-types";
 import { PrismaService } from "../../database/prisma.service";
-import { deviceLiveProcessesStore } from "../../common/stores/device-processes.store";
+import {
+  deviceLiveProcessesStore,
+  getDeviceLiveProcesses,
+} from "../../common/stores/device-processes.store";
 import { deviceTelemetryPausedStore } from "../../common/stores/device-telemetry-paused.store";
 import { decommissionedDevicesStore } from "../../common/stores/device-decommissioned.store";
 import { DeviceTelemetryStatusEvent } from "../../common/events/domain-events";
@@ -321,15 +324,14 @@ export class DevicesController {
     @CurrentUser() user?: any,
   ) {
     const isSuperAdmin = user?.role === "SUPER_ADMIN";
-    const orgId = tenant.organizationId;
+    const orgId =
+      tenant?.organizationId || user?.organizationId || user?.organization?.id;
     const device = await this.findDevice(id, orgId, undefined, isSuperAdmin);
 
     if (!device) throw new NotFoundException("Device not found");
 
-    // 1. Check live processes reported by agent via heartbeat/telemetry
-    const live =
-      deviceLiveProcessesStore.get(device.id) ||
-      (device.uuid ? deviceLiveProcessesStore.get(device.uuid) : null);
+    // 1. Check live processes reported by agent via heartbeat/telemetry (case-insensitive across keys)
+    const live = getDeviceLiveProcesses([device.id, device.uuid, id]);
     const validLive = live?.filter(
       (p: any) =>
         p &&

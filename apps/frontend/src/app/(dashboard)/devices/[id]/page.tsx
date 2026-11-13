@@ -72,6 +72,15 @@ function formatDataSize(bytes: number | null | undefined): string {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
+function matchesDevice(
+  payloadId: string | undefined | null,
+  ...targetIds: (string | undefined | null)[]
+): boolean {
+  if (!payloadId) return false;
+  const p = String(payloadId).trim().toLowerCase();
+  return targetIds.some((t) => t && String(t).trim().toLowerCase() === p);
+}
+
 export default function DeviceDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -84,10 +93,28 @@ export default function DeviceDetailPage() {
 
   const [device, setDevice] = useState<any>(null);
   const [telemetryHistory, setTelemetryHistory] = useState<any[]>([]);
-  const [processes, setProcesses] = useState<any[]>([]);
+  const [processes, setProcesses] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`nos_procs_${id}`);
+        return cached ? JSON.parse(cached) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [services, setServices] = useState<any[]>([]);
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (processes.length > 0 && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`nos_procs_${id}`, JSON.stringify(processes));
+      } catch {}
+    }
+  }, [processes, id]);
 
   const [loading, setLoading] = useState(true);
   const [realtimeData, setRealtimeData] = useState<any>(null);
@@ -202,8 +229,18 @@ export default function DeviceDetailPage() {
         }
 
         const procData = procRes?.data?.data || procRes?.data || null;
-        if (procData && Array.isArray(procData) && procData.length > 0) {
-          setProcesses(procData);
+        if (procData && Array.isArray(procData)) {
+          const valid = procData.filter(
+            (p: any) =>
+              p &&
+              (p.pid !== undefined ||
+                p.Pid !== undefined ||
+                p.processId !== undefined) &&
+              (p.name || p.Name || p.processName || p.ProcessName),
+          );
+          if (valid.length > 0) {
+            setProcesses(valid);
+          }
         }
       } catch (err) {
         console.error("Failed to load device details", err);
@@ -234,11 +271,7 @@ export default function DeviceDetailPage() {
   // Realtime Socket listener
   useEffect(() => {
     const cleanupTelemetry = on("telemetry.received", (payload: any) => {
-      if (
-        payload.deviceId === id ||
-        payload.deviceId === device?.id ||
-        payload.deviceId === device?.uuid
-      ) {
+      if (matchesDevice(payload?.deviceId, id, device?.id, device?.uuid)) {
         setRealtimeData(payload);
         setTelemetryHistory((prev) => [...prev, payload].slice(-60));
         if (
@@ -246,7 +279,17 @@ export default function DeviceDetailPage() {
           Array.isArray(payload.processes) &&
           payload.processes.length > 0
         ) {
-          setProcesses(payload.processes);
+          const valid = payload.processes.filter(
+            (p: any) =>
+              p &&
+              (p.pid !== undefined ||
+                p.Pid !== undefined ||
+                p.processId !== undefined) &&
+              (p.name || p.Name || p.processName || p.ProcessName),
+          );
+          if (valid.length > 0) {
+            setProcesses(valid);
+          }
         }
         // Reset countdown timer immediately on fresh telemetry
         setTimeUntilUpdate(30);
@@ -255,11 +298,7 @@ export default function DeviceDetailPage() {
 
     // Also update live CPU/RAM and extended metrics from heartbeats (arrive every 30s)
     const cleanupHeartbeat = on("heartbeat.received", (payload: any) => {
-      if (
-        payload.deviceId === id ||
-        payload.deviceId === device?.id ||
-        payload.deviceId === device?.uuid
-      ) {
+      if (matchesDevice(payload?.deviceId, id, device?.id, device?.uuid)) {
         setRealtimeData((prev: any) => ({
           ...prev,
           cpuUsage: payload.cpuUsage ?? prev?.cpuUsage,
@@ -281,28 +320,30 @@ export default function DeviceDetailPage() {
           Array.isArray(payload.processes) &&
           payload.processes.length > 0
         ) {
-          setProcesses(payload.processes);
+          const valid = payload.processes.filter(
+            (p: any) =>
+              p &&
+              (p.pid !== undefined ||
+                p.Pid !== undefined ||
+                p.processId !== undefined) &&
+              (p.name || p.Name || p.processName || p.ProcessName),
+          );
+          if (valid.length > 0) {
+            setProcesses(valid);
+          }
         }
         setTimeUntilUpdate(30);
       }
     });
 
     const cleanupStatus = on("device.online", (payload: any) => {
-      if (
-        payload.deviceId === id ||
-        payload.deviceId === device?.id ||
-        payload.deviceId === device?.uuid
-      ) {
+      if (matchesDevice(payload?.deviceId, id, device?.id, device?.uuid)) {
         setDevice((prev: any) => (prev ? { ...prev, status: "ONLINE" } : prev));
       }
     });
 
     const cleanupStatusOffline = on("device.offline", (payload: any) => {
-      if (
-        payload.deviceId === id ||
-        payload.deviceId === device?.id ||
-        payload.deviceId === device?.uuid
-      ) {
+      if (matchesDevice(payload?.deviceId, id, device?.id, device?.uuid)) {
         setDevice((prev: any) =>
           prev ? { ...prev, status: "OFFLINE" } : prev,
         );
@@ -313,11 +354,7 @@ export default function DeviceDetailPage() {
       "device.telemetry.status",
       (payload: any) => {
         const data = payload?.payload || payload;
-        if (
-          data.deviceId === id ||
-          data.deviceId === device?.id ||
-          data.deviceId === device?.uuid
-        ) {
+        if (matchesDevice(data?.deviceId, id, device?.id, device?.uuid)) {
           setIsTelemetryPaused(!!data.telemetryPaused);
           setDevice((prev: any) =>
             prev ? { ...prev, telemetryPaused: !!data.telemetryPaused } : prev,

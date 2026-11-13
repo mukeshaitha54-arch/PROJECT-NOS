@@ -63,8 +63,8 @@ export function GenerateKeyModal({
         ? `${window.location.origin}/api/v1`
         : "http://localhost:3001/api/v1");
     const link = document.createElement("a");
-    link.href = `${apiBase}/fleet/installer/agent`;
-    link.setAttribute("download", "NOS-Agent.exe");
+    link.href = `${apiBase}/device/download`;
+    link.setAttribute("download", "NOS_Agent_Installer.exe");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

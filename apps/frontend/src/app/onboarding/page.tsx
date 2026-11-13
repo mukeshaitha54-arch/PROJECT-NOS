@@ -52,17 +52,18 @@ export default function OnboardingWizard() {
   const [copiedCmd, setCopiedCmd] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const apiBase = () => {
+  const apiBase = (): string => {
     if (typeof window !== "undefined") {
+      if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+        return process.env.NEXT_PUBLIC_API_BASE_URL;
+      }
       if (
         window.location.hostname !== "localhost" &&
         window.location.hostname !== "127.0.0.1"
       ) {
         return `${window.location.origin}/api/v1`;
       }
-      return (
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1"
-      );
+      return "http://localhost:3001/api/v1";
     }
     return "http://nos.is-local.org/api/v1";
   };
@@ -471,7 +472,7 @@ export default function OnboardingWizard() {
             {step === 5 &&
               (() => {
                 const scriptUrl = `${apiBase()}/fleet/installer/windows?registrationKey=${encodeURIComponent(keyData.key)}&serverUrl=${encodeURIComponent(apiBase())}`;
-                const psCommand = `Invoke-WebRequest -Uri "${scriptUrl}" -OutFile "install-nos-agent.ps1"; .\\install-nos-agent.ps1`;
+                const psCommand = `Invoke-WebRequest -Uri "${scriptUrl}" -OutFile "install-nos-agent.ps1"; if ($? -and (Test-Path "install-nos-agent.ps1")) { powershell -ExecutionPolicy Bypass -File .\\install-nos-agent.ps1 }`;
 
                 return (
                   <div className="space-y-6">

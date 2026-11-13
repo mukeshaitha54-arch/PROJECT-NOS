@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, use } from "react";
+import React, { useState, useEffect, useCallback, useMemo, use } from "react";
 import Link from "next/link";
 import {
   Layers,
@@ -143,6 +143,15 @@ function StatusBool({ value }: { value: boolean | null | undefined }) {
   );
 }
 
+function matchesDevice(
+  payloadId: string | undefined | null,
+  ...targetIds: (string | undefined | null)[]
+): boolean {
+  if (!payloadId) return false;
+  const p = String(payloadId).trim().toLowerCase();
+  return targetIds.some((t) => t && String(t).trim().toLowerCase() === p);
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export default function DeviceInventoryDetailPage({
@@ -155,11 +164,32 @@ export default function DeviceInventoryDetailPage({
 
   const [activeTab, setActiveTab] = useState<TabType>("HARDWARE");
   const [inventory, setInventory] = useState<any>(null);
-  const [processes, setProcesses] = useState<any[]>([]);
+  const [processes, setProcesses] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`nos_procs_${deviceId}`);
+        return cached ? JSON.parse(cached) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [rescanLoading, setRescanLoading] = useState(false);
+
+  useEffect(() => {
+    if (processes.length > 0 && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          `nos_procs_${deviceId}`,
+          JSON.stringify(processes),
+        );
+      } catch {}
+    }
+  }, [processes, deviceId]);
 
   const loadInventory = useCallback(async () => {
     try {
@@ -186,9 +216,31 @@ export default function DeviceInventoryDetailPage({
         );
       }
 
-      const procList = procRes?.data?.data || procRes?.data || [];
+      let procList = procRes?.data?.data || procRes?.data || [];
+      const devDbId = inv?.deviceId || inv?.device?.id;
+      if (
+        (!Array.isArray(procList) || procList.length === 0) &&
+        devDbId &&
+        String(devDbId).toLowerCase() !== String(deviceId).toLowerCase()
+      ) {
+        const secondary = await apiClient
+          .get<any>(`/devices/${devDbId}/processes`)
+          .catch(() => null);
+        procList = secondary?.data?.data || secondary?.data || [];
+      }
+
       if (Array.isArray(procList)) {
-        setProcesses(procList);
+        const valid = procList.filter(
+          (p: any) =>
+            p &&
+            (p.pid !== undefined ||
+              p.Pid !== undefined ||
+              p.processId !== undefined) &&
+            (p.name || p.Name || p.processName || p.ProcessName),
+        );
+        if (valid.length > 0) {
+          setProcesses(valid);
+        }
       }
 
       const alertList = alertRes?.data?.data || alertRes?.data || [];
@@ -231,28 +283,100 @@ export default function DeviceInventoryDetailPage({
   }, [loadInventory]);
 
   // Real-time socket listener for live process updates and alerts
-  const { on } = useRealtimeContext();
+  const { on, socket } = useRealtimeContext();
+
+  // Join device room so real-time updates are received
+  useEffect(() => {
+    if (socket) {
+      socket.emit("joinRoom", `device:${deviceId}`);
+      const devDbId = inventory?.deviceId || inventory?.device?.id;
+      if (
+        devDbId &&
+        String(devDbId).toLowerCase() !== String(deviceId).toLowerCase()
+      ) {
+        socket.emit("joinRoom", `device:${devDbId}`);
+      }
+      return () => {
+        socket.emit("leaveRoom", `device:${deviceId}`);
+        if (
+          devDbId &&
+          String(devDbId).toLowerCase() !== String(deviceId).toLowerCase()
+        ) {
+          socket.emit("leaveRoom", `device:${devDbId}`);
+        }
+      };
+    }
+  }, [socket, deviceId, inventory?.deviceId, inventory?.device?.id]);
+
   useEffect(() => {
     const unsubHeartbeat = on("heartbeat.received", (payload: any) => {
       if (
-        payload.deviceId === deviceId ||
-        payload.deviceId === inventory?.deviceId ||
-        payload.deviceId === inventory?.device?.uuid
+        matchesDevice(
+          payload?.deviceId,
+          deviceId,
+          inventory?.deviceId,
+          inventory?.device?.id,
+          inventory?.device?.uuid,
+        )
       ) {
         if (
           payload.processes &&
           Array.isArray(payload.processes) &&
           payload.processes.length > 0
         ) {
-          setProcesses(payload.processes);
+          const valid = payload.processes.filter(
+            (p: any) =>
+              p &&
+              (p.pid !== undefined ||
+                p.Pid !== undefined ||
+                p.processId !== undefined) &&
+              (p.name || p.Name || p.processName || p.ProcessName),
+          );
+          if (valid.length > 0) {
+            setProcesses(valid);
+          }
+        }
+      }
+    });
+
+    const unsubTelemetry = on("telemetry.received", (payload: any) => {
+      if (
+        matchesDevice(
+          payload?.deviceId,
+          deviceId,
+          inventory?.deviceId,
+          inventory?.device?.id,
+          inventory?.device?.uuid,
+        )
+      ) {
+        if (
+          payload.processes &&
+          Array.isArray(payload.processes) &&
+          payload.processes.length > 0
+        ) {
+          const valid = payload.processes.filter(
+            (p: any) =>
+              p &&
+              (p.pid !== undefined ||
+                p.Pid !== undefined ||
+                p.processId !== undefined) &&
+              (p.name || p.Name || p.processName || p.ProcessName),
+          );
+          if (valid.length > 0) {
+            setProcesses(valid);
+          }
         }
       }
     });
 
     const unsubAlert = on("alert:triggered", (payload: any) => {
       if (
-        payload.deviceId === deviceId ||
-        payload.deviceId === inventory?.deviceId
+        matchesDevice(
+          payload?.deviceId,
+          deviceId,
+          inventory?.deviceId,
+          inventory?.device?.id,
+        )
       ) {
         setAlerts((prev) => [payload, ...prev]);
       }
@@ -260,6 +384,7 @@ export default function DeviceInventoryDetailPage({
 
     return () => {
       unsubHeartbeat();
+      unsubTelemetry();
       unsubAlert();
     };
   }, [on, deviceId, inventory]);
@@ -322,7 +447,7 @@ export default function DeviceInventoryDetailPage({
       sortable: true,
       render: (r) => (
         <span className="font-mono text-xs text-blue-300">
-          {r.pid ?? r.Pid ?? "—"}
+          {r.pid ?? r.Pid ?? r.processId ?? "—"}
         </span>
       ),
     },
@@ -332,7 +457,7 @@ export default function DeviceInventoryDetailPage({
       sortable: true,
       render: (r) => (
         <span className="font-semibold text-xs text-zinc-100">
-          {r.processName ?? r.ProcessName ?? r.name ?? r.Name}
+          {r.processName ?? r.ProcessName ?? r.name ?? r.Name ?? "Unknown"}
         </span>
       ),
     },
@@ -340,37 +465,83 @@ export default function DeviceInventoryDetailPage({
       key: "memoryMb",
       header: "Memory",
       sortable: true,
-      render: (r) => (
-        <span className="font-mono text-xs text-cyan-400 font-semibold">
-          {(
-            r.memoryMb ??
-            r.MemoryMb ??
-            (r.memoryBytes ? r.memoryBytes / 1048576 : 0)
-          ).toFixed(1)}{" "}
-          MB
-        </span>
-      ),
+      render: (r) => {
+        const mem =
+          r.memoryMb ??
+          r.MemoryMb ??
+          (r.memoryBytes ? r.memoryBytes / 1048576 : 0);
+        return (
+          <span className="font-mono text-xs text-cyan-400 font-semibold">
+            {typeof mem === "number"
+              ? mem.toFixed(1)
+              : Number(mem || 0).toFixed(1)}{" "}
+            MB
+          </span>
+        );
+      },
+    },
+    {
+      key: "cpuTimeSec",
+      header: "CPU Time",
+      sortable: true,
+      render: (r) => {
+        const cpu = r.cpuTimeSec ?? r.CpuTimeSec ?? r.cpuPercent ?? 0;
+        return (
+          <span className="font-mono text-xs text-zinc-300">
+            {typeof cpu === "number"
+              ? `${cpu.toFixed(1)}s`
+              : `${Number(cpu || 0).toFixed(1)}s`}
+          </span>
+        );
+      },
     },
     {
       key: "threads",
       header: "Threads",
       sortable: true,
       render: (r) => (
-        <span className="text-xs text-zinc-300">
-          {r.threads ?? r.Threads ?? "—"}
+        <span className="text-xs text-zinc-300 font-mono">
+          {r.threads ?? r.Threads ?? 1}
         </span>
       ),
     },
     {
       key: "status",
       header: "Status",
-      render: () => (
+      render: (r) => (
         <Badge variant="online" size="xs">
-          Running
+          {r.status || "Running"}
         </Badge>
       ),
     },
   ];
+
+  const validProcesses = useMemo(() => {
+    return processes
+      .filter(
+        (p: any) =>
+          p &&
+          (p.pid !== undefined ||
+            p.Pid !== undefined ||
+            p.processId !== undefined) &&
+          (p.name || p.Name || p.processName || p.ProcessName),
+      )
+      .map((p: any) => ({
+        pid: p.pid ?? p.Pid ?? p.processId,
+        name: p.processName ?? p.ProcessName ?? p.name ?? p.Name ?? "Unknown",
+        processName:
+          p.processName ?? p.ProcessName ?? p.name ?? p.Name ?? "Unknown",
+        memoryMb:
+          p.memoryMb ??
+          p.MemoryMb ??
+          (p.memoryBytes
+            ? Number((p.memoryBytes / (1024 * 1024)).toFixed(1))
+            : 0),
+        threads: p.threads ?? p.Threads ?? 1,
+        cpuTimeSec: p.cpuTimeSec ?? p.CpuTimeSec ?? p.cpuPercent ?? 0,
+        status: p.status ?? p.Status ?? "Running",
+      }));
+  }, [processes]);
 
   // ─ Tab definitions ───────────────────────────────────────────────────────
 
@@ -720,7 +891,7 @@ export default function DeviceInventoryDetailPage({
           {activeTab === "PROCESSES" && (
             <DataTable
               columns={processCols}
-              data={processes}
+              data={validProcesses}
               loading={loading}
               searchable={true}
               searchPlaceholder="Search running processes…"
