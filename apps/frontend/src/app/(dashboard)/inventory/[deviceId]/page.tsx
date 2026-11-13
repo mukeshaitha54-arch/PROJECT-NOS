@@ -28,6 +28,8 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { apiClient } from "@/lib/api-client";
 import { useRealtimeContext } from "@/realtime/providers/RealtimeProvider";
+import { useAuth } from "@/contexts/auth-context";
+import { getScopedProcessCacheKey } from "@/lib/cache";
 
 type TabType =
   | "HARDWARE"
@@ -162,13 +164,37 @@ export default function DeviceInventoryDetailPage({
   const resolvedParams = use(params);
   const deviceId = resolvedParams.deviceId;
 
+  const { user } = useAuth();
+  const userOrgId =
+    user?.organizationId ||
+    (user as any)?.orgId ||
+    (user as any)?.currentOrganizationId ||
+    (user as any)?.organization?.id;
+  const scopedProcessCacheKey = getScopedProcessCacheKey(
+    deviceId,
+    user?.id,
+    userOrgId,
+  );
+
   const [activeTab, setActiveTab] = useState<TabType>("HARDWARE");
   const [inventory, setInventory] = useState<any>(null);
+  const [isProcessesStale, setIsProcessesStale] = useState<boolean>(false);
   const [processes, setProcesses] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const cached = localStorage.getItem(`nos_procs_${deviceId}`);
-        return cached ? JSON.parse(cached) : [];
+        const raw = localStorage.getItem(scopedProcessCacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const list = Array.isArray(parsed) ? parsed : parsed?.processes;
+          const ts = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+          const age = Date.now() - ts;
+          if (age > 5 * 60 * 1000 && ts > 0) {
+            return [];
+          }
+          if (Array.isArray(list) && list.length > 0) {
+            return list;
+          }
+        }
       } catch {
         return [];
       }
@@ -180,16 +206,39 @@ export default function DeviceInventoryDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [rescanLoading, setRescanLoading] = useState(false);
 
+  // Restore and check collection timestamp when scoped cache key changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(scopedProcessCacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const list = Array.isArray(parsed) ? parsed : parsed?.processes;
+          const ts = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+          const age = Date.now() - ts;
+          if (age > 5 * 60 * 1000 && ts > 0) {
+            return;
+          }
+          if (Array.isArray(list) && list.length > 0) {
+            setProcesses((prev) => (prev.length === 0 ? list : prev));
+            setIsProcessesStale(true);
+          }
+        }
+      } catch {}
+    }
+  }, [scopedProcessCacheKey]);
+
   useEffect(() => {
     if (processes.length > 0 && typeof window !== "undefined") {
       try {
-        localStorage.setItem(
-          `nos_procs_${deviceId}`,
-          JSON.stringify(processes),
-        );
+        const payload = {
+          processes,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(scopedProcessCacheKey, JSON.stringify(payload));
       } catch {}
     }
-  }, [processes, deviceId]);
+  }, [processes, scopedProcessCacheKey]);
 
   const loadInventory = useCallback(async () => {
     try {
@@ -240,6 +289,7 @@ export default function DeviceInventoryDetailPage({
         );
         if (valid.length > 0) {
           setProcesses(valid);
+          setIsProcessesStale(false);
         }
       }
 
@@ -334,6 +384,7 @@ export default function DeviceInventoryDetailPage({
           );
           if (valid.length > 0) {
             setProcesses(valid);
+            setIsProcessesStale(false);
           }
         }
       }
@@ -364,6 +415,7 @@ export default function DeviceInventoryDetailPage({
           );
           if (valid.length > 0) {
             setProcesses(valid);
+            setIsProcessesStale(false);
           }
         }
       }
@@ -485,7 +537,10 @@ export default function DeviceInventoryDetailPage({
       header: "CPU Time",
       sortable: true,
       render: (r) => {
-        const cpu = r.cpuTimeSec ?? r.CpuTimeSec ?? r.cpuPercent ?? 0;
+        const cpu = r.cpuTimeSec ?? r.CpuTimeSec;
+        if (cpu === null || cpu === undefined) {
+          return <span className="font-mono text-xs text-zinc-500">—</span>;
+        }
         return (
           <span className="font-mono text-xs text-zinc-300">
             {typeof cpu === "number"
@@ -538,7 +593,12 @@ export default function DeviceInventoryDetailPage({
             ? Number((p.memoryBytes / (1024 * 1024)).toFixed(1))
             : 0),
         threads: p.threads ?? p.Threads ?? 1,
-        cpuTimeSec: p.cpuTimeSec ?? p.CpuTimeSec ?? p.cpuPercent ?? 0,
+        cpuTimeSec:
+          p.cpuTimeSec !== undefined && p.cpuTimeSec !== null
+            ? Number(p.cpuTimeSec)
+            : p.CpuTimeSec !== undefined && p.CpuTimeSec !== null
+              ? Number(p.CpuTimeSec)
+              : null,
         status: p.status ?? p.Status ?? "Running",
       }));
   }, [processes]);
@@ -889,14 +949,23 @@ export default function DeviceInventoryDetailPage({
 
           {/* ── PROCESSES TAB ── */}
           {activeTab === "PROCESSES" && (
-            <DataTable
-              columns={processCols}
-              data={validProcesses}
-              loading={loading}
-              searchable={true}
-              searchPlaceholder="Search running processes…"
-              emptyTitle="No live process stream yet"
-            />
+            <div className="space-y-3">
+              {isProcessesStale && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Cached process snapshot (stale — waiting for live agent
+                  heartbeat)
+                </div>
+              )}
+              <DataTable
+                columns={processCols}
+                data={validProcesses}
+                loading={loading}
+                searchable={true}
+                searchPlaceholder="Search running processes…"
+                emptyTitle="No live process stream yet"
+              />
+            </div>
           )}
 
           {/* ── ALERTS TAB ── */}

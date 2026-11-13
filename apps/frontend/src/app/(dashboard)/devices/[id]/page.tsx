@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { TelemetrySparkline } from "@/components/dashboard/TelemetrySparkline";
 import { apiClient } from "@/lib/api-client";
+import { getScopedProcessCacheKey } from "@/lib/cache";
 import { toast } from "sonner";
 
 // ── Smart Formatters ──────────────────────────────────────────────────────────
@@ -89,15 +90,40 @@ export default function DeviceDetailPage() {
   const { user } = useAuth();
   const { on, socket } = useRealtimeContext();
 
+  const userOrgId =
+    (user as any)?.organizationId ||
+    (user as any)?.orgId ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("nos_active_org_id")
+      : null);
+  const scopedProcessCacheKey = getScopedProcessCacheKey(
+    id,
+    user?.id,
+    userOrgId,
+  );
+
   const [activeTab, setActiveTab] = useState("overview");
 
   const [device, setDevice] = useState<any>(null);
   const [telemetryHistory, setTelemetryHistory] = useState<any[]>([]);
+  const [isProcessesStale, setIsProcessesStale] = useState<boolean>(false);
   const [processes, setProcesses] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const cached = localStorage.getItem(`nos_procs_${id}`);
-        return cached ? JSON.parse(cached) : [];
+        const raw = localStorage.getItem(scopedProcessCacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const list = Array.isArray(parsed) ? parsed : parsed?.processes;
+          const ts = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+          const age = Date.now() - ts;
+          // Expire cache if older than 5 minutes
+          if (age > 5 * 60 * 1000 && ts > 0) {
+            return [];
+          }
+          if (Array.isArray(list) && list.length > 0) {
+            return list;
+          }
+        }
       } catch {
         return [];
       }
@@ -108,13 +134,39 @@ export default function DeviceDetailPage() {
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
+  // If initial processes were restored from cache, mark as stale until fresh data arrives
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(scopedProcessCacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const list = Array.isArray(parsed) ? parsed : parsed?.processes;
+          const ts = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+          const age = Date.now() - ts;
+          if (age > 5 * 60 * 1000 && ts > 0) {
+            return;
+          }
+          if (Array.isArray(list) && list.length > 0) {
+            setProcesses((prev) => (prev.length === 0 ? list : prev));
+            setIsProcessesStale(true);
+          }
+        }
+      } catch {}
+    }
+  }, [scopedProcessCacheKey]);
+
   useEffect(() => {
     if (processes.length > 0 && typeof window !== "undefined") {
       try {
-        localStorage.setItem(`nos_procs_${id}`, JSON.stringify(processes));
+        const payload = {
+          processes,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(scopedProcessCacheKey, JSON.stringify(payload));
       } catch {}
     }
-  }, [processes, id]);
+  }, [processes, scopedProcessCacheKey]);
 
   const [loading, setLoading] = useState(true);
   const [realtimeData, setRealtimeData] = useState<any>(null);
@@ -240,6 +292,7 @@ export default function DeviceDetailPage() {
           );
           if (valid.length > 0) {
             setProcesses(valid);
+            setIsProcessesStale(false);
           }
         }
       } catch (err) {
@@ -289,6 +342,7 @@ export default function DeviceDetailPage() {
           );
           if (valid.length > 0) {
             setProcesses(valid);
+            setIsProcessesStale(false);
           }
         }
         // Reset countdown timer immediately on fresh telemetry
@@ -330,6 +384,7 @@ export default function DeviceDetailPage() {
           );
           if (valid.length > 0) {
             setProcesses(valid);
+            setIsProcessesStale(false);
           }
         }
         setTimeUntilUpdate(30);
@@ -1193,89 +1248,96 @@ export default function DeviceDetailPage() {
             );
 
             return (
-              <div className="dashboard-glass-card rounded-2xl overflow-hidden">
-                {validProcesses.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500 text-sm">
-                    No process data yet. Running processes stream via live agent
-                    heartbeats.
-                    <br />
-                    <span className="text-xs text-gray-600">
-                      Live count: {runningProcesses} processes running
-                    </span>
+              <div className="space-y-3">
+                {isProcessesStale && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    Cached process snapshot (stale — waiting for live agent
+                    heartbeat)
                   </div>
-                ) : (
-                  <table className="w-full text-sm text-left text-gray-400">
-                    <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
-                      <tr>
-                        <th className="px-6 py-3">PID</th>
-                        <th className="px-6 py-3">Name</th>
-                        <th className="px-6 py-3">Memory (MB)</th>
-                        <th className="px-6 py-3">CPU Time (s)</th>
-                        <th className="px-6 py-3">Threads</th>
-                        <th className="px-6 py-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {validProcesses.map((proc: any, idx: number) => {
-                        const pidVal =
-                          proc.pid ?? proc.Pid ?? proc.processId ?? "—";
-                        const nameVal =
-                          proc.processName ??
-                          proc.ProcessName ??
-                          proc.name ??
-                          proc.Name ??
-                          "Unknown";
-                        const memVal =
-                          proc.memoryMb ??
-                          proc.MemoryMb ??
-                          ((proc.memoryBytes ?? proc.MemoryBytes)
-                            ? (proc.memoryBytes ?? proc.MemoryBytes) /
-                              (1024 * 1024)
-                            : 0);
-                        const cpuVal =
-                          proc.cpuTimeSec ??
-                          proc.CpuTimeSec ??
-                          proc.cpuPercent ??
-                          0;
-                        const threadsVal = proc.threads ?? proc.Threads ?? 1;
-                        const statusVal =
-                          proc.status ?? proc.Status ?? "Running";
-
-                        return (
-                          <tr
-                            key={pidVal !== "—" ? `${pidVal}-${idx}` : idx}
-                            className="border-b border-white/[0.08] hover:bg-white/[0.06]"
-                          >
-                            <td className="px-6 py-3 font-mono text-xs text-cyan-400 font-semibold">
-                              {pidVal}
-                            </td>
-                            <td className="px-6 py-3 font-medium text-gray-200">
-                              {nameVal}
-                            </td>
-                            <td className="px-6 py-3 font-mono text-xs">
-                              {typeof memVal === "number"
-                                ? memVal.toFixed(1)
-                                : Number(memVal || 0).toFixed(1)}
-                            </td>
-                            <td className="px-6 py-3 font-mono text-xs">
-                              {typeof cpuVal === "number"
-                                ? cpuVal.toFixed(1)
-                                : Number(cpuVal || 0).toFixed(1)}
-                            </td>
-                            <td className="px-6 py-3 font-mono text-xs">
-                              {threadsVal}
-                            </td>
-                            <td className="px-6 py-3">
-                              <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                                {statusVal}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
                 )}
+                <div className="dashboard-glass-card rounded-2xl overflow-hidden">
+                  {validProcesses.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500 text-sm">
+                      No process data yet. Running processes stream via live
+                      agent heartbeats.
+                      <br />
+                      <span className="text-xs text-gray-600">
+                        Live count: {runningProcesses} processes running
+                      </span>
+                    </div>
+                  ) : (
+                    <table className="w-full text-sm text-left text-gray-400">
+                      <thead className="text-xs text-gray-500 uppercase bg-white/[0.04]/50">
+                        <tr>
+                          <th className="px-6 py-3">PID</th>
+                          <th className="px-6 py-3">Name</th>
+                          <th className="px-6 py-3">Memory (MB)</th>
+                          <th className="px-6 py-3">CPU Time (s)</th>
+                          <th className="px-6 py-3">Threads</th>
+                          <th className="px-6 py-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {validProcesses.map((proc: any, idx: number) => {
+                          const pidVal =
+                            proc.pid ?? proc.Pid ?? proc.processId ?? "—";
+                          const nameVal =
+                            proc.processName ??
+                            proc.ProcessName ??
+                            proc.name ??
+                            proc.Name ??
+                            "Unknown";
+                          const memVal =
+                            proc.memoryMb ??
+                            proc.MemoryMb ??
+                            ((proc.memoryBytes ?? proc.MemoryBytes)
+                              ? (proc.memoryBytes ?? proc.MemoryBytes) /
+                                (1024 * 1024)
+                              : 0);
+                          const cpuVal = proc.cpuTimeSec ?? proc.CpuTimeSec;
+                          const threadsVal = proc.threads ?? proc.Threads ?? 1;
+                          const statusVal =
+                            proc.status ?? proc.Status ?? "Running";
+
+                          return (
+                            <tr
+                              key={pidVal !== "—" ? `${pidVal}-${idx}` : idx}
+                              className="border-b border-white/[0.08] hover:bg-white/[0.06]"
+                            >
+                              <td className="px-6 py-3 font-mono text-xs text-cyan-400 font-semibold">
+                                {pidVal}
+                              </td>
+                              <td className="px-6 py-3 font-medium text-gray-200">
+                                {nameVal}
+                              </td>
+                              <td className="px-6 py-3 font-mono text-xs">
+                                {typeof memVal === "number"
+                                  ? memVal.toFixed(1)
+                                  : Number(memVal || 0).toFixed(1)}
+                              </td>
+                              <td className="px-6 py-3 font-mono text-xs">
+                                {cpuVal !== undefined && cpuVal !== null
+                                  ? typeof cpuVal === "number"
+                                    ? `${cpuVal.toFixed(1)}s`
+                                    : `${Number(cpuVal || 0).toFixed(1)}s`
+                                  : "—"}
+                              </td>
+                              <td className="px-6 py-3 font-mono text-xs">
+                                {threadsVal}
+                              </td>
+                              <td className="px-6 py-3">
+                                <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                                  {statusVal}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
             );
           })()}

@@ -330,10 +330,23 @@ export class DeviceService {
           (p.name || p.Name || p.processName || p.ProcessName),
       );
       if (validProcs.length > 0) {
-        setDeviceLiveProcesses(
-          [device.id, device.uuid, dto.deviceId],
-          validProcs,
-        );
+        // Validate dto.deviceId against authenticated device to prevent cross-device spoofing
+        const allowedKeys = [device.id, device.uuid];
+        if (dto.deviceId) {
+          const rawDtoId = String(dto.deviceId).trim().toLowerCase();
+          const matchesAuthenticatedDevice =
+            rawDtoId === String(device.id).trim().toLowerCase() ||
+            (device.uuid &&
+              rawDtoId === String(device.uuid).trim().toLowerCase());
+          if (matchesAuthenticatedDevice) {
+            allowedKeys.push(dto.deviceId);
+          } else {
+            this.logger.warn(
+              `Heartbeat reported mismatched dto.deviceId [${dto.deviceId}] for authenticated device [${device.id}]. Ignoring rogue identifier.`,
+            );
+          }
+        }
+        setDeviceLiveProcesses(allowedKeys, validProcs);
       }
     }
 

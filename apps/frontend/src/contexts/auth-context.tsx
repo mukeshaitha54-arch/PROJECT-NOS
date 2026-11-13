@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { api, rawApi } from "../lib/api-client";
-import { clearScopedDeviceCache } from "../lib/cache";
+import { clearScopedDeviceCache, clearScopedProcessCache } from "../lib/cache";
 import { User, ApiResponse } from "../types/api";
 
 interface RegisterPayload {
@@ -80,6 +80,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (err?.response?.status === 401) {
         setUser(null);
         if (typeof window !== "undefined") {
+          clearScopedDeviceCache();
+          clearScopedProcessCache();
           localStorage.removeItem("nos_access_token");
           localStorage.removeItem("nos_refresh_token");
           localStorage.removeItem("nos_cached_user");
@@ -176,6 +178,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       if (typeof window !== "undefined") {
         clearScopedDeviceCache();
+        clearScopedProcessCache();
         localStorage.removeItem("nos_access_token");
         localStorage.removeItem("nos_refresh_token");
         localStorage.removeItem("nos_cached_user");
@@ -208,9 +211,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (typeof window !== "undefined") {
         const status = err?.response?.status;
         if (status === 401 || status === 403) {
+          clearScopedDeviceCache();
+          clearScopedProcessCache();
           localStorage.removeItem("nos_access_token");
           localStorage.removeItem("nos_refresh_token");
           localStorage.removeItem("nos_cached_user");
+          localStorage.removeItem("nos_active_org_id");
           setUser(null);
         }
       }
