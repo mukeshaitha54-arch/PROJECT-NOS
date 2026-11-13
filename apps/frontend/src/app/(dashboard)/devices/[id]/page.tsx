@@ -29,16 +29,33 @@ import { apiClient } from "@/lib/api-client";
 import { getScopedProcessCacheKey } from "@/lib/cache";
 import { toast } from "sonner";
 
-// ── Smart Formatters ──────────────────────────────────────────────────────────
+// ── Smart Unit Normalization & Formatters ────────────────────────────────────
+
+function normalizeMemoryToGb(val: number | null | undefined): number | null {
+  if (val === null || val === undefined || isNaN(val) || val <= 0) return null;
+  // If raw bytes (> 10MB in bytes = 10,485,760)
+  if (val > 10485760) return val / (1024 * 1024 * 1024);
+  // If in MB (between 512 and 10,485,760, e.g. 4096, 16384, 32000, 48000 MB)
+  if (val >= 512) return val / 1024;
+  // Otherwise already in GB (< 512 GB)
+  return val;
+}
+
+function normalizeDiskToGb(val: number | null | undefined): number | null {
+  if (val === null || val === undefined || isNaN(val) || val <= 0) return null;
+  // If in raw bytes (> 10MB in bytes = 10,485,760)
+  if (val > 10485760) return val / (1024 * 1024 * 1024);
+  // Disk values are in GB (e.g. 20, 100, 250, 500, 1024, 2048, 4096 GB)
+  return val;
+}
+
+function formatGb(val: number | null | undefined): string {
+  if (val === null || val === undefined || isNaN(val) || val <= 0) return "0.0";
+  return val.toFixed(1);
+}
 
 function formatBytesToGb(val: number | null | undefined): string {
-  if (val === null || val === undefined || isNaN(val) || val <= 0) return "0.0";
-  // If already in GB (< 1024)
-  if (val < 1024) return val.toFixed(1);
-  // If in MB (< 10 MB in bytes = 10,485,760, so if val < 10485760 it's in MB)
-  if (val < 10485760) return (val / 1024).toFixed(1);
-  // Otherwise in raw bytes
-  return (val / (1024 * 1024 * 1024)).toFixed(1);
+  return formatGb(val);
 }
 
 function formatMbsSpeed(mbsVal: number | null | undefined): string {
@@ -553,25 +570,34 @@ export default function DeviceDetailPage() {
         })
       : device?.latestSnapshot || null;
 
-  const currentCpu =
-    realtimeData?.cpuUsage ??
-    latestSnapshot?.cpuUsage ??
-    device?.latestSnapshot?.cpuUsage ??
-    device.lastHeartbeat?.cpuUsage ??
-    device.latestHeartbeat?.cpuUsage ??
-    0;
-  const currentMem =
-    realtimeData?.memoryUsagePercent ??
-    latestSnapshot?.memoryUsagePercent ??
-    device?.latestSnapshot?.memoryUsagePercent ??
-    device.lastHeartbeat?.ramUsage ??
-    device.latestHeartbeat?.ramUsage ??
-    0;
-  const currentDisk =
-    realtimeData?.diskUsagePercent ??
-    latestSnapshot?.diskUsagePercent ??
-    device?.latestSnapshot?.diskUsagePercent ??
-    0;
+  const measuredCpu: number | null =
+    [
+      realtimeData?.cpuUsage,
+      latestSnapshot?.cpuUsage,
+      device?.latestSnapshot?.cpuUsage,
+      device?.lastHeartbeat?.cpuUsage,
+      device?.latestHeartbeat?.cpuUsage,
+    ].find((v) => typeof v === "number" && !isNaN(v) && v >= 0) ?? null;
+
+  const measuredMemUsage: number | null =
+    [
+      realtimeData?.memoryUsagePercent,
+      latestSnapshot?.memoryUsagePercent,
+      device?.latestSnapshot?.memoryUsagePercent,
+      device?.lastHeartbeat?.ramUsage,
+      device?.latestHeartbeat?.ramUsage,
+    ].find((v) => typeof v === "number" && !isNaN(v) && v >= 0) ?? null;
+
+  const measuredDiskUsage: number | null =
+    [
+      realtimeData?.diskUsagePercent,
+      latestSnapshot?.diskUsagePercent,
+      device?.latestSnapshot?.diskUsagePercent,
+    ].find((v) => typeof v === "number" && !isNaN(v) && v >= 0) ?? null;
+
+  const currentCpu = measuredCpu ?? 0;
+  const currentMem = measuredMemUsage ?? 0;
+  const currentDisk = measuredDiskUsage ?? 0;
 
   const netUpload =
     realtimeData?.networkUploadSpeed ?? latestSnapshot?.networkUploadSpeed ?? 0;
@@ -610,16 +636,22 @@ export default function DeviceDetailPage() {
   const bytesSent = realtimeData?.bytesSent ?? latestSnapshot?.bytesSent ?? 0;
   const bytesReceived =
     realtimeData?.bytesReceived ?? latestSnapshot?.bytesReceived ?? 0;
+
+  // First positive processor count; zero does not suppress valid inventory count
   const logicalProcessors =
-    realtimeData?.logicalProcessors ??
-    latestSnapshot?.logicalProcessors ??
-    inventory?.logicalCores ??
-    0;
+    [
+      realtimeData?.logicalProcessors,
+      latestSnapshot?.logicalProcessors,
+      inventory?.logicalCores,
+    ].find((v) => typeof v === "number" && v > 0) ?? 0;
+
   const physicalProcessors =
-    realtimeData?.physicalProcessors ??
-    latestSnapshot?.physicalProcessors ??
-    inventory?.physicalCores ??
-    0;
+    [
+      realtimeData?.physicalProcessors,
+      latestSnapshot?.physicalProcessors,
+      inventory?.physicalCores,
+    ].find((v) => typeof v === "number" && v > 0) ?? 0;
+
   const runningProcesses =
     realtimeData?.runningProcesses ?? latestSnapshot?.runningProcesses ?? 0;
   const runningServices =
@@ -632,61 +664,106 @@ export default function DeviceDetailPage() {
   const rawDns = realtimeData?.dns ?? latestSnapshot?.dns ?? null;
   const dns = rawDns && rawDns !== "8.8.8.8" && rawDns !== "" ? rawDns : "N/A";
 
-  const invRamTotalGb =
+  // Normalize Memory Capacities to GB
+  const rawMemTotal =
+    [
+      realtimeData?.memoryTotal,
+      latestSnapshot?.memoryTotal,
+      device?.latestSnapshot?.memoryTotal,
+    ].find((v) => typeof v === "number" && v > 0) ?? null;
+
+  const invRamBytes =
     inventory?.memoryModules &&
     Array.isArray(inventory.memoryModules) &&
     inventory.memoryModules.length > 0
       ? inventory.memoryModules.reduce(
           (acc: number, m: any) => acc + (Number(m.capacityBytes) || 0),
           0,
-        ) /
-        (1024 * 1024 * 1024)
-      : 0;
+        )
+      : null;
 
-  const invDiskTotalGb =
+  const memTotal: number | null =
+    rawMemTotal !== null
+      ? normalizeMemoryToGb(rawMemTotal)
+      : invRamBytes !== null
+        ? normalizeMemoryToGb(invRamBytes)
+        : null;
+
+  const rawMemFree =
+    [
+      realtimeData?.memoryFree,
+      latestSnapshot?.memoryFree,
+      device?.latestSnapshot?.memoryFree,
+    ].find((v) => typeof v === "number" && v >= 0) ?? null;
+
+  const rawMemUsed =
+    [
+      realtimeData?.memoryUsed,
+      latestSnapshot?.memoryUsed,
+      device?.latestSnapshot?.memoryUsed,
+    ].find((v) => typeof v === "number" && v >= 0) ?? null;
+
+  let memUsed: number | null = null;
+  let memFree: number | null = null;
+
+  if (rawMemFree !== null) {
+    // Preserve existing calculation when telemetry provides memoryFree
+    memFree = normalizeMemoryToGb(rawMemFree);
+    if (rawMemUsed !== null) {
+      memUsed = normalizeMemoryToGb(rawMemUsed);
+    } else if (memTotal !== null && memFree !== null) {
+      memUsed = Math.max(0, memTotal - memFree);
+    }
+  } else {
+    // memoryFree absent in telemetry; normalize memUsed or derive usage from memTotal & measuredMemUsage
+    if (rawMemUsed !== null) {
+      memUsed = normalizeMemoryToGb(rawMemUsed);
+    } else if (memTotal !== null && measuredMemUsage !== null) {
+      memUsed = (memTotal * measuredMemUsage) / 100;
+    }
+    if (memTotal !== null && memUsed !== null) {
+      memFree = Math.max(0, memTotal - memUsed);
+    }
+  }
+
+  // Normalize Disk Capacities to GB
+  const rawDiskTotal =
+    [
+      realtimeData?.diskTotal,
+      latestSnapshot?.diskTotal,
+      device?.latestSnapshot?.diskTotal,
+    ].find((v) => typeof v === "number" && v > 0) ?? null;
+
+  const invDiskBytes =
     inventory?.diskDrives &&
     Array.isArray(inventory.diskDrives) &&
     inventory.diskDrives.length > 0
       ? inventory.diskDrives.reduce(
           (acc: number, d: any) => acc + (Number(d.sizeBytes) || 0),
           0,
-        ) /
-        (1024 * 1024 * 1024)
-      : 0;
+        )
+      : null;
 
-  const rawMemTotal =
-    realtimeData?.memoryTotal ?? latestSnapshot?.memoryTotal ?? 0;
-  const memTotal = rawMemTotal > 0 ? rawMemTotal : invRamTotalGb;
+  const diskTotal: number | null =
+    rawDiskTotal !== null
+      ? normalizeDiskToGb(rawDiskTotal)
+      : invDiskBytes !== null
+        ? normalizeDiskToGb(invDiskBytes)
+        : null;
 
-  const rawMemUsed =
-    realtimeData?.memoryUsed ?? latestSnapshot?.memoryUsed ?? 0;
-  const memUsed =
-    rawMemUsed > 0
-      ? rawMemUsed
-      : memTotal > 0 && currentMem > 0
-        ? (memTotal * currentMem) / 100
-        : 0;
+  const rawDiskFree =
+    [
+      realtimeData?.diskFree,
+      latestSnapshot?.diskFree,
+      device?.latestSnapshot?.diskFree,
+    ].find((v) => typeof v === "number" && v >= 0) ?? null;
 
-  const rawMemFree =
-    realtimeData?.memoryFree ?? latestSnapshot?.memoryFree ?? 0;
-  const memFree =
-    rawMemFree > 0
-      ? rawMemFree
-      : memTotal > 0
-        ? Math.max(0, memTotal - memUsed)
-        : 0;
-
-  const rawDiskTotal =
-    realtimeData?.diskTotal ?? latestSnapshot?.diskTotal ?? 0;
-  const diskTotal = rawDiskTotal > 0 ? rawDiskTotal : invDiskTotalGb;
-
-  const rawDiskFree = realtimeData?.diskFree ?? latestSnapshot?.diskFree ?? 0;
-  const diskFree =
-    rawDiskFree > 0
-      ? rawDiskFree
-      : diskTotal > 0
-        ? Math.max(0, diskTotal - (diskTotal * currentDisk) / 100)
-        : 0;
+  let diskFree: number | null = null;
+  if (rawDiskFree !== null) {
+    diskFree = normalizeDiskToGb(rawDiskFree);
+  } else if (diskTotal !== null && measuredDiskUsage !== null) {
+    diskFree = Math.max(0, diskTotal - (diskTotal * measuredDiskUsage) / 100);
+  }
 
   const diskRead =
     realtimeData?.diskReadSpeed ?? latestSnapshot?.diskReadSpeed ?? 0;
@@ -1078,25 +1155,33 @@ export default function DeviceDetailPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Total</span>
                   <span className="text-gray-200 font-mono">
-                    {formatBytesToGb(memTotal)} GB
+                    {memTotal !== null
+                      ? `${formatBytesToGb(memTotal)} GB`
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Used</span>
                   <span className="text-gray-200 font-mono">
-                    {formatBytesToGb(memUsed)} GB
+                    {memUsed !== null
+                      ? `${formatBytesToGb(memUsed)} GB`
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Free</span>
                   <span className="text-gray-200 font-mono">
-                    {formatBytesToGb(memFree)} GB
+                    {memFree !== null
+                      ? `${formatBytesToGb(memFree)} GB`
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Usage</span>
                   <span className="text-gray-200 font-mono">
-                    {currentMem.toFixed(1)}%
+                    {measuredMemUsage !== null
+                      ? `${measuredMemUsage.toFixed(1)}%`
+                      : "N/A"}
                   </span>
                 </div>
               </div>
@@ -1109,19 +1194,25 @@ export default function DeviceDetailPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Disk Total</span>
                   <span className="text-gray-200 font-mono">
-                    {formatBytesToGb(diskTotal)} GB
+                    {diskTotal !== null
+                      ? `${formatBytesToGb(diskTotal)} GB`
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Disk Free</span>
                   <span className="text-gray-200 font-mono">
-                    {formatBytesToGb(diskFree)} GB
+                    {diskFree !== null
+                      ? `${formatBytesToGb(diskFree)} GB`
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Disk Usage</span>
                   <span className="text-gray-200 font-mono">
-                    {currentDisk.toFixed(1)}%
+                    {measuredDiskUsage !== null
+                      ? `${measuredDiskUsage.toFixed(1)}%`
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
