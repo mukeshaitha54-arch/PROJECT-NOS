@@ -231,6 +231,71 @@ export class DeviceController {
     };
   }
 
+  @Get("download")
+  @ApiOperation({ summary: "Download the NOS Windows Agent Installer" })
+  @ApiResponse({
+    status: 200,
+    description: "Returns the installer executable.",
+  })
+  async downloadAgent(@Req() req: Request, @Res() res: any) {
+    const path = require("path");
+    const fs = require("fs");
+
+    const possiblePaths = [
+      path.join(
+        process.cwd(),
+        "apps",
+        "installer",
+        "NOS.Installer",
+        "bin",
+        "Release",
+        "net8.0-windows",
+        "win-x64",
+        "publish",
+        "NOS.Installer.exe",
+      ),
+      path.join(process.cwd(), "apps", "backend", "assets", "NOS-Agent.exe"),
+      path.join(process.cwd(), "assets", "NOS-Agent.exe"),
+      path.join(__dirname, "..", "..", "..", "..", "assets", "NOS-Agent.exe"),
+      path.join(__dirname, "..", "..", "..", "assets", "NOS-Agent.exe"),
+      path.join(process.cwd(), "apps", "NOS.Agent", "publish", "NOS.Agent.exe"),
+    ];
+
+    const foundPath = possiblePaths.find((p: string) => fs.existsSync(p));
+
+    if (foundPath) {
+      const fileName = path.basename(foundPath);
+      const stat = fs.statSync(foundPath);
+
+      if (typeof res.header === "function") {
+        res.header("Content-Type", "application/octet-stream");
+        res.header("Content-Disposition", `attachment; filename="${fileName}"`);
+        res.header("Content-Length", stat.size);
+      } else if (typeof res.setHeader === "function") {
+        res.setHeader("Content-Type", "application/octet-stream");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${fileName}"`,
+        );
+        res.setHeader("Content-Length", stat.size);
+      }
+
+      if (typeof res.download === "function") {
+        return res.download(foundPath, fileName);
+      }
+
+      const stream = fs.createReadStream(foundPath);
+      return res.send(stream);
+    }
+
+    return res
+      .status(404)
+      .send({
+        success: false,
+        message: "Installer or agent executable not found.",
+      });
+  }
+
   @Get(":id")
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
@@ -307,44 +372,6 @@ export class DeviceController {
       message: "Device retired.",
       data,
     };
-  }
-
-  @Get("download")
-  @ApiOperation({ summary: "Download the NOS Windows Agent Installer" })
-  @ApiResponse({
-    status: 200,
-    description: "Returns the installer executable.",
-  })
-  async downloadAgent(@Req() req: Request, @Res() res: any) {
-    const installerPath = require("path").join(
-      process.cwd(),
-      "..",
-      "..",
-      "apps",
-      "installer",
-      "NOS.Installer",
-      "bin",
-      "Release",
-      "net8.0-windows",
-      "win-x64",
-      "publish",
-      "NOS.Installer.exe",
-    );
-    if (require("fs").existsSync(installerPath)) {
-      if (typeof res.download === "function") {
-        return res.download(installerPath, "NOS_Agent_Installer.exe");
-      }
-      const stream = require("fs").createReadStream(installerPath);
-      res.header(
-        "Content-Disposition",
-        'attachment; filename="NOS_Agent_Installer.exe"',
-      );
-      res.header("Content-Type", "application/octet-stream");
-      return res.send(stream);
-    }
-    return res
-      .status(404)
-      .send({ success: false, message: "Installer not compiled or missing." });
   }
 
   @Post("bulk/status")

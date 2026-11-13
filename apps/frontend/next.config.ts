@@ -48,7 +48,77 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/device/:id/inventory",
-        destination: "/devices/:id/inventory",
+        destination: "/inventory/:id",
+        permanent: true,
+      },
+      {
+        source: "/devices/:id/inventory",
+        destination: "/inventory/:id",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/devices",
+        destination: "/devices",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/devices/:id",
+        destination: "/devices/:id",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/fleet",
+        destination: "/fleet",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/alerts",
+        destination: "/alerts",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/inventory",
+        destination: "/inventory",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/inventory/:id",
+        destination: "/inventory/:id",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/settings",
+        destination: "/settings",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/settings/:path*",
+        destination: "/settings/:path*",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/members",
+        destination: "/members",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/audit",
+        destination: "/audit",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/admin/:path*",
+        destination: "/admin/:path*",
+        permanent: true,
+      },
+      {
+        source: "/organization",
+        destination: "/members",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/organization",
+        destination: "/members",
         permanent: true,
       },
     ];

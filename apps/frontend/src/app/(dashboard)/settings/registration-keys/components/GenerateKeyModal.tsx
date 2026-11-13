@@ -55,9 +55,16 @@ export function GenerateKeyModal({
   };
 
   const handleDownloadInstaller = () => {
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      (typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1"
+        ? `${window.location.origin}/api/v1`
+        : "http://localhost:3001/api/v1");
     const link = document.createElement("a");
-    link.href = "http://localhost:4000/api/v1/device/download";
-    link.setAttribute("download", "NOS_Agent_Installer.exe");
+    link.href = `${apiBase}/fleet/installer/agent`;
+    link.setAttribute("download", "NOS-Agent.exe");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

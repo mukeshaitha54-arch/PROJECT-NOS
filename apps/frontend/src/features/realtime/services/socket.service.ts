@@ -30,7 +30,7 @@ class RealtimeSocketClient {
 
     const apiUrl = clientEnv.apiBaseUrl;
     const baseUrl =
-      apiUrl.replace(/\/api\/v1\/?$/, "") || "http://localhost:4000";
+      apiUrl.replace(/\/api\/v1\/?$/, "") || "http://localhost:3001";
     const namespace = process.env.NEXT_PUBLIC_SOCKET_NAMESPACE || "/realtime";
 
     this.socket = io(`${baseUrl}${namespace}`, {

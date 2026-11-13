@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   User,
   Bell,
@@ -313,6 +314,28 @@ export default function SettingsPage() {
           </div>
         </div>
       </Card>
+
+      {/* SECTION: REGISTRATION KEYS */}
+      <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <Key className="w-5 h-5 text-[#3D8BFF] flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-white">
+              Device Registration Keys
+            </p>
+            <p className="text-xs text-gray-400">
+              Manage enrollment tokens, usage limits, and expiration policies
+              for connecting Windows agents.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/settings/registration-keys"
+          className="px-4 py-2 rounded-xl bg-[#3D8BFF]/20 hover:bg-[#3D8BFF]/30 border border-[#3D8BFF]/40 text-xs font-semibold text-blue-200 transition-colors shrink-0 text-center"
+        >
+          Manage Registration Keys →
+        </Link>
+      </div>
 
       {/* SECTION 3: API KEYS */}
       <Card className="bg-white/[0.04]/90 border-white/[0.08] p-6 shadow-xl space-y-5">

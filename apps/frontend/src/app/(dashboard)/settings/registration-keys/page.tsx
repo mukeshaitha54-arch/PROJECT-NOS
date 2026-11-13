@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2, Key, Trash, Plus, Copy, Check, Download } from "lucide-react";
+import {
+  Loader2,
+  Key,
+  Trash,
+  Plus,
+  Copy,
+  Check,
+  Download,
+  ArrowLeft,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { safeCopyToClipboard } from "@/lib/clipboard";
@@ -51,7 +61,7 @@ export default function RegistrationKeysPage() {
       ) {
         return `${window.location.origin}/api/v1`;
       }
-      return "http://localhost:4000/api/v1";
+      return "http://localhost:3001/api/v1";
     }
     return "http://nos.is-local.org/api/v1";
   };
@@ -160,7 +170,7 @@ export default function RegistrationKeysPage() {
   };
 
   const downloadExe = () => {
-    const directUrl = `${apiBase().replace(/\/api\/v1$/, "")}/downloads/NOS-Agent.exe`;
+    const directUrl = `${apiBase()}/fleet/installer/agent`;
     const a = document.createElement("a");
     a.href = directUrl;
     a.download = "NOS-Agent.exe";
@@ -182,10 +192,19 @@ export default function RegistrationKeysPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Key className="text-[#C8A96E]" /> Registration Keys
-          </h1>
-          <p className="text-gray-400 mt-1">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/settings"
+              className="text-gray-400 hover:text-white transition-colors p-1"
+              title="Back to Settings"
+            >
+              <ArrowLeft size={20} />
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Key className="text-[#C8A96E]" /> Registration Keys
+            </h1>
+          </div>
+          <p className="text-gray-400 mt-1 pl-8">
             Manage agent enrollment tokens. Each key lets Windows PCs register
             with NOS automatically.
           </p>

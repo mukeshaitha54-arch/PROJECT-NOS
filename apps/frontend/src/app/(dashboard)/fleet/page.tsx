@@ -755,7 +755,7 @@ function AddDeviceModal({
         return `${window.location.origin}/api/v1`;
       }
       return (
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1"
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1"
       );
     }
     return "http://nos.is-local.org/api/v1";

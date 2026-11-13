@@ -15,6 +15,10 @@ import {
   Server,
   Search,
   Loader2,
+  Copy,
+  Check,
+  Terminal,
+  FileCode,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { onboardingApi } from "../../features/fleet/services/onboarding.api";
@@ -45,6 +49,60 @@ export default function OnboardingWizard() {
   });
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const [copiedCmd, setCopiedCmd] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+
+  const apiBase = () => {
+    if (typeof window !== "undefined") {
+      if (
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        return `${window.location.origin}/api/v1`;
+      }
+      return (
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1"
+      );
+    }
+    return "http://nos.is-local.org/api/v1";
+  };
+
+  const handleCopyCmd = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCmd(true);
+      setTimeout(() => setCopiedCmd(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleCopyKey = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const downloadScript = () => {
+    const url = `${apiBase()}/fleet/installer/windows?registrationKey=${encodeURIComponent(keyData.key)}&serverUrl=${encodeURIComponent(apiBase())}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "install-nos-agent.ps1";
+    a.click();
+  };
+
+  const downloadAgentExe = () => {
+    const url = `${apiBase()}/fleet/installer/agent`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "NOS-Agent.exe";
+    a.click();
+  };
+
   useEffect(() => {
     if (step === 6) {
       // Simulate polling for device connection
@@ -69,10 +127,15 @@ export default function OnboardingWizard() {
         ownerLastName: ownerData.lastName,
         timezone: orgData.timezone,
       });
+      const plainKey =
+        result.data?.registrationKey?.key ||
+        result.data?.key ||
+        result.data?.registrationKey?.plainKey ||
+        result.data?.registrationKey?.registrationKey?.key ||
+        "";
       setKeyData({
         generated: true,
-        key:
-          result.data?.registrationKey?.registrationKey?.key || "ERROR_NO_KEY",
+        key: plainKey,
         expires: "Never",
         limit: 0, // Unlimited as per backend
       });
@@ -349,8 +412,26 @@ export default function OnboardingWizard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 font-mono text-center text-lg text-[#3D8BFF] tracking-wider">
-                      {keyData.key}
+                    <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 font-mono text-center text-lg text-[#3D8BFF] tracking-wider flex items-center justify-between gap-3">
+                      <span className="flex-1 select-all">{keyData.key}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopyKey(keyData.key)}
+                        className="border-gray-700 text-xs shrink-0"
+                      >
+                        {copiedKey ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1 text-emerald-400" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5 mr-1" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
                       <div className="bg-gray-800/50 p-3 rounded border border-gray-800">
@@ -361,9 +442,7 @@ export default function OnboardingWizard() {
                         <span className="block text-gray-500">
                           Device Limit
                         </span>
-                        <span className="text-white">
-                          {keyData.limit} Devices
-                        </span>
+                        <span className="text-white">Unlimited Devices</span>
                       </div>
                     </div>
                   </div>
@@ -389,64 +468,98 @@ export default function OnboardingWizard() {
             )}
 
             {/* Step 5: Download Agent */}
-            {step === 5 && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3 border-b border-gray-800 pb-4">
-                  <Download className="h-6 w-6 text-[#3D8BFF]" />
-                  <h2 className="text-xl font-bold text-white">Deploy Agent</h2>
-                </div>
-                <p className="text-gray-400 text-sm">
-                  Run the following PowerShell command as Administrator on your
-                  target Windows devices to automatically install the agent and
-                  enroll it to your organization.
-                </p>
+            {step === 5 &&
+              (() => {
+                const scriptUrl = `${apiBase()}/fleet/installer/windows?registrationKey=${encodeURIComponent(keyData.key)}&serverUrl=${encodeURIComponent(apiBase())}`;
+                const psCommand = `Invoke-WebRequest -Uri "${scriptUrl}" -OutFile "install-nos-agent.ps1"; .\\install-nos-agent.ps1`;
 
-                <div className="bg-gray-950 p-4 rounded-lg border border-gray-800 font-mono text-sm overflow-x-auto whitespace-pre">
-                  <>
-                    <span className="text-pink-400">Invoke-WebRequest</span>{" "}
-                    -Uri{" "}
-                    <span className="text-green-400">
-                      &quot;https://api.nos.local/v1/installer?key={keyData.key}
-                      &quot;
-                    </span>{" "}
-                    -OutFile{" "}
-                    <span className="text-green-400">
-                      &quot;setup.ps1&quot;
-                    </span>
-                    ; <span className="text-pink-400">.\setup.ps1</span>
-                  </>
-                </div>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-3 border-b border-gray-800 pb-4">
+                      <Download className="h-6 w-6 text-[#3D8BFF]" />
+                      <h2 className="text-xl font-bold text-white">
+                        Deploy Agent
+                      </h2>
+                    </div>
+                    <p className="text-gray-400 text-sm">
+                      Run the following PowerShell command as Administrator on
+                      your target Windows devices to automatically install the
+                      agent and enroll it to your organization.
+                    </p>
 
-                <div className="flex justify-between items-center pt-4 border-t border-gray-800 mt-6">
-                  <div className="text-xs text-gray-500">
-                    Also available:{" "}
-                    <a href="#" className="text-[#3D8BFF] hover:underline">
-                      MSI Installer
-                    </a>{" "}
-                    or{" "}
-                    <a href="#" className="text-[#3D8BFF] hover:underline">
-                      Linux sh
-                    </a>
+                    <div className="relative group bg-gray-950 p-4 rounded-xl border border-gray-800 font-mono text-xs overflow-x-auto">
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-800 text-gray-400">
+                        <span className="flex items-center gap-1.5 font-sans font-semibold text-gray-300">
+                          <Terminal className="w-3.5 h-3.5 text-[#3D8BFF]" />
+                          PowerShell (Run as Administrator)
+                        </span>
+                        <button
+                          onClick={() => handleCopyCmd(psCommand)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 transition font-sans font-medium"
+                        >
+                          {copiedCmd ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              Copy Command
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <code className="text-emerald-400 select-all block whitespace-pre-wrap break-all">
+                        {psCommand}
+                      </code>
+                    </div>
+
+                    {/* Direct Download Options */}
+                    <div className="bg-gray-900/60 border border-gray-800/80 rounded-xl p-4 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        Alternative Manual Installation Files:
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={downloadScript}
+                          className="border-gray-700 bg-gray-800/80 text-gray-200 hover:bg-gray-700 text-xs flex items-center gap-1.5"
+                        >
+                          <FileCode className="w-3.5 h-3.5 text-[#3D8BFF]" />
+                          Download Installer Script (.ps1)
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={downloadAgentExe}
+                          className="border-gray-700 bg-gray-800/80 text-gray-200 hover:bg-gray-700 text-xs flex items-center gap-1.5"
+                        >
+                          <Download className="w-3.5 h-3.5 text-emerald-400" />
+                          Download Agent (.exe)
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between pt-4 border-t border-gray-800">
+                      <Button
+                        onClick={prevStep}
+                        variant="outline"
+                        className="border-gray-700 text-gray-300 active:scale-[0.97]"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        onClick={nextStep}
+                        className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
+                      >
+                        I&apos;ve Run the Installer
+                      </Button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <Button
-                    onClick={prevStep}
-                    variant="outline"
-                    className="border-gray-700 text-gray-300 active:scale-[0.97]"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    onClick={nextStep}
-                    className="bg-gradient-to-r from-[#3D8BFF] to-[#2563EB] hover:from-[#60A5FA] hover:to-[#3D8BFF] active:scale-[0.97]"
-                  >
-                    I&apos;ve Run the Installer
-                  </Button>
-                </div>
-              </div>
-            )}
+                );
+              })()}
 
             {/* Step 6: Connection (Waiting) */}
             {step === 6 && (

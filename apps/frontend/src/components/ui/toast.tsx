@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from "lucide-react";
+import { toast as sonnerToast } from "sonner";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -54,6 +55,31 @@ function uid() {
   return `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 function emit(t: Toast) {
+  try {
+    if (t.type === "success") {
+      sonnerToast.success(t.title, {
+        description: t.message,
+        duration: t.duration,
+      });
+    } else if (t.type === "error") {
+      sonnerToast.error(t.title, {
+        description: t.message,
+        duration: t.duration,
+      });
+    } else if (t.type === "warning") {
+      sonnerToast.warning(t.title, {
+        description: t.message,
+        duration: t.duration,
+      });
+    } else {
+      sonnerToast.info(t.title, {
+        description: t.message,
+        duration: t.duration,
+      });
+    }
+  } catch {
+    // Fallback if sonner is unavailable
+  }
   listeners.forEach((fn) => fn(t));
 }
 
