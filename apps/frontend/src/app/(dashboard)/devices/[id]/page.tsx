@@ -133,6 +133,7 @@ export default function DeviceDetailPage() {
   const [services, setServices] = useState<any[]>([]);
   const [software, setSoftware] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any>(null);
 
   // If initial processes were restored from cache, mark as stale until fresh data arrives
   useEffect(() => {
@@ -294,6 +295,22 @@ export default function DeviceDetailPage() {
             setProcesses(valid);
             setIsProcessesStale(false);
           }
+        }
+
+        // Also fetch complete inventory to populate hardware specs (CPU cores, RAM total, Disk total)
+        const invRes = await apiClient
+          .get<any, any>(`/inventory/${deviceDbId}`)
+          .catch(() =>
+            apiClient.get<any, any>(`/inventory/${id}`).catch(() => null),
+          );
+        const inv =
+          invRes?.data?.data?.inventory ||
+          invRes?.data?.inventory ||
+          invRes?.data?.data ||
+          invRes?.data ||
+          null;
+        if (inv) {
+          setInventory(inv);
         }
       } catch (err) {
         console.error("Failed to load device details", err);
@@ -568,8 +585,14 @@ export default function DeviceDetailPage() {
     device.lastHeartbeat?.ipAddress ??
     device.latestHeartbeat?.ipAddress ??
     "N/A";
+  const rawMac =
+    realtimeData?.macAddress ??
+    latestSnapshot?.macAddress ??
+    (inventory?.networkAdapters?.[0]?.macAddress || "N/A");
   const macAddress =
-    realtimeData?.macAddress ?? latestSnapshot?.macAddress ?? "N/A";
+    rawMac && rawMac !== "Unknown" && rawMac !== "00:00:00:00:00:00"
+      ? rawMac
+      : inventory?.networkAdapters?.[0]?.macAddress || "N/A";
   const uptime =
     realtimeData?.systemUptime ??
     latestSnapshot?.systemUptime ??
@@ -588,9 +611,15 @@ export default function DeviceDetailPage() {
   const bytesReceived =
     realtimeData?.bytesReceived ?? latestSnapshot?.bytesReceived ?? 0;
   const logicalProcessors =
-    realtimeData?.logicalProcessors ?? latestSnapshot?.logicalProcessors ?? 0;
+    realtimeData?.logicalProcessors ??
+    latestSnapshot?.logicalProcessors ??
+    inventory?.logicalCores ??
+    0;
   const physicalProcessors =
-    realtimeData?.physicalProcessors ?? latestSnapshot?.physicalProcessors ?? 0;
+    realtimeData?.physicalProcessors ??
+    latestSnapshot?.physicalProcessors ??
+    inventory?.physicalCores ??
+    0;
   const runningProcesses =
     realtimeData?.runningProcesses ?? latestSnapshot?.runningProcesses ?? 0;
   const runningServices =
@@ -603,13 +632,62 @@ export default function DeviceDetailPage() {
   const rawDns = realtimeData?.dns ?? latestSnapshot?.dns ?? null;
   const dns = rawDns && rawDns !== "8.8.8.8" && rawDns !== "" ? rawDns : "N/A";
 
-  const memTotal =
-    realtimeData?.memoryTotal ?? latestSnapshot?.memoryTotal ?? 0;
-  const memUsed = realtimeData?.memoryUsed ?? latestSnapshot?.memoryUsed ?? 0;
-  const memFree = realtimeData?.memoryFree ?? latestSnapshot?.memoryFree ?? 0;
+  const invRamTotalGb =
+    inventory?.memoryModules &&
+    Array.isArray(inventory.memoryModules) &&
+    inventory.memoryModules.length > 0
+      ? inventory.memoryModules.reduce(
+          (acc: number, m: any) => acc + (Number(m.capacityBytes) || 0),
+          0,
+        ) /
+        (1024 * 1024 * 1024)
+      : 0;
 
-  const diskTotal = realtimeData?.diskTotal ?? latestSnapshot?.diskTotal ?? 0;
-  const diskFree = realtimeData?.diskFree ?? latestSnapshot?.diskFree ?? 0;
+  const invDiskTotalGb =
+    inventory?.diskDrives &&
+    Array.isArray(inventory.diskDrives) &&
+    inventory.diskDrives.length > 0
+      ? inventory.diskDrives.reduce(
+          (acc: number, d: any) => acc + (Number(d.sizeBytes) || 0),
+          0,
+        ) /
+        (1024 * 1024 * 1024)
+      : 0;
+
+  const rawMemTotal =
+    realtimeData?.memoryTotal ?? latestSnapshot?.memoryTotal ?? 0;
+  const memTotal = rawMemTotal > 0 ? rawMemTotal : invRamTotalGb;
+
+  const rawMemUsed =
+    realtimeData?.memoryUsed ?? latestSnapshot?.memoryUsed ?? 0;
+  const memUsed =
+    rawMemUsed > 0
+      ? rawMemUsed
+      : memTotal > 0 && currentMem > 0
+        ? (memTotal * currentMem) / 100
+        : 0;
+
+  const rawMemFree =
+    realtimeData?.memoryFree ?? latestSnapshot?.memoryFree ?? 0;
+  const memFree =
+    rawMemFree > 0
+      ? rawMemFree
+      : memTotal > 0
+        ? Math.max(0, memTotal - memUsed)
+        : 0;
+
+  const rawDiskTotal =
+    realtimeData?.diskTotal ?? latestSnapshot?.diskTotal ?? 0;
+  const diskTotal = rawDiskTotal > 0 ? rawDiskTotal : invDiskTotalGb;
+
+  const rawDiskFree = realtimeData?.diskFree ?? latestSnapshot?.diskFree ?? 0;
+  const diskFree =
+    rawDiskFree > 0
+      ? rawDiskFree
+      : diskTotal > 0
+        ? Math.max(0, diskTotal - (diskTotal * currentDisk) / 100)
+        : 0;
+
   const diskRead =
     realtimeData?.diskReadSpeed ?? latestSnapshot?.diskReadSpeed ?? 0;
   const diskWrite =

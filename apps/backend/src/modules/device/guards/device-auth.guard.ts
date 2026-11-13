@@ -31,10 +31,7 @@ export class DeviceAuthGuard implements CanActivate {
     const headers = request.headers;
 
     // Fast check: Is this device or token in the decommissioned set?
-    const deviceIdHeader =
-      headers["x-device-id"] ||
-      headers["X-Device-Id"] ||
-      request.body?.deviceId;
+    const deviceIdHeader = headers["x-device-id"] || headers["X-Device-Id"];
     const rawToken =
       headers["x-device-token"] ||
       headers["X-Device-Token"] ||

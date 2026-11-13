@@ -46,14 +46,17 @@ export class TelemetryService {
     dto: SubmitTelemetryDto,
   ): Promise<TelemetrySnapshotContract> {
     const requestedDeviceId = dto.deviceId;
-    if (
-      requestedDeviceId &&
-      requestedDeviceId !== authenticatedDevice.id &&
-      requestedDeviceId !== authenticatedDevice.uuid
-    ) {
-      throw new BadRequestException(
-        "Security violation: Cannot submit telemetry metrics on behalf of a differing device UUID.",
-      );
+    if (requestedDeviceId) {
+      const rawReq = String(requestedDeviceId).trim().toLowerCase();
+      const matchesAuth =
+        rawReq === String(authenticatedDevice.id).trim().toLowerCase() ||
+        (authenticatedDevice.uuid &&
+          rawReq === String(authenticatedDevice.uuid).trim().toLowerCase());
+      if (!matchesAuth) {
+        this.logger.warn(
+          `Telemetry reported mismatched dto.deviceId [${dto.deviceId}] for authenticated device [${authenticatedDevice.id}]. Re-binding to authenticated device.`,
+        );
+      }
     }
     const targetDeviceId = authenticatedDevice.id;
 
