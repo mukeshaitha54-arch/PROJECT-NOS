@@ -788,43 +788,65 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="site-footer page-width">
-        <a className="brand footer-brand" href="#top">
-          <svg
-            className="brand-mark"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            role="img"
-            aria-label="NOS Sentinel insignia"
+      <footer className="site-footer page-width flex flex-col md:flex-row items-center justify-between gap-4 py-8 border-t border-white/[0.08] text-sm text-zinc-400">
+        <div className="flex items-center gap-3">
+          <a className="brand footer-brand flex items-center gap-2" href="#top">
+            <svg
+              className="brand-mark w-7 h-7"
+              viewBox="0 0 32 32"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="NOS Sentinel insignia"
+            >
+              <rect
+                x="2.5"
+                y="2.5"
+                width="27"
+                height="27"
+                rx="7.5"
+                stroke="url(#nos-logo-grad)"
+                strokeWidth="1.75"
+                fill="url(#nos-logo-fill)"
+              />
+              <path
+                d="M10 22V10L22 22V10"
+                stroke="url(#nos-logo-grad)"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="10" cy="10" r="2" fill="#3D8BFF" />
+              <circle cx="16" cy="16" r="2.2" fill="#00E5FF" />
+              <circle cx="22" cy="22" r="2" fill="#6366F1" />
+            </svg>
+            <span className="font-semibold text-white">NOS Sentinel</span>
+          </a>
+          <span className="text-zinc-600 hidden md:inline">•</span>
+          <span className="text-xs text-zinc-500 hidden md:inline">
+            Enterprise Windows Fleet Intelligence
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
+          <a
+            href="mailto:nos.platformm@gmail.com"
+            className="text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-medium"
           >
-            <rect
-              x="2.5"
-              y="2.5"
-              width="27"
-              height="27"
-              rx="7.5"
-              stroke="url(#nos-logo-grad)"
-              strokeWidth="1.75"
-              fill="url(#nos-logo-fill)"
-            />
-            <path
-              d="M10 22V10L22 22V10"
-              stroke="url(#nos-logo-grad)"
-              strokeWidth="2.25"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <circle cx="10" cy="10" r="2" fill="#3D8BFF" />
-            <circle cx="16" cy="16" r="2.2" fill="#00E5FF" />
-            <circle cx="22" cy="22" r="2" fill="#6366F1" />
-          </svg>
-          <span>NOS Sentinel</span>
-        </a>
-        <span>
-          Enterprise Windows fleet intelligence powered by native C# AOT and
-          zero-loss SQLite failover.
-        </span>
+            <span>Help: nos.platformm@gmail.com</span>
+          </a>
+          <span className="text-zinc-600">•</span>
+          <a
+            href="/privacy"
+            className="text-zinc-300 hover:text-white transition-colors"
+          >
+            Privacy &amp; Terms
+          </a>
+          <span className="text-zinc-600">•</span>
+          <span className="text-zinc-400 font-mono">
+            © 2026 NOS • License 2026
+          </span>
+        </div>
       </footer>
     </>
   );

@@ -282,9 +282,15 @@ export default function AuthRegisterPage() {
                   className="text-xs text-zinc-300 cursor-pointer leading-relaxed"
                 >
                   I agree to the{" "}
-                  <span className="text-[#3D8BFF] hover:text-blue-300 transition-colors font-semibold">
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[#3D8BFF] hover:text-blue-300 transition-colors font-semibold underline underline-offset-2"
+                  >
                     Terms of Use &amp; Privacy Governance
-                  </span>
+                  </Link>
                 </label>
               </div>
 
